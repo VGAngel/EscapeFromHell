@@ -1,0 +1,126 @@
+[gd_scene load_steps=46 format=3]
+
+[ext_resource type="Script" path="res://Player.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_000.png" id="2_joy0"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_001.png" id="3_joy1"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_002.png" id="4_joy2"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_003.png" id="5_joy3"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_004.png" id="6_joy4"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_005.png" id="7_joy5"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_006.png" id="8_joy6"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_007.png" id="9_joy7"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_008.png" id="10_joy8"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JOY_009.png" id="11_joy9"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_000.png" id="12_run0"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_001.png" id="13_run1"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_002.png" id="14_run2"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_003.png" id="15_run3"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_004.png" id="16_run4"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_005.png" id="17_run5"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_006.png" id="18_run6"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_007.png" id="19_run7"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_008.png" id="20_run8"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_RUN_01_009.png" id="21_run9"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_000.png" id="22_jump0"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_001.png" id="23_jump1"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_002.png" id="24_jump2"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_003.png" id="25_jump3"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_004.png" id="26_jump4"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_005.png" id="27_jump5"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_006.png" id="28_jump6"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_007.png" id="29_jump7"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_008.png" id="30_jump8"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_JUMP_009.png" id="31_jump9"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_000.png" id="32_fall0"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_001.png" id="33_fall1"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_002.png" id="34_fall2"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_003.png" id="35_fall3"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_004.png" id="36_fall4"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_005.png" id="37_fall5"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_006.png" id="38_fall6"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_007.png" id="39_fall7"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_008.png" id="40_fall8"]
+[ext_resource type="Texture2D" path="res://Assets/jumpPack/dog-koala-and-bunny-2d-game-sprites/PNG/KOALA/KOALA_FLYGHT_009.png" id="41_fall9"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_koala"]
+animations = [{
+"frames": [{
+"duration": 1.0, "texture": ExtResource("32_fall0")
+}, { "duration": 1.0, "texture": ExtResource("33_fall1")
+}, { "duration": 1.0, "texture": ExtResource("34_fall2")
+}, { "duration": 1.0, "texture": ExtResource("35_fall3")
+}, { "duration": 1.0, "texture": ExtResource("36_fall4")
+}, { "duration": 1.0, "texture": ExtResource("37_fall5")
+}, { "duration": 1.0, "texture": ExtResource("38_fall6")
+}, { "duration": 1.0, "texture": ExtResource("39_fall7")
+}, { "duration": 1.0, "texture": ExtResource("40_fall8")
+}, { "duration": 1.0, "texture": ExtResource("41_fall9")
+}],
+"loop": true,
+"name": &"fall",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0, "texture": ExtResource("2_joy0")
+}, { "duration": 1.0, "texture": ExtResource("3_joy1")
+}, { "duration": 1.0, "texture": ExtResource("4_joy2")
+}, { "duration": 1.0, "texture": ExtResource("5_joy3")
+}, { "duration": 1.0, "texture": ExtResource("6_joy4")
+}, { "duration": 1.0, "texture": ExtResource("7_joy5")
+}, { "duration": 1.0, "texture": ExtResource("8_joy6")
+}, { "duration": 1.0, "texture": ExtResource("9_joy7")
+}, { "duration": 1.0, "texture": ExtResource("10_joy8")
+}, { "duration": 1.0, "texture": ExtResource("11_joy9")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0, "texture": ExtResource("22_jump0")
+}, { "duration": 1.0, "texture": ExtResource("23_jump1")
+}, { "duration": 1.0, "texture": ExtResource("24_jump2")
+}, { "duration": 1.0, "texture": ExtResource("25_jump3")
+}, { "duration": 1.0, "texture": ExtResource("26_jump4")
+}, { "duration": 1.0, "texture": ExtResource("27_jump5")
+}, { "duration": 1.0, "texture": ExtResource("28_jump6")
+}, { "duration": 1.0, "texture": ExtResource("29_jump7")
+}, { "duration": 1.0, "texture": ExtResource("30_jump8")
+}, { "duration": 1.0, "texture": ExtResource("31_jump9")
+}],
+"loop": false,
+"name": &"jump",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0, "texture": ExtResource("12_run0")
+}, { "duration": 1.0, "texture": ExtResource("13_run1")
+}, { "duration": 1.0, "texture": ExtResource("14_run2")
+}, { "duration": 1.0, "texture": ExtResource("15_run3")
+}, { "duration": 1.0, "texture": ExtResource("16_run4")
+}, { "duration": 1.0, "texture": ExtResource("17_run5")
+}, { "duration": 1.0, "texture": ExtResource("18_run6")
+}, { "duration": 1.0, "texture": ExtResource("19_run7")
+}, { "duration": 1.0, "texture": ExtResource("20_run8")
+}, { "duration": 1.0, "texture": ExtResource("21_run9")
+}],
+"loop": true,
+"name": &"run",
+"speed": 12.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player"]
+radius = 45.0
+height = 140.0
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(0.2, 0.2)
+sprite_frames = SubResource("SpriteFrames_koala")
+animation = &"idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 5)
+shape = SubResource("CapsuleShape2D_player")
