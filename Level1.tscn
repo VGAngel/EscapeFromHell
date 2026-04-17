@@ -1,0 +1,263 @@
+[gd_scene format=3 uid="uid://bv1scenexy41a"]
+
+[ext_resource type="Script" path="res://Level1.gd" id="1_lv1s"]
+[ext_resource type="PackedScene" path="res://Soul.tscn" id="2_soul"]
+[ext_resource type="PackedScene" path="res://Player.tscn" id="3_plyr"]
+[ext_resource type="Texture2D" path="res://Assets/hellAssets/Background/Background_01.png" id="4_bg"]
+[ext_resource type="Texture2D" path="res://Assets/hellAssets/Platformer/Brick_01.png" id="5_brk"]
+[ext_resource type="Texture2D" path="res://Assets/hellAssets/Platformer/Spikes.png" id="6_spk"]
+[ext_resource type="Texture2D" path="res://Assets/hellAssets/Collectable Object/Star.png" id="7_str"]
+[ext_resource type="Texture2D" path="res://Assets/hellAssets/Environment/Lantern.png" id="8_lnt"]
+
+[sub_resource type="RectangleShape2D" id="SS_640"]
+size = Vector2(640, 128)
+
+[sub_resource type="RectangleShape2D" id="SS_512"]
+size = Vector2(512, 128)
+
+[sub_resource type="RectangleShape2D" id="SS_480"]
+size = Vector2(480, 128)
+
+[sub_resource type="RectangleShape2D" id="SS_384"]
+size = Vector2(384, 128)
+
+[sub_resource type="RectangleShape2D" id="SS_256"]
+size = Vector2(256, 128)
+
+[sub_resource type="RectangleShape2D" id="SS_wall"]
+size = Vector2(40, 3500)
+
+[sub_resource type="RectangleShape2D" id="SS_floor"]
+size = Vector2(800, 40)
+
+[sub_resource type="RectangleShape2D" id="SS_portal"]
+size = Vector2(720, 150)
+
+[node name="Level1" type="Node2D"]
+script = ExtResource("1_lv1s")
+
+; Фон — розтягнутий на всю висоту рівня
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(360, 1600)
+scale = Vector2(0.546, 4.32)
+texture = ExtResource("4_bg")
+
+[node name="Platforms" type="Node2D" parent="."]
+
+; === СТАРТ (широка безпечна платформа) ===
+[node name="StartPlatform" type="StaticBody2D" parent="Platforms"]
+position = Vector2(360, 300)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/StartPlatform"]
+scale = Vector2(5.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/StartPlatform"]
+shape = SubResource("SS_640")
+
+; === ЗИГЗАГ ВНИЗ ===
+
+; Платформа 1 — ліво
+[node name="P1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(192, 590)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P1"]
+scale = Vector2(3.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P1"]
+shape = SubResource("SS_384")
+
+; Платформа 2 — право
+[node name="P2" type="StaticBody2D" parent="Platforms"]
+position = Vector2(528, 880)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P2"]
+scale = Vector2(3.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P2"]
+shape = SubResource("SS_384")
+
+; Платформа 3 — центр-ліво, бонус зірка
+[node name="P3" type="StaticBody2D" parent="Platforms"]
+position = Vector2(300, 1170)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P3"]
+scale = Vector2(4.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P3"]
+shape = SubResource("SS_512")
+
+[node name="StarBonus" type="Sprite2D" parent="Platforms/P3"]
+position = Vector2(0, -96)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("7_str")
+
+; Платформа 4 — центр-право + шипи на правому краю
+[node name="P4" type="StaticBody2D" parent="Platforms"]
+position = Vector2(450, 1460)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P4"]
+scale = Vector2(3.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P4"]
+shape = SubResource("SS_384")
+
+[node name="Spikes" type="Sprite2D" parent="Platforms/P4"]
+position = Vector2(128, -80)
+texture = ExtResource("6_spk")
+
+; Платформа 5 — ліво ВУЗЬКА (небезпечно!)
+[node name="P5" type="StaticBody2D" parent="Platforms"]
+position = Vector2(148, 1750)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P5"]
+scale = Vector2(2.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P5"]
+shape = SubResource("SS_256")
+
+; Платформа 6 — право
+[node name="P6" type="StaticBody2D" parent="Platforms"]
+position = Vector2(540, 2040)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P6"]
+scale = Vector2(3.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P6"]
+shape = SubResource("SS_384")
+
+; Платформа 7 — центр широка (відпочинок), шипи по центру
+[node name="P7" type="StaticBody2D" parent="Platforms"]
+position = Vector2(360, 2330)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P7"]
+scale = Vector2(3.75, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P7"]
+shape = SubResource("SS_480")
+
+[node name="Spikes" type="Sprite2D" parent="Platforms/P7"]
+position = Vector2(0, -80)
+texture = ExtResource("6_spk")
+
+; Платформа 8 — право ВУЗЬКА + шипи на лівому краю
+[node name="P8" type="StaticBody2D" parent="Platforms"]
+position = Vector2(570, 2620)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P8"]
+scale = Vector2(2.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P8"]
+shape = SubResource("SS_256")
+
+[node name="Spikes" type="Sprite2D" parent="Platforms/P8"]
+position = Vector2(-64, -80)
+texture = ExtResource("6_spk")
+
+; === ФІНАЛЬНА ПЛАТФОРМА З ДУШЕЮ ===
+[node name="SoulPlatform" type="StaticBody2D" parent="Platforms"]
+position = Vector2(360, 2910)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/SoulPlatform"]
+scale = Vector2(5.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/SoulPlatform"]
+shape = SubResource("SS_640")
+
+; === ДЕКОРАЦІЇ ===
+[node name="Decorations" type="Node2D" parent="."]
+
+[node name="Lantern1" type="Sprite2D" parent="Decorations"]
+position = Vector2(50, 480)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("8_lnt")
+
+[node name="Lantern2" type="Sprite2D" parent="Decorations"]
+position = Vector2(670, 870)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("8_lnt")
+
+[node name="Lantern3" type="Sprite2D" parent="Decorations"]
+position = Vector2(50, 1740)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("8_lnt")
+
+[node name="Lantern4" type="Sprite2D" parent="Decorations"]
+position = Vector2(670, 2310)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("8_lnt")
+
+; === ДУША ===
+[node name="Soul" parent="." instance=ExtResource("2_soul")]
+position = Vector2(360, 2760)
+
+; === ВИХІД (активується після збору душі) ===
+[node name="ExitPortal" type="Area2D" parent="."]
+position = Vector2(360, -75)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitPortal"]
+shape = SubResource("SS_portal")
+
+; === МЕЖІ ===
+[node name="Boundaries" type="StaticBody2D" parent="."]
+
+[node name="LeftWall" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(-20, 1600)
+shape = SubResource("SS_wall")
+
+[node name="RightWall" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(740, 1600)
+shape = SubResource("SS_wall")
+
+[node name="Floor" type="CollisionShape2D" parent="Boundaries"]
+position = Vector2(360, 3060)
+shape = SubResource("SS_floor")
+
+; === ГРАВЦІ ===
+[node name="Player1" parent="." instance=ExtResource("3_plyr")]
+position = Vector2(300, 100)
+
+[node name="Player2" parent="." instance=ExtResource("3_plyr")]
+position = Vector2(420, 100)
+player_id = 2
+
+; === КАМЕРА (слідкує за серединою між гравцями) ===
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(360, 640)
+
+; === UI ===
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="StatusLabel" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 20.0
+offset_bottom = 72.0
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 1, 0.8, 1)
+text = "↓ Знайдіть загублену душу! ↓"
+horizontal_alignment = 1
+
+[node name="ControlsHint" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 0.7)
+text = "P1: ← → SPACE       P2: A D W"
+horizontal_alignment = 1
+
+[connection signal="body_entered" from="ExitPortal" to="." method="_on_exit_portal_body_entered"]

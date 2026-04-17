@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://dnvrto72r4qa2"]
+
+[ext_resource type="Texture2D" uid="uid://cq7xwuo555foe" path="res://Assets/jumpPack/backgrounds-for-vertical-jump-2d-game/PNG/BG_04_Preview/BG_04_Preview_No_Start.png" id="1_njbin"]
+[ext_resource type="Texture2D" uid="uid://7vnwyee6raqs" path="res://Assets/jumpPack/backgrounds-for-vertical-jump-2d-game/PNG/Pads/Pad_01_1.png" id="2_u1je6"]
+[ext_resource type="PackedScene" uid="uid://c6xkiv4q4p4s8" path="res://Player.tscn" id="3_player"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pad"]
+size = Vector2(750, 290)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 1280)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(720, 40)
+
+[node name="CustomLevelForTestJump" type="Node2D" unique_id=1762467027]
+
+[node name="Bg04PreviewNoStart" type="Sprite2D" parent="." unique_id=201055959]
+position = Vector2(360, 640)
+scale = Vector2(0.467, 0.321)
+texture = ExtResource("1_njbin")
+
+[node name="Pad011" type="StaticBody2D" parent="." unique_id=664070011]
+position = Vector2(245, 371)
+scale = Vector2(0.3456175, 0.19276063)
+
+[node name="Sprite2D" type="Sprite2D" parent="Pad011" unique_id=1160589630]
+texture = ExtResource("2_u1je6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pad011" unique_id=1051796375]
+shape = SubResource("RectangleShape2D_pad")
+
+[node name="Pad012" type="StaticBody2D" parent="." unique_id=242379352]
+position = Vector2(463, 759)
+scale = Vector2(0.3456175, 0.19276063)
+
+[node name="Sprite2D" type="Sprite2D" parent="Pad012" unique_id=1410951959]
+texture = ExtResource("2_u1je6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pad012" unique_id=70021060]
+shape = SubResource("RectangleShape2D_pad")
+
+[node name="Pad013" type="StaticBody2D" parent="." unique_id=1300739478]
+position = Vector2(256, 1227)
+scale = Vector2(0.3456175, 0.19276063)
+
+[node name="Sprite2D" type="Sprite2D" parent="Pad013" unique_id=1327153049]
+texture = ExtResource("2_u1je6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pad013" unique_id=814839865]
+shape = SubResource("RectangleShape2D_pad")
+
+[node name="Boundaries" type="StaticBody2D" parent="." unique_id=1246145268]
+
+[node name="LeftWall" type="CollisionShape2D" parent="Boundaries" unique_id=1143715447]
+position = Vector2(-20, 640)
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="CollisionShape2D" parent="Boundaries" unique_id=1010801780]
+position = Vector2(740, 640)
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Floor" type="CollisionShape2D" parent="Boundaries" unique_id=607264984]
+position = Vector2(360, 1300)
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="Player" parent="." unique_id=905731033 instance=ExtResource("3_player")]
+position = Vector2(463, 600)

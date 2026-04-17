@@ -1,0 +1,106 @@
+[gd_scene format=3 uid="uid://b4e5f6g7h8jaj"]
+
+[ext_resource type="Script" path="res://MainMenu.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/rpg-platformer-game-assets/5_Levels/DUNGEON CARTOON 2D PLATFORMER TILESET/PNG/Background/Background_01.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://Assets/rpg-platformer-game-assets/6_UI/PNG/btn/1.png" id="3_play"]
+[ext_resource type="Texture2D" path="res://Assets/rpg-platformer-game-assets/6_UI/PNG/btn/25.png" id="4_levels"]
+[ext_resource type="Texture2D" path="res://Assets/rpg-platformer-game-assets/6_UI/PNG/btn/9.png" id="5_exit"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_bg")
+stretch_mode = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
+theme_override_font_sizes/font_size = 62
+text = "ESCAPE FROM HELL"
+horizontal_alignment = 1
+
+[node name="TitleSpacer" type="Control" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+
+[node name="PlayButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 200)
+size_flags_horizontal = 4
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("3_play")
+
+[node name="PlayLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 42
+text = "Play"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 24)
+
+[node name="LevelsButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 200)
+size_flags_horizontal = 4
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("4_levels")
+
+[node name="LevelsLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 42
+text = "Levels"
+horizontal_alignment = 1
+
+[node name="Spacer2" type="Control" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 24)
+
+[node name="ExitButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 200)
+size_flags_horizontal = 4
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("5_exit")
+
+[node name="ExitLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 42
+text = "Exit"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/PlayButton" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/LevelsButton" to="." method="_on_levels_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ExitButton" to="." method="_on_exit_pressed"]
