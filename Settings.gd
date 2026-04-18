@@ -5,14 +5,14 @@ extends Control
 func _ready() -> void:
 	notice_label.text = ""
 
-func _apply_resolution(size: Vector2i) -> void:
-	DisplayServer.window_set_size(size)
+func _apply_resolution(win_size: Vector2i) -> void:
+	DisplayServer.window_set_size(win_size)
 	await get_tree().process_frame
-	if DisplayServer.window_get_size() == size:
+	if DisplayServer.window_get_size() == win_size:
 		var screen := DisplayServer.screen_get_size()
-		DisplayServer.window_set_position((screen - size) / 2)
+		DisplayServer.window_set_position(Vector2i(Vector2(screen - win_size) / 2.0))
 		notice_label.add_theme_color_override("font_color", Color(0.4, 1, 0.4, 1))
-		notice_label.text = "Applied: %d x %d" % [size.x, size.y]
+		notice_label.text = "Applied: %d x %d" % [win_size.x, win_size.y]
 	else:
 		notice_label.add_theme_color_override("font_color", Color(1, 0.5, 0.3, 1))
 		notice_label.text = "Embedded mode: запусти гру окремим вікном\n(Editor Settings > Run > Window Placement)"
