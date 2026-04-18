@@ -30,6 +30,7 @@ var _jump:  String
 
 func _ready() -> void:
 	add_to_group("player")
+	floor_snap_length = 10.0
 	_spawn_pos = global_position
 	_left  = "p%d_left"  % player_id
 	_right = "p%d_right" % player_id
