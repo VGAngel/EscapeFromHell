@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://bv1scenexy41a"]
+[gd_scene format=3 uid="uid://lv2scn345678b"]
 
-[ext_resource type="Script" path="res://Level1.gd" id="1_lv1s"]
+[ext_resource type="Script" path="res://Level2.gd" id="1_lv2s"]
 [ext_resource type="PackedScene" path="res://Soul.tscn" id="2_soul"]
 [ext_resource type="PackedScene" path="res://Player.tscn" id="3_plyr"]
 [ext_resource type="Texture2D" path="res://Assets/hellAssets/Background/Background_01.png" id="4_bg"]
@@ -21,11 +21,17 @@ size = Vector2(480, 128)
 [sub_resource type="RectangleShape2D" id="SS_384"]
 size = Vector2(384, 128)
 
+[sub_resource type="RectangleShape2D" id="SS_320"]
+size = Vector2(320, 128)
+
 [sub_resource type="RectangleShape2D" id="SS_256"]
 size = Vector2(256, 128)
 
+[sub_resource type="RectangleShape2D" id="SS_192"]
+size = Vector2(192, 128)
+
 [sub_resource type="RectangleShape2D" id="SS_wall"]
-size = Vector2(40, 3500)
+size = Vector2(40, 3600)
 
 [sub_resource type="RectangleShape2D" id="SS_floor"]
 size = Vector2(800, 40)
@@ -33,20 +39,19 @@ size = Vector2(800, 40)
 [sub_resource type="RectangleShape2D" id="SS_portal"]
 size = Vector2(720, 150)
 
-[node name="Level1" type="Node2D"]
-script = ExtResource("1_lv1s")
+[node name="Level2" type="Node2D"]
+script = ExtResource("1_lv2s")
 
-; Фон — розтягнутий на всю висоту рівня
 [node name="Background" type="Sprite2D" parent="."]
-position = Vector2(360, 1600)
-scale = Vector2(0.546, 4.32)
+position = Vector2(360, 1650)
+scale = Vector2(0.546, 4.5)
 texture = ExtResource("4_bg")
 
 [node name="Platforms" type="Node2D" parent="."]
 
-; === СТАРТ (широка безпечна платформа) ===
+; === СТАРТ ===
 [node name="StartPlatform" type="StaticBody2D" parent="Platforms"]
-position = Vector2(360, 300)
+position = Vector2(360, 200)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/StartPlatform"]
 scale = Vector2(5.0, 1.0)
@@ -56,23 +61,27 @@ texture = ExtResource("5_brk")
 one_way_collision = true
 shape = SubResource("SS_640")
 
-; === ЗИГЗАГ ВНИЗ ===
+; === ЗИГЗАГ ВНИЗ (складніший за рівень 1) ===
 
-; Платформа 1 — ліво
+; P1 — право вузька, шипи зліва
 [node name="P1" type="StaticBody2D" parent="Platforms"]
-position = Vector2(192, 590)
+position = Vector2(540, 480)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/P1"]
-scale = Vector2(3.0, 1.0)
+scale = Vector2(2.0, 1.0)
 texture = ExtResource("5_brk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P1"]
 one_way_collision = true
-shape = SubResource("SS_384")
+shape = SubResource("SS_256")
 
-; Платформа 2 — право
+[node name="Spikes" type="Sprite2D" parent="Platforms/P1"]
+position = Vector2(-64, -80)
+texture = ExtResource("6_spk")
+
+; P2 — ліво, чиста
 [node name="P2" type="StaticBody2D" parent="Platforms"]
-position = Vector2(528, 880)
+position = Vector2(165, 755)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/P2"]
 scale = Vector2(3.0, 1.0)
@@ -82,82 +91,86 @@ texture = ExtResource("5_brk")
 one_way_collision = true
 shape = SubResource("SS_384")
 
-; Платформа 3 — центр-ліво, бонус зірка
+; P3 — центр, зірка бонус
 [node name="P3" type="StaticBody2D" parent="Platforms"]
-position = Vector2(300, 1170)
+position = Vector2(390, 1020)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/P3"]
-scale = Vector2(4.0, 1.0)
+scale = Vector2(2.5, 1.0)
 texture = ExtResource("5_brk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P3"]
 one_way_collision = true
-shape = SubResource("SS_512")
+shape = SubResource("SS_320")
 
 [node name="StarBonus" type="Sprite2D" parent="Platforms/P3"]
 position = Vector2(0, -96)
 scale = Vector2(0.6, 0.6)
 texture = ExtResource("7_str")
 
-; Платформа 4 — центр-право + шипи на правому краю
+; P4 — право вузька, шипи по центру
 [node name="P4" type="StaticBody2D" parent="Platforms"]
-position = Vector2(450, 1460)
+position = Vector2(560, 1285)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/P4"]
-scale = Vector2(3.0, 1.0)
+scale = Vector2(2.0, 1.0)
 texture = ExtResource("5_brk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P4"]
 one_way_collision = true
-shape = SubResource("SS_384")
+shape = SubResource("SS_256")
 
 [node name="Spikes" type="Sprite2D" parent="Platforms/P4"]
-position = Vector2(128, -80)
+position = Vector2(0, -80)
 texture = ExtResource("6_spk")
 
-; Платформа 5 — ліво ВУЗЬКА (небезпечно!)
+; P5 — ліво широка (відпочинок), шипи правий край
 [node name="P5" type="StaticBody2D" parent="Platforms"]
-position = Vector2(148, 1750)
+position = Vector2(200, 1540)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/P5"]
-scale = Vector2(2.0, 1.0)
+scale = Vector2(3.75, 1.0)
 texture = ExtResource("5_brk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P5"]
 one_way_collision = true
-shape = SubResource("SS_256")
+shape = SubResource("SS_480")
 
-; Платформа 6 — право
+[node name="Spikes" type="Sprite2D" parent="Platforms/P5"]
+position = Vector2(176, -80)
+texture = ExtResource("6_spk")
+
+; P6 — ДУЖЕ ВУЗЬКА по центру (небезпечно!)
 [node name="P6" type="StaticBody2D" parent="Platforms"]
-position = Vector2(540, 2040)
+position = Vector2(360, 1790)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/P6"]
-scale = Vector2(3.0, 1.0)
+scale = Vector2(1.5, 1.0)
 texture = ExtResource("5_brk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P6"]
 one_way_collision = true
-shape = SubResource("SS_384")
+shape = SubResource("SS_192")
 
-; Платформа 7 — центр широка (відпочинок), шипи по центру
+; P7 — право, шипи зліва
 [node name="P7" type="StaticBody2D" parent="Platforms"]
-position = Vector2(360, 2330)
+position = Vector2(540, 2050)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/P7"]
-scale = Vector2(3.75, 1.0)
+scale = Vector2(3.0, 1.0)
 texture = ExtResource("5_brk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P7"]
 one_way_collision = true
-shape = SubResource("SS_480")
+shape = SubResource("SS_384")
 
 [node name="Spikes" type="Sprite2D" parent="Platforms/P7"]
-position = Vector2(0, -80)
+position = Vector2(-128, -80)
 texture = ExtResource("6_spk")
 
-; Платформа 8 — право ВУЗЬКА + шипи на лівому краю
+; P8 — ліво вузька
 [node name="P8" type="StaticBody2D" parent="Platforms"]
-position = Vector2(570, 2620)
+position = Vector2(175, 2320)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/P8"]
 scale = Vector2(2.0, 1.0)
@@ -167,13 +180,41 @@ texture = ExtResource("5_brk")
 one_way_collision = true
 shape = SubResource("SS_256")
 
-[node name="Spikes" type="Sprite2D" parent="Platforms/P8"]
+; P9 — широка відпочинок, шипи центр
+[node name="P9" type="StaticBody2D" parent="Platforms"]
+position = Vector2(380, 2580)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P9"]
+scale = Vector2(4.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P9"]
+one_way_collision = true
+shape = SubResource("SS_512")
+
+[node name="Spikes" type="Sprite2D" parent="Platforms/P9"]
+position = Vector2(0, -80)
+texture = ExtResource("6_spk")
+
+; P10 — право вузька, шипи зліва
+[node name="P10" type="StaticBody2D" parent="Platforms"]
+position = Vector2(545, 2840)
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/P10"]
+scale = Vector2(2.0, 1.0)
+texture = ExtResource("5_brk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/P10"]
+one_way_collision = true
+shape = SubResource("SS_256")
+
+[node name="Spikes" type="Sprite2D" parent="Platforms/P10"]
 position = Vector2(-64, -80)
 texture = ExtResource("6_spk")
 
 ; === ФІНАЛЬНА ПЛАТФОРМА З ДУШЕЮ ===
 [node name="SoulPlatform" type="StaticBody2D" parent="Platforms"]
-position = Vector2(360, 2910)
+position = Vector2(360, 3090)
 
 [node name="Sprite2D" type="Sprite2D" parent="Platforms/SoulPlatform"]
 scale = Vector2(5.0, 1.0)
@@ -187,28 +228,38 @@ shape = SubResource("SS_640")
 [node name="Decorations" type="Node2D" parent="."]
 
 [node name="Lantern1" type="Sprite2D" parent="Decorations"]
-position = Vector2(50, 480)
+position = Vector2(50, 380)
 scale = Vector2(0.6, 0.6)
 texture = ExtResource("8_lnt")
 
 [node name="Lantern2" type="Sprite2D" parent="Decorations"]
-position = Vector2(670, 870)
+position = Vector2(675, 670)
 scale = Vector2(0.6, 0.6)
 texture = ExtResource("8_lnt")
 
 [node name="Lantern3" type="Sprite2D" parent="Decorations"]
-position = Vector2(50, 1740)
+position = Vector2(50, 1530)
 scale = Vector2(0.6, 0.6)
 texture = ExtResource("8_lnt")
 
 [node name="Lantern4" type="Sprite2D" parent="Decorations"]
-position = Vector2(670, 2310)
+position = Vector2(675, 1785)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("8_lnt")
+
+[node name="Lantern5" type="Sprite2D" parent="Decorations"]
+position = Vector2(50, 2310)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("8_lnt")
+
+[node name="Lantern6" type="Sprite2D" parent="Decorations"]
+position = Vector2(675, 2570)
 scale = Vector2(0.6, 0.6)
 texture = ExtResource("8_lnt")
 
 ; === ДУША ===
 [node name="Soul" parent="." instance=ExtResource("2_soul")]
-position = Vector2(360, 2760)
+position = Vector2(360, 2940)
 
 ; === ВИХІД (активується після збору душі) ===
 [node name="ExitPortal" type="Area2D" parent="."]
@@ -221,26 +272,26 @@ shape = SubResource("SS_portal")
 [node name="Boundaries" type="StaticBody2D" parent="."]
 
 [node name="LeftWall" type="CollisionShape2D" parent="Boundaries"]
-position = Vector2(-20, 1600)
+position = Vector2(-20, 1700)
 shape = SubResource("SS_wall")
 
 [node name="RightWall" type="CollisionShape2D" parent="Boundaries"]
-position = Vector2(740, 1600)
+position = Vector2(740, 1700)
 shape = SubResource("SS_wall")
 
 [node name="Floor" type="CollisionShape2D" parent="Boundaries"]
-position = Vector2(360, 3060)
+position = Vector2(360, 3240)
 shape = SubResource("SS_floor")
 
 ; === ГРАВЦІ ===
 [node name="Player1" parent="." instance=ExtResource("3_plyr")]
-position = Vector2(300, 100)
+position = Vector2(300, 50)
 
 [node name="Player2" parent="." instance=ExtResource("3_plyr")]
-position = Vector2(420, 100)
+position = Vector2(420, 50)
 player_id = 2
 
-; === КАМЕРА (слідкує за серединою між гравцями) ===
+; === КАМЕРА ===
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(360, 640)
 
