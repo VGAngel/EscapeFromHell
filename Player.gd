@@ -1,105 +1,95 @@
 extends CharacterBody2D
 
-const SPEED = 320.0 # Slightly faster walking for better feel
-const JUMP_VELOCITY = -800.0
-const GRAVITY_SCALE = 1.0
-const TERMINAL_VELOCITY = 1000.0
+@export var player_id: int = 1
 
-# Game Feel Constants
-const COYOTE_TIME = 0.15
-const JUMP_BUFFER_TIME = 0.15
+const SPEED           = 320.0
+const JUMP_VELOCITY   = -800.0
+const GRAVITY_SCALE   = 1.0
+const TERMINAL_VEL    = 1000.0
+const COYOTE_TIME     = 0.15
+const JUMP_BUFFER     = 0.15
 
-# Squash and Stretch Constants
-const SQUASH_SPEED = 12.0 # Slightly slower for smoother transitions
-const SCALE_IDLE = Vector2(0.2, 0.2)
-const SCALE_JUMP = Vector2(0.18, 0.22) # Less extreme stretch
-const SCALE_FALL = Vector2(0.19, 0.21) # Subtler fall stretch
-const SCALE_LAND = Vector2(0.22, 0.18) # Subtler land squash
+const ANIM_BASE = "res://Assets/rpg-platformer-game-assets/1_Main_character/Dark_Elves/PNG/PNG Sequences/"
 
-var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+var gravity := ProjectSettings.get_setting("physics/2d/default_gravity")
+var coyote_timer   := 0.0
+var jump_buf_timer := 0.0
 
-# Timers
-var coyote_timer = 0.0
-var jump_buffer_timer = 0.0
-var target_scale = SCALE_IDLE
+var _left:  String
+var _right: String
+var _jump:  String
 
-@onready var animated_sprite = $AnimatedSprite2D
+@onready var _sprite: AnimatedSprite2D = $Sprite
 
-func _ready():
-	floor_snap_length = 8.0
-	floor_constant_speed = true
+func _ready() -> void:
+	add_to_group("player")
+	_left  = "p%d_left"  % player_id
+	_right = "p%d_right" % player_id
+	_jump  = "p%d_jump"  % player_id
+	_setup_animations()
+	if player_id == 2:
+		_sprite.modulate = Color(1.0, 0.55, 0.55)
 
-func _physics_process(delta):
-	apply_gravity(delta)
-	handle_jump(delta)
-	handle_movement(delta)
-	
-	update_timers(delta)
+func _setup_animations() -> void:
+	var frames := SpriteFrames.new()
+
+	_add_anim(frames, "idle",    ANIM_BASE + "Idle/0_Dark_Elves_Idle_%03d.png",          18, 10.0, true)
+	_add_anim(frames, "run",     ANIM_BASE + "Running/0_Dark_Elves_Running_%03d.png",     12, 12.0, true)
+	_add_anim(frames, "jump",    ANIM_BASE + "Jump Start/0_Dark_Elves_Jump Start_%03d.png", 6, 10.0, false)
+	_add_anim(frames, "fall",    ANIM_BASE + "Falling Down/0_Dark_Elves_Falling Down_%03d.png", 6, 8.0, true)
+
+	_sprite.sprite_frames = frames
+	_sprite.play("idle")
+
+func _add_anim(frames: SpriteFrames, name: String, path_tpl: String, count: int, fps: float, loop: bool) -> void:
+	frames.add_animation(name)
+	frames.set_animation_loop(name, loop)
+	frames.set_animation_speed(name, fps)
+	for i in range(count):
+		frames.add_frame(name, load(path_tpl % i))
+
+func _physics_process(delta: float) -> void:
+	_apply_gravity(delta)
+	_handle_jump(delta)
+	_handle_movement()
 	move_and_slide()
-	
-	update_target_scale()
-	update_animations()
+	_update_animation()
 
-func _process(delta):
-	# Using 1.0 - exp(-speed * delta) for smooth frame-rate independent transition
-	var lerp_factor = 1.0 - exp(-SQUASH_SPEED * delta)
-	animated_sprite.scale = animated_sprite.scale.lerp(target_scale, lerp_factor)
-
-func apply_gravity(delta):
+func _apply_gravity(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += gravity * GRAVITY_SCALE * delta
-		velocity.y = min(velocity.y, TERMINAL_VELOCITY)
+		velocity.y  = min(velocity.y, TERMINAL_VEL)
 		coyote_timer -= delta
 	else:
-		if coyote_timer < 0: # Just landed
-			# Only trigger squash if we were falling fast
-			if abs(velocity.y) < 10:
-				animated_sprite.scale = SCALE_LAND
 		coyote_timer = COYOTE_TIME
 
-func handle_jump(delta):
-	if Input.is_action_just_pressed("ui_accept"):
-		jump_buffer_timer = JUMP_BUFFER_TIME
-	
-	if jump_buffer_timer > 0 and coyote_timer > 0:
-		velocity.y = JUMP_VELOCITY
-		jump_buffer_timer = 0
-		coyote_timer = 0
-		animated_sprite.scale = SCALE_JUMP # Visual stretch
-	
-	if Input.is_action_just_released("ui_accept") and velocity.y < 0:
+func _handle_jump(delta: float) -> void:
+	if Input.is_action_just_pressed(_jump):
+		jump_buf_timer = JUMP_BUFFER
+	if jump_buf_timer > 0 and coyote_timer > 0:
+		velocity.y     = JUMP_VELOCITY
+		jump_buf_timer = 0
+		coyote_timer   = 0
+	if Input.is_action_just_released(_jump) and velocity.y < 0:
 		velocity.y *= 0.5
-	
-	jump_buffer_timer -= delta
+	jump_buf_timer = max(0.0, jump_buf_timer - delta)
+	coyote_timer   = max(0.0, coyote_timer)
 
-func handle_movement(_delta):
-	var direction = Input.get_axis("ui_left", "ui_right")
-	if direction:
-		# Balanced acceleration
-		velocity.x = move_toward(velocity.x, direction * SPEED, SPEED * 0.12)
-		animated_sprite.flip_h = direction < 0
+func _handle_movement() -> void:
+	var dir := Input.get_axis(_left, _right)
+	if dir:
+		velocity.x = move_toward(velocity.x, dir * SPEED, SPEED * 0.15)
+		_sprite.flip_h = dir < 0
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED * 0.08)
+		velocity.x = move_toward(velocity.x, 0.0, SPEED * 0.1)
 
-func update_timers(delta):
-	jump_buffer_timer = max(0, jump_buffer_timer)
-	coyote_timer = max(0, coyote_timer)
-
-func update_target_scale():
-	if not is_on_floor():
-		if velocity.y < 0:
-			target_scale = SCALE_JUMP
-		else:
-			target_scale = SCALE_FALL
-	else:
-		target_scale = SCALE_IDLE
-
-func update_animations():
-	var anim = "idle"
+func _update_animation() -> void:
+	var anim: String
 	if not is_on_floor():
 		anim = "jump" if velocity.y < 0 else "fall"
+	elif abs(velocity.x) > 10:
+		anim = "run"
 	else:
-		anim = "run" if abs(velocity.x) > 10 else "idle"
-	
-	if animated_sprite.animation != anim:
-		animated_sprite.play(anim)
+		anim = "idle"
+	if _sprite.animation != anim:
+		_sprite.play(anim)
