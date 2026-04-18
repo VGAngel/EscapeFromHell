@@ -302,15 +302,15 @@ offset_top = 20.0
 offset_bottom = 72.0
 theme_override_font_sizes/font_size = 26
 theme_override_colors/font_color = Color(1, 1, 0.8, 1)
-text = "↓ Знайдіть загублену душу! ↓"
+text = ""
 horizontal_alignment = 1
 
 [node name="Hearts" type="HBoxContainer" parent="UI"]
 layout_mode = 1
 offset_left = 16.0
-offset_top = 16.0
-offset_right = 160.0
-offset_bottom = 60.0
+offset_top = 10.0
+offset_right = 200.0
+offset_bottom = 80.0
 theme_override_constants/separation = 4
 
 [node name="Heart1" type="Label" parent="UI/Hearts"]
