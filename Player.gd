@@ -15,6 +15,13 @@ var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
 var coyote_timer:   float = 0.0
 var jump_buf_timer: float = 0.0
 
+var lives: int = 3
+var is_dead: bool = false
+var _spawn_pos: Vector2
+
+signal life_lost(remaining: int)
+signal all_lives_lost
+
 var _left:  String
 var _right: String
 var _jump:  String
@@ -23,6 +30,7 @@ var _jump:  String
 
 func _ready() -> void:
 	add_to_group("player")
+	_spawn_pos = global_position
 	_left  = "p%d_left"  % player_id
 	_right = "p%d_right" % player_id
 	_jump  = "p%d_jump"  % player_id
@@ -50,6 +58,8 @@ func _add_anim(frames: SpriteFrames, anim_name: String, path_tpl: String, count:
 		frames.add_frame(anim_name, tex)
 
 func _physics_process(delta: float) -> void:
+	if is_dead:
+		return
 	_apply_gravity(delta)
 	_handle_jump(delta)
 	_handle_movement()
@@ -93,3 +103,20 @@ func _update_animation() -> void:
 		anim = "idle"
 	if _sprite.animation != anim:
 		_sprite.play(anim)
+
+func die() -> void:
+	if is_dead:
+		return
+	is_dead = true
+	velocity = Vector2.ZERO
+	lives -= 1
+	if lives <= 0:
+		all_lives_lost.emit()
+	else:
+		life_lost.emit(lives)
+		_sprite.modulate = Color(1.0, 0.2, 0.2, 0.5)
+		await get_tree().create_timer(0.8).timeout
+		global_position = _spawn_pos
+		velocity = Vector2.ZERO
+		_sprite.modulate = Color.WHITE
+		is_dead = false
