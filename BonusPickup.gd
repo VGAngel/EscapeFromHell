@@ -26,6 +26,14 @@ const NAMES: Array[String] = [
 	"Факел Надії",
 ]
 
+const TEXTURES: Array[String] = [
+	"res://Assets/MyAssets/bonus_holy_water.png",
+	"res://Assets/MyAssets/bonus_prayer_stone.png",
+	"res://Assets/MyAssets/bonus_angel_feather.png",
+	"res://Assets/MyAssets/bonus_manna.png",
+	"res://Assets/MyAssets/bonus_torch.png",
+]
+
 signal bonus_collected(type: int, bonus_name: String)
 
 func _ready() -> void:
@@ -39,7 +47,7 @@ func _ready() -> void:
 func _update_sprite() -> void:
 	var sprite := $Sprite2D as Sprite2D
 	if sprite:
-		sprite.frame = bonus_type
+		sprite.texture = load(TEXTURES[bonus_type])
 
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():

@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://bonuspickup12"]
 
 [ext_resource type="Script" path="res://BonusPickup.gd" id="1_bonus"]
-[ext_resource type="Texture2D" path="res://Assets/MyAssets/Bonuses.png" id="2_bonuses"]
 
 [sub_resource type="CircleShape2D" id="CircleShape_1"]
 radius = 32.0
@@ -13,10 +12,7 @@ script = ExtResource("1_bonus")
 shape = SubResource("CircleShape_1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("2_bonuses")
-hframes = 5
-vframes = 1
-frame = 0
+scale = Vector2(0.2, 0.2)
 
 [node name="Label" type="Label" parent="."]
 position = Vector2(-50, -72)
