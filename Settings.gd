@@ -1,9 +1,11 @@
 extends Control
 
 @onready var notice_label: Label = %NoticeLabel
+@onready var fullscreen_btn: Button = $CenterContainer/VBoxContainer/FullscreenButton
 
 func _ready() -> void:
 	notice_label.text = ""
+	_refresh_fullscreen_label()
 
 func _apply_resolution(win_size: Vector2i) -> void:
 	DisplayServer.window_set_size(win_size)
@@ -28,6 +30,19 @@ func _on_pc_hd_pressed() -> void:
 
 func _on_pc_fhd_pressed() -> void:
 	_apply_resolution(Vector2i(1920, 1080))
+
+func _on_fullscreen_pressed() -> void:
+	var mode := DisplayServer.window_get_mode()
+	if mode == DisplayServer.WINDOW_MODE_FULLSCREEN or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	_refresh_fullscreen_label()
+
+func _refresh_fullscreen_label() -> void:
+	var mode := DisplayServer.window_get_mode()
+	var is_fs := mode == DisplayServer.WINDOW_MODE_FULLSCREEN or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
+	fullscreen_btn.text = "Windowed" if is_fs else "Fullscreen"
 
 func _on_back_pressed() -> void:
 	get_tree().change_scene_to_file("res://MainMenu.tscn")
