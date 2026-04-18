@@ -46,11 +46,11 @@ horizontal_alignment = 1
 
 [node name="TitleSpacer" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(0, 20)
 
 [node name="PlayButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(200, 200)
+custom_minimum_size = Vector2(120, 120)
 size_flags_horizontal = 4
 ignore_texture_size = true
 stretch_mode = 5
@@ -65,11 +65,11 @@ horizontal_alignment = 1
 
 [node name="Spacer1" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 24)
+custom_minimum_size = Vector2(0, 12)
 
 [node name="LevelsButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(200, 200)
+custom_minimum_size = Vector2(120, 120)
 size_flags_horizontal = 4
 ignore_texture_size = true
 stretch_mode = 5
@@ -84,11 +84,11 @@ horizontal_alignment = 1
 
 [node name="Spacer2" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 24)
+custom_minimum_size = Vector2(0, 12)
 
 [node name="SettingsButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(200, 200)
+custom_minimum_size = Vector2(120, 120)
 size_flags_horizontal = 4
 ignore_texture_size = true
 stretch_mode = 5
@@ -103,11 +103,11 @@ horizontal_alignment = 1
 
 [node name="Spacer3" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 24)
+custom_minimum_size = Vector2(0, 12)
 
 [node name="ExitButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(200, 200)
+custom_minimum_size = Vector2(120, 120)
 size_flags_horizontal = 4
 ignore_texture_size = true
 stretch_mode = 5

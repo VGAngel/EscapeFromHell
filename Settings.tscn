@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://ds3k7m9p2q4r5"]
+[gd_scene format=3 uid="uid://ds3k7nap2q4r5"]
 
 [ext_resource type="Script" path="res://Settings.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Assets/rpg-platformer-game-assets/5_Levels/DUNGEON CARTOON 2D PLATFORMER TILESET/PNG/Background/Background_01.png" id="2_bg"]
@@ -87,7 +87,16 @@ horizontal_alignment = 1
 
 [node name="TitleSpacer" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 10)
+
+[node name="NoticeLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(320, 0)
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="MobileLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
