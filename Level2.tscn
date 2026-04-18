@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" path="res://Assets/hellAssets/Platformer/Spikes.png" id="6_spk"]
 [ext_resource type="Texture2D" path="res://Assets/hellAssets/Collectable Object/Star.png" id="7_str"]
 [ext_resource type="Texture2D" path="res://Assets/hellAssets/Environment/Lantern.png" id="8_lnt"]
+[ext_resource type="PackedScene" path="res://BonusPickup.tscn" id="9_bonus"]
 
 [sub_resource type="RectangleShape2D" id="SS_640"]
 size = Vector2(640, 128)
@@ -257,6 +258,29 @@ position = Vector2(675, 2570)
 scale = Vector2(0.6, 0.6)
 texture = ExtResource("8_lnt")
 
+; === БОНУСИ ===
+[node name="Bonuses" type="Node2D" parent="."]
+
+[node name="HolyWater" parent="Bonuses" instance=ExtResource("9_bonus")]
+position = Vector2(165, 665)
+bonus_type = 0
+
+[node name="PrayerStone" parent="Bonuses" instance=ExtResource("9_bonus")]
+position = Vector2(540, 1960)
+bonus_type = 1
+
+[node name="AngelFeather" parent="Bonuses" instance=ExtResource("9_bonus")]
+position = Vector2(390, 930)
+bonus_type = 2
+
+[node name="Manna" parent="Bonuses" instance=ExtResource("9_bonus")]
+position = Vector2(200, 1450)
+bonus_type = 3
+
+[node name="Torch" parent="Bonuses" instance=ExtResource("9_bonus")]
+position = Vector2(540, 390)
+bonus_type = 4
+
 ; === ДУША ===
 [node name="Soul" parent="." instance=ExtResource("2_soul")]
 position = Vector2(360, 2940)
@@ -290,6 +314,18 @@ position = Vector2(360, 50)
 ; === КАМЕРА ===
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(360, 640)
+
+; === ТЕМНИЙ ОВЕРЛЕЙ (Факел знімає) ===
+[node name="DarkOverlay" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="DarkRect" type="ColorRect" parent="DarkOverlay"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.78)
+mouse_filter = 2
 
 ; === UI ===
 [node name="UI" type="CanvasLayer" parent="."]
@@ -330,6 +366,23 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.1, 0.1, 1)
 theme_override_font_sizes/font_size = 40
 text = "♥"
+
+[node name="BonusLabel" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -30.0
+offset_right = 150.0
+offset_bottom = 30.0
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 28
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="ControlsHint" type="Label" parent="UI"]
 layout_mode = 1
