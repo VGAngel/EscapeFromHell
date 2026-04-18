@@ -232,13 +232,9 @@ shape = SubResource("SS_wall")
 position = Vector2(360, 3060)
 shape = SubResource("SS_floor")
 
-; === ГРАВЦІ ===
+; === ГРАВЕЦЬ ===
 [node name="Player1" parent="." instance=ExtResource("3_plyr")]
-position = Vector2(300, 100)
-
-[node name="Player2" parent="." instance=ExtResource("3_plyr")]
-position = Vector2(420, 100)
-player_id = 2
+position = Vector2(360, 100)
 
 ; === КАМЕРА (слідкує за серединою між гравцями) ===
 [node name="Camera2D" type="Camera2D" parent="."]
@@ -267,7 +263,7 @@ anchor_bottom = 1.0
 offset_top = -40.0
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 0.7)
-text = "P1: ← → SPACE       P2: A D W"
+text = "← → переміщення     SPACE стрибок"
 horizontal_alignment = 1
 
 [connection signal="body_entered" from="ExitPortal" to="." method="_on_exit_portal_body_entered"]

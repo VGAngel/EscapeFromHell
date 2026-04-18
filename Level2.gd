@@ -1,7 +1,6 @@
 extends Node2D
 
 @onready var _player1: CharacterBody2D = $Player1
-@onready var _player2: CharacterBody2D = $Player2
 @onready var _camera: Camera2D = $Camera2D
 @onready var _exit_portal: Area2D = $ExitPortal
 @onready var _status_label: Label = $UI/StatusLabel
@@ -18,8 +17,7 @@ func _ready() -> void:
 	GameManager.soul_collected.connect(_on_soul_collected)
 
 func _process(_delta: float) -> void:
-	var mid := (_player1.global_position + _player2.global_position) * 0.5
-	_camera.global_position = _camera.global_position.lerp(mid, 0.08)
+	_camera.global_position = _camera.global_position.lerp(_player1.global_position, 0.08)
 
 func _on_soul_collected(_total: int) -> void:
 	_has_soul = true

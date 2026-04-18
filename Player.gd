@@ -27,8 +27,6 @@ func _ready() -> void:
 	_right = "p%d_right" % player_id
 	_jump  = "p%d_jump"  % player_id
 	_setup_animations()
-	if player_id == 2:
-		_sprite.modulate = Color(1.0, 0.55, 0.55)
 
 func _setup_animations() -> void:
 	var frames := SpriteFrames.new()

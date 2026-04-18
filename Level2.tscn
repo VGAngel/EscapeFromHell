@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://lv2scn345678b"]
+[gd_scene format=3 uid="uid://bt6kidehllx0"]
 
 [ext_resource type="Script" path="res://Level2.gd" id="1_lv2s"]
 [ext_resource type="PackedScene" path="res://Soul.tscn" id="2_soul"]
@@ -283,13 +283,9 @@ shape = SubResource("SS_wall")
 position = Vector2(360, 3240)
 shape = SubResource("SS_floor")
 
-; === ГРАВЦІ ===
+; === ГРАВЕЦЬ ===
 [node name="Player1" parent="." instance=ExtResource("3_plyr")]
-position = Vector2(300, 50)
-
-[node name="Player2" parent="." instance=ExtResource("3_plyr")]
-position = Vector2(420, 50)
-player_id = 2
+position = Vector2(360, 50)
 
 ; === КАМЕРА ===
 [node name="Camera2D" type="Camera2D" parent="."]
@@ -318,7 +314,7 @@ anchor_bottom = 1.0
 offset_top = -40.0
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 0.7)
-text = "P1: ← → SPACE       P2: A D W"
+text = "← → переміщення     SPACE стрибок"
 horizontal_alignment = 1
 
 [connection signal="body_entered" from="ExitPortal" to="." method="_on_exit_portal_body_entered"]
