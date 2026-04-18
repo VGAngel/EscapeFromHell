@@ -86,6 +86,25 @@ horizontal_alignment = 1
 layout_mode = 2
 custom_minimum_size = Vector2(0, 24)
 
+[node name="SettingsButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 200)
+size_flags_horizontal = 4
+ignore_texture_size = true
+stretch_mode = 5
+texture_normal = ExtResource("4_levels")
+
+[node name="SettingsLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 42
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="Spacer3" type="Control" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 24)
+
 [node name="ExitButton" type="TextureButton" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 200)
@@ -103,4 +122,5 @@ horizontal_alignment = 1
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/LevelsButton" to="." method="_on_levels_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/SettingsButton" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ExitButton" to="." method="_on_exit_pressed"]
