@@ -27,11 +27,11 @@ const NAMES: Array[String] = [
 ]
 
 const TEXTURES: Array[String] = [
-	"res://Assets/MyAssets/bonus_holy_water.png",
-	"res://Assets/MyAssets/bonus_prayer_stone.png",
-	"res://Assets/MyAssets/bonus_angel_feather.png",
-	"res://Assets/MyAssets/bonus_manna.png",
-	"res://Assets/MyAssets/bonus_torch.png",
+	"res://Assets/OurAssets/bonus_holy_water.png",
+	"res://Assets/OurAssets/bonus_prayer_stone.png",
+	"res://Assets/OurAssets/bonus_angel_feather.png",
+	"res://Assets/OurAssets/bonus_manna.png",
+	"res://Assets/OurAssets/bonus_torch.png",
 ]
 
 signal bonus_collected(type: int, bonus_name: String)
