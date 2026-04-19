@@ -299,10 +299,10 @@ func _refresh_ability_slots() -> void:
 		child.queue_free()
 	_ability_slots.clear()
 
-	var ability_ids := ["invisibility", "distraction", "decoy"]
-	var icons       := ["👁", "🔔", "🌑"]
+	var ability_ids: Array[String] = ["invisibility", "distraction", "decoy"]
+	var icons: Array[String]       = ["👁", "🔔", "🌑"]
 	for i in ability_ids.size():
-		var aid := ability_ids[i]
+		var aid: String = ability_ids[i]
 		if SaveManager and not SaveManager.has_upgrade(aid):
 			continue
 		var container := Control.new()
