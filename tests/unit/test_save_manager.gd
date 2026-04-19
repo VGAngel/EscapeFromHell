@@ -1,16 +1,14 @@
 extends GutTest
 
 # Tests for SaveManager pure in-memory logic.
-# File I/O (_flush) is stubbed out to keep tests hermetic.
+# Uses a fresh instance per test; _ready() calls _ensure_dir() + _reset().
 
 var sm: Node
 
 func before_each() -> void:
-	sm = partial_double("res://SaveManager.gd").new()
-	stub(sm, "_flush").to_do_nothing()
-	stub(sm, "_ensure_dir").to_do_nothing()
-	sm._reset()
+	sm = preload("res://SaveManager.gd").new()
 	add_child_autofree(sm)
+	# _ready() already called _reset() — state is clean
 
 # ── _reset ────────────────────────────────────────────────────────────────────
 
@@ -271,7 +269,6 @@ func test_migrate_v1_moves_active_rewards_to_flags() -> void:
 		"active_rewards": ["no_ads_purchased"],
 		"flags": {},
 	}
-	stub(sm, "_flush").to_do_nothing()
 	sm._migrate()
 	assert_true(sm.get_flag("no_ads_purchased"), "reward should become a flag after migration")
 	assert_eq(sm.data.get("version"), 2)
