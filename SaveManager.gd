@@ -192,6 +192,20 @@ func get_secret_levels_found() -> int:
 func increment_secret_levels() -> void:
 	data["secret_levels_found"] = get_secret_levels_found() + 1
 
+# ── Tutorial ─────────────────────────────────────────────────
+
+func is_hint_seen(hint_id: String) -> bool:
+	return hint_id in data.get("seen_tutorial_hints", [])
+
+func mark_hint_seen(hint_id: String) -> void:
+	var seen: Array = data.get("seen_tutorial_hints", [])
+	if hint_id not in seen:
+		seen.append(hint_id)
+		data["seen_tutorial_hints"] = seen
+
+func clear_all_hints() -> void:
+	data["seen_tutorial_hints"] = []
+
 # ── Internal ──────────────────────────────────────────────────
 
 func _load() -> bool:
@@ -265,7 +279,8 @@ func _reset() -> void:
 		"active_rewards":       [],
 		"demon_deals_accepted": 0,
 		"deals_refused":        0,
-		"secret_levels_found":  0
+		"secret_levels_found":  0,
+		"seen_tutorial_hints":  []
 	}
 
 func _ensure_dir() -> void:
