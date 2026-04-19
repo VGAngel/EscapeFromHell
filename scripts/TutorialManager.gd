@@ -37,7 +37,7 @@ func _load_config() -> void:
 	if not file:
 		push_warning("TutorialManager: tutorial_config.json not found — hints disabled")
 		return
-	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not parsed is Dictionary:
 		push_error("TutorialManager: failed to parse tutorial_config.json")

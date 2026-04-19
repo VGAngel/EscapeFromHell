@@ -74,7 +74,7 @@ func _load_souls() -> void:
 	if not file:
 		push_warning("CollectionScreen: souls_collection.json not found")
 		return
-	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not parsed is Dictionary:
 		return

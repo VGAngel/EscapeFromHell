@@ -39,7 +39,7 @@ func _load_config() -> void:
 	if not file:
 		push_warning("UpgradesScreen: upgrades_config.json not found")
 		return
-	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if parsed is Dictionary:
 		_categories = parsed.get("categories", [])
@@ -99,7 +99,7 @@ func _rebuild_cards(cat_idx: int) -> void:
 
 func _make_card(upgrade: Dictionary) -> Control:
 	var id:        String = upgrade.get("id",          "")
-	var name:      String = upgrade.get("name",        "")
+	var upgrade_name: String = upgrade.get("name",        "")
 	var desc:      String = upgrade.get("description", "")
 	var cost:      int    = upgrade.get("cost",         0)
 	var max_level: int    = upgrade.get("max_level",    1)
@@ -138,7 +138,7 @@ func _make_card(upgrade: Dictionary) -> Control:
 	hbox.add_child(info)
 
 	var lbl_name := Label.new()
-	lbl_name.text = name
+	lbl_name.text = upgrade_name
 	lbl_name.add_theme_font_size_override("font_size", 15)
 	lbl_name.add_theme_color_override("font_color",
 		Color("#88DD88") if maxed else Color(0.90, 0.88, 0.96))

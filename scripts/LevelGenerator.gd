@@ -40,7 +40,7 @@ func _load_config() -> void:
 	if not file:
 		push_error("LevelGenerator: level_generation_config.json not found")
 		return
-	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not parsed is Dictionary:
 		push_error("LevelGenerator: failed to parse level_generation_config.json")
@@ -58,7 +58,7 @@ func _load_souls() -> void:
 	if not file:
 		push_warning("LevelGenerator: souls_collection.json not found")
 		return
-	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not parsed is Dictionary:
 		return

@@ -94,7 +94,7 @@ func _make_card(sku: String) -> Control:
 		"icon": "🙏", "name": sku, "desc": ""
 	})
 	var icon: String = meta["icon"]
-	var name: String = meta["name"]
+	var tier_name: String = meta["name"]
 	var desc: String = meta["desc"]
 
 	var card := PanelContainer.new()
@@ -133,7 +133,7 @@ func _make_card(sku: String) -> Control:
 	hbox.add_child(vbox)
 
 	var lbl_name := Label.new()
-	lbl_name.text = name
+	lbl_name.text = tier_name
 	lbl_name.add_theme_font_size_override("font_size", 16)
 	lbl_name.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
 	vbox.add_child(lbl_name)

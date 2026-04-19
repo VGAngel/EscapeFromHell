@@ -256,7 +256,7 @@ func _read_file(path: String) -> Variant:
 	var file := FileAccess.open(path, FileAccess.READ)
 	if not file:
 		return null
-	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	return parsed if parsed is Dictionary else null
 

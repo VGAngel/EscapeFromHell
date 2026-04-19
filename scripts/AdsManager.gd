@@ -34,7 +34,7 @@ func _load_config() -> void:
 	if not file:
 		push_error("AdsManager: monetization_config.json not found")
 		return
-	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not parsed is Dictionary:
 		push_error("AdsManager: failed to parse monetization_config.json")
