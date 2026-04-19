@@ -186,9 +186,13 @@ func trigger_death(cause: String = "enemy_hit") -> void:
 	var tree := get_tree()
 	if tree:
 		var overlay := _make_overlay()
+		overlay.color = Color(0.55, 0.0, 0.0)
 		tree.root.add_child(overlay)
 		var tw := create_tween()
-		tw.tween_property(overlay, "modulate:a", 1.0, SCREEN_DARKEN_DURATION)
+		tw.tween_property(overlay, "modulate:a", 0.6, 0.12)
+		tw.tween_property(overlay, "modulate:a", 0.0, 0.10)
+		tw.tween_callback(func() -> void: overlay.color = Color.BLACK)
+		tw.tween_property(overlay, "modulate:a", 1.0, SCREEN_DARKEN_DURATION - 0.22)
 		tw.tween_callback(func() -> void:
 			_do_respawn(overlay)
 		)

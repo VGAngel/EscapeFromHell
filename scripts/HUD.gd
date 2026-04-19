@@ -51,6 +51,7 @@ var _sin_pulse_timer:  float = 0.0
 var _escape_duration:  float = 0.0
 var _escape_elapsed:   float = 0.0
 var _escape_active:    bool  = false
+var _sin_was_high:     bool  = false
 
 # Bonus slots: bonus_id → { icon_node, timer_label, tween, time_left, duration }
 var _active_bonuses: Dictionary = {}
@@ -93,6 +94,7 @@ func set_hp(hp: int, max_hp: int) -> void:
 	_set_hearts(hp, max_hp)
 	if damaged:
 		_animate_hearts_shake()
+		_flash_screen(Color(1.0, 0.25, 0.25, 0.35), 0.15)
 	elif healed:
 		_animate_hearts_pulse()
 
@@ -147,7 +149,7 @@ func _process(delta: float) -> void:
 	# Sin pulse at >= 85%
 	if _sin >= 85.0:
 		_sin_pulse_timer += delta
-		var alpha := 0.6 + 0.4 * sin(_sin_pulse_timer * TAU * 0.8)
+		var alpha := 0.35 + 0.65 * sin(_sin_pulse_timer * TAU * 1.2)
 		_sin_bar.modulate.a = alpha
 	else:
 		_sin_bar.modulate.a = 1.0
@@ -196,6 +198,13 @@ func _set_sin(value: float) -> void:
 	var ratio := _sin / 100.0
 	_sin_bar.size.x = _sin_bar_bg.size.x * ratio
 	_sin_bar.color = _sin_color(_sin)
+	if _sin >= 85.0 and not _sin_was_high:
+		_sin_was_high = true
+		var tw := create_tween()
+		tw.tween_property(_sin_bar, "color", Color.WHITE, 0.1)
+		tw.tween_property(_sin_bar, "color", _sin_color(_sin), 0.25)
+	elif _sin < 85.0:
+		_sin_was_high = false
 
 func _set_souls_total(total: int) -> void:
 	_souls_total.text = "👻 %d / 100" % total
@@ -230,6 +239,19 @@ func _pulse_node(node: Control, duration: float) -> void:
 	var tw := create_tween()
 	tw.tween_property(node, "scale", Vector2(1.25, 1.25), duration * 0.4)
 	tw.tween_property(node, "scale", Vector2.ONE, duration * 0.6)
+
+func _flash_screen(color: Color, duration: float) -> void:
+	if not _root:
+		return
+	var flash := ColorRect.new()
+	flash.color = color
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.z_index = 50
+	_root.add_child(flash)
+	var tw := create_tween()
+	tw.tween_property(flash, "modulate:a", 0.0, duration)
+	tw.tween_callback(flash.queue_free)
 
 # ── Bonus icons ───────────────────────────────────────────────────────────────
 

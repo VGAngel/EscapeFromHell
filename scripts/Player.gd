@@ -40,6 +40,7 @@ var _pickup_timer:      float = 0.0
 var _invincibility_timer: float = 0.0
 var _wall_hang_timer:   float = 0.0
 var _was_on_floor:      bool  = false
+var _landing_decel_timer: float = 0.0
 
 var carried_soul_id: String = ""
 var _facing_right:   bool   = true
@@ -160,6 +161,8 @@ func _tick_timers(delta: float) -> void:
 # ── Gravity ───────────────────────────────────────────────────────────────────
 func _handle_gravity(delta: float) -> void:
 	if is_on_floor():
+		if not _was_on_floor and absf(velocity.x) > 50.0:
+			_landing_decel_timer = 0.05
 		velocity.y = 0.0
 		return
 	if state == State.WALL_HANG:
@@ -179,13 +182,17 @@ func _handle_movement(delta: float) -> void:
 
 	var dir: float = Input.get_axis("move_left", "move_right")
 	var accel: float = acceleration if is_on_floor() else air_acceleration
+	var effective_decel: float = deceleration
+	if _landing_decel_timer > 0.0:
+		effective_decel = deceleration * 2.2
+		_landing_decel_timer -= delta
 
 	if dir != 0.0:
 		_facing_right = dir > 0.0
 		_sprite.flip_h = not _facing_right
 		velocity.x = move_toward(velocity.x, dir * walk_speed, accel * delta)
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
+		velocity.x = move_toward(velocity.x, 0.0, effective_decel * delta)
 
 # ── Coyote time ───────────────────────────────────────────────────────────────
 func _handle_coyote(delta: float) -> void:
@@ -261,8 +268,13 @@ func _handle_staff() -> void:
 
 	_staff_area.monitoring = true
 	await get_tree().create_timer(0.15).timeout
-	_apply_staff_hit()
+	var hit := _apply_staff_hit()
 	_staff_area.monitoring = false
+
+	if hit:
+		Engine.time_scale = 0.0
+		await get_tree().create_timer(0.08, true, false, true).timeout
+		Engine.time_scale = 1.0
 
 	await _anim.animation_finished
 	if state == State.STAFF_SWING:
@@ -272,12 +284,15 @@ func _handle_staff() -> void:
 		SaveManager.add_sin(staff_sin_cost)
 	staff_used.emit()
 
-func _apply_staff_hit() -> void:
+func _apply_staff_hit() -> bool:
+	var hit := false
 	for body in _staff_area.get_overlapping_bodies():
 		if body.is_in_group("enemy"):
 			var direction: Vector2 = Vector2.RIGHT if _facing_right else Vector2.LEFT
 			if body.has_method("receive_knockback"):
-				body.receive_knockback(direction * 180.0, 2.5)
+				body.receive_knockback(direction * 280.0, 3.5)
+			hit = true
+	return hit
 
 # ── Fall damage ───────────────────────────────────────────────────────────────
 func _check_fall_damage() -> void:
@@ -305,12 +320,14 @@ func _take_damage(amount: int) -> void:
 	if current_hp <= 0:
 		_die()
 	else:
+		_shake_camera(0.15, 8.0)
 		_anim.play("player_hurt")
 
 func _die() -> void:
 	state = State.DEAD
 	velocity = Vector2.ZERO
 	_anim.play("player_death")
+	_shake_camera(0.3, 12.0)
 	if carried_soul_id != "":
 		soul_dropped.emit(carried_soul_id, global_position)
 		_drop_soul()
@@ -421,6 +438,17 @@ func _update_sin_shader(delta: float) -> void:
 	_sprite.modulate = _sin_modulate
 
 # ── Public helpers ────────────────────────────────────────────────────────────
+func _shake_camera(duration: float, intensity: float) -> void:
+	var camera := get_viewport().get_camera_2d()
+	if not camera:
+		return
+	var tw := create_tween()
+	var steps := int(duration / 0.05)
+	for _i in steps:
+		tw.tween_property(camera, "offset",
+			Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity)), 0.05)
+	tw.tween_property(camera, "offset", Vector2.ZERO, 0.05)
+
 func get_staff_cooldown_ratio() -> float:
 	return 1.0 - (_staff_timer / staff_cooldown)
 
@@ -433,5 +461,8 @@ func respawn(spawn_position: Vector2) -> void:
 	current_hp = max_hp
 	state = State.IDLE
 	_invincibility_timer = 1.2
+	_sprite.modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(_sprite, "modulate:a", 1.0, 0.4)
 	hp_changed.emit(current_hp, max_hp)
 	_anim.play("player_respawn_breath")
