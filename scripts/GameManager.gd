@@ -11,6 +11,7 @@ signal player_respawned
 signal sin_changed(new_value: float)
 signal hp_changed(hp: int, max_hp: int)
 signal soul_collected_in_level(found: int, total: int)
+@warning_ignore("unused_signal")
 signal game_over  # reserved for future hard-fail states
 
 # ── Scene paths ───────────────────────────────────────────────────────────────
@@ -173,7 +174,7 @@ func collect_hidden_soul(soul_id: String) -> void:
 
 # ── Death ─────────────────────────────────────────────────────────────────────
 
-func trigger_death(cause: String = "enemy_hit") -> void:
+func trigger_death(_cause: String = "enemy_hit") -> void:
 	if _is_transitioning:
 		return
 	_is_transitioning = true
