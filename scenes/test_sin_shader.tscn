@@ -15,118 +15,49 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.08, 0.06, 0.1, 1)
+color = Color(0.08, 0.06, 0.10, 1)
 
-[node name="Title" type="Label" parent="."]
+[node name="PlayerSprite" type="Sprite2D" parent="."]
+position = Vector2(360, 280)
+texture = ExtResource("2")
+scale = Vector2(1.1, 1.1)
+
+[node name="UI" type="VBoxContainer" parent="."]
 layout_mode = 1
-offset_left = 0.0
-offset_top = 10.0
-offset_right = 720.0
-offset_bottom = 50.0
-horizontal_alignment = 1
-text = "Sin Shader Test"
-theme_override_font_sizes/font_size = 22
+offset_left = 30.0
+offset_top = 520.0
+offset_right = 690.0
+offset_bottom = 660.0
+theme_override_constants/separation = 10
 
-[node name="CharactersRow" type="HBoxContainer" parent="."]
-layout_mode = 1
-offset_left = 20.0
-offset_top = 60.0
-offset_right = 700.0
-offset_bottom = 360.0
-alignment = 1
-
-[node name="State0" type="VBoxContainer" parent="CharactersRow"]
-custom_minimum_size = Vector2(160, 280)
-alignment = 1
-
-[node name="Sprite0" type="Sprite2D" parent="CharactersRow/State0"]
-position = Vector2(80, 120)
-texture = ExtResource("2")
-scale = Vector2(0.45, 0.45)
-
-[node name="Label0" type="Label" parent="CharactersRow/State0"]
+[node name="StateLabel" type="Label" parent="UI"]
 layout_mode = 2
 horizontal_alignment = 1
-text = "Чистий\n0–29%"
-theme_override_font_sizes/font_size = 13
+text = "Чистий  •  0–29%"
+theme_override_font_sizes/font_size = 20
 
-[node name="State1" type="VBoxContainer" parent="CharactersRow"]
-custom_minimum_size = Vector2(160, 280)
-alignment = 1
-
-[node name="Sprite1" type="Sprite2D" parent="CharactersRow/State1"]
-position = Vector2(80, 120)
-texture = ExtResource("2")
-scale = Vector2(0.45, 0.45)
-
-[node name="Label1" type="Label" parent="CharactersRow/State1"]
+[node name="DescLabel" type="Label" parent="UI"]
 layout_mode = 2
 horizontal_alignment = 1
-text = "Скверний\n30–59%"
-theme_override_font_sizes/font_size = 13
+text = "Базовий вигляд, м'яке золоте світло"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
 
-[node name="State2" type="VBoxContainer" parent="CharactersRow"]
-custom_minimum_size = Vector2(160, 280)
-alignment = 1
-
-[node name="Sprite2" type="Sprite2D" parent="CharactersRow/State2"]
-position = Vector2(80, 120)
-texture = ExtResource("2")
-scale = Vector2(0.45, 0.45)
-
-[node name="Label2" type="Label" parent="CharactersRow/State2"]
-layout_mode = 2
-horizontal_alignment = 1
-text = "Падений\n60–84%"
-theme_override_font_sizes/font_size = 13
-
-[node name="State3" type="VBoxContainer" parent="CharactersRow"]
-custom_minimum_size = Vector2(160, 280)
-alignment = 1
-
-[node name="Sprite3" type="Sprite2D" parent="CharactersRow/State3"]
-position = Vector2(80, 120)
-texture = ExtResource("2")
-scale = Vector2(0.45, 0.45)
-
-[node name="Label3" type="Label" parent="CharactersRow/State3"]
-layout_mode = 2
-horizontal_alignment = 1
-text = "Демон\n85–100%"
-theme_override_font_sizes/font_size = 13
-
-[node name="SliderRow" type="VBoxContainer" parent="."]
-layout_mode = 1
-offset_left = 40.0
-offset_top = 380.0
-offset_right = 680.0
-offset_bottom = 480.0
-
-[node name="SliderLabel" type="Label" parent="SliderRow"]
+[node name="SliderLabel" type="Label" parent="UI"]
 layout_mode = 2
 horizontal_alignment = 1
 text = "Гріх: 0%"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 
-[node name="SinSlider" type="HSlider" parent="SliderRow"]
+[node name="SinSlider" type="HSlider" parent="UI"]
 layout_mode = 2
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 36)
 min_value = 0.0
 max_value = 100.0
 step = 1.0
 value = 0.0
 
-[node name="StateLabel" type="Label" parent="SliderRow"]
+[node name="AnimToggle" type="CheckButton" parent="UI"]
 layout_mode = 2
-horizontal_alignment = 1
-text = "Поточний стан: Чистий"
-theme_override_font_sizes/font_size = 15
-theme_override_colors/font_color = Color(0.8, 0.8, 0.2, 1)
-
-[node name="AnimToggle" type="CheckButton" parent="."]
-layout_mode = 1
-offset_left = 270.0
-offset_top = 490.0
-offset_right = 450.0
-offset_bottom = 525.0
+alignment = 1
 text = "Авто-анімація"
