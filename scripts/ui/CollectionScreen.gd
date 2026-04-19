@@ -140,6 +140,8 @@ func _refresh_counters() -> void:
 # ── Grid ──────────────────────────────────────────────────────────────────────
 
 func _rebuild_grid() -> void:
+	if not _grid:
+		return
 	_cell_nodes.clear()
 	for child in _grid.get_children():
 		child.queue_free()
