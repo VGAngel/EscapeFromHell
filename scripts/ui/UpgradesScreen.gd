@@ -1,0 +1,349 @@
+extends CanvasLayer
+
+# Accessed from Hub via BtnUpgrades.
+# Loads upgrades_config.json, shows 6 category tabs,
+# each with upgrade cards — Buy / Max / Locked states.
+
+signal closed
+
+# ── Constants ─────────────────────────────────────────────────────────────────
+const CONFIG_PATH   := "res://upgrades_config.json"
+const FADE_DURATION := 0.3
+
+# ── Data ──────────────────────────────────────────────────────────────────────
+var _categories: Array = []   # raw from JSON
+
+# ── UI ────────────────────────────────────────────────────────────────────────
+var _root:          ColorRect        = null
+var _lbl_currency:  Label            = null
+
+# Category tab bar
+var _cat_tabs:      Array            = []   # Array[Button]
+var _active_cat:    int              = 0
+
+# Cards container
+var _cards_scroll:  ScrollContainer  = null
+var _cards_box:     VBoxContainer    = null
+
+# ── Init ──────────────────────────────────────────────────────────────────────
+
+func _ready() -> void:
+	layer = 10
+	_load_config()
+	_build_ui()
+	modulate.a = 0.0
+	visible    = false
+
+func _load_config() -> void:
+	var file := FileAccess.open(CONFIG_PATH, FileAccess.READ)
+	if not file:
+		push_warning("UpgradesScreen: upgrades_config.json not found")
+		return
+	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	file.close()
+	if parsed is Dictionary:
+		_categories = parsed.get("categories", [])
+
+# ── Public ────────────────────────────────────────────────────────────────────
+
+func open() -> void:
+	visible = true
+	_refresh_currency()
+	_switch_category(0)
+	var tw := create_tween()
+	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+
+func close() -> void:
+	var tw := create_tween()
+	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	tw.tween_callback(func() -> void:
+		visible = false
+		closed.emit()
+	)
+
+# ── Input ─────────────────────────────────────────────────────────────────────
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event.is_action_pressed("ui_cancel"):
+		close()
+		get_viewport().set_input_as_handled()
+
+# ── Currency ──────────────────────────────────────────────────────────────────
+
+func _refresh_currency() -> void:
+	var light: int = SaveManager.get_light() if SaveManager else 0
+	_lbl_currency.text = "💡 %d" % light
+
+# ── Category switching ────────────────────────────────────────────────────────
+
+func _switch_category(idx: int) -> void:
+	_active_cat = idx
+	for i in _cat_tabs.size():
+		_cat_tabs[i].modulate = Color.WHITE if i == idx else Color(0.55, 0.52, 0.62)
+	_rebuild_cards(idx)
+
+# ── Cards ─────────────────────────────────────────────────────────────────────
+
+func _rebuild_cards(cat_idx: int) -> void:
+	for child in _cards_box.get_children():
+		child.queue_free()
+
+	if cat_idx >= _categories.size():
+		return
+
+	var category: Dictionary = _categories[cat_idx]
+	for upgrade in category.get("upgrades", []):
+		_cards_box.add_child(_make_card(upgrade))
+
+func _make_card(upgrade: Dictionary) -> Control:
+	var id:        String = upgrade.get("id",          "")
+	var name:      String = upgrade.get("name",        "")
+	var desc:      String = upgrade.get("description", "")
+	var cost:      int    = upgrade.get("cost",         0)
+	var max_level: int    = upgrade.get("max_level",    1)
+	var cur_level: int    = SaveManager.get_upgrade_level(id) if SaveManager else 0
+	var light:     int    = SaveManager.get_light()           if SaveManager else 0
+	var maxed:     bool   = cur_level >= max_level
+	var can_buy:   bool   = not maxed and light >= cost
+
+	# Card container
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(0, 88)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.12, 0.10, 0.16) if not maxed else Color(0.10, 0.12, 0.10)
+	style.border_width_left   = 1
+	style.border_width_right  = 1
+	style.border_width_top    = 1
+	style.border_width_bottom = 1
+	style.border_color = Color(0.45, 0.35, 0.60) if not maxed else Color(0.28, 0.48, 0.28)
+	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+		style.set("corner_radius_" + corner, 10)
+	style.content_margin_left   = 14.0
+	style.content_margin_right  = 14.0
+	style.content_margin_top    = 10.0
+	style.content_margin_bottom = 10.0
+	card.add_theme_stylebox_override("panel", style)
+
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 12)
+	card.add_child(hbox)
+
+	# Left: name + desc + level dots
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_theme_constant_override("separation", 4)
+	hbox.add_child(info)
+
+	var lbl_name := Label.new()
+	lbl_name.text = name
+	lbl_name.add_theme_font_size_override("font_size", 15)
+	lbl_name.add_theme_color_override("font_color",
+		Color("#88DD88") if maxed else Color(0.90, 0.88, 0.96))
+	info.add_child(lbl_name)
+
+	var lbl_desc := Label.new()
+	lbl_desc.text = desc
+	lbl_desc.add_theme_font_size_override("font_size", 12)
+	lbl_desc.add_theme_color_override("font_color", Color(0.62, 0.60, 0.68))
+	lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(lbl_desc)
+
+	# Level dots (for multi-level upgrades)
+	if max_level > 1:
+		var dots_row := HBoxContainer.new()
+		dots_row.add_theme_constant_override("separation", 4)
+		info.add_child(dots_row)
+		for i in max_level:
+			var dot := ColorRect.new()
+			dot.custom_minimum_size = Vector2(10, 10)
+			dot.color = Color("#88DD88") if i < cur_level else Color(0.28, 0.26, 0.35)
+			dots_row.add_child(dot)
+
+	# Right: buy button
+	var btn := _make_buy_btn(id, cost, cur_level, max_level, can_buy, maxed)
+	hbox.add_child(btn)
+
+	return card
+
+func _make_buy_btn(id: String, cost: int, cur_level: int, max_level: int,
+		can_buy: bool, maxed: bool) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(76, 56)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.add_theme_font_size_override("font_size", 13)
+
+	var s := StyleBoxFlat.new()
+	s.corner_radius_top_left    = 8
+	s.corner_radius_top_right   = 8
+	s.corner_radius_bottom_left = 8
+	s.corner_radius_bottom_right = 8
+
+	if maxed:
+		btn.text = "МАКС"
+		s.bg_color = Color(0.14, 0.22, 0.14)
+		btn.add_theme_color_override("font_color", Color("#66BB66"))
+		btn.disabled = true
+	elif can_buy:
+		btn.text = "💡 %d\nКупити" % cost
+		s.bg_color = Color(0.22, 0.16, 0.34)
+		s.border_color = Color(0.55, 0.38, 0.78)
+		s.border_width_left   = 1; s.border_width_right  = 1
+		s.border_width_top    = 1; s.border_width_bottom = 1
+		btn.add_theme_color_override("font_color", Color(0.90, 0.80, 1.00))
+		btn.pressed.connect(_on_buy.bind(id, cost, cur_level, max_level))
+	else:
+		btn.text = "💡 %d" % cost
+		s.bg_color = Color(0.12, 0.11, 0.15)
+		btn.add_theme_color_override("font_color", Color(0.40, 0.38, 0.46))
+		btn.disabled = true
+
+	for state in ["normal","hover","pressed","focus","disabled"]:
+		btn.add_theme_stylebox_override(state, s)
+
+	return btn
+
+# ── Buy ───────────────────────────────────────────────────────────────────────
+
+func _on_buy(id: String, cost: int, cur_level: int, max_level: int) -> void:
+	if not SaveManager:
+		return
+	if not SaveManager.spend_light(cost):
+		_flash_currency()
+		return
+	SaveManager.set_upgrade_level(id, cur_level + 1)
+	_refresh_currency()
+	_rebuild_cards(_active_cat)
+
+func _flash_currency() -> void:
+	var tw := create_tween()
+	tw.tween_property(_lbl_currency, "modulate", Color("#FF6644"), 0.1)
+	tw.tween_property(_lbl_currency, "modulate", Color.WHITE,      0.3)
+
+# ── Build UI ──────────────────────────────────────────────────────────────────
+
+func _build_ui() -> void:
+	_root = ColorRect.new()
+	_root.color = Color(0.05, 0.04, 0.08, 0.97)
+	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_root)
+
+	var vbox := VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 0)
+	_root.add_child(vbox)
+
+	_build_header(vbox)
+	_build_cat_tabs(vbox)
+	_build_cards_area(vbox)
+
+func _build_header(parent: VBoxContainer) -> void:
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left",   16)
+	margin.add_theme_constant_override("margin_right",  12)
+	margin.add_theme_constant_override("margin_top",     8)
+	margin.add_theme_constant_override("margin_bottom",  8)
+	parent.add_child(margin)
+
+	var hdr := HBoxContainer.new()
+	hdr.custom_minimum_size.y = 48
+	hdr.add_theme_constant_override("separation", 10)
+	margin.add_child(hdr)
+
+	var title := Label.new()
+	title.text = "Апгрейди"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hdr.add_child(title)
+
+	_lbl_currency = Label.new()
+	_lbl_currency.text = "💡 0"
+	_lbl_currency.add_theme_font_size_override("font_size", 17)
+	_lbl_currency.add_theme_color_override("font_color", Color("#FFD700"))
+	_lbl_currency.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hdr.add_child(_lbl_currency)
+
+	var btn_close := Button.new()
+	btn_close.text = "✕"
+	btn_close.custom_minimum_size = Vector2(44, 44)
+	btn_close.add_theme_font_size_override("font_size", 18)
+	var empty := StyleBoxEmpty.new()
+	for state in ["normal","hover","pressed","focus"]:
+		btn_close.add_theme_stylebox_override(state, empty)
+	btn_close.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
+	btn_close.pressed.connect(close)
+	hdr.add_child(btn_close)
+
+func _build_cat_tabs(parent: VBoxContainer) -> void:
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size.y = 52
+	scroll.vertical_scroll_mode   = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	parent.add_child(scroll)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	scroll.add_child(row)
+
+	var lm := Control.new(); lm.custom_minimum_size.x = 10
+	row.add_child(lm)
+
+	var cat_icons := ["⚔️", "💪", "👻", "🙏", "🌑", "👁"]
+	var cat_names := ["Посох", "Тіло", "Душа", "Молитва", "Хитрість", "Провидіння"]
+
+	for i in _categories.size():
+		var cat: Dictionary = _categories[i]
+		var icon: String = cat_icons[i] if i < cat_icons.size() else ""
+		var name: String = cat.get("name", cat_names[i] if i < cat_names.size() else "")
+
+		var btn := Button.new()
+		btn.text = "%s %s" % [icon, name]
+		btn.custom_minimum_size = Vector2(0, 44)
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.add_theme_font_size_override("font_size", 13)
+
+		var n := StyleBoxFlat.new()
+		n.bg_color = Color(0.14, 0.12, 0.20)
+		n.corner_radius_top_left    = 8
+		n.corner_radius_top_right   = 8
+		n.corner_radius_bottom_left = 8
+		n.corner_radius_bottom_right = 8
+		n.content_margin_left   = 12.0
+		n.content_margin_right  = 12.0
+		n.content_margin_top    = 4.0
+		n.content_margin_bottom = 4.0
+		var h := n.duplicate() as StyleBoxFlat
+		h.bg_color = Color(0.22, 0.18, 0.30)
+		for state in ["normal","hover","pressed","focus"]:
+			btn.add_theme_stylebox_override(state, n if state in ["normal","focus"] else h)
+		btn.add_theme_color_override("font_color", Color(0.84, 0.82, 0.90))
+
+		var idx := i
+		btn.pressed.connect(func() -> void: _switch_category(idx))
+		row.add_child(btn)
+		_cat_tabs.append(btn)
+
+	var rm := Control.new(); rm.custom_minimum_size.x = 10
+	row.add_child(rm)
+
+func _build_cards_area(parent: VBoxContainer) -> void:
+	_cards_scroll = ScrollContainer.new()
+	_cards_scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	_cards_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	parent.add_child(_cards_scroll)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left",   12)
+	margin.add_theme_constant_override("margin_right",  12)
+	margin.add_theme_constant_override("margin_top",    10)
+	margin.add_theme_constant_override("margin_bottom", 70)  # space above ad banner
+	_cards_scroll.add_child(margin)
+
+	_cards_box = VBoxContainer.new()
+	_cards_box.add_theme_constant_override("separation", 8)
+	margin.add_child(_cards_box)
