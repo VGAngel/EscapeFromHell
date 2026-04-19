@@ -2,66 +2,139 @@ extends GutTest
 
 # Integration tests for LevelComplete.gd (CanvasLayer).
 # Shown after each level with stats, stars, and light earned.
+# Button/navigation tests are TODO — they call get_tree().change_scene_to_file()
+# which would kill the GUT runner.
 
 var lc: Node
 
 func before_each() -> void:
-	# TODO: instantiate LevelComplete, build UI, add to scene
-	pass
+	lc = preload("res://scripts/ui/LevelComplete.gd").new()
+	add_child_autofree(lc)
 
-# ── show_stats ────────────────────────────────────────────────────────────────
+# ── show_results — visibility ─────────────────────────────────────────────────
 
 func test_show_stats_makes_screen_visible() -> void:
-	# TODO: call lc.show_stats({...stats dict...}), assert visible == true
+	lc.show_results({})
+	assert_true(lc.visible)
+
+func test_initially_hidden() -> void:
+	assert_false(lc.visible)
+
+# ── Label content (set synchronously in _fill_static) ────────────────────────
+
+func test_souls_count_displayed() -> void:
+	lc.show_results({"souls_found": 3, "souls_total": 5})
+	assert_true(lc._stat_souls.text.contains("3"))
+	assert_true(lc._stat_souls.text.contains("5"))
+
+func test_deaths_displayed() -> void:
+	lc.show_results({"deaths": 2})
+	assert_true(lc._stat_deaths.text.contains("2"))
+
+func test_light_earned_displayed() -> void:
+	lc.show_results({"light_earned": 15})
+	assert_true(lc._stat_light.text.contains("15"))
+
+func test_subtitle_shows_circle_and_level() -> void:
+	lc.show_results({"circle": 2, "level_id": 15})
+	assert_true(lc._lbl_subtitle.text.contains("2"))
+	assert_true(lc._lbl_subtitle.text.contains("15"))
+
+func test_sin_stat_shows_delta_and_total() -> void:
+	lc.show_results({"sin_delta": 5.0, "sin_total": 15.0})
+	assert_true(lc._stat_sin.text.contains("5"))
+	assert_true(lc._stat_sin.text.contains("15"))
+
+func test_sin_positive_delta_shows_plus_sign() -> void:
+	lc.show_results({"sin_delta": 5.0, "sin_total": 15.0})
+	assert_true(lc._stat_sin.text.contains("+"))
+
+func test_sin_negative_delta_no_plus_sign() -> void:
+	lc.show_results({"sin_delta": -3.0, "sin_total": 12.0})
+	assert_false(lc._stat_sin.text.contains("+"))
+
+func test_zero_deaths_displayed() -> void:
+	lc.show_results({"deaths": 0})
+	assert_true(lc._stat_deaths.text.contains("0"))
+
+func test_zero_light_displayed() -> void:
+	lc.show_results({"light_earned": 0})
+	assert_true(lc._stat_light.text.contains("0"))
+
+# ── _reveal_star ──────────────────────────────────────────────────────────────
+
+func test_reveal_star_filled_sets_star_char() -> void:
+	var lbl := Label.new()
+	add_child_autofree(lbl)
+	lc._reveal_star(lbl, true)
+	assert_eq(lbl.text, "★")
+
+func test_reveal_star_filled_sets_full_alpha() -> void:
+	var lbl := Label.new()
+	add_child_autofree(lbl)
+	lc._reveal_star(lbl, true)
+	assert_eq(lbl.modulate.a, 1.0)
+
+func test_reveal_star_empty_sets_empty_char() -> void:
+	var lbl := Label.new()
+	add_child_autofree(lbl)
+	lc._reveal_star(lbl, false)
+	assert_eq(lbl.text, "☆")
+
+func test_reveal_star_empty_sets_dim_alpha() -> void:
+	var lbl := Label.new()
+	add_child_autofree(lbl)
+	lc._reveal_star(lbl, false)
+	assert_almost_eq(lbl.modulate.a, 0.35, 0.01)
+
+# ── Signals ───────────────────────────────────────────────────────────────────
+
+func test_hub_button_emits_hub_pressed_signal() -> void:
+	watch_signals(lc)
+	# Disconnect scene-change handler to avoid killing GUT runner
+	lc._btn_hub.pressed.disconnect(lc._on_hub_pressed)
+	lc._btn_hub.pressed.connect(func() -> void: lc.hub_pressed.emit())
+	lc._btn_hub.pressed.emit()
+	assert_signal_emitted(lc, "hub_pressed")
+
+func test_next_button_emits_next_level_pressed_signal() -> void:
+	watch_signals(lc)
+	lc._btn_next.pressed.disconnect(lc._on_next_pressed)
+	lc._btn_next.pressed.connect(func() -> void: lc.next_level_pressed.emit())
+	lc._btn_next.pressed.emit()
+	assert_signal_emitted(lc, "next_level_pressed")
+
+# ── TODO ──────────────────────────────────────────────────────────────────────
+
+func test_time_displayed() -> void:
+	# TODO: time_seconds is accepted in stats dict but not displayed in current
+	# LevelComplete.gd — add a _stat_time label and format as "M:SS" first
 	pass
 
 func test_three_stars_shown_on_perfect_run() -> void:
-	# TODO: pass stats with stars=3, assert all 3 star labels at full alpha
+	# TODO: requires awaiting tween completion (stars are set via _animate_in callbacks)
 	pass
 
 func test_one_star_on_partial_souls() -> void:
-	# TODO: pass stats with stars=1, assert only 1 star at full alpha
+	# TODO: requires awaiting tween completion
 	pass
-
-func test_light_earned_displayed() -> void:
-	# TODO: pass stats with light_earned=15, assert light label shows "15"
-	pass
-
-func test_souls_count_displayed() -> void:
-	# TODO: pass stats with souls_found=3, souls_total=5,
-	# assert souls label shows "3 / 5"
-	pass
-
-func test_deaths_displayed() -> void:
-	# TODO: pass stats with deaths=2, assert deaths label shows "2"
-	pass
-
-func test_time_displayed() -> void:
-	# TODO: pass stats with time_seconds=92.0, assert "1:32" formatted time
-	pass
-
-# ── Animations ────────────────────────────────────────────────────────────────
 
 func test_stars_animate_in_sequence() -> void:
-	# TODO: call show_stats with 3 stars, verify each star fades in with delay
+	# TODO: async tween — verify each star callback fires with correct filled flag
 	pass
 
 func test_elements_fade_in_after_stars() -> void:
-	# TODO: after star animation completes, assert stats nodes become visible
+	# TODO: async tween — stat labels start at modulate.a=0, animate to 1.0
 	pass
 
-# ── Buttons ───────────────────────────────────────────────────────────────────
-
 func test_next_level_button_calls_load_next() -> void:
-	# TODO: simulate BtnNext press, assert GameManager.load_next_level() called
+	# TODO: requires GameManager stub — load_next_level() calls change_scene_to_file
 	pass
 
 func test_hub_button_calls_load_hub() -> void:
-	# TODO: simulate BtnHub press, assert GameManager.load_hub() called
+	# TODO: requires GameManager stub — load_hub() calls change_scene_to_file
 	pass
 
-# ── Input ─────────────────────────────────────────────────────────────────────
-
 func test_tap_anywhere_advances_to_next() -> void:
-	# TODO: simulate screen tap / ui_accept, assert next level loads
+	# TODO: requires InputEvent simulation + GameManager stub
 	pass
