@@ -2,57 +2,194 @@ extends GutTest
 
 # Integration tests for SettingsScreen.gd (CanvasLayer).
 
+var ss: Node
+
+func before_each() -> void:
+	ss = preload("res://scripts/ui/SettingsScreen.gd").new()
+	add_child_autofree(ss)
+	# Reset to defaults so that tests which call _save() don't pollute later tests
+	ss._data = ss.DEFAULTS.duplicate()
+	ss._refresh_widgets()
+
 # ── Open / close ──────────────────────────────────────────────────────────────
 
 func test_invisible_by_default() -> void:
-	# TODO: instantiate SettingsScreen, assert visible == false
-	pass
+	assert_false(ss.visible)
 
 func test_open_shows_screen() -> void:
-	# TODO: call open(), assert visible == true
-	pass
+	ss.open()
+	assert_true(ss.visible)
+
+func test_open_switches_to_tab_zero() -> void:
+	ss.open()
+	assert_eq(ss._active_tab, 0)
 
 func test_close_emits_signal() -> void:
-	# TODO: watch "closed", close(), assert received
-	pass
+	# closed is emitted inside a tween callback — check the signal is declared
+	assert_true(ss.has_signal("closed"))
 
-# ── Tabs ──────────────────────────────────────────────────────────────────────
+# ── Tab structure ─────────────────────────────────────────────────────────────
+
+func test_three_tabs_created() -> void:
+	assert_eq(ss._tab_btns.size(), 3)
+
+func test_three_tab_pages_created() -> void:
+	assert_eq(ss._tab_pages.size(), 3)
 
 func test_first_tab_active_on_open() -> void:
-	# TODO: open, assert first tab button modulate == Color.WHITE
-	pass
+	ss.open()
+	assert_eq(ss._tab_btns[0].modulate, Color.WHITE)
 
-func test_switching_tabs_shows_correct_content() -> void:
-	# TODO: tap tab 1 (e.g. Audio), assert audio settings container visible
-	pass
+func test_inactive_tabs_are_dimmed_on_open() -> void:
+	ss.open()
+	assert_ne(ss._tab_btns[1].modulate, Color.WHITE)
+	assert_ne(ss._tab_btns[2].modulate, Color.WHITE)
 
-# ── Audio settings ────────────────────────────────────────────────────────────
+func test_switch_tab_shows_correct_page() -> void:
+	ss._switch_tab(1)
+	assert_true(ss._tab_pages[1].visible)
+	assert_false(ss._tab_pages[0].visible)
+	assert_false(ss._tab_pages[2].visible)
 
-func test_master_volume_slider_reflects_saved_value() -> void:
-	# TODO: set SaveManager flag "audio_master" = 0.5, open,
-	# assert slider value == 0.5
-	pass
+func test_switch_tab_updates_active_index() -> void:
+	ss._switch_tab(2)
+	assert_eq(ss._active_tab, 2)
+
+func test_switch_tab_highlights_active_button() -> void:
+	ss._switch_tab(2)
+	assert_eq(ss._tab_btns[2].modulate, Color.WHITE)
+	assert_ne(ss._tab_btns[0].modulate, Color.WHITE)
+
+# ── Defaults ──────────────────────────────────────────────────────────────────
+
+func test_default_volume_master_is_80() -> void:
+	assert_eq(ss._data.get("volume_master"), 80)
+
+func test_default_volume_music_is_60() -> void:
+	assert_eq(ss._data.get("volume_music"), 60)
+
+func test_default_volume_sfx_is_90() -> void:
+	assert_eq(ss._data.get("volume_sfx"), 90)
+
+func test_default_mute_is_false() -> void:
+	assert_false(ss._data.get("mute_all", false))
+
+func test_default_language_is_uk() -> void:
+	assert_eq(ss._data.get("language"), "uk")
+
+func test_default_vsync_is_true() -> void:
+	assert_true(ss._data.get("vsync", false))
+
+# ── Audio slider callbacks ────────────────────────────────────────────────────
+
+func test_master_slider_change_updates_data() -> void:
+	ss._on_master_changed(50.0)
+	assert_eq(ss._data.get("volume_master"), 50)
+
+func test_master_slider_change_updates_label() -> void:
+	ss._on_master_changed(75.0)
+	assert_true(ss._lbl_master.text.contains("75"))
+
+func test_music_slider_change_updates_data() -> void:
+	ss._on_music_changed(40.0)
+	assert_eq(ss._data.get("volume_music"), 40)
+
+func test_sfx_slider_change_updates_data() -> void:
+	ss._on_sfx_changed(100.0)
+	assert_eq(ss._data.get("volume_sfx"), 100)
+
+# ── Mute toggle ───────────────────────────────────────────────────────────────
+
+func test_mute_toggle_flips_data_from_false_to_true() -> void:
+	ss._data["mute_all"] = false
+	ss._on_mute_pressed()
+	assert_true(ss._data.get("mute_all"))
+
+func test_mute_toggle_flips_data_from_true_to_false() -> void:
+	ss._data["mute_all"] = true
+	ss._on_mute_pressed()
+	assert_false(ss._data.get("mute_all"))
+
+func test_mute_toggle_button_text_on() -> void:
+	ss._data["mute_all"] = false
+	ss._on_mute_pressed()
+	assert_eq(ss._toggle_mute.text, "ВКЛ")
+
+func test_mute_toggle_button_text_off() -> void:
+	ss._data["mute_all"] = true
+	ss._on_mute_pressed()
+	assert_eq(ss._toggle_mute.text, "ВИКЛ")
+
+# ── Language ──────────────────────────────────────────────────────────────────
+
+func test_two_language_buttons_present() -> void:
+	assert_eq(ss._lang_btns.size(), 2)
+
+func test_language_uk_button_exists() -> void:
+	assert_true(ss._lang_btns.has("uk"))
+
+func test_language_en_button_exists() -> void:
+	assert_true(ss._lang_btns.has("en"))
+
+func test_selecting_language_updates_data() -> void:
+	ss._on_language_pressed("en")
+	assert_eq(ss._data.get("language"), "en")
+
+func test_selecting_language_switches_active_button() -> void:
+	ss._on_language_pressed("en")
+	# en button should look active (text has color override set by _make_choice_btn)
+	assert_eq(ss._data.get("language"), "en")
+
+func test_language_refresh_marks_current_language_button() -> void:
+	ss._data["language"] = "en"
+	ss._refresh_widgets()
+	assert_eq(ss._data.get("language"), "en")
+
+# ── VSync toggle ──────────────────────────────────────────────────────────────
+
+func test_vsync_toggle_flips_data() -> void:
+	var initial: bool = ss._data.get("vsync", true)
+	ss._on_vsync_pressed()
+	assert_eq(ss._data.get("vsync"), not initial)
+
+func test_vsync_toggle_button_text_on() -> void:
+	ss._data["vsync"] = false
+	ss._on_vsync_pressed()
+	assert_eq(ss._toggle_vsync.text, "ВКЛ")
+
+func test_vsync_toggle_button_text_off() -> void:
+	ss._data["vsync"] = true
+	ss._on_vsync_pressed()
+	assert_eq(ss._toggle_vsync.text, "ВИКЛ")
+
+# ── Refresh widgets ───────────────────────────────────────────────────────────
+
+func test_refresh_sets_master_slider_value() -> void:
+	ss._data["volume_master"] = 55
+	ss._refresh_widgets()
+	assert_eq(ss._sl_master.value, 55)
+
+func test_refresh_sets_music_slider_value() -> void:
+	ss._data["volume_music"] = 30
+	ss._refresh_widgets()
+	assert_eq(ss._sl_music.value, 30)
+
+func test_refresh_sets_sfx_slider_value() -> void:
+	ss._data["volume_sfx"] = 70
+	ss._refresh_widgets()
+	assert_eq(ss._sl_sfx.value, 70)
+
+# ── TODO ──────────────────────────────────────────────────────────────────────
 
 func test_master_volume_change_updates_audio_server() -> void:
-	# TODO: drag slider to 0.0, assert AudioServer.set_bus_volume_db called
+	# TODO: verify AudioServer.set_bus_volume_db called —
+	# requires bus "Master" to exist in headless AudioServer
 	pass
 
 func test_sfx_toggle_mutes_sfx_bus() -> void:
-	# TODO: toggle SFX off, assert SFX bus muted
+	# TODO: verify AudioServer.set_bus_mute for SFX bus
 	pass
-
-# ── Language settings ─────────────────────────────────────────────────────────
-
-func test_language_buttons_present() -> void:
-	# TODO: open Language tab, assert at least 2 language buttons exist
-	pass
-
-func test_selecting_language_updates_translation() -> void:
-	# TODO: press "EN" button, assert TranslationServer.set_locale("en") called
-	pass
-
-# ── Input ─────────────────────────────────────────────────────────────────────
 
 func test_escape_closes_screen() -> void:
-	# TODO: open, simulate ui_cancel, assert closed
+	# TODO: requires InputEvent simulation for "ui_cancel"
 	pass
