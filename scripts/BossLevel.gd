@@ -123,6 +123,7 @@ func _on_boss_win() -> void:
 	if _boss_defeated:
 		return
 	_boss_defeated = true
+	_shake_camera(0.5, 16.0)
 	_flash_notify("Бос переможений!", 3.0, Color("#FFD700"))
 	_hide_phase_panel()
 
@@ -134,8 +135,10 @@ func _on_boss_win() -> void:
 func _on_sin_aura_tick(amount: float) -> void:
 	if GameManager and GameManager.has_method("add_sin"):
 		GameManager.add_sin(amount)
+	_shake_camera(0.08, 3.0)
 
 func _on_boss_stunned(_duration: float) -> void:
+	_shake_camera(0.25, 10.0)
 	_flash_notify("ОГЛУШЕНО!", 2.2, Color("#88EEFF"))
 
 func _on_boss_stun_ended() -> void:
@@ -147,6 +150,7 @@ func _on_phase_changed(phase_index: int) -> void:
 	if phase_index > 0 and phase_index < PHASE_LABELS.size():
 		var label: String = PHASE_LABELS[phase_index]
 		if label != "":
+			_shake_camera(0.4, 14.0)
 			_flash_notify(label, 3.0, Color("#FF4444"))
 
 # ── Intro overlay ─────────────────────────────────────────────────────────────
@@ -268,6 +272,16 @@ func _build_notify_layer() -> void:
 	_notify_label.add_theme_font_size_override("font_size", 18)
 	_notify_label.modulate.a = 0.0
 	_notify_layer.add_child(_notify_label)
+
+func _shake_camera(duration: float, intensity: float) -> void:
+	var camera := get_viewport().get_camera_2d()
+	if not camera:
+		return
+	var tw := create_tween()
+	for _i in int(duration / 0.05):
+		tw.tween_property(camera, "offset",
+			Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity)), 0.05)
+	tw.tween_property(camera, "offset", Vector2.ZERO, 0.05)
 
 func _flash_notify(text: String, duration: float = 2.0,
 		color: Color = Color(0.90, 0.88, 0.96)) -> void:
