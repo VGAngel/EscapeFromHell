@@ -15,6 +15,16 @@ var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity")
 var coyote_timer:   float = 0.0
 var jump_buf_timer: float = 0.0
 
+var lives: int = 3
+var is_dead: bool = false
+var is_invulnerable: bool = false
+var _air_jumps: int = 0
+var _spawn_pos: Vector2
+
+signal life_lost(remaining: int)
+signal all_lives_lost
+signal heart_restored(current: int)
+
 var _left:  String
 var _right: String
 var _jump:  String
@@ -23,12 +33,12 @@ var _jump:  String
 
 func _ready() -> void:
 	add_to_group("player")
+	floor_snap_length = 10.0
+	_spawn_pos = global_position
 	_left  = "p%d_left"  % player_id
 	_right = "p%d_right" % player_id
 	_jump  = "p%d_jump"  % player_id
 	_setup_animations()
-	if player_id == 2:
-		_sprite.modulate = Color(1.0, 0.55, 0.55)
 
 func _setup_animations() -> void:
 	var frames := SpriteFrames.new()
@@ -52,6 +62,8 @@ func _add_anim(frames: SpriteFrames, anim_name: String, path_tpl: String, count:
 		frames.add_frame(anim_name, tex)
 
 func _physics_process(delta: float) -> void:
+	if is_dead:
+		return
 	_apply_gravity(delta)
 	_handle_jump(delta)
 	_handle_movement()
@@ -65,10 +77,16 @@ func _apply_gravity(delta: float) -> void:
 		coyote_timer -= delta
 	else:
 		coyote_timer = COYOTE_TIME
+		_air_jumps = 0
 
 func _handle_jump(delta: float) -> void:
 	if Input.is_action_just_pressed(_jump):
 		jump_buf_timer = JUMP_BUFFER
+		# Повітряний стрибок (Янгольське перо)
+		if coyote_timer <= 0 and _air_jumps > 0:
+			velocity.y    = JUMP_VELOCITY
+			_air_jumps   -= 1
+			jump_buf_timer = 0.0
 	if jump_buf_timer > 0 and coyote_timer > 0:
 		velocity.y     = JUMP_VELOCITY
 		jump_buf_timer = 0.0
@@ -95,3 +113,58 @@ func _update_animation() -> void:
 		anim = "idle"
 	if _sprite.animation != anim:
 		_sprite.play(anim)
+
+func _refresh_modulate() -> void:
+	if is_dead:
+		_sprite.modulate = Color(1.0, 0.2, 0.2, 0.5)
+	elif is_invulnerable:
+		_sprite.modulate = Color(0.5, 0.8, 1.0, 0.85)
+	else:
+		_sprite.modulate = Color.WHITE
+
+# ──────────────────── Public API ────────────────────
+
+func die() -> void:
+	if is_dead:
+		return
+	is_dead = true
+	velocity = Vector2.ZERO
+	lives -= 1
+	_refresh_modulate()
+	if lives <= 0:
+		all_lives_lost.emit()
+	else:
+		life_lost.emit(lives)
+		await get_tree().create_timer(0.8).timeout
+		global_position = _spawn_pos
+		velocity = Vector2.ZERO
+		_air_jumps = 0
+		is_dead = false
+		_refresh_modulate()
+
+func apply_bonus(type: int) -> void:
+	match type:
+		0:  # HOLY_WATER — невразливість 5с
+			_apply_invulnerability()
+		1:  # PRAYER_STONE — placeholder (немає ворогів)
+			pass
+		2:  # ANGEL_FEATHER — подвійний стрибок
+			_air_jumps = 1
+			_flash(Color(1.0, 1.0, 0.3))
+		3:  # MANNA — +1 серце
+			if lives < 3:
+				lives = min(lives + 1, 3)
+				heart_restored.emit(lives)
+			_flash(Color(0.3, 1.0, 0.5))
+
+func _apply_invulnerability() -> void:
+	is_invulnerable = true
+	_refresh_modulate()
+	await get_tree().create_timer(5.0).timeout
+	is_invulnerable = false
+	_refresh_modulate()
+
+func _flash(color: Color) -> void:
+	_sprite.modulate = color
+	await get_tree().create_timer(0.35).timeout
+	_refresh_modulate()

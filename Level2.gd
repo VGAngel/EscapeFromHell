@@ -13,8 +13,9 @@ extends Node2D
 var _has_soul: bool = false
 
 func _ready() -> void:
+	GameManager.reset()
 	_camera.limit_top    = -200
-	_camera.limit_bottom = 3150
+	_camera.limit_bottom = 3350
 	_camera.limit_left   = 0
 	_camera.limit_right  = 720
 	_exit_portal.monitoring = false
@@ -27,7 +28,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_camera.global_position = _camera.global_position.lerp(_player1.global_position, 0.08)
-	if not _player1.is_dead and _player1.global_position.y > 2990.0:
+	if not _player1.is_dead and _player1.global_position.y > 3050.0:
 		_player1.die()
 
 func _on_soul_collected(_total: int) -> void:

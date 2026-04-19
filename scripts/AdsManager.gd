@@ -24,7 +24,8 @@ var _billing: Object = null
 
 func _ready() -> void:
 	_load_config()
-	_ads_removed = SaveManager.get_flag(_cfg["iap"]["no_ads"]["save_key"]) if SaveManager else false
+	var save_key: String = _cfg.get("iap", {}).get("no_ads", {}).get("save_key", "no_ads_purchased")
+	_ads_removed = SaveManager.get_flag(save_key) if SaveManager else false
 	_setup_admob()
 	_setup_billing()
 
@@ -33,11 +34,12 @@ func _load_config() -> void:
 	if not file:
 		push_error("AdsManager: monetization_config.json not found")
 		return
-	var json := JSON.new()
-	if json.parse(file.get_as_text()) != OK:
+	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	file.close()
+	if not parsed is Dictionary:
 		push_error("AdsManager: failed to parse monetization_config.json")
 		return
-	_cfg = json.get_data()
+	_cfg = parsed
 	_sku_no_ads  = _cfg["iap"]["no_ads"]["sku"]
 	_skus_donate = _cfg["iap"]["donate"]["tiers"].map(func(t): return t["sku"])
 	_interstitial_cooldown  = float(_cfg["admob"]["interstitial"]["cooldown_seconds"])
@@ -128,7 +130,7 @@ func _restore_purchases() -> void:
 	var result: Dictionary = _billing.queryPurchases("inapp")
 	if result.get("status", -1) == 0:
 		for purchase in result.get("purchases", []):
-			if purchase.get("sku") == SKU_NO_ADS:
+			if purchase.get("sku") == _sku_no_ads:
 				_remove_ads_locally()
 
 func purchase_no_ads() -> void:
@@ -152,10 +154,10 @@ func get_donate_tiers() -> Array:
 func _on_purchases_updated(purchases: Array) -> void:
 	for purchase in purchases:
 		var sku: String = purchase.get("sku", "")
-		if sku == SKU_NO_ADS:
+		if sku == _sku_no_ads:
 			_billing.acknowledgePurchase(purchase.get("purchase_token", ""))
 			_remove_ads_locally()
-		elif sku in SKUS_DONATE:
+		elif sku in _skus_donate:
 			_billing.consumePurchase(purchase.get("purchase_token", ""))
 			donate_purchased.emit(sku)
 
