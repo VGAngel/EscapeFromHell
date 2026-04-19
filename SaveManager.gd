@@ -270,7 +270,7 @@ func _flush() -> void:
 	if FileAccess.file_exists(path):
 		var old := FileAccess.open(path, FileAccess.READ)
 		if old:
-			var content: String = old.read_as_text()
+			var content: String = old.get_as_text()
 			old.close()
 			var bak := FileAccess.open(backup, FileAccess.WRITE)
 			if bak:
