@@ -228,13 +228,13 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 func _style_cell(s: StyleBoxFlat, is_hidden: bool, saved: bool, hovered: bool) -> void:
 	if is_hidden:
 		s.bg_color     = Color(0.22, 0.16, 0.06) if (saved and hovered) else \
-		                 (Color(0.18, 0.13, 0.05) if saved else Color(0.10, 0.08, 0.04))
+						 (Color(0.18, 0.13, 0.05) if saved else Color(0.10, 0.08, 0.04))
 		s.border_color = Color("#FFD700") if hovered else Color("#A07820")
 	else:
 		s.bg_color     = Color(0.26, 0.24, 0.32) if (saved and hovered) else \
-		                 (Color(0.18, 0.16, 0.22) if saved else Color(0.10, 0.09, 0.13))
+						 (Color(0.18, 0.16, 0.22) if saved else Color(0.10, 0.09, 0.13))
 		s.border_color = Color(0.65, 0.60, 0.78) if hovered else \
-		                 (Color(0.42, 0.38, 0.52) if saved else Color(0.22, 0.20, 0.28))
+						 (Color(0.42, 0.38, 0.52) if saved else Color(0.22, 0.20, 0.28))
 	s.border_width_left   = 1
 	s.border_width_right  = 1
 	s.border_width_top    = 1
@@ -299,7 +299,7 @@ func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
 	var circle: int = soul.get("circle", 1)
 	var level:  int = soul.get("level",  0)
 	_sheet_loc.text = ("Коло %d • Прихована" % circle) if is_hidden else \
-	                  ("Коло %d • Рівень %d" % [circle, level])
+					  ("Коло %d • Рівень %d" % [circle, level])
 	_sheet_loc.visible = true
 	_sheet_sep.visible = true
 
