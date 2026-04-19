@@ -1,0 +1,305 @@
+{
+  "version": "1.0",
+
+  "note": "Всі вороги використовують BaseEnemy.gd. Статі беруться звідси при ініціалізації.",
+
+  "chase_scaling": {
+    "note": "Береться з soul_mechanics_config.json — дублюємо тут для зручності",
+    "circles_1_2":  { "chase_duration": 4,  "chase_speed_mult": 1.1, "max_chasers": 1 },
+    "circles_3_4":  { "chase_duration": 6,  "chase_speed_mult": 1.2, "max_chasers": 1 },
+    "circles_5_6":  { "chase_duration": 8,  "chase_speed_mult": 1.3, "max_chasers": 2 },
+    "circles_7_8":  { "chase_duration": 10, "chase_speed_mult": 1.4, "max_chasers": 2 },
+    "circles_9_10": { "chase_duration": 14, "chase_speed_mult": 1.5, "max_chasers": 3 }
+  },
+
+  "enemies": [
+
+    {
+      "id": "shadow_lost",
+      "name": "Тінь Загублена",
+      "circle": 1,
+      "sprite": "enemies/shadow_lost",
+      "placeholder_color": "#444466",
+      "size": [20, 32],
+      "move_speed": 60,
+      "detection_range": 180,
+      "patrol_distance": 100,
+      "alert_duration": 1.0,
+      "behavior_note": "Повільний, базовий. Патрулює невелику ділянку. Ідеально для навчання механіки."
+    },
+
+    {
+      "id": "pale_wanderer",
+      "name": "Блідий Блукач",
+      "circle": 1,
+      "sprite": "enemies/pale_wanderer",
+      "placeholder_color": "#BBBBCC",
+      "size": [18, 28],
+      "move_speed": 75,
+      "detection_range": 220,
+      "patrol_distance": 180,
+      "alert_duration": 0.8,
+      "behavior_note": "Патрулює довгі маршрути. Трохи пильніший за shadow_lost."
+    },
+
+    {
+      "id": "wind_shade",
+      "name": "Тінь Вітру",
+      "circle": 2,
+      "sprite": "enemies/wind_shade",
+      "placeholder_color": "#8899BB",
+      "size": [22, 30],
+      "move_speed": 100,
+      "detection_range": 260,
+      "patrol_distance": 220,
+      "alert_duration": 0.6,
+      "behavior_note": "Швидший рух, менший alert. Рухається ривками — нерівномірний патруль."
+    },
+
+    {
+      "id": "flame_imp",
+      "name": "Вогняний Імп",
+      "circle": 3,
+      "sprite": "enemies/flame_imp",
+      "placeholder_color": "#FF6600",
+      "size": [18, 24],
+      "move_speed": 110,
+      "detection_range": 200,
+      "patrol_distance": 140,
+      "alert_duration": 0.5,
+      "behavior_note": "Малий і швидкий. Двигається хаотично. Легко помітити гравця."
+    },
+
+    {
+      "id": "fire_hound",
+      "name": "Вогняний Пес",
+      "circle": 3,
+      "sprite": "enemies/fire_hound",
+      "placeholder_color": "#DD3300",
+      "size": [32, 24],
+      "move_speed": 130,
+      "detection_range": 280,
+      "patrol_distance": 200,
+      "alert_duration": 0.4,
+      "behavior_note": "Чотирилапий — низький і швидкий. Великий радіус виявлення. Небезпечний у погоні."
+    },
+
+    {
+      "id": "swamp_crawler",
+      "name": "Болотний Повзун",
+      "circle": 4,
+      "sprite": "enemies/swamp_crawler",
+      "placeholder_color": "#446633",
+      "size": [28, 20],
+      "move_speed": 55,
+      "detection_range": 160,
+      "patrol_distance": 100,
+      "alert_duration": 1.2,
+      "behavior_note": "Повільний але непомітний на болотному фоні. Довга анімація alert — гравець має час відреагувати."
+    },
+
+    {
+      "id": "bog_phantom",
+      "name": "Болотний Привид",
+      "circle": 4,
+      "sprite": "enemies/bog_phantom",
+      "placeholder_color": "#335544",
+      "size": [24, 36],
+      "move_speed": 70,
+      "detection_range": 300,
+      "patrol_distance": 160,
+      "alert_duration": 0.7,
+      "special": "phases_through_mud_platforms",
+      "behavior_note": "Може проходити крізь mud платформи — не можна сховатись на них."
+    },
+
+    {
+      "id": "rage_shade",
+      "name": "Тінь Гніву",
+      "circle": 5,
+      "sprite": "enemies/rage_shade",
+      "placeholder_color": "#CC2222",
+      "size": [24, 36],
+      "move_speed": 120,
+      "detection_range": 300,
+      "patrol_distance": 200,
+      "alert_duration": 0.4,
+      "behavior_note": "Агресивний. Мала затримка alert — майже одразу кидається. Не дає часу підготуватись."
+    },
+
+    {
+      "id": "frost_knight",
+      "name": "Крижаний Лицар",
+      "circle": 5,
+      "sprite": "enemies/frost_knight",
+      "placeholder_color": "#88CCDD",
+      "size": [32, 48],
+      "move_speed": 70,
+      "detection_range": 260,
+      "patrol_distance": 160,
+      "alert_duration": 0.8,
+      "special": "knockback_resistance",
+      "knockback_resistance": 0.4,
+      "behavior_note": "Рідкісний важкий ворог. Посох відштовхує лише на 40% дистанції — треба 2 удари для повного оглушення."
+    },
+
+    {
+      "id": "heresy_priest",
+      "name": "Єретичний Жрець",
+      "circle": 6,
+      "sprite": "enemies/heresy_priest",
+      "placeholder_color": "#884422",
+      "size": [22, 40],
+      "move_speed": 80,
+      "detection_range": 320,
+      "patrol_distance": 180,
+      "alert_duration": 0.6,
+      "special": "increases_player_sin_when_nearby",
+      "sin_aura": { "radius": 140, "sin_per_second": 1 },
+      "behavior_note": "Присутність жерця збільшує гріх гравця. Треба уникати не лише зіткнення але й близькості."
+    },
+
+    {
+      "id": "cursed_stone",
+      "name": "Проклятий Камінь",
+      "circle": 6,
+      "sprite": "enemies/cursed_stone",
+      "placeholder_color": "#666644",
+      "size": [40, 40],
+      "move_speed": 0,
+      "detection_range": 180,
+      "patrol_distance": 0,
+      "alert_duration": 0.0,
+      "special": "stationary_launches_projectile",
+      "projectile": {
+        "trigger_range": 180,
+        "cooldown": 3.0,
+        "projectile_speed": 200,
+        "behavior": "straight_toward_player_at_moment_of_fire"
+      },
+      "behavior_note": "Нерухомий. Не переслідує. Стріляє проклятим снарядом якщо гравець в радіусі. Посох знищує снаряд."
+    },
+
+    {
+      "id": "hell_knight",
+      "name": "Лицар Пекла",
+      "circle": 7,
+      "sprite": "enemies/hell_knight",
+      "placeholder_color": "#AA1100",
+      "size": [36, 52],
+      "move_speed": 90,
+      "detection_range": 300,
+      "patrol_distance": 200,
+      "alert_duration": 0.5,
+      "special": "knockback_resistance",
+      "knockback_resistance": 0.5,
+      "behavior_note": "Важкий броньований ворог. Посох відштовхує лише на 50%. Повільний але дуже наполегливий."
+    },
+
+    {
+      "id": "blood_hound",
+      "name": "Кривавий Пес",
+      "circle": 7,
+      "sprite": "enemies/blood_hound",
+      "placeholder_color": "#880000",
+      "size": [30, 22],
+      "move_speed": 150,
+      "detection_range": 350,
+      "patrol_distance": 250,
+      "alert_duration": 0.3,
+      "behavior_note": "Найшвидший ворог. Мінімальний alert. Виявляє з великої дистанції."
+    },
+
+    {
+      "id": "mimic_shade",
+      "name": "Тінь-Мімік",
+      "circle": 8,
+      "sprite": "enemies/mimic_shade",
+      "placeholder_color": "#AA66FF",
+      "size": [16, 16],
+      "move_speed": 0,
+      "detection_range": 0,
+      "special": "disguised_as_soul",
+      "behavior_note": "Виглядає як душа. Не переслідує. Детальна механіка в soul_mechanics_config.json."
+    },
+
+    {
+      "id": "clockwork_guard",
+      "name": "Годинниковий Вартовий",
+      "circle": 8,
+      "sprite": "enemies/clockwork_guard",
+      "placeholder_color": "#CCAA44",
+      "size": [28, 40],
+      "move_speed": 85,
+      "detection_range": 240,
+      "patrol_distance": 300,
+      "alert_duration": 0.7,
+      "special": "fixed_patrol_route",
+      "behavior_note": "Патрулює строго фіксованим маршрутом — не відхиляється. Передбачуваний але точний."
+    },
+
+    {
+      "id": "frost_shade",
+      "name": "Крижана Тінь",
+      "circle": 9,
+      "sprite": "enemies/frost_shade",
+      "placeholder_color": "#99CCFF",
+      "size": [20, 32],
+      "move_speed": 95,
+      "detection_range": 280,
+      "patrol_distance": 200,
+      "alert_duration": 0.5,
+      "special": "slows_player_on_touch",
+      "slow_duration": 2.0,
+      "slow_multiplier": 0.6,
+      "behavior_note": "Дотик сповільнює гравця на 2 сек — небезпечно якщо ще є переслідувачі."
+    },
+
+    {
+      "id": "silent_stalker",
+      "name": "Тихий Переслідувач",
+      "circle": 9,
+      "sprite": "enemies/silent_stalker",
+      "placeholder_color": "#334455",
+      "size": [22, 34],
+      "move_speed": 110,
+      "detection_range": 200,
+      "patrol_distance": 250,
+      "alert_duration": 0.0,
+      "special": "no_alert_phase",
+      "behavior_note": "Немає фази alert — одразу починає гнатись без попередження. Не видає звуку patrol. Апгрейд quiet_step зменшує його дальність виявлення."
+    },
+
+    {
+      "id": "void_sentinel",
+      "name": "Страж Пустоти",
+      "circle": 10,
+      "sprite": "enemies/void_sentinel",
+      "placeholder_color": "#220033",
+      "size": [32, 48],
+      "move_speed": 100,
+      "detection_range": 380,
+      "patrol_distance": 300,
+      "alert_duration": 0.4,
+      "special": "ignores_invisibility_upgrade",
+      "behavior_note": "Не реагує на апгрейд невидимості — бачить гравця крізь нього. Треба уникати фізично."
+    },
+
+    {
+      "id": "throne_guard",
+      "name": "Вартовий Трону",
+      "circle": 10,
+      "sprite": "enemies/throne_guard",
+      "placeholder_color": "#440000",
+      "size": [40, 60],
+      "move_speed": 80,
+      "detection_range": 340,
+      "patrol_distance": 200,
+      "alert_duration": 0.3,
+      "special": "knockback_resistance",
+      "knockback_resistance": 0.7,
+      "behavior_note": "Найбільш стійкий до посоха ворог. Посох відштовхує лише на 30% — практично не корисний. Треба уникати."
+    }
+
+  ]
+}

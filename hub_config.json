@@ -1,0 +1,296 @@
+{
+  "version": "1.0",
+
+  "hub": {
+    "trigger": "before_every_level",
+    "skippable": true,
+    "skip_button": "Пропустити",
+    "note": "Гравець може пропустити Хаб якщо не хоче витрачати Світло і просто йде далі"
+  },
+
+  "visuals": {
+    "background": "heaven_hub_bg",
+    "ambient_particles": "floating_light_dust",
+    "music": "heaven_ambient_soft",
+    "god_portrait": {
+      "position": "left",
+      "style": "silhouette_bright",
+      "note": "Бог показується як яскравий силует — не конкретне обличчя"
+    },
+    "player_portrait": {
+      "position": "right",
+      "style": "half_demon_priest",
+      "note": "Данило в гібридній формі — ряса з темними елементами"
+    }
+  },
+
+  "sections": {
+    "god_message": {
+      "position": "top_center",
+      "type": "dialogue_box",
+      "style": "italic_gold",
+      "auto_hide_after_seconds": 8,
+      "note": "Репліка Бога перед рівнем. Різна залежно від контексту."
+    },
+    "upgrades_button": {
+      "position": "bottom_left",
+      "label": "Апгрейди",
+      "icon": "light_icon",
+      "shows_currency": true,
+      "currency_format": "💡 {amount}"
+    },
+    "souls_button": {
+      "position": "bottom_center",
+      "label": "Душі",
+      "icon": "soul_icon",
+      "shows_counter": true,
+      "counter_format": "{saved} / 100"
+    },
+    "continue_button": {
+      "position": "bottom_right",
+      "label": "Далі →",
+      "shows_level_preview": true,
+      "level_preview_format": "Коло {circle} • {level_name}"
+    }
+  },
+
+  "prologue": {
+    "trigger": "before_level_1",
+    "skippable": false,
+    "note": "Пролог не можна пропустити — тільки один раз",
+    "scenes": [
+      {
+        "id": "fall",
+        "type": "narration",
+        "background": "darkness_falling",
+        "text": "Ти падав довго. Довше ніж здавалось можливим.\nВнизу не було нічого. Тільки тепло.\nІ голос.",
+        "sound": "wind_falling",
+        "duration": 4.0
+      },
+      {
+        "id": "god_appears",
+        "type": "dialogue",
+        "background": "heaven_light_emerge",
+        "speaker": "god",
+        "lines": [
+          { "text": "Отче Данило.", "pause_after": 1.5 },
+          { "text": "Так. Я знаю що ти зробив. І знаю чому.", "pause_after": 0.5 }
+        ],
+        "sound": "god_voice_reverb"
+      },
+      {
+        "id": "silence",
+        "type": "dialogue",
+        "speaker": "god",
+        "lines": [
+          { "text": "Ти зневірився. Це не найгірший гріх зі всіх що я бачив тут.", "pause_after": 0.5 },
+          { "text": "Але ти священник. Від тебе очікували більшого. Від тебе очікував більшого ти сам.", "pause_after": 1.0 }
+        ]
+      },
+      {
+        "id": "mission",
+        "type": "dialogue",
+        "speaker": "god",
+        "lines": [
+          { "text": "В пеклі є 100 душ що потрапили туди помилково. Бюрократія — навіть тут вона існує.", "pause_after": 0.5 },
+          { "text": "Я міг би виправити це сам. Але не виправлю.", "pause_after": 1.5 },
+          { "text": "Ти підеш замість мене.", "pause_after": 1.0 }
+        ]
+      },
+      {
+        "id": "player_speaks",
+        "type": "dialogue",
+        "lines": [
+          { "speaker": "player", "text": "Я не переживу там і хвилини.", "pause_after": 0.5 },
+          { "speaker": "god",    "text": "Знаю.", "pause_after": 1.5 }
+        ]
+      },
+      {
+        "id": "transformation",
+        "type": "dialogue",
+        "background": "player_silhouette_darkening",
+        "sound": "transformation_hum",
+        "lines": [
+          { "speaker": "god", "text": "Тому я дам тобі те що потрібно щоб вижити. Але попереджаю — це буде боляче носити в собі.", "pause_after": 1.0 }
+        ]
+      },
+      {
+        "id": "player_hands",
+        "type": "dialogue",
+        "background": "player_looks_at_hands",
+        "lines": [
+          { "speaker": "god", "text": "Частина пекла тепер в тобі. Ти відчуєш це. Ти будеш хотіти використати це.", "pause_after": 0.5 },
+          { "speaker": "god", "text": "Не забувай хто ти є. Був. Хочеш бути знову.", "pause_after": 1.0 }
+        ]
+      },
+      {
+        "id": "final_exchange",
+        "type": "dialogue",
+        "lines": [
+          { "speaker": "player", "text": "А якщо я знайду всіх 100?", "pause_after": 0.5 },
+          { "speaker": "god",    "text": "Тоді подивимось що залишилось від священника Данила.", "pause_after": 2.0 },
+          { "speaker": "god",    "text": "Йди. Вони чекають.", "pause_after": 0.5 }
+        ],
+        "sound": "heaven_choir_soft"
+      }
+    ]
+  },
+
+  "god_messages": {
+    "note": "Репліки Бога в Хабі перед конкретними рівнями або при конкретних умовах. Перевіряються по порядку — перша підходяща показується.",
+
+    "conditional": [
+      {
+        "id": "demon_deal_accepted",
+        "condition": { "type": "last_level_accepted_deal", "value": true },
+        "text": "Я бачив. Нічого не кажу. Просто бачив.",
+        "style": "quiet"
+      },
+      {
+        "id": "sin_critical",
+        "condition": { "type": "sin_above", "value": 70 },
+        "text": "Данило. Я ще тут. Але ти йдеш не в той бік.",
+        "style": "warning"
+      },
+      {
+        "id": "last_soul",
+        "condition": { "type": "total_souls_saved", "value": 99 },
+        "text": "Одна залишилась. Остання завжди найважча. Не через пекло — через тебе.",
+        "style": "solemn"
+      }
+    ],
+
+    "by_level": [
+      {
+        "level": 1,
+        "text": "Передпокій. Тут ще є тиша. Скористайся цим — далі її не буде.",
+        "style": "calm"
+      },
+      {
+        "level": 2,
+        "text": "Ти вже знаєш як падати. Тепер навчись зупинятись вчасно.",
+        "style": "calm"
+      },
+      {
+        "level": 5,
+        "text": "Перша втеча. Не соромно тікати від того що сильніше. Соромно не повернутись.",
+        "style": "calm"
+      },
+      {
+        "level": 10,
+        "text": "Перший охоронець позаду. Попереду гірше. Але ти вже знаєш що гірше — не значить неможливо.",
+        "style": "solemn"
+      },
+      {
+        "level": 11,
+        "text": "Болота. Тут гинуть не від болю — від непевності. Кожен крок перевіряй.",
+        "style": "calm"
+      },
+      {
+        "level": 20,
+        "text": "Друге Коло пройдено. Ти змінився трохи. Я бачу. Не кажу чи на краще.",
+        "style": "observing"
+      },
+      {
+        "level": 21,
+        "text": "Вогонь не прощає повільних. Але й нетерплячих — теж.",
+        "style": "calm"
+      },
+      {
+        "level": 25,
+        "text": "Чверть шляху. Вони вже у безпеці. Данило — ти пам'ятаєш їхні імена?",
+        "style": "personal"
+      },
+      {
+        "level": 30,
+        "text": "Третє Коло позаду. Вогонь більше не лякає тебе так як раніше. Це добре. І погано.",
+        "style": "observing"
+      },
+      {
+        "level": 40,
+        "text": "Жадібність — єдиний гріх що виглядає як чеснота поки не озирнешся.",
+        "style": "solemn"
+      },
+      {
+        "level": 50,
+        "text": "Половина. Подивись на себе. Пам'ятаєш яким ти був коли падав?",
+        "style": "personal"
+      },
+      {
+        "level": 51,
+        "text": "Гордість будує палаци і руйнує людей. Тут — і те і інше одночасно.",
+        "style": "calm"
+      },
+      {
+        "level": 60,
+        "text": "П'яте Коло. Ти пройшов більше ніж половину. Але найважче — не завжди попереду.",
+        "style": "solemn"
+      },
+      {
+        "level": 70,
+        "text": "Ліс Зрадників. Тут кожен колись когось зрадив. Навіть ті хто вважали себе праведними.",
+        "style": "personal"
+      },
+      {
+        "level": 75,
+        "text": "75 душ. Три чверті. Я не очікував що ти зайдеш так далеко.",
+        "style": "surprised"
+      },
+      {
+        "level": 80,
+        "text": "Машина не має душі. Тому вона страшніша за демона.",
+        "style": "calm"
+      },
+      {
+        "level": 81,
+        "text": "Безодня. Тут закони фізики — лише рекомендації.",
+        "style": "calm"
+      },
+      {
+        "level": 90,
+        "text": "Дев'яте Коло позаду. Данило... я пишаюсь. Хоча й не повинен цього казати.",
+        "style": "warm"
+      },
+      {
+        "level": 91,
+        "text": "Трон попереду. Він знає що ти тут. Він чекав когось такого як ти.",
+        "style": "warning"
+      },
+      {
+        "level": 95,
+        "text": "Остання Пустота. Всі душі що ти зможеш знайти — тут. Не поспішай.",
+        "style": "solemn"
+      },
+      {
+        "level": 99,
+        "text": "Остання кімната перед ним. Що б не сталось далі — ти вже зробив більше ніж я просив.",
+        "style": "warm"
+      },
+      {
+        "level": 100,
+        "text": "Я більше нічого не скажу. Це твій момент. Не мій.",
+        "style": "silent"
+      }
+    ],
+
+    "by_souls_milestone": [
+      { "souls": 10,  "text": "Десять. Вони вже у безпеці. Продовжуй.",          "style": "warm"     },
+      { "souls": 25,  "text": "Чверть шляху. Пам'ятаєш їхні імена?",             "style": "personal" },
+      { "souls": 50,  "text": "Половина. Вони чекали на тебе довго.",             "style": "solemn"   },
+      { "souls": 75,  "text": "75 душ. Я не очікував що ти зайдеш так далеко.",  "style": "surprised"},
+      { "souls": 99,  "text": "Одна залишилась. Остання завжди найважча.",        "style": "solemn"   }
+    ]
+  },
+
+  "message_styles": {
+    "calm":      { "color": "#FFFFFF", "animation": "fade_in_slow" },
+    "solemn":    { "color": "#DDDDFF", "animation": "fade_in_slow" },
+    "warning":   { "color": "#FFAA00", "animation": "pulse_once"   },
+    "personal":  { "color": "#FFEECC", "animation": "fade_in_slow" },
+    "warm":      { "color": "#FFD700", "animation": "fade_in_slow" },
+    "observing": { "color": "#CCCCCC", "animation": "fade_in_slow" },
+    "surprised": { "color": "#FFFFFF", "animation": "fade_in_fast" },
+    "quiet":     { "color": "#AAAAAA", "animation": "fade_in_slow" },
+    "silent":    { "color": "#FFFFFF", "animation": "appear_instant", "no_sound": true }
+  }
+}

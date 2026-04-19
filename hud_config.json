@@ -1,0 +1,224 @@
+{
+  "version": "1.0",
+
+  "layout": {
+    "top_left": "health",
+    "top_center": "level_info",
+    "top_right": "total_souls_counter",
+    "bottom_left": "ability_slots",
+    "bottom_center": "active_bonuses",
+    "bottom_right": "level_souls_counter",
+    "bottom_full": "sin_bar"
+  },
+
+  "elements": {
+
+    "health": {
+      "type": "hearts",
+      "max": 6,
+      "default": 3,
+      "icons": {
+        "full":  "♥",
+        "empty": "♡"
+      },
+      "animate_on_damage": {
+        "type": "shake",
+        "duration": 0.3
+      },
+      "animate_on_heal": {
+        "type": "pulse_green",
+        "duration": 0.4
+      }
+    },
+
+    "level_info": {
+      "type": "label",
+      "format": "Коло {circle} • Рівень {level}",
+      "style": "small_dim",
+      "visible_duration": 3.0,
+      "note": "Показується 3 секунди на початку рівня потім зникає"
+    },
+
+    "total_souls_counter": {
+      "type": "counter",
+      "format": "{saved} / 100",
+      "icon": "👻",
+      "style": "normal",
+      "animate_on_increment": {
+        "type": "pulse_white",
+        "duration": 0.3
+      }
+    },
+
+    "level_souls_counter": {
+      "type": "counter",
+      "format": "{found} / {total}",
+      "icon": "👻",
+      "style": "small",
+      "note": "Душі знайдені на поточному рівні",
+      "animate_on_increment": {
+        "type": "pulse_white",
+        "duration": 0.3
+      }
+    },
+
+    "sin_bar": {
+      "type": "progress_bar",
+      "position": "bottom_edge",
+      "height": 6,
+      "direction": "left_to_right",
+      "value_range": [0, 100],
+      "colors": [
+        { "threshold": 0,  "color": "#FFFFFF" },
+        { "threshold": 30, "color": "#FFAA00" },
+        { "threshold": 60, "color": "#FF4400" },
+        { "threshold": 85, "color": "#AA0000" }
+      ],
+      "animate_on_increase": {
+        "type": "flash_red",
+        "duration": 0.2
+      },
+      "animate_on_decrease": {
+        "type": "flash_white",
+        "duration": 0.2
+      },
+      "warning": {
+        "threshold": 85,
+        "type": "slow_pulse_red",
+        "note": "При > 85% гріха смужка повільно пульсує — небезпека кінцівки Падший"
+      }
+    },
+
+    "ability_slots": {
+      "type": "icon_row",
+      "position": "bottom_left",
+      "note": "Показуються тільки куплені апгрейди категорії Хитрість",
+      "slots": [
+        {
+          "id": "invisibility",
+          "icon": "👁",
+          "upgrade_required": "invisibility",
+          "cooldown_display": "radial_fill",
+          "uses_per_level": 1
+        },
+        {
+          "id": "distraction",
+          "icon": "🔔",
+          "upgrade_required": "distraction",
+          "cooldown_display": "radial_fill",
+          "uses_per_level": 1
+        },
+        {
+          "id": "decoy",
+          "icon": "🌑",
+          "upgrade_required": "decoy",
+          "cooldown_display": "radial_fill",
+          "uses_per_level": 1
+        }
+      ],
+      "states": {
+        "available": {
+          "opacity": 1.0,
+          "color": "white"
+        },
+        "used": {
+          "opacity": 0.4,
+          "color": "grey",
+          "note": "Використано на цьому рівні — недоступно"
+        }
+      }
+    },
+
+    "active_bonuses": {
+      "type": "bonus_icon_row",
+      "position": "bottom_center",
+      "max_visible": 5,
+      "bonuses": [
+        {
+          "id": "holy_water",
+          "icon": "💧",
+          "type": "timed",
+          "duration": 10
+        },
+        {
+          "id": "broken_halo",
+          "icon": "😇",
+          "type": "timed",
+          "duration": 15
+        },
+        {
+          "id": "righteous_shadow",
+          "icon": "🛡",
+          "type": "timed",
+          "duration": 20
+        },
+        {
+          "id": "burnt_wings",
+          "icon": "🪶",
+          "type": "timed",
+          "duration": 12
+        },
+        {
+          "id": "hope_torch",
+          "icon": "🔦",
+          "type": "timed",
+          "duration": 15
+        },
+        {
+          "id": "sinner_map",
+          "icon": "🗺",
+          "type": "timed",
+          "duration": 10
+        },
+        {
+          "id": "prayer_stone",
+          "icon": "🪨",
+          "type": "timed",
+          "duration": 5,
+          "note": "Заморозка ворогів"
+        },
+        {
+          "id": "angel_feather",
+          "icon": "⬆️",
+          "type": "single_use",
+          "note": "Зникає після першого стрибка, не має таймера"
+        },
+        {
+          "id": "manna",
+          "icon": null,
+          "type": "instant",
+          "note": "Миттєво відновлює HP — не показується в HUD"
+        }
+      ],
+      "states": {
+        "active": {
+          "opacity": 1.0,
+          "show_timer": true,
+          "timer_position": "below_icon",
+          "timer_style": "small_white"
+        },
+        "expiring": {
+          "threshold_seconds": 3,
+          "animation": "blink",
+          "blink_speed": 0.4,
+          "timer_color": "red"
+        },
+        "expired": {
+          "animation": "fade_out",
+          "duration": 0.3
+        }
+      }
+    }
+  },
+
+  "escape_level_timer": {
+    "note": "Додатковий елемент тільки для рівнів типу escape",
+    "type": "countdown_bar",
+    "position": "top_full",
+    "height": 8,
+    "color_start": "#00FF88",
+    "color_end": "#FF0000",
+    "pulse_when_low": true,
+    "pulse_threshold_seconds": 5
+  }
+}

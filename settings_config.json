@@ -1,0 +1,121 @@
+{
+  "version": "1.0",
+
+  "accessible_from": ["main_menu", "pause_menu"],
+
+  "tabs": [
+
+    {
+      "id": "sound",
+      "icon": "🔊",
+      "text_key": "settings.tab_sound",
+      "controls": [
+        {
+          "id": "volume_master",
+          "type": "slider",
+          "text_key": "settings.volume_master",
+          "min": 0, "max": 100, "default": 80,
+          "bus": "Master"
+        },
+        {
+          "id": "volume_music",
+          "type": "slider",
+          "text_key": "settings.volume_music",
+          "min": 0, "max": 100, "default": 60,
+          "bus": "Music"
+        },
+        {
+          "id": "volume_sfx",
+          "type": "slider",
+          "text_key": "settings.volume_sfx",
+          "min": 0, "max": 100, "default": 90,
+          "bus": "SFX"
+        },
+        {
+          "id": "mute_all",
+          "type": "toggle",
+          "text_key": "settings.mute_all",
+          "default": false,
+          "note": "Вимикає Master bus повністю"
+        }
+      ]
+    },
+
+    {
+      "id": "language",
+      "icon": "🌐",
+      "text_key": "settings.tab_language",
+      "controls": [
+        {
+          "id": "language_select",
+          "type": "language_list",
+          "text_key": "settings.language",
+          "apply": "instant",
+          "note": "Зміна мови застосовується миттєво без перезапуску",
+          "available": [
+            { "code": "uk", "label": "Українська" },
+            { "code": "en", "label": "English"    }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "graphics",
+      "icon": "🖥",
+      "text_key": "settings.tab_graphics",
+      "controls": [
+        {
+          "id": "fullscreen",
+          "type": "toggle",
+          "text_key": "settings.fullscreen",
+          "default": false,
+          "apply": "instant"
+        },
+        {
+          "id": "resolution",
+          "type": "dropdown",
+          "text_key": "settings.resolution",
+          "visible_when": "fullscreen == false",
+          "default": "1280x720",
+          "options": [
+            "1280x720",
+            "1920x1080",
+            "2560x1440"
+          ]
+        },
+        {
+          "id": "quality",
+          "type": "radio",
+          "text_key": "settings.quality",
+          "default": "medium",
+          "options": [
+            { "value": "low",    "text_key": "settings.quality_low"    },
+            { "value": "medium", "text_key": "settings.quality_medium" },
+            { "value": "high",   "text_key": "settings.quality_high"   }
+          ]
+        },
+        {
+          "id": "vsync",
+          "type": "toggle",
+          "text_key": "settings.vsync",
+          "default": true
+        }
+      ]
+    }
+
+  ],
+
+  "save": {
+    "path": "user://settings.json",
+    "trigger": "on_any_change",
+    "note": "Налаштування зберігаються миттєво при кожній зміні"
+  },
+
+  "sounds": {
+    "tab_switch":    "ui_tab_soft",
+    "slider_change": "ui_click_soft",
+    "toggle_on":     "ui_toggle_on",
+    "toggle_off":    "ui_toggle_off"
+  }
+}

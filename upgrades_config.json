@@ -1,0 +1,274 @@
+{
+  "version": "1.0",
+
+  "currency": {
+    "name": "Світло",
+    "sources": [
+      { "source": "soul_common",        "amount": 1 },
+      { "source": "soul_named",         "amount": 3 },
+      { "source": "soul_hidden",        "amount": 10 },
+      { "source": "soul_undamaged",     "amount": 1 },
+      { "source": "demon_deal_refused", "amount": 2 }
+    ]
+  },
+
+  "categories": [
+
+    {
+      "id": "staff",
+      "name": "Посох",
+      "description": "Покращення захисного удару посохом",
+      "upgrades": [
+        {
+          "id": "staff_reach",
+          "name": "Досяжність",
+          "description": "Радіус удару посохом +40px.",
+          "cost": 4,
+          "max_level": 1,
+          "effect": { "type": "stat", "stat": "staff_range", "value": 40 }
+        },
+        {
+          "id": "staff_cooldown",
+          "name": "Швидка Молитва",
+          "description": "Час перезарядки посоха 4.5 → 3.0 сек.",
+          "cost": 5,
+          "max_level": 1,
+          "effect": { "type": "stat", "stat": "staff_cooldown", "value": -1.5 }
+        },
+        {
+          "id": "staff_purity",
+          "name": "Чиста Молитва",
+          "description": "Удар посохом більше не додає гріх.",
+          "cost": 8,
+          "max_level": 1,
+          "effect": { "type": "flag", "flag": "staff_no_sin" }
+        }
+      ]
+    },
+
+    {
+      "id": "body",
+      "name": "Тіло",
+      "description": "Фізичні здібності гравця",
+      "upgrades": [
+        {
+          "id": "vitality",
+          "name": "Міцність",
+          "description": "+1 удар до смерті. Базово 3 удари, максимум 6.",
+          "cost": 3,
+          "max_level": 3,
+          "effect": { "type": "stat", "stat": "max_hp", "value": 1 }
+        },
+        {
+          "id": "jump",
+          "name": "Стрибок",
+          "description": "Висота стрибка +20%.",
+          "cost": 4,
+          "max_level": 2,
+          "effect": { "type": "stat", "stat": "jump_height", "value": 0.2 }
+        },
+        {
+          "id": "speed",
+          "name": "Швидкість",
+          "description": "Швидкість руху +15%.",
+          "cost": 5,
+          "max_level": 2,
+          "effect": { "type": "stat", "stat": "move_speed", "value": 0.15 }
+        },
+        {
+          "id": "wall_grab",
+          "name": "Чіпкість",
+          "description": "Можна чіплятись за стіну і висіти 2 секунди.",
+          "cost": 6,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "wall_grab", "duration": 2 }
+        },
+        {
+          "id": "soft_landing",
+          "name": "М'яке Падіння",
+          "description": "Пошкодження від падіння зменшуються на 50%.",
+          "cost": 3,
+          "max_level": 1,
+          "effect": { "type": "stat", "stat": "fall_damage", "value": -0.5 }
+        }
+      ]
+    },
+
+    {
+      "id": "soul",
+      "name": "Душа",
+      "description": "Покращення роботи з душами",
+      "upgrades": [
+        {
+          "id": "soul_sense",
+          "name": "Відчуття",
+          "description": "Душі слабко світяться крізь платформи на відстані 3 клітинки.",
+          "cost": 4,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "soul_glow_through_platforms", "range": 3 }
+        },
+        {
+          "id": "soul_shield",
+          "name": "Захист Душі",
+          "description": "Перші 3 секунди після підбору душі вороги не реагують на гравця.",
+          "cost": 5,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "pickup_grace_period", "duration": 3 }
+        },
+        {
+          "id": "quick_pickup",
+          "name": "Швидке Збирання",
+          "description": "Підбір душі миттєвий — без анімації зупинки.",
+          "cost": 6,
+          "max_level": 1,
+          "effect": { "type": "stat", "stat": "pickup_time", "value": 0 }
+        },
+        {
+          "id": "soul_memory",
+          "name": "Пам'ять",
+          "description": "Якщо гравець загинув з душею в руках — душа залишається на місці загибелі, не зникає.",
+          "cost": 8,
+          "max_level": 1,
+          "note": "Без цього апгрейду загибель з душею = душа зникає назавжди з рівня.",
+          "effect": { "type": "ability", "ability": "soul_persists_on_death" }
+        }
+      ]
+    },
+
+    {
+      "id": "prayer",
+      "name": "Молитва",
+      "description": "Захист і духовне очищення",
+      "upgrades": [
+        {
+          "id": "faith_shield",
+          "name": "Щит Віри",
+          "description": "Раз на рівень автоматично блокує один удар ворога.",
+          "cost": 5,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "auto_block", "uses_per_level": 1 }
+        },
+        {
+          "id": "cleansing",
+          "name": "Очищення",
+          "description": "-5% гріха після кожного успішно завершеного рівня.",
+          "cost": 8,
+          "max_level": 2,
+          "incompatible_with": [],
+          "effect": { "type": "stat", "stat": "sin_per_level_end", "value": -0.05 }
+        },
+        {
+          "id": "recognition",
+          "name": "Розпізнавання",
+          "description": "Фальшиві душі та міміки підсвічуються червоним кольором.",
+          "cost": 4,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "reveal_fakes" }
+        },
+        {
+          "id": "temptation_resist",
+          "name": "Опір Спокусі",
+          "description": "Прийнята угода з демоном дає +10% гріха замість +20%.",
+          "cost": 6,
+          "max_level": 1,
+          "effect": { "type": "stat", "stat": "demon_deal_sin_cost", "value": -0.1 }
+        }
+      ]
+    },
+
+    {
+      "id": "stealth",
+      "name": "Хитрість",
+      "description": "Апгрейди для уникнення ворогів",
+      "upgrades": [
+        {
+          "id": "quiet_step",
+          "name": "Тихий Крок",
+          "description": "Вороги чують гравця на меншій відстані. Зона виявлення -30%.",
+          "cost": 5,
+          "max_level": 2,
+          "effect": { "type": "stat", "stat": "enemy_detection_range", "value": -0.3 }
+        },
+        {
+          "id": "invisibility",
+          "name": "Тінь",
+          "description": "Раз на рівень стати невидимим для ворогів на 4 секунди.",
+          "cost": 7,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "invisibility", "duration": 4, "uses_per_level": 1 }
+        },
+        {
+          "id": "distraction",
+          "name": "Відволікання",
+          "description": "Раз на рівень гравець видає гучний звук в протилежному від себе напрямку. Вороги в радіусі 5 клітинок йдуть до джерела звуку на 3 секунди.",
+          "cost": 6,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "sound_distraction", "range": 5, "duration": 3, "uses_per_level": 1 }
+        },
+        {
+          "id": "decoy",
+          "name": "Обманка",
+          "description": "Раз на рівень залишити світловий слід на місці де стояв гравець. Вороги атакують слід 3 секунди.",
+          "cost": 8,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "leave_decoy", "duration": 3, "uses_per_level": 1 }
+        }
+      ]
+    },
+
+    {
+      "id": "foresight",
+      "name": "Провидіння",
+      "description": "Знання і орієнтація на рівні",
+      "upgrades": [
+        {
+          "id": "map",
+          "name": "Карта",
+          "description": "Перед стартом рівня показується загальний контур мапи на 3 секунди.",
+          "cost": 5,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "pre_level_map_preview", "duration": 3 }
+        },
+        {
+          "id": "premonition",
+          "name": "Передчуття",
+          "description": "Ловушки миготять жовтим за 1 секунду до спрацьовування.",
+          "cost": 7,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "trap_warning", "warning_time": 1 }
+        },
+        {
+          "id": "tracker",
+          "name": "Слідопит",
+          "description": "Невелика стрілка вказує напрям до найближчої нерозбудженої душі.",
+          "cost": 8,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "nearest_soul_arrow" }
+        },
+        {
+          "id": "death_memory",
+          "name": "Пам'ять Шляху",
+          "description": "Після загибелі — на екрані видно де саме загинув і які предмети були поруч.",
+          "cost": 6,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "show_death_location" }
+        }
+      ]
+    }
+  ],
+
+  "rules": [
+    {
+      "rule": "cleansing_cap",
+      "description": "'Очищення' не може знизити гріх нижче 5% за рівень — мінімальний залишок завжди є."
+    },
+    {
+      "rule": "stealth_sin",
+      "description": "Використання 'Тінь' або 'Відволікання' не збільшує гріх — це хитрість, не зло."
+    },
+    {
+      "rule": "final_bonus",
+      "description": "На рівні 100 всі апгрейди категорії 'Молитва' дають +10% ефективності."
+    }
+  ]
+}

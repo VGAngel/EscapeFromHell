@@ -1,0 +1,208 @@
+{
+  "version": "1.0",
+
+  "navigation": {
+    "accessible_from": ["main_menu", "pause_menu", "level_complete_screen"],
+    "main_menu_button": {
+      "label": "Врятовані Душі",
+      "position": "main_menu_buttons_list",
+      "icon": "soul_icon_gold",
+      "show_counter": true,
+      "counter_format": "{saved}/100"
+    }
+  },
+
+  "layout": {
+    "sections": {
+      "header": {
+        "position": "top",
+        "elements": [
+          {
+            "id": "title",
+            "type": "label",
+            "text": "Врятовані Душі"
+          },
+          {
+            "id": "counter_named",
+            "type": "counter",
+            "format": "{saved} / 100",
+            "color_default": "white",
+            "color_complete": "gold",
+            "animate_on_complete": true
+          },
+          {
+            "id": "counter_hidden",
+            "type": "counter",
+            "format": "✦ {saved} / 20",
+            "color": "gold",
+            "visible": "always",
+            "tooltip": "Приховані душі — шукай уважніше на кожному рівні"
+          }
+        ]
+      },
+
+      "filters": {
+        "position": "below_header",
+        "elements": [
+          {
+            "id": "filter_all",
+            "type": "tab",
+            "label": "Всі",
+            "default": true
+          },
+          {
+            "id": "filter_circle",
+            "type": "tab_group",
+            "tabs": [
+              { "label": "Коло 1",  "value": 1  },
+              { "label": "Коло 2",  "value": 2  },
+              { "label": "Коло 3",  "value": 3  },
+              { "label": "Коло 4",  "value": 4  },
+              { "label": "Коло 5",  "value": 5  },
+              { "label": "Коло 6",  "value": 6  },
+              { "label": "Коло 7",  "value": 7  },
+              { "label": "Коло 8",  "value": 8  },
+              { "label": "Коло 9",  "value": 9  },
+              { "label": "Коло 10", "value": 10 }
+            ]
+          },
+          {
+            "id": "filter_type",
+            "type": "dropdown",
+            "label": "Тип",
+            "options": [
+              { "label": "Всі типи",  "value": "all"      },
+              { "label": "Невинні",   "value": "innocent" },
+              { "label": "Зламані",   "value": "broken"   },
+              { "label": "Сплячі",    "value": "sleeping" }
+            ]
+          },
+          {
+            "id": "filter_missing",
+            "type": "toggle",
+            "label": "Тільки не знайдені",
+            "default": false
+          }
+        ]
+      },
+
+      "grid": {
+        "position": "center_left",
+        "columns": 8,
+        "cell": {
+          "size": "64x64",
+          "states": {
+            "saved_common": {
+              "frame": "silver",
+              "portrait": "visible",
+              "name_visible": true,
+              "glow_on_hover": true,
+              "glow_color": "white"
+            },
+            "saved_hidden": {
+              "frame": "gold",
+              "portrait": "visible",
+              "name_visible": true,
+              "glow_on_hover": true,
+              "glow_color": "gold",
+              "badge": "✦"
+            },
+            "not_found_common": {
+              "frame": "dark",
+              "portrait": "silhouette",
+              "name_visible": false,
+              "label": "?"
+            },
+            "not_found_hidden": {
+              "frame": "gold",
+              "portrait": "silhouette_dark",
+              "name_visible": false,
+              "label": "?",
+              "glow_color": "gold_dim",
+              "tooltip": "Прихована душа — шукай уважніше"
+            }
+          }
+        }
+      },
+
+      "detail_panel": {
+        "position": "center_right",
+        "visible_when": "cell_selected",
+        "states": {
+          "saved_common": {
+            "elements": [
+              { "id": "portrait",  "type": "image",  "size": "128x128"              },
+              { "id": "name",      "type": "label",  "style": "title"               },
+              { "id": "age",       "type": "label",  "format": "{age} років"        },
+              { "id": "location",  "type": "label",  "format": "Коло {circle} • Рівень {level}" },
+              { "id": "divider",   "type": "line"                                   },
+              { "id": "epitaph",   "type": "label",  "style": "italic", "multiline": true },
+              { "id": "sin",       "type": "label",  "format": "Гріх: {sin}"        }
+            ]
+          },
+          "saved_hidden": {
+            "elements": [
+              { "id": "portrait",      "type": "image",  "size": "128x128", "frame": "gold" },
+              { "id": "name",          "type": "label",  "style": "title_gold"              },
+              { "id": "age",           "type": "label",  "format": "{age} років"            },
+              { "id": "location",      "type": "label",  "format": "Коло {circle} • Прихована" },
+              { "id": "divider",       "type": "line",   "color": "gold"                    },
+              { "id": "full_story",    "type": "label",  "style": "italic", "multiline": true },
+              { "id": "reward_label",  "type": "label",  "text": "Нагорода:"                },
+              { "id": "reward_value",  "type": "label",  "style": "gold", "source": "reward" }
+            ]
+          },
+          "not_found": {
+            "elements": [
+              { "id": "silhouette", "type": "image",  "style": "dark_blur"               },
+              { "id": "unknown",    "type": "label",  "text": "Душа не знайдена"         },
+              { "id": "hint",       "type": "label",  "text": "Продовжуй шукати в цьому Колі" }
+            ]
+          }
+        }
+      }
+    }
+  },
+
+  "animations": {
+    "open_screen": {
+      "type": "fade_in",
+      "duration": 0.4,
+      "soul_particles": true
+    },
+    "cell_hover": {
+      "type": "glow_pulse",
+      "duration": 0.6
+    },
+    "new_soul_added": {
+      "type": "flash_and_appear",
+      "sound": "soul_saved_chime"
+    },
+    "counter_complete": {
+      "trigger": "saved_count_reaches_100",
+      "type": "all_portraits_warm_glow_slow",
+      "sound": "soft_bell_sigh",
+      "duration": 3.0,
+      "text_popup": "Всі 100 душ знайдені",
+      "text_style": "small_centered_fade_in"
+    }
+  },
+
+  "sounds": {
+    "screen_open":     "soft_choir_whisper",
+    "cell_hover":      "soul_hum_soft",
+    "cell_select":     "soul_chime",
+    "hidden_select":   "golden_chime",
+    "filter_change":   "page_turn"
+  },
+
+  "save_data": {
+    "persists": true,
+    "fields_saved": [
+      "saved_soul_ids",
+      "hidden_soul_ids",
+      "total_saved_count",
+      "total_hidden_count"
+    ]
+  }
+}

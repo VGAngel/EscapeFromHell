@@ -1,0 +1,310 @@
+{
+  "version": "1.0",
+
+  "buses": {
+    "note": "Три шини визначені в settings_config.json",
+    "Master": "глобальна гучність",
+    "Music":  "фонова музика і ембієнт",
+    "SFX":    "всі звукові ефекти"
+  },
+
+  "music": {
+
+    "system": {
+      "type": "layered_adaptive",
+      "note": "Кожен трек складається з шарів. Шари додаються/прибираються динамічно залежно від стану гравця.",
+      "crossfade_duration": 1.5,
+      "layer_fade_duration": 0.8
+    },
+
+    "layers": {
+      "base":    "завжди грає на рівні",
+      "tension": "додається коли ворог помітив гравця (alerted фаза)",
+      "chase":   "додається під час активного переслідування",
+      "carry":   "тихий мелодійний шар коли гравець несе душу",
+      "note":    "Шари міксуються в реальному часі — музика адаптується без перемикання треку"
+    },
+
+    "tracks": {
+
+      "main_menu": {
+        "id": "main_menu",
+        "file": "music/menu_theme_ambient",
+        "bus": "Music",
+        "loop": true,
+        "style": "темна оркестрова ембієнт, повільний пульс, без мелодії",
+        "instruments": ["strings_low", "distant_choir", "sparse_piano"]
+      },
+
+      "hub_heaven": {
+        "id": "hub_heaven",
+        "file": "music/heaven_hub_calm",
+        "bus": "Music",
+        "loop": true,
+        "style": "тихий і світлий, відчуття спокою між рівнями",
+        "instruments": ["soft_choir", "harp", "high_strings"],
+        "note": "Єдиний трек де немає відчуття небезпеки"
+      },
+
+      "prologue": {
+        "id": "prologue",
+        "file": "music/prologue_cinematic",
+        "bus": "Music",
+        "loop": false,
+        "style": "кінематографічний, будується від тиші до повного звуку",
+        "instruments": ["solo_cello", "low_organ", "building_strings"]
+      },
+
+      "circles": {
+
+        "circle_1": {
+          "name": "Передпокій",
+          "file_base": "music/circle_01_antechamber",
+          "style": "майже тиша, далекі шерехи, поодинокі ноти фортепіано",
+          "instruments": ["sparse_piano", "distant_wind", "low_drone"],
+          "layers": {
+            "tension": "music/circle_01_tension",
+            "chase":   "music/circle_01_chase",
+            "carry":   "music/circle_01_carry"
+          }
+        },
+
+        "circle_2": {
+          "name": "Вітри",
+          "file_base": "music/circle_02_winds",
+          "style": "завивання вітру як музика, безперервний рух, тривожно",
+          "instruments": ["wind_textures", "ethereal_vocals", "tremolo_strings"],
+          "layers": {
+            "tension": "music/circle_02_tension",
+            "chase":   "music/circle_02_chase",
+            "carry":   "music/circle_02_carry"
+          }
+        },
+
+        "circle_3": {
+          "name": "Вогонь",
+          "file_base": "music/circle_03_fire",
+          "style": "ритмічні низькі барабани, тріск вогню вплетений у ритм",
+          "instruments": ["taiko_drums", "low_brass", "fire_crackling_rhythmic"],
+          "layers": {
+            "tension": "music/circle_03_tension",
+            "chase":   "music/circle_03_chase",
+            "carry":   "music/circle_03_carry"
+          }
+        },
+
+        "circle_4": {
+          "name": "Болота",
+          "file_base": "music/circle_04_swamp",
+          "style": "важка, в'язка, повільний пульс, бульбашки і гниль",
+          "instruments": ["bass_drone", "slow_bass_pulse", "muted_brass"],
+          "layers": {
+            "tension": "music/circle_04_tension",
+            "chase":   "music/circle_04_chase",
+            "carry":   "music/circle_04_carry"
+          }
+        },
+
+        "circle_5": {
+          "name": "Гнів",
+          "file_base": "music/circle_05_wrath",
+          "style": "дисонанс, різкі акценти, нервова напруга",
+          "instruments": ["dissonant_strings", "staccato_brass", "metal_percussion"],
+          "layers": {
+            "tension": "music/circle_05_tension",
+            "chase":   "music/circle_05_chase",
+            "carry":   "music/circle_05_carry"
+          }
+        },
+
+        "circle_6": {
+          "name": "Єресь",
+          "file_base": "music/circle_06_heresy",
+          "style": "готичний орган, спотворені псалми, церковне і демонічне одночасно",
+          "instruments": ["pipe_organ", "distorted_choir", "low_bells"],
+          "layers": {
+            "tension": "music/circle_06_tension",
+            "chase":   "music/circle_06_chase",
+            "carry":   "music/circle_06_carry"
+          }
+        },
+
+        "circle_7": {
+          "name": "Насильство",
+          "file_base": "music/circle_07_violence",
+          "style": "важка і гнітюча, низькі частоти тиснуть, майже без мелодії",
+          "instruments": ["sub_bass_drone", "industrial_percussion", "crushed_strings"],
+          "layers": {
+            "tension": "music/circle_07_tension",
+            "chase":   "music/circle_07_chase",
+            "carry":   "music/circle_07_carry"
+          }
+        },
+
+        "circle_8": {
+          "name": "Обман",
+          "file_base": "music/circle_08_fraud",
+          "style": "механічна, тікаючий годинник, щось розраховує, неприємно точна",
+          "instruments": ["clockwork_mechanical", "pizzicato_strings", "eerie_music_box"],
+          "layers": {
+            "tension": "music/circle_08_tension",
+            "chase":   "music/circle_08_chase",
+            "carry":   "music/circle_08_carry"
+          }
+        },
+
+        "circle_9": {
+          "name": "Зрада",
+          "file_base": "music/circle_09_betrayal",
+          "style": "холодна, майже відсутня, поодинокі льодяні тони, порожнеча",
+          "instruments": ["ice_crystalline", "solo_violin_high", "frozen_silence"],
+          "layers": {
+            "tension": "music/circle_09_tension",
+            "chase":   "music/circle_09_chase",
+            "carry":   "music/circle_09_carry"
+          }
+        },
+
+        "circle_10": {
+          "name": "Трон",
+          "file_base": "music/circle_10_throne",
+          "style": "монументальна і жахлива, відчуття присутності чогось величезного",
+          "instruments": ["full_orchestra_low", "massive_choir", "deep_percussion"],
+          "layers": {
+            "tension": "music/circle_10_tension",
+            "chase":   "music/circle_10_chase",
+            "carry":   "music/circle_10_carry"
+          }
+        }
+
+      },
+
+      "boss_arenas": {
+        "note": "Унікальна музика для кожного боса, без шарів — один цілісний трек",
+        "boss_1":  { "file": "music/boss_01_gatekeeper",  "style": "важкий і повільний, як жорна" },
+        "boss_2":  { "file": "music/boss_02_hydra_flame",  "style": "хаотична, вогняні сплески" },
+        "boss_5":  { "file": "music/boss_05_colossus",     "style": "кроки-удари як ритм, земля тремтить" },
+        "boss_10": { "file": "music/boss_10_lucifer",      "style": "тиша з одним голосом, що росте до оркестру" }
+      },
+
+      "level_complete": {
+        "file": "music/level_complete_chime",
+        "style": "коротка, тепла, відчуття полегшення",
+        "duration": 4.0
+      },
+
+      "god_message": {
+        "note": "Не окремий трек — поточна музика приглушується до -18db, додається reverb_god",
+        "music_duck_db": -18,
+        "reverb_preset": "reverb_god",
+        "fade_back_duration": 2.0
+      }
+
+    }
+  },
+
+  "sfx": {
+
+    "player": {
+      "footstep_stone":   "sfx/player/footstep_stone",
+      "footstep_dirt":    "sfx/player/footstep_dirt",
+      "footstep_metal":   "sfx/player/footstep_metal",
+      "jump":             "sfx/player/jump_whoosh",
+      "land_soft":        "sfx/player/land_soft",
+      "land_hard":        "sfx/player/land_hard",
+      "hurt":             "sfx/player/hurt_grunt",
+      "death":            "sfx/player/death_gasp",
+      "respawn":          "sfx/player/respawn_breath"
+    },
+
+    "souls": {
+      "innocent_idle":       "sfx/souls/innocent_hum",
+      "sleeping_idle":       "sfx/souls/sleeping_breath",
+      "mimic_idle":          "sfx/souls/mimic_dissonance",
+      "pickup_resonance":    "sfx/souls/pickup_resonance",
+      "carrying_hum":        "sfx/souls/carrying_hum_loop",
+      "delivered":           "sfx/souls/delivered_chime",
+      "soul_memory_marker":  "sfx/souls/memory_marker_place",
+      "awaken_rise":         "sfx/souls/sleeping_awaken",
+      "mimic_reveal":        "sfx/souls/mimic_reveal_screech",
+      "mimic_banished":      "sfx/souls/mimic_banished",
+      "exorcism_swell":      "sfx/souls/exorcism_prayer"
+    },
+
+    "minigames": {
+      "heartbeat_slow":      "sfx/minigame/heartbeat_slow",
+      "heartbeat_rhythm":    "sfx/minigame/heartbeat_rhythm",
+      "spark_scatter":       "sfx/minigame/spark_scatter",
+      "echo_intro":          "sfx/minigame/echo_intro",
+      "prayer_hum":          "sfx/minigame/prayer_hum",
+      "minigame_success":    "sfx/minigame/success_soft",
+      "minigame_fail":       "sfx/minigame/fail_dim"
+    },
+
+    "enemies": {
+      "patrol_step":         "sfx/enemy/patrol_step",
+      "alert":               "sfx/enemy/alert_grunt",
+      "chase_start":         "sfx/enemy/chase_growl",
+      "give_up":             "sfx/enemy/give_up_grumble",
+      "nearby_breathing":    "sfx/enemy/nearby_breath_loop"
+    },
+
+    "environment": {
+      "lava_bubble":         "sfx/env/lava_bubble_loop",
+      "fire_crackle":        "sfx/env/fire_crackle_loop",
+      "wind_howl":           "sfx/env/wind_howl_loop",
+      "swamp_bubble":        "sfx/env/swamp_bubble_loop",
+      "water_drip":          "sfx/env/water_drip",
+      "chain_clank":         "sfx/env/chain_clank",
+      "mechanism_turn":      "sfx/env/mechanism_turn",
+      "door_open":           "sfx/env/door_heavy_open",
+      "trap_trigger":        "sfx/env/trap_trigger_snap"
+    },
+
+    "ui": {
+      "button_hover":        "sfx/ui/hover_soft",
+      "button_click":        "sfx/ui/click_soft",
+      "tab_switch":          "sfx/ui/tab_soft",
+      "toggle_on":           "sfx/ui/toggle_on",
+      "toggle_off":          "sfx/ui/toggle_off",
+      "slider_change":       "sfx/ui/slider_tick",
+      "pause_open":          "sfx/ui/pause_chime",
+      "pause_close":         "sfx/ui/pause_chime",
+      "level_complete":      "sfx/ui/level_complete_chime",
+      "star_appear_soft":    "sfx/ui/star_soft",
+      "star_appear_gold":    "sfx/ui/star_gold",
+      "choir_swell_soft":    "sfx/ui/choir_swell",
+      "golden_chime":        "sfx/ui/golden_chime"
+    },
+
+    "bonuses": {
+      "pickup_generic":      "sfx/bonus/pickup_shimmer",
+      "holy_water":          "sfx/bonus/holy_water_splash",
+      "angel_feather":       "sfx/bonus/feather_flutter",
+      "manna":               "sfx/bonus/manna_pulse",
+      "expiring_tick":       "sfx/bonus/expiring_tick",
+      "expired":             "sfx/bonus/expired_fade"
+    },
+
+    "sin": {
+      "sin_increase":        "sfx/sin/sin_rise_pulse",
+      "sin_decrease":        "sfx/sin/sin_drop_soft",
+      "sin_critical":        "sfx/sin/sin_critical_drone",
+      "sin_warning_80":      "sfx/sin/sin_warning_heartbeat"
+    }
+
+  },
+
+  "spatial_audio": {
+    "note": "Вороги і навколишнє середовище мають просторовий звук",
+    "enemy_nearby_breathing": {
+      "enabled": true,
+      "max_distance": 300,
+      "note": "Гравець чує дихання ворога ще до того як бачить його"
+    },
+    "soul_hum_range": {
+      "max_distance": 250,
+      "note": "Душа видає звук — можна почути до того як побачив"
+    }
+  }
+}

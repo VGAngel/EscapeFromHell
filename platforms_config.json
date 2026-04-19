@@ -1,0 +1,227 @@
+{
+  "version": "1.0",
+
+  "categories": ["static", "moving", "temporary", "hazardous", "special"],
+
+  "platforms": {
+
+    "stone": {
+      "id": "stone",
+      "category": "static",
+      "behavior": "solid_always",
+      "circles": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "note": "Базова платформа. Є скрізь."
+    },
+
+    "one_way": {
+      "id": "one_way",
+      "category": "static",
+      "behavior": "solid_from_above_only",
+      "note": "Можна стрибнути крізь знизу. Стандартна механіка.",
+      "circles": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+
+    "moving_horizontal": {
+      "id": "moving_horizontal",
+      "category": "moving",
+      "behavior": "moves_left_right",
+      "speed": { "min": 60, "max": 140 },
+      "range": { "min": 80, "max": 300 },
+      "reverses_at_edge": true,
+      "circles": [2, 4, 6, 8, 10],
+      "sound_loop": "sfx/platform/platform_move_grind"
+    },
+
+    "moving_vertical": {
+      "id": "moving_vertical",
+      "category": "moving",
+      "behavior": "moves_up_down",
+      "speed": { "min": 50, "max": 120 },
+      "range": { "min": 80, "max": 400 },
+      "reverses_at_edge": true,
+      "circles": [1, 3, 5, 7, 9],
+      "sound_loop": "sfx/platform/platform_move_grind"
+    },
+
+    "crumbling": {
+      "id": "crumbling",
+      "category": "temporary",
+      "behavior": "breaks_after_standing",
+      "delay_before_break": 1.2,
+      "visual_warning": "shake_and_dust_at_0.8s",
+      "respawn_after": 5.0,
+      "circles": [1, 3, 5, 7, 9, 10],
+      "sound_warning": "sfx/platform/crumble_warning",
+      "sound_break":   "sfx/platform/crumble_break",
+      "note": "Гравець бачить тремтіння — треба або добігти або стрибнути вчасно"
+    },
+
+    "falling": {
+      "id": "falling",
+      "category": "temporary",
+      "behavior": "falls_when_stepped_on",
+      "delay_before_fall": 0.4,
+      "fall_speed": 400,
+      "respawn": false,
+      "circles": [5, 7, 8, 10],
+      "sound_trigger": "sfx/platform/falling_chain_snap",
+      "note": "Падає разом з гравцем якщо не зістрибнути. Не відновлюється."
+    },
+
+    "ash": {
+      "id": "ash",
+      "category": "temporary",
+      "behavior": "sinks_slowly_under_weight",
+      "sink_speed": 30,
+      "max_sink": 16,
+      "restores_when_off": true,
+      "restore_speed": 20,
+      "circles": [3, 4],
+      "visual": "ash_dust_particles_while_sinking",
+      "sound_loop": "sfx/platform/ash_creak",
+      "note": "Повільно просідає під вагою, відновлюється коли гравець сходить"
+    },
+
+    "ice": {
+      "id": "ice",
+      "category": "hazardous",
+      "behavior": "slippery",
+      "friction": 0.05,
+      "note": "Майже без тертя — гравець ковзає, важко зупинитись",
+      "circles": [9],
+      "visual": "ice_glint_shimmer",
+      "sound_step": "sfx/platform/ice_step"
+    },
+
+    "lava_edge": {
+      "id": "lava_edge",
+      "category": "hazardous",
+      "behavior": "damages_on_prolonged_contact",
+      "safe_time": 2.0,
+      "damage_per_second": 1,
+      "visual_warning": "platform_glows_red_after_1s",
+      "circles": [3, 5, 7],
+      "sound_loop": "sfx/platform/lava_heat_hiss",
+      "note": "Можна стояти 2 сек безпечно. Потім починає пекти."
+    },
+
+    "sin_platform": {
+      "id": "sin_platform",
+      "category": "hazardous",
+      "behavior": "increases_sin_while_standing",
+      "sin_per_second": 2,
+      "visual": "dark_red_glow_pulsing",
+      "circles": [6, 8, 10],
+      "sound_loop": "sfx/platform/sin_pulse_low",
+      "note": "Проклята платформа. Стоїш — гріх росте. Іноді єдиний шлях."
+    },
+
+    "conveyor": {
+      "id": "conveyor",
+      "category": "special",
+      "behavior": "pushes_player_horizontally",
+      "speed": 80,
+      "direction": "set_per_instance",
+      "circles": [8],
+      "visual": "moving_arrow_texture",
+      "sound_loop": "sfx/platform/conveyor_loop",
+      "note": "Механічне коло — конвеєри штовхають у потрібному або непотрібному напрямку"
+    },
+
+    "bounce": {
+      "id": "bounce",
+      "category": "special",
+      "behavior": "launches_player_upward",
+      "launch_multiplier": 2.2,
+      "visual": "membrane_compress_and_expand",
+      "circles": [2, 5],
+      "sound": "sfx/platform/bounce_spring",
+      "note": "Підкидає гравця вище звичайного стрибка. Корисно на вертикальних рівнях."
+    },
+
+    "chain": {
+      "id": "chain",
+      "category": "special",
+      "behavior": "swings_pendulum",
+      "swing_angle": 45,
+      "swing_speed": 1.2,
+      "note": "Гравець стає на платформу що гойдається. Треба зістрибнути в правильний момент.",
+      "circles": [4, 7],
+      "sound_loop": "sfx/platform/chain_creak"
+    },
+
+    "pressure_plate": {
+      "id": "pressure_plate",
+      "category": "special",
+      "behavior": "triggers_mechanism_while_pressed",
+      "linked_to": "set_per_level",
+      "triggers": ["open_door", "extend_bridge", "lower_platform", "disable_trap"],
+      "visual": "glows_when_active",
+      "circles": [1, 6, 8],
+      "sound_activate": "sfx/platform/plate_click",
+      "note": "Гравець стоїть → механізм активний. Зійшов → вимикається. Іноді треба чимось завантажити."
+    },
+
+    "illusory": {
+      "id": "illusory",
+      "category": "special",
+      "behavior": "disappears_on_touch",
+      "reappear_after": 3.0,
+      "visual_tell": "slight_transparency_flicker",
+      "circles": [8, 10],
+      "sound_disappear": "sfx/platform/illusion_vanish",
+      "sound_reappear":  "sfx/platform/illusion_appear",
+      "note": "Виглядає як звичайна платформа але злегка мерехтить. Зникає при торканні. Коло Обману."
+    },
+
+    "faith": {
+      "id": "faith",
+      "category": "special",
+      "behavior": "solid_only_when_sin_below_threshold",
+      "sin_threshold": 50,
+      "visual_solid":   "bright_white_glow",
+      "visual_phantom": "faint_outline_only",
+      "circles": [6, 9, 10],
+      "sound_activate": "sfx/platform/faith_solidify",
+      "sound_deactivate": "sfx/platform/faith_fade",
+      "note": "Якщо гріх > 50% — платформа лише примара, провалюєшся крізь неї. Мотивує тримати гріх низьким."
+    },
+
+    "soul_bridge": {
+      "id": "soul_bridge",
+      "category": "special",
+      "behavior": "appears_only_when_carrying_soul",
+      "visual_without_soul": "invisible",
+      "visual_with_soul": "translucent_blue_glow",
+      "circles": [7, 9, 10],
+      "sound_appear": "sfx/platform/soul_bridge_hum",
+      "note": "Невидима без душі в руках. З душею — з'являється. Деякі маршрути відкриті тільки коли несеш душу."
+    },
+
+    "mud": {
+      "id": "mud",
+      "category": "hazardous",
+      "behavior": "slows_movement",
+      "speed_multiplier": 0.55,
+      "visual": "dark_muddy_surface_bubbles",
+      "circles": [4],
+      "sound_step": "sfx/platform/mud_squelch",
+      "note": "Болото. Сповільнює пересування — небезпечно якщо переслідують."
+    }
+
+  },
+
+  "circle_platform_sets": {
+    "note": "Які типи платформ переважають в кожному колі",
+    "circle_1":  ["stone", "one_way", "crumbling", "moving_vertical", "pressure_plate"],
+    "circle_2":  ["stone", "one_way", "moving_horizontal", "moving_vertical", "bounce"],
+    "circle_3":  ["stone", "one_way", "crumbling", "ash", "lava_edge"],
+    "circle_4":  ["stone", "one_way", "mud", "ash", "chain", "moving_horizontal"],
+    "circle_5":  ["stone", "one_way", "crumbling", "falling", "bounce", "lava_edge"],
+    "circle_6":  ["stone", "one_way", "sin_platform", "pressure_plate", "faith"],
+    "circle_7":  ["stone", "one_way", "crumbling", "falling", "lava_edge", "chain", "soul_bridge"],
+    "circle_8":  ["stone", "one_way", "conveyor", "illusory", "falling", "pressure_plate"],
+    "circle_9":  ["stone", "one_way", "ice", "crumbling", "faith", "soul_bridge"],
+    "circle_10": ["stone", "one_way", "crumbling", "falling", "sin_platform", "illusory", "faith", "soul_bridge"]
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "version": "1.0",
+
+  "approach": "hybrid",
+  "note": "Статичні рівні для ключових моментів. Решта збирається з готових кімнат-блоків.",
+
+  "static_levels": {
+    "note": "Ці рівні зроблені вручну повністю. Не генеруються.",
+
+    "boss_levels": [10, 20, 30, 50, 70, 100],
+
+    "circle_openers": {
+      "levels": [1, 11, 21, 31, 41, 51, 61, 71, 81, 91],
+      "note": "Перший рівень кожного кола — наративний. Тут God message, особлива атмосфера."
+    },
+
+    "hidden_soul_levels": {
+      "note": "Рівні де є приховані душі — статичні щоб підказки і розміщення були точними.",
+      "determined_by": "souls_collection.json hidden souls circle/level fields"
+    },
+
+    "milestone_levels": [50, 75, 99, 100],
+
+    "total_static_estimate": "~35 рівнів"
+  },
+
+  "procedural_levels": {
+    "note": "~65 рівнів збираються з кімнат-блоків при завантаженні рівня.",
+    "total_procedural_estimate": "~65 рівнів",
+
+    "assembly": {
+      "method": "sequential_rooms",
+      "room_count_per_level": { "min": 3, "max": 6 },
+      "note": "Рівень = послідовність кімнат. Перша кімната — вхід, остання — вихід.",
+
+      "room_types": {
+        "entrance": {
+          "count": 1,
+          "position": "first",
+          "note": "Завжди безпечна — ворогів немає, гравець орієнтується"
+        },
+        "main": {
+          "count": "1-4",
+          "position": "middle",
+          "note": "Основний контент: вороги, душі, пастки, платформи"
+        },
+        "exit": {
+          "count": 1,
+          "position": "last",
+          "note": "Вихід з рівня. Може мати охорону."
+        }
+      },
+
+      "soul_placement": {
+        "method": "pick_from_circle_pool",
+        "note": "Для кожного рівня береться відповідна іменна душа з souls_collection.json. Розміщується в main кімнаті за правилами кола.",
+        "guard_rules": "soul_mechanics_config.json guard_scaling"
+      },
+
+      "seed": {
+        "based_on": "level_id",
+        "note": "Однаковий рівень завжди генерується однаково. Гравець може вивчити рівень при повторній спробі."
+      }
+    },
+
+    "room_pools": {
+      "note": "Для кожного кола — свій набір кімнат. 20-30 кімнат на коло.",
+
+      "circle_1": {
+        "style": "antechamber_stone",
+        "platforms": ["stone", "one_way", "crumbling", "moving_vertical", "pressure_plate"],
+        "enemies": ["shadow_lost", "pale_wanderer"],
+        "traps": ["spike_floor", "falling_rock"],
+        "rooms_count": 24
+      },
+
+      "circle_2": {
+        "style": "wind_corridors",
+        "platforms": ["stone", "one_way", "moving_horizontal", "moving_vertical", "bounce"],
+        "enemies": ["wind_shade", "pale_wanderer"],
+        "traps": ["wind_burst", "spike_floor"],
+        "rooms_count": 22,
+        "special": "wind_pushes_player_horizontally_in_some_rooms"
+      },
+
+      "circle_3": {
+        "style": "fire_caverns",
+        "platforms": ["stone", "one_way", "crumbling", "ash", "lava_edge"],
+        "enemies": ["flame_imp", "fire_hound"],
+        "traps": ["lava_geyser", "fire_jet"],
+        "rooms_count": 26
+      },
+
+      "circle_4": {
+        "style": "dark_swamps",
+        "platforms": ["stone", "one_way", "mud", "ash", "chain", "moving_horizontal"],
+        "enemies": ["swamp_crawler", "bog_phantom"],
+        "traps": ["poison_puddle", "sinking_floor"],
+        "rooms_count": 24
+      },
+
+      "circle_5": {
+        "style": "rage_ruins",
+        "platforms": ["stone", "one_way", "crumbling", "falling", "bounce", "lava_edge"],
+        "enemies": ["rage_shade", "iron_wraith", "frost_knight"],
+        "traps": ["spike_wall", "falling_ceiling"],
+        "rooms_count": 26,
+        "note": "frost_knight — сильний рідкісний ворог, з'являється на рівнях 7-9 кола"
+      },
+
+      "circle_6": {
+        "style": "heresy_cathedral",
+        "platforms": ["stone", "one_way", "sin_platform", "pressure_plate", "faith"],
+        "enemies": ["heresy_priest", "cursed_stone"],
+        "traps": ["sin_trap", "false_floor"],
+        "rooms_count": 22,
+        "special": "faith_platforms_appear_disappear_by_player_sin"
+      },
+
+      "circle_7": {
+        "style": "violence_fortress",
+        "platforms": ["stone", "one_way", "crumbling", "falling", "lava_edge", "chain", "soul_bridge"],
+        "enemies": ["hell_knight", "blood_hound"],
+        "traps": ["axe_pendulum", "spike_floor", "collapsing_bridge"],
+        "rooms_count": 28
+      },
+
+      "circle_8": {
+        "style": "fraud_machine",
+        "platforms": ["stone", "one_way", "conveyor", "illusory", "falling", "pressure_plate"],
+        "enemies": ["mimic_shade", "clockwork_guard"],
+        "traps": ["false_wall", "trapdoor"],
+        "rooms_count": 28,
+        "special": "illusory_platforms_require_observation_before_stepping"
+      },
+
+      "circle_9": {
+        "style": "betrayal_ice",
+        "platforms": ["stone", "one_way", "ice", "crumbling", "faith", "soul_bridge"],
+        "enemies": ["frost_shade", "silent_stalker"],
+        "traps": ["ice_spike", "cracking_floor"],
+        "rooms_count": 24,
+        "special": "ice_physics_require_planning_before_jumping"
+      },
+
+      "circle_10": {
+        "style": "throne_abyss",
+        "platforms": ["stone", "one_way", "crumbling", "falling", "sin_platform", "illusory", "faith", "soul_bridge"],
+        "enemies": ["void_sentinel", "throne_guard", "hell_knight"],
+        "traps": ["void_pull", "sin_trap", "axe_pendulum"],
+        "rooms_count": 30,
+        "note": "Використовує платформи і ворогів з усіх попередніх кіл"
+      }
+    }
+  },
+
+  "difficulty_injection": {
+    "note": "Навіть в межах одного кола складність зростає від першого до останнього рівня",
+    "method": "level_index_within_circle",
+    "levels_1_3":  { "enemy_count_mod": -1, "trap_density": "low",    "room_count": 3 },
+    "levels_4_6":  { "enemy_count_mod":  0, "trap_density": "medium", "room_count": 4 },
+    "levels_7_9":  { "enemy_count_mod": +1, "trap_density": "high",   "room_count": 5 },
+    "level_10":    { "note": "Boss — статичний, не генерується" }
+  },
+
+  "level_type_distribution": {
+    "note": "Типи рівнів з levels_config.json розподіляються по слотах всередині кола",
+    "pattern_per_circle": ["platformer", "platformer", "vertical", "platformer", "labyrinth", "platformer", "void", "platformer", "escape", "boss"],
+    "note2": "Шаблон повторюється для кожного кола. Void і escape — завжди на фіксованих позиціях."
+  }
+}

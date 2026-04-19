@@ -1,0 +1,293 @@
+{
+  "version": "1.1",
+
+  "soul_types": {
+
+    "innocent": {
+      "id": "innocent",
+      "collect": "on_touch",
+      "carry_to_exit": true,
+      "visual": {
+        "glow_color": "#FFFFFF",
+        "pulse": "steady",
+        "float_amplitude": 4,
+        "particle": "soft_sparkle"
+      },
+      "sound_idle": "soul_hum_soft",
+      "sound_collect": "soul_collect_chime",
+      "guard_scaling": {
+        "note": "Кількість і складність охорони залежить від кола рівня",
+        "circles_1_2": "none_or_distant_patrol",
+        "circles_3_5": "one_guard_nearby",
+        "circles_6_8": "two_guards_plus_trap",
+        "circles_9_10": "locked_behind_mechanism"
+      }
+    },
+
+    "sleeping": {
+      "id": "sleeping",
+      "collect": "after_minigame",
+      "carry_to_exit": true,
+      "visual": {
+        "glow_color": "#8899BB",
+        "pulse": "very_slow",
+        "float_amplitude": 1,
+        "particle": "dim_dust",
+        "note": "Виглядає приглушено, майже нерухома"
+      },
+      "sound_idle": "soul_sleeping_breath",
+      "sound_awaken": "soul_awaken_rise",
+      "sound_collect": "soul_collect_warm",
+
+      "approach_distance": 80,
+      "hint_display_duration": 1.5,
+      "hint_note": "За 1.5 сек до старту показується іконка + текст підказки",
+
+      "minigame_fail": {
+        "retry_delay": 20,
+        "penalty": "none",
+        "visual": "soul_dims_briefly"
+      },
+
+      "minigame_pool_by_circles": {
+        "circles_1_3": ["silence", "rhythm"],
+        "circles_4_6": ["silence", "rhythm", "flames"],
+        "circles_7_8": ["rhythm", "flames", "echo"],
+        "circles_9_10": ["rhythm", "echo", "prayer"]
+      },
+
+      "minigames": {
+
+        "silence": {
+          "id": "silence",
+          "hint_icon": "🤫",
+          "hint_key": "souls.minigame_hint_silence",
+          "duration": 4,
+          "mechanic": "player_must_not_move_for_duration",
+          "fail_condition": "any_movement_input",
+          "visual_feedback": "circle_timer_around_soul",
+          "sound_start": "minigame_heartbeat_slow"
+        },
+
+        "rhythm": {
+          "id": "rhythm",
+          "hint_icon": "♪",
+          "hint_key": "souls.minigame_hint_rhythm",
+          "beats": { "min": 3, "max": 5 },
+          "beat_interval": { "min": 0.6, "max": 1.0 },
+          "mechanic": "press_action_on_each_pulse",
+          "tolerance_ms": 200,
+          "fail_condition": "missed_2_beats_or_wrong_timing",
+          "visual_feedback": "soul_pulses_brighter_on_beat",
+          "sound_start": "minigame_heartbeat_rhythm"
+        },
+
+        "flames": {
+          "id": "flames",
+          "hint_icon": "🕯",
+          "hint_key": "souls.minigame_hint_flames",
+          "sparks_count": 3,
+          "time_limit": 10,
+          "spawn_radius": 160,
+          "mechanic": "collect_all_sparks_in_time",
+          "fail_condition": "time_expired",
+          "visual_feedback": "sparks_glow_appear_around_soul",
+          "sound_start": "minigame_spark_scatter"
+        },
+
+        "echo": {
+          "id": "echo",
+          "hint_icon": "👂",
+          "hint_key": "souls.minigame_hint_echo",
+          "pattern_length": { "min": 2, "max": 4 },
+          "mechanic": "listen_sound_pattern_then_repeat_button_timing",
+          "playback_before_input": true,
+          "fail_condition": "wrong_timing_or_extra_press",
+          "visual_feedback": "waveform_shown_during_playback",
+          "sound_start": "minigame_echo_intro"
+        },
+
+        "prayer": {
+          "id": "prayer",
+          "hint_icon": "🙏",
+          "hint_key": "souls.minigame_hint_prayer",
+          "hold_duration": 3,
+          "mechanic": "hold_action_button_for_duration",
+          "fail_condition": "released_early",
+          "visual_feedback": "golden_light_grows_while_holding",
+          "effect_while_holding": "sin_paused",
+          "note": "Гріх не накопичується поки гравець утримує кнопку",
+          "sound_start": "minigame_prayer_hum"
+        }
+
+      }
+    },
+
+    "mimic": {
+      "id": "mimic",
+      "collect": "exorcism_or_avoid",
+      "carry_to_exit": false,
+
+      "visual_tells": {
+        "note": "Гравець вчиться впізнавати міміка за підказками",
+        "pulse": "irregular_twitch",
+        "glow_color": "#CC99FF",
+        "shadow_direction": "wrong",
+        "particle": "faint_dark_wisps"
+      },
+      "sound_idle": "soul_mimic_dissonance",
+      "sound_expose": "mimic_hiss",
+
+      "recognition_upgrade": {
+        "upgrade_id": "recognition",
+        "effect": "highlight_red_glow",
+        "note": "Апгрейд Розпізнавання підсвічує міміка червоним"
+      },
+
+      "on_wrong_touch": {
+        "sin_penalty": 10,
+        "spawns_enemy": true,
+        "enemy_duration": 15,
+        "visual": "jumpscare_flash_red",
+        "sound": "mimic_reveal_screech"
+      },
+
+      "exorcism": {
+        "trigger": "hold_action_near_mimic",
+        "required_hold": 2.0,
+        "distance": 60,
+        "note": "Гравець утримує кнопку поряд — священик читає молитву",
+        "visual_feedback": "golden_cross_light_expands",
+        "sound": "exorcism_prayer_swell",
+        "on_success": {
+          "sin_delta": -3,
+          "reward_light": 10,
+          "visual": "mimic_dissolves_dark_smoke",
+          "sound": "mimic_banished"
+        },
+        "can_fail_if": "player_moves_during_hold",
+        "fail_result": "exorcism_cancelled_no_penalty"
+      }
+    }
+
+  },
+
+  "carrying_mechanic": {
+    "applies_to": ["innocent", "sleeping"],
+    "speed_penalty": 0,
+    "note": "Несення не сповільнює — напруга створюється переслідуванням ворогів",
+
+    "visual": {
+      "soul_position": "floats_above_player_head",
+      "player_aura": "faint_white_glow",
+      "note": "Гравець світиться — вороги помічають швидше"
+    },
+
+    "enemy_alert": {
+      "note": "Підбір душі може привернути увагу ворогів поруч",
+      "alert_radius_on_pickup": 200,
+      "alert_sound": "soul_pickup_resonance",
+      "note2": "Вороги в радіусі чують звук і починають переслідування"
+    },
+
+    "on_player_death": {
+      "default": "soul_drops_at_death_location",
+      "with_soul_memory_upgrade": "soul_stays_marked_on_minimap"
+    },
+
+    "on_exit_to_menu": {
+      "result": "soul_lost",
+      "warning_key": "pause.exit_message"
+    }
+  },
+
+  "enemy_chase": {
+    "note": "Переслідування після підбору душі — основна напруга гри",
+
+    "trigger": "soul_picked_up_within_enemy_detection_range",
+
+    "phases": {
+      "alerted": {
+        "duration": 1.0,
+        "behavior": "enemy_turns_toward_player_pause",
+        "visual": "exclamation_mark_above_enemy",
+        "sound": "enemy_alert_grunt"
+      },
+      "chasing": {
+        "behavior": "enemy_moves_toward_player_at_chase_speed",
+        "visual": "enemy_eyes_glow_red"
+      },
+      "giving_up": {
+        "behavior": "enemy_slows_stops_returns_to_patrol",
+        "visual": "question_mark_above_enemy",
+        "sound": "enemy_lose_target_grumble"
+      }
+    },
+
+    "scaling_by_circle": {
+      "note": "Чим глибше коло — довше, швидше і більше ворогів переслідує. Не всі вороги в радіусі гонятимуться — решта залишається на патрулі.",
+      "circles_1_2":  { "chase_duration": 4,  "chase_speed_multiplier": 1.1, "max_chasers": 1 },
+      "circles_3_4":  { "chase_duration": 6,  "chase_speed_multiplier": 1.2, "max_chasers": 1 },
+      "circles_5_6":  { "chase_duration": 8,  "chase_speed_multiplier": 1.3, "max_chasers": 2 },
+      "circles_7_8":  { "chase_duration": 10, "chase_speed_multiplier": 1.4, "max_chasers": 2 },
+      "circles_9_10": { "chase_duration": 14, "chase_speed_multiplier": 1.5, "max_chasers": 3 }
+    },
+
+    "chaser_selection": {
+      "note": "Якщо в радіусі більше ворогів ніж max_chasers — переслідують найближчі",
+      "priority": "closest_first",
+      "rest_behavior": "continue_patrol",
+      "note2": "Вороги що не гоняться — продовжують патруль. Це створює ситуацію: втік від одного, але попав під другого."
+    },
+
+    "upgrades_interaction": {
+      "soul_shield": {
+        "upgrade_id": "soul_shield",
+        "effect": "enemies_ignore_player_for_3_sec_after_pickup",
+        "note": "3 секунди після підбору — вороги не реагують. Дає фору для втечі."
+      },
+      "quick_pickup": {
+        "upgrade_id": "quick_pickup",
+        "effect": "no_pickup_animation",
+        "note": "Без анімації підбору — гравець одразу може бігти"
+      },
+      "quiet_step": {
+        "upgrade_id": "quiet_step",
+        "effect": "alert_radius_on_pickup_reduced_30_percent",
+        "note": "Звук підбору тихіший — менший радіус сповіщення"
+      },
+      "invisibility": {
+        "upgrade_id": "invisibility",
+        "effect": "chase_broken_immediately_when_activated",
+        "note": "Активація невидимості скидає переслідування"
+      }
+    },
+
+    "special_cases": {
+      "multiple_enemies": {
+        "note": "Якщо кілька ворогів почули — кожен переслідує незалежно зі своїм таймером"
+      },
+      "enemy_loses_sight": {
+        "note": "Якщо ворог втратив гравця з виду — таймер продовжує йти, але ворог іде до останньої відомої позиції"
+      },
+      "soul_dropped_on_death": {
+        "note": "Якщо гравець помер і душа впала — вороги повертаються до патрулювання"
+      }
+    }
+  },
+
+  "localization_keys": {
+    "note": "Вже додано до uk.json та en.json",
+    "keys": [
+      "souls.minigame_hint_silence",
+      "souls.minigame_hint_rhythm",
+      "souls.minigame_hint_flames",
+      "souls.minigame_hint_echo",
+      "souls.minigame_hint_prayer",
+      "souls.minigame_fail_message",
+      "souls.mimic_warning",
+      "souls.exorcism_success",
+      "souls.carrying_label"
+    ]
+  }
+}

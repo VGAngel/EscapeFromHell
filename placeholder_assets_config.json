@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "note": "Кольори для placeholder прямокутників. Замінюються реальними asset'ами пізніше.",
+
+  "platforms": {
+    "stone":            { "color": "#666666", "label": "Stone" },
+    "one_way":          { "color": "#888888", "label": "One-Way", "opacity": 0.7 },
+    "moving_horizontal":{ "color": "#4488FF", "label": "Move H" },
+    "moving_vertical":  { "color": "#2266DD", "label": "Move V" },
+    "crumbling":        { "color": "#AA6633", "label": "Crumble" },
+    "falling":          { "color": "#CC5500", "label": "Fall" },
+    "ash":              { "color": "#BBAA99", "label": "Ash" },
+    "ice":              { "color": "#AADDFF", "label": "Ice" },
+    "mud":              { "color": "#664422", "label": "Mud" },
+    "lava_edge":        { "color": "#FF4400", "label": "Lava" },
+    "sin_platform":     { "color": "#880033", "label": "Sin" },
+    "conveyor":         { "color": "#FFCC00", "label": "Conv" },
+    "bounce":           { "color": "#44CC44", "label": "Bounce" },
+    "chain":            { "color": "#AAAA44", "label": "Chain" },
+    "pressure_plate":   { "color": "#00CCCC", "label": "Plate" },
+    "illusory":         { "color": "#AA66FF", "label": "Illusion", "opacity": 0.6 },
+    "faith":            { "color": "#FFFFAA", "label": "Faith" },
+    "soul_bridge":      { "color": "#66AAFF", "label": "SoulBridge", "opacity": 0.5 }
+  },
+
+  "souls": {
+    "innocent":  { "color": "#FFFFFF", "size": [16, 16], "label": "Soul" },
+    "sleeping":  { "color": "#8899BB", "size": [16, 16], "label": "Sleep" },
+    "mimic":     { "color": "#CC99FF", "size": [16, 16], "label": "Mimic" }
+  },
+
+  "enemies": {
+    "default":          { "color": "#FF3333", "size": [24, 32] },
+    "fast":             { "color": "#FF6600", "size": [20, 28] },
+    "large":            { "color": "#AA0000", "size": [32, 48] },
+    "flying":           { "color": "#FF4488", "size": [24, 24] }
+  },
+
+  "traps": {
+    "spike_floor":      { "color": "#FF2200", "size": [32, 12] },
+    "lava_geyser":      { "color": "#FF6600", "size": [16, 48] },
+    "fire_jet":         { "color": "#FF4400", "size": [12, 64] },
+    "falling_rock":     { "color": "#885533", "size": [32, 32] },
+    "axe_pendulum":     { "color": "#CC2200", "size": [12, 48] },
+    "trapdoor":         { "color": "#CC5500", "size": [48, 8] }
+  },
+
+  "player": {
+    "color": "#00FFCC",
+    "size": [20, 32]
+  },
+
+  "exit": {
+    "color": "#FFD700",
+    "size": [32, 48],
+    "label": "EXIT"
+  },
+
+  "spawn": {
+    "color": "#00FF88",
+    "size": [32, 8],
+    "label": "SPAWN"
+  },
+
+  "bonuses": {
+    "default": { "color": "#FFFF44", "size": [16, 16] }
+  }
+}

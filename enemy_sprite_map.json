@@ -1,0 +1,283 @@
+{
+  "version": "1.0",
+  "base_path": "res://Assets/enemies/",
+  "anim_subpath": "PNG/PNG Sequences/",
+
+  "note": "Шлях до кадрів: base_path + pack + / + character + / + anim_subpath + animation_folder",
+
+  "enemies": {
+
+    "shadow_lost": {
+      "pack": "free-fallen-angel-chibi-2d-game-sprites",
+      "character": "Fallen_Angels_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "pale_wanderer": {
+      "pack": "free-reaper-man-chibi-2d-game-sprites",
+      "character": "Reaper_Man_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "wind_shade": {
+      "pack": "free-fallen-angel-chibi-2d-game-sprites",
+      "character": "Fallen_Angels_2",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "flame_imp": {
+      "pack": "demon-of-darkness-chibi-2d-game-sprites",
+      "character": "Demons_of_Darkness_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "fire_hound": {
+      "pack": "chibi-blood-demon-character-sprites",
+      "character": "Blood_Demon_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "swamp_crawler": {
+      "pack": "skeleton-chibi-2d-game-sprites",
+      "character": "Skeleton_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "bog_phantom": {
+      "pack": "ghost-knight-chibi-character-sprites",
+      "character": "Ghost_Knight_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "rage_shade": {
+      "pack": "demon-of-darkness-chibi-2d-game-sprites",
+      "character": "Demons_of_Darkness_3",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "frost_knight": {
+      "pack": "frost-knight-chibi-character-sprites",
+      "character": "Frost_Knight_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "heresy_priest": {
+      "pack": "chibi-skeleton-witch-character-sprites",
+      "character": "Skeleton_Witch_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "cursed_stone": {
+      "pack": "free-golems-chibi-2d-game-sprites",
+      "character": "Golem_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Idle",
+        "enemy_run":   "Idle",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "hell_knight": {
+      "pack": "devil-hell-knight-succubus-chibi-2d-game-sprites",
+      "character": "Hell_Knight",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "blood_hound": {
+      "pack": "chibi-blood-demon-character-sprites",
+      "character": "Blood_Demon_2",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "mimic_shade": {
+      "pack": "mimic-chibi-character-sprites",
+      "character": "Mimic_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "clockwork_guard": {
+      "pack": "free-chibi-skeleton-warrior-character-sprites",
+      "character": "Skeleton_Warrior_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "frost_shade": {
+      "pack": "chibi-ghost-knight-character-sprites",
+      "character": "Ghost_Knight_2",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "silent_stalker": {
+      "pack": "demon-archer-chibi-game-sprites",
+      "character": "Archer_1",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "void_sentinel": {
+      "pack": "demon-of-darkness-chibi-2d-game-sprites",
+      "character": "Demons_of_Darkness_2",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    },
+
+    "throne_guard": {
+      "pack": "free-chibi-skeleton-warrior-character-sprites",
+      "character": "Skeleton_Warrior_3",
+      "animations": {
+        "enemy_idle":  "Idle",
+        "enemy_walk":  "Walking",
+        "enemy_run":   "Running",
+        "enemy_stun":  "Hurt",
+        "enemy_death": "Dying"
+      }
+    }
+  },
+
+  "bosses": {
+    "boss_01": {
+      "pack": "free-golems-chibi-2d-game-sprites",
+      "character": "Golem_3"
+    },
+    "boss_02": {
+      "pack": "free-fallen-angel-chibi-2d-game-sprites",
+      "character": "Fallen_Angels_3"
+    },
+    "boss_03": {
+      "pack": "free-golems-chibi-2d-game-sprites",
+      "character": "Golem_2"
+    },
+    "boss_05": {
+      "pack": "chibi-winter-witch-character-sprite",
+      "character": "Winter_Witch_1"
+    },
+    "boss_07": {
+      "pack": "ghost-knight-chibi-character-sprites",
+      "character": "Ghost_Knight_3"
+    },
+    "boss_10": {
+      "pack": "devil-hell-knight-succubus-chibi-2d-game-sprites",
+      "character": "Devil"
+    }
+  },
+
+  "unused": {
+    "note": "Доступні спрайти що ще не призначені",
+    "available": [
+      "undead-archer-chibi-game-character-sprites: Archer_1/2/3",
+      "magician-undead-chibi-2d-game-sprites: Magician_1/2/3",
+      "magician-demon-chibi-2d-sprites: Magician_1/2/3",
+      "devil-hell-knight-succubus: Succubus",
+      "chibi-skeleton-archer-character-sprites: Archer_1/2/3",
+      "chibi-skeleton-witch-character-sprites: Skeleton_Witch_2/3",
+      "frost-knight-chibi-character-sprites: Frost_Knight_2/3",
+      "chibi-ghost-knight-character-sprites: Ghost_Knight_1/3",
+      "mimic-chibi-character-sprites: Mimic_2/3",
+      "chibi-blood-demon-character-sprites: Blood_Demon_3",
+      "free-reaper-man-chibi-2d-game-sprites: Reaper_Man_2/3",
+      "skeleton-chibi-2d-game-sprites: Skeleton_2/3"
+    ]
+  }
+}
