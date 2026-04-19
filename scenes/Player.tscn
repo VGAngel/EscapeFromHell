@@ -1,0 +1,114 @@
+[gd_scene format=3 uid="uid://player1tscn01"]
+
+[ext_resource type="Script" uid="uid://bml4i5up7waaq" path="res://scripts/Player.gd" id="1_player"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(40.0, 90.0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_staff"]
+size = Vector2(80.0, 60.0)
+
+[sub_resource type="Animation" id="Anim_idle"]
+resource_name = "player_idle"
+length = 0.5
+loop_mode = 1
+
+[sub_resource type="Animation" id="Anim_walk"]
+resource_name = "player_walk"
+length = 0.5
+loop_mode = 1
+
+[sub_resource type="Animation" id="Anim_jump"]
+resource_name = "player_jump"
+length = 0.4
+loop_mode = 1
+
+[sub_resource type="Animation" id="Anim_fall"]
+resource_name = "player_fall"
+length = 0.4
+loop_mode = 1
+
+[sub_resource type="Animation" id="Anim_wall_hang"]
+resource_name = "player_wall_hang"
+length = 0.4
+loop_mode = 1
+
+[sub_resource type="Animation" id="Anim_staff_swing"]
+resource_name = "player_staff_swing"
+length = 0.4
+loop_mode = 0
+
+[sub_resource type="Animation" id="Anim_pickup"]
+resource_name = "player_pickup"
+length = 0.6
+loop_mode = 0
+
+[sub_resource type="Animation" id="Anim_carry_idle"]
+resource_name = "player_carry_idle"
+length = 0.5
+loop_mode = 1
+
+[sub_resource type="Animation" id="Anim_carry_walk"]
+resource_name = "player_carry_walk"
+length = 0.5
+loop_mode = 1
+
+[sub_resource type="Animation" id="Anim_death"]
+resource_name = "player_death"
+length = 0.6
+loop_mode = 0
+
+[sub_resource type="Animation" id="Anim_hurt"]
+resource_name = "player_hurt"
+length = 0.4
+loop_mode = 0
+
+[sub_resource type="Animation" id="Anim_respawn"]
+resource_name = "player_respawn_breath"
+length = 0.5
+loop_mode = 0
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_1"]
+_data = {
+"player_idle": SubResource("Anim_idle"),
+"player_walk": SubResource("Anim_walk"),
+"player_jump": SubResource("Anim_jump"),
+"player_fall": SubResource("Anim_fall"),
+"player_wall_hang": SubResource("Anim_wall_hang"),
+"player_staff_swing": SubResource("Anim_staff_swing"),
+"player_pickup": SubResource("Anim_pickup"),
+"player_carry_idle": SubResource("Anim_carry_idle"),
+"player_carry_walk": SubResource("Anim_carry_walk"),
+"player_death": SubResource("Anim_death"),
+"player_hurt": SubResource("Anim_hurt"),
+"player_respawn_breath": SubResource("Anim_respawn"),
+}
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 3
+script = ExtResource("1_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_1"),
+}
+
+[node name="StaffArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaffArea"]
+position = Vector2(70.0, 0.0)
+shape = SubResource("RectangleShape2D_staff")
+
+[node name="SoulCarryVisual" type="Node2D" parent="."]
+position = Vector2(0.0, -60.0)
+visible = false
