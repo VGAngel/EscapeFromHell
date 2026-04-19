@@ -6,17 +6,17 @@ extends Node
 #
 # Expected scene tree:
 #   Hub (Node)  ← this script
-#   ├── Background      (ColorRect or TextureRect)
-#   ├── GodPortrait     (Control / TextureRect)
-#   ├── PlayerPortrait  (Control / TextureRect)
-#   ├── MessageBox      (PanelContainer)  ← god dialogue
-#   ├── BottomBar       (HBoxContainer)
-#   │   ├── BtnUpgrades (Button)
-#   │   ├── BtnSouls    (Button)
-#   │   └── BtnContinue (Button)
-#   ├── BtnSkip         (Button)
-#   ├── UpgradesPanel   (CanvasLayer/Node) ← UpgradesScreen.gd (future)
-#   └── CollectionScreen (CanvasLayer)    ← scripts/ui/CollectionScreen.gd
+#   ├── Background       (ColorRect or TextureRect)
+#   ├── GodPortrait      (Control / TextureRect)
+#   ├── PlayerPortrait   (Control / TextureRect)
+#   ├── MessageBox       (PanelContainer)  ← god dialogue
+#   ├── BottomBar        (HBoxContainer)
+#   │   ├── BtnUpgrades  (Button)
+#   │   ├── BtnSouls     (Button)
+#   │   └── BtnContinue  (Button)
+#   ├── BtnSkip          (Button)
+#   ├── UpgradesScreen   (CanvasLayer) ← scripts/ui/UpgradesScreen.gd
+#   └── CollectionScreen (CanvasLayer) ← scripts/ui/CollectionScreen.gd
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 const MSG_AUTO_HIDE   := 8.0
@@ -66,6 +66,7 @@ const PROLOGUE := [
 @onready var _btn_souls:      Button        = $BottomBar/BtnSouls
 @onready var _btn_continue:   Button        = $BottomBar/BtnContinue
 @onready var _btn_skip:       Button        = $BtnSkip
+@onready var _upgrades:       CanvasLayer   = $UpgradesScreen
 @onready var _collection:     CanvasLayer   = $CollectionScreen
 
 # ── State ─────────────────────────────────────────────────────────────────────
@@ -87,6 +88,9 @@ func _ready() -> void:
 	_btn_souls.pressed.connect(_on_souls)
 	_btn_continue.pressed.connect(_on_continue)
 	_btn_skip.pressed.connect(_on_skip)
+
+	_upgrades.closed.connect(_on_upgrades_closed)
+	_collection.closed.connect(_on_collection_closed)
 
 	_setup_continue_label()
 	_refresh_currency()
@@ -277,12 +281,29 @@ func _end_prologue() -> void:
 # ── Button callbacks ──────────────────────────────────────────────────────────
 
 func _on_upgrades() -> void:
-	# UpgradesScreen not yet implemented — placeholder
-	push_warning("Hub: UpgradesScreen not yet implemented")
+	if _upgrades and _upgrades.has_method("open"):
+		_upgrades.open()
+		_set_hub_interactive(false)
+
+func _on_upgrades_closed() -> void:
+	_refresh_currency()
+	_setup_continue_label()
+	_set_hub_interactive(true)
 
 func _on_souls() -> void:
 	if _collection and _collection.has_method("open"):
 		_collection.open()
+		_set_hub_interactive(false)
+
+func _on_collection_closed() -> void:
+	_set_hub_interactive(true)
+
+func _set_hub_interactive(enabled: bool) -> void:
+	_bottom_bar.modulate.a = 1.0 if enabled else 0.4
+	_btn_upgrades.disabled  = not enabled
+	_btn_souls.disabled     = not enabled
+	_btn_continue.disabled  = not enabled
+	_btn_skip.disabled      = not enabled
 
 func _on_continue() -> void:
 	_fade_out_and_load()
