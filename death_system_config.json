@@ -1,0 +1,64 @@
+{
+  "version": "1.0",
+
+  "death_causes": {
+    "enemy_hit":    { "instant": false, "note": "HP доходить до 0 від ударів ворогів" },
+    "lava":         { "instant": true,  "note": "Торкнувся лави — миттєва смерть" },
+    "poison":       { "instant": true,  "note": "Торкнувся отрути — миттєва смерть" },
+    "fall":         { "instant": true,  "note": "Впав за межі рівня" },
+    "drowning":     { "instant": false, "note": "Лічильник повітря дійшов до нуля" }
+  },
+
+  "death_sequence": [
+    { "step": 1, "action": "play_animation",  "value": "death_fall"         },
+    { "step": 2, "action": "screen_darken",   "duration": 0.6               },
+    { "step": 3, "action": "apply_sin",       "value": 5.0                  },
+    { "step": 4, "action": "handle_soul",     "note": "див. soul_on_death"  },
+    { "step": 5, "action": "increment_deaths"                               },
+    { "step": 6, "action": "check_limit",     "note": "див. death_limits"   },
+    { "step": 7, "action": "respawn"                                        }
+  ],
+
+  "soul_on_death": {
+    "without_memory_upgrade": {
+      "action": "return_to_origin",
+      "note": "Душа повертається на своє початкове місце на рівні"
+    },
+    "with_memory_upgrade": {
+      "action": "stay_at_death_location",
+      "note": "Душа залишається там де гравець загинув"
+    }
+  },
+
+  "death_limits": {
+    "vertical":  { "limit": 3, "soft": true  },
+    "labyrinth": { "limit": 3, "soft": true  },
+    "void":      { "limit": 5, "soft": true  },
+    "escape":    { "limit": 3, "soft": true  },
+    "boss":      { "limit": 0, "soft": false, "note": "Без ліміту" }
+  },
+
+  "soft_limit": {
+    "note": "Якщо гравець досяг ліміту — не провалюється, а отримує +1 спробу автоматично",
+    "extra_lives_per_trigger": 1,
+    "sin_penalty_on_soft": 5.0,
+    "note2": "Кожна додаткова спроба понад ліміт коштує +5% гріха"
+  },
+
+  "respawn_points": {
+    "vertical":  "level_start",
+    "labyrinth": "level_start",
+    "void":      "level_start",
+    "escape":    "escape_start",
+    "boss":      "boss_arena_entrance",
+    "note": "Бос при respawn відновлює повне HP"
+  },
+
+  "forgiveness_upgrade": {
+    "trigger": "death_with_hp_0",
+    "effect": "survive_with_1_hp",
+    "sin_penalty": 0,
+    "uses_per_level": 1,
+    "note": "Апгрейд Прощення — раз на рівень не дає вмерти"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "version": "1.0",
+
+  "trigger": {
+    "open":  ["pause_button", "escape_key"],
+    "close": ["resume_button", "escape_key"]
+  },
+
+  "background": {
+    "type": "blur_overlay",
+    "blur_amount": 4.0,
+    "overlay_color": "#00000088",
+    "animate_in": { "type": "fade_in", "duration": 0.2 },
+    "animate_out": { "type": "fade_out", "duration": 0.2 }
+  },
+
+  "layout": {
+    "title": {
+      "text_key": "pause.title",
+      "style": "gold_glow",
+      "position": "top_center"
+    },
+
+    "stats": {
+      "position": "below_title",
+      "elements": [
+        {
+          "id": "level_info",
+          "type": "label",
+          "text_key": "hud.level_info_format",
+          "params": ["circle", "level"]
+        },
+        {
+          "id": "souls_counter",
+          "type": "label",
+          "text_key": "hud.souls_total_format",
+          "params": ["saved"]
+        },
+        {
+          "id": "sin_bar",
+          "type": "mini_progress_bar",
+          "width": 120,
+          "height": 8,
+          "show_percent": true,
+          "colors": [
+            { "threshold": 0,  "color": "#FFFFFF" },
+            { "threshold": 30, "color": "#FFAA00" },
+            { "threshold": 60, "color": "#FF4400" },
+            { "threshold": 85, "color": "#AA0000" }
+          ]
+        }
+      ]
+    },
+
+    "buttons": {
+      "position": "center",
+      "gap": 12,
+      "items": [
+        {
+          "id": "resume",
+          "text_key": "pause.resume",
+          "style": "primary",
+          "action": "close_pause"
+        },
+        {
+          "id": "souls",
+          "text_key": "ui.menu.collection",
+          "style": "secondary",
+          "action": "open_collection",
+          "note": "Відкриває колекцію поверх паузи без виходу з рівня"
+        },
+        {
+          "id": "settings",
+          "text_key": "pause.settings",
+          "style": "secondary",
+          "action": "open_settings"
+        },
+        {
+          "id": "main_menu",
+          "text_key": "pause.main_menu",
+          "style": "danger",
+          "action": "confirm_exit"
+        }
+      ]
+    }
+  },
+
+  "exit_confirmation": {
+    "title_key": "pause.exit_title",
+    "message_key": "pause.exit_message",
+    "note": "Душі що підібрав на рівні — збережені. Душа в руках — втрачається.",
+    "buttons": [
+      { "text_key": "pause.exit_yes", "action": "go_to_main_menu" },
+      { "text_key": "pause.exit_no",  "action": "close_confirmation" }
+    ]
+  },
+
+  "sounds": {
+    "open":   "pause_soft_chime",
+    "close":  "pause_soft_chime",
+    "button_hover": "ui_hover_soft"
+  }
+}

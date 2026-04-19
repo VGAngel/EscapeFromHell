@@ -1,0 +1,121 @@
+{
+  "version": "1.0",
+
+  "trigger": "all_required_souls_collected_and_player_reached_exit",
+
+  "background": {
+    "type": "overlay",
+    "color": "#000000AA",
+    "animate_in": { "type": "fade_in", "duration": 0.5 }
+  },
+
+  "layout": {
+    "title": {
+      "text_key": "level_complete.title",
+      "style": "gold_glow",
+      "position": "top_center"
+    },
+
+    "subtitle": {
+      "text_key": "hud.level_info_format",
+      "params": ["circle", "level"],
+      "style": "small_dim",
+      "position": "below_title"
+    },
+
+    "stars": {
+      "position": "top_right",
+      "count": 3,
+      "icon_filled": "★",
+      "icon_empty":  "☆",
+      "animate": true,
+      "animate_delay_per_star": 0.3,
+      "rules": [
+        { "stars": 3, "condition": "all_souls_found AND deaths == 0"    },
+        { "stars": 2, "condition": "all_souls_found AND deaths <= 2"    },
+        { "stars": 1, "condition": "else"                               }
+      ]
+    },
+
+    "stats": {
+      "position": "center",
+      "animate_each": true,
+      "animate_delay": 0.2,
+      "items": [
+        {
+          "id": "souls",
+          "icon": "👻",
+          "text_key": "level_complete.souls",
+          "value_format": "{found} / {total}"
+        },
+        {
+          "id": "deaths",
+          "icon": "💀",
+          "text_key": "level_complete.deaths",
+          "value_format": "{count}",
+          "hide_if_zero": false
+        },
+        {
+          "id": "sin",
+          "icon": "😈",
+          "text_key": "level_complete.sin",
+          "value_format": "+{delta}%  →  {total}%",
+          "color_positive": "#FF4400",
+          "note": "Показує приріст гріха за рівень і фінальне значення"
+        },
+        {
+          "id": "light",
+          "icon": "💡",
+          "text_key": "level_complete.light",
+          "value_format": "+{earned}",
+          "color": "#FFD700"
+        }
+      ]
+    },
+
+    "souls_found": {
+      "position": "below_stats",
+      "title_key": "level_complete.souls_found_title",
+      "show_named_portraits": true,
+      "show_anonymous_count": true,
+      "anonymous_format_key": "level_complete.anonymous_souls",
+      "hidden_soul_highlight": {
+        "frame": "gold",
+        "badge": "✦",
+        "text_key": "level_complete.hidden_found"
+      }
+    },
+
+    "buttons": {
+      "position": "bottom_center",
+      "items": [
+        {
+          "id": "hub",
+          "text_key": "level_complete.go_to_hub",
+          "style": "secondary",
+          "action": "open_hub"
+        },
+        {
+          "id": "next",
+          "text_key": "level_complete.next_level",
+          "style": "primary",
+          "action": "load_next_level"
+        }
+      ]
+    }
+  },
+
+  "save": {
+    "trigger": "on_screen_show",
+    "note": "Збереження відбувається одразу при появі екрану завершення"
+  },
+
+  "sounds": {
+    "screen_appear":  "level_complete_chime",
+    "star_1":         "star_appear_soft",
+    "star_2":         "star_appear_soft",
+    "star_3":         "star_appear_gold",
+    "hidden_found":   "golden_chime",
+    "all_3_stars":    "choir_swell_soft"
+  }
+}

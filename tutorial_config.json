@@ -1,0 +1,320 @@
+{
+  "version": "1.0",
+
+  "approach": "contextual",
+  "note": "Туторіал вбудований у рівні — підказки з'являються при першій зустрічі з механікою. Не окремий режим.",
+
+  "settings": {
+    "can_skip": true,
+    "skip_input": "any_action_button",
+    "hint_display_duration": 4.0,
+    "hint_fade_in": 0.3,
+    "hint_fade_out": 0.5,
+    "show_only_once": true,
+    "save_seen_hints": true,
+    "note": "Кожна підказка і візуалізація показується лише раз — зберігається в save файлі",
+
+    "exceptions": {
+      "minigame_hint": {
+        "show_only_once": false,
+        "show_every_time": true,
+        "visual_demo": true,
+        "duration": 1.5,
+        "note": "Міні-гра сплячої душі рандомна — іконка + коротке демо показується щоразу перед стартом. Гравець міг не бачити цей тип давно."
+      }
+    }
+  },
+
+  "hint_style": {
+    "position": "bottom_center",
+    "background": "dark_pill",
+    "icon_size": 24,
+    "font_style": "small_dim",
+    "input_icon": true,
+    "note": "Показує іконку дії + текст. Автоматично підлаштовується під keyboard або gamepad."
+  },
+
+  "visual_demos": {
+    "note": "Кожна підказка може мати анімовану демонстрацію — маленький loop поруч з текстом або над об'єктом",
+
+    "types": {
+
+      "animated_ghost_player": {
+        "description": "Напівпрозорий силует гравця показує рух — стрибає, ходить, б'є посохом",
+        "loop": true,
+        "opacity": 0.5,
+        "used_for": ["move", "jump", "variable_jump", "staff", "carry_to_exit"]
+      },
+
+      "highlight_pulse": {
+        "description": "Об'єкт пульсує жовтим контуром щоб привернути увагу",
+        "loop": true,
+        "used_for": ["soul_pickup", "sleeping_soul", "one_way_platform", "crumbling_platform", "faith_platform", "soul_bridge"]
+      },
+
+      "arrow_animated": {
+        "description": "Анімована стрілка вказує куди рухатись або на що дивитись",
+        "loop": true,
+        "used_for": ["carry_to_exit", "hidden_souls"]
+      },
+
+      "input_press_animation": {
+        "description": "Іконка кнопки анімується — натискається і відпускається в loop",
+        "used_for": ["jump", "staff", "mimic_exorcism"]
+      },
+
+      "input_hold_animation": {
+        "description": "Іконка кнопки утримується — заповнюється прогрес-бар",
+        "used_for": ["variable_jump", "mimic_exorcism", "staff"]
+      }
+
+    },
+
+    "per_trigger": {
+      "move": {
+        "visual": "animated_ghost_player",
+        "ghost_action": "walks_left_right_loop"
+      },
+      "jump": {
+        "visual": ["animated_ghost_player", "input_press_animation"],
+        "ghost_action": "jumps_once_loop"
+      },
+      "variable_jump": {
+        "visual": ["animated_ghost_player", "input_hold_animation"],
+        "ghost_action": "short_jump_then_high_jump_comparison",
+        "note": "Показує два стрибки: короткий і довгий — різниця очевидна"
+      },
+      "soul_pickup": {
+        "visual": ["highlight_pulse", "animated_ghost_player"],
+        "ghost_action": "walks_into_soul_soul_appears_above_head"
+      },
+      "carry_to_exit": {
+        "visual": ["arrow_animated"],
+        "arrow_target": "exit_door"
+      },
+      "enemy_avoid": {
+        "visual": "animated_ghost_player",
+        "ghost_action": "sneaks_past_enemy_from_behind"
+      },
+      "staff": {
+        "visual": ["animated_ghost_player", "input_press_animation"],
+        "ghost_action": "swings_staff_enemy_flies_back"
+      },
+      "crumbling_platform": {
+        "visual": "highlight_pulse",
+        "extra": "platform_shakes_preview_before_player_steps"
+      },
+      "sleeping_soul": {
+        "visual": ["highlight_pulse", "animated_ghost_player"],
+        "ghost_action": "approaches_soul_minigame_icon_appears"
+      },
+      "mimic_exorcism": {
+        "visual": ["animated_ghost_player", "input_hold_animation"],
+        "ghost_action": "stands_near_mimic_holds_button_mimic_dissolves"
+      },
+      "faith_platform": {
+        "visual": "highlight_pulse",
+        "extra": "platform_fades_when_sin_bar_shown_above_50_percent"
+      },
+      "soul_bridge": {
+        "visual": ["highlight_pulse", "animated_ghost_player"],
+        "ghost_action": "ghost_without_soul_falls_through_ghost_with_soul_stands"
+      }
+    }
+  },
+
+  "triggers": {
+
+    "move": {
+      "id": "move",
+      "level": 1,
+      "trigger": "on_level_start",
+      "delay": 1.5,
+      "text_key": "tutorial.move",
+      "icon": "input_move",
+      "auto_dismiss": true
+    },
+
+    "jump": {
+      "id": "jump",
+      "level": 1,
+      "trigger": "first_gap_approached",
+      "proximity_to": "first_gap",
+      "distance": 120,
+      "text_key": "tutorial.jump",
+      "icon": "input_jump",
+      "note": "Показується коли гравець підходить до першої ями"
+    },
+
+    "variable_jump": {
+      "id": "variable_jump",
+      "level": 1,
+      "trigger": "after_first_jump",
+      "text_key": "tutorial.variable_jump",
+      "icon": "input_jump_hold",
+      "note": "Показується одразу після першого стрибка"
+    },
+
+    "soul_pickup": {
+      "id": "soul_pickup",
+      "level": 1,
+      "trigger": "proximity_to_first_soul",
+      "distance": 100,
+      "text_key": "tutorial.soul_pickup",
+      "icon": "soul_icon",
+      "note": "Перша душа — підказка торкнутись"
+    },
+
+    "carry_to_exit": {
+      "id": "carry_to_exit",
+      "level": 1,
+      "trigger": "after_first_soul_pickup",
+      "text_key": "tutorial.carry_to_exit",
+      "icon": "exit_arrow",
+      "extra": "arrow_points_to_exit",
+      "note": "Після підбору — стрілка вказує на вихід"
+    },
+
+    "enemy_nearby": {
+      "id": "enemy_nearby",
+      "level": 1,
+      "trigger": "first_enemy_in_sight",
+      "text_key": "tutorial.enemy_avoid",
+      "icon": "warning_icon",
+      "note": "Перший раз бачить ворога — підказка що треба уникати"
+    },
+
+    "enemy_chasing": {
+      "id": "enemy_chasing",
+      "level": 2,
+      "trigger": "first_enemy_chase",
+      "text_key": "tutorial.enemy_gives_up",
+      "icon": "run_icon",
+      "note": "Перше переслідування — підказка що ворог відстане"
+    },
+
+    "one_way_platform": {
+      "id": "one_way_platform",
+      "level": 2,
+      "trigger": "proximity_to_first_one_way",
+      "distance": 80,
+      "text_key": "tutorial.one_way",
+      "icon": "platform_icon"
+    },
+
+    "crumbling_platform": {
+      "id": "crumbling_platform",
+      "level": 2,
+      "trigger": "proximity_to_first_crumbling",
+      "distance": 60,
+      "text_key": "tutorial.crumbling",
+      "icon": "warning_icon"
+    },
+
+    "staff": {
+      "id": "staff",
+      "level": 3,
+      "trigger": "first_enemy_blocks_path",
+      "text_key": "tutorial.staff",
+      "icon": "input_action",
+      "note": "Коло 3 — перший раз коли ворог реально блокує прохід і без посоха не пройти"
+    },
+
+    "staff_sin_warning": {
+      "id": "staff_sin_warning",
+      "level": 3,
+      "trigger": "after_first_staff_use",
+      "text_key": "tutorial.staff_sin",
+      "icon": "sin_icon",
+      "note": "Після першого удару посохом — підказка що це коштує гріх"
+    },
+
+    "sin_bar": {
+      "id": "sin_bar",
+      "level": 1,
+      "trigger": "after_first_sin_gain",
+      "text_key": "tutorial.sin_bar",
+      "icon": "sin_bar_icon",
+      "note": "Перший приріст гріху — коротке пояснення шкали"
+    },
+
+    "sleeping_soul": {
+      "id": "sleeping_soul",
+      "level": 5,
+      "trigger": "proximity_to_first_sleeping_soul",
+      "distance": 120,
+      "text_key": "tutorial.sleeping_soul",
+      "icon": "soul_sleeping_icon",
+      "note": "Перша спляча душа — пояснення що треба взаємодіяти"
+    },
+
+    "minigame_hint": {
+      "id": "minigame_hint",
+      "level": 5,
+      "trigger": "minigame_starts_first_time",
+      "text_key": "tutorial.minigame_watch_icon",
+      "icon": "eye_icon",
+      "note": "Перша міні-гра — підказка що іконка показує що робити"
+    },
+
+    "mimic": {
+      "id": "mimic",
+      "level": 7,
+      "trigger": "proximity_to_first_mimic",
+      "distance": 150,
+      "text_key": "tutorial.mimic_warning",
+      "icon": "warning_icon",
+      "note": "Перший мімік — підказка придивитись перед торканням"
+    },
+
+    "mimic_exorcism": {
+      "id": "mimic_exorcism",
+      "level": 7,
+      "trigger": "player_pauses_near_mimic",
+      "pause_duration": 2.0,
+      "text_key": "tutorial.mimic_exorcism",
+      "icon": "input_hold_action",
+      "note": "Якщо гравець стоїть 2 сек поруч з міміком — підказка про екзорцизм"
+    },
+
+    "faith_platform": {
+      "id": "faith_platform",
+      "level": 51,
+      "trigger": "proximity_to_first_faith_platform",
+      "distance": 100,
+      "text_key": "tutorial.faith_platform",
+      "icon": "sin_bar_icon"
+    },
+
+    "soul_bridge": {
+      "id": "soul_bridge",
+      "level": 61,
+      "trigger": "proximity_to_first_soul_bridge",
+      "distance": 100,
+      "text_key": "tutorial.soul_bridge",
+      "icon": "soul_icon"
+    },
+
+    "hidden_souls": {
+      "id": "hidden_souls",
+      "level": 1,
+      "trigger": "on_level_start",
+      "delay": 30.0,
+      "text_key": "tutorial.hidden_souls",
+      "icon": "hidden_soul_icon",
+      "note": "Через 30 сек після старту рівня 1 — підказка про приховані душі ✦"
+    }
+
+  },
+
+  "god_as_tutorial": {
+    "note": "Деякі механіки пояснює Бог через hub повідомлення — не окремі підказки",
+    "level_1_message": "Передпокій. Тут ще тихо. Використай це — далі тиші не буде.",
+    "covers": ["загальна атмосфера", "відчуття небезпеки", "мотивація рухатись"]
+  },
+
+  "new_game_plus": {
+    "skip_all_tutorials": true,
+    "note": "При повторному проходженні всі підказки вимкнені автоматично"
+  }
+}

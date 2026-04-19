@@ -1,0 +1,1048 @@
+{
+  "version": "1.1",
+
+  "enums": {
+    "level_types": ["vertical", "void", "labyrinth", "escape", "boss"],
+    "soul_types": ["innocent", "broken", "sleeping", "trap"],
+    "bonus_types": [
+      "holy_water", "prayer_stone", "angel_feather", "manna",
+      "hope_torch", "broken_halo", "sinner_map", "righteous_shadow", "burnt_wings"
+    ],
+    "trap_types": [
+      "lava_pit", "chains", "ghost_platform", "bottom_spikes", "collapse",
+      "fake_soul", "treasure_chest", "voice_of_relatives", "mirror", "demon_deal",
+      "darkness", "gravity_shift", "lava_flow", "scream",
+      "sinking_platform", "poison_gas", "ice_slide", "cracking_ice",
+      "falling_column", "wind_blast", "crusher", "conveyor", "gear_trap",
+      "steam_jet", "void_tear"
+    ],
+    "enemy_types": [
+      "skeleton",
+      "skeleton_warrior",
+      "skeleton_archer",
+      "undead_archer",
+      "skeleton_witch",
+      "necromancer",
+      "stone_golem",
+      "fire_golem",
+      "ice_golem",
+      "succubus",
+      "hell_knight",
+      "demon_archer",
+      "magician_demon",
+      "blood_demon",
+      "mimic",
+      "ghost_warrior",
+      "phantom_knight",
+      "dark_entity",
+      "reaper",
+      "fallen_angel"
+    ],
+    "boss_types": ["frost_knight", "winter_witch", "devil"]
+  },
+
+  "enemy_sprites": {
+    "skeleton":          "craftpix-789911-skeleton-chibi-2d-game-sprites",
+    "skeleton_warrior":  "craftpix-net-140672-free-chibi-skeleton-warrior-character-sprites",
+    "skeleton_archer":   "craftpix-net-276870-chibi-skeleton-archer-character-sprites",
+    "undead_archer":     "craftpix-785501-undead-archer-chibi-game-character-sprites",
+    "skeleton_witch":    "craftpix-net-504260-chibi-skeleton-witch-character-sprites",
+    "necromancer":       "craftpix-891176-magician-undead-chibi-2d-game-sprites",
+    "stone_golem":       "craftpix-891123-free-golems-chibi-2d-game-sprites__stone",
+    "fire_golem":        "craftpix-891123-free-golems-chibi-2d-game-sprites__fire",
+    "ice_golem":         "craftpix-891123-free-golems-chibi-2d-game-sprites__ice",
+    "succubus":          "craftpix-891134-devil-hell-knight-succubus-chibi-2d-game-sprites__succubus",
+    "hell_knight":       "craftpix-891134-devil-hell-knight-succubus-chibi-2d-game-sprites__hell_knight",
+    "demon_archer":      "craftpix-781156-demon-archer-chibi-game-sprites",
+    "magician_demon":    "craftpix-891178-magician-demon-chibi-2d-sprites",
+    "blood_demon":       "craftpix-net-986833-chibi-blood-demon-character-sprites",
+    "mimic":             "craftpix-net-981630-mimic-chibi-character-sprites",
+    "ghost_warrior":     "craftpix-net-316278-ghost-knight-chibi-character-sprites",
+    "phantom_knight":    "craftpix-net-808001-chibi-ghost-knight-character-sprites",
+    "dark_entity":       "craftpix-911588-demon-of-darkness-chibi-2d-game-sprites",
+    "reaper":            "craftpix-904589-free-reaper-man-chibi-2d-game-sprites",
+    "fallen_angel":      "craftpix-991117-free-fallen-angel-chibi-2d-game-sprites",
+    "frost_knight":      "craftpix-net-575311-frost-knight-chibi-character-sprites",
+    "winter_witch":      "craftpix-net-200710-chibi-winter-witch-character-sprite",
+    "devil":             "craftpix-891134-devil-hell-knight-succubus-chibi-2d-game-sprites__devil"
+  },
+
+  "circle_defaults": {
+    "1": {
+      "theme": "grey_stone",
+      "enemies":  ["skeleton", "skeleton_warrior", "skeleton_archer"],
+      "traps":    ["collapse", "ghost_platform", "bottom_spikes"],
+      "bonuses":  ["manna", "angel_feather", "prayer_stone"]
+    },
+    "2": {
+      "theme": "swamp",
+      "enemies":  ["skeleton", "undead_archer", "skeleton_witch"],
+      "traps":    ["sinking_platform", "poison_gas", "ghost_platform"],
+      "bonuses":  ["holy_water", "hope_torch", "broken_halo"]
+    },
+    "3": {
+      "theme": "lava",
+      "enemies":  ["fire_golem", "demon_archer", "blood_demon"],
+      "traps":    ["lava_pit", "lava_flow", "bottom_spikes"],
+      "bonuses":  ["holy_water", "righteous_shadow", "prayer_stone"]
+    },
+    "4": {
+      "theme": "gold",
+      "enemies":  ["succubus", "mimic", "hell_knight"],
+      "traps":    ["treasure_chest", "fake_soul", "mirror"],
+      "bonuses":  ["sinner_map", "burnt_wings", "manna"]
+    },
+    "5": {
+      "theme": "ice",
+      "enemies":  ["ice_golem", "magician_demon"],
+      "traps":    ["ice_slide", "cracking_ice", "ghost_platform"],
+      "bonuses":  ["hope_torch", "angel_feather", "holy_water"]
+    },
+    "6": {
+      "theme": "palace",
+      "enemies":  ["hell_knight", "demon_archer", "ghost_warrior", "fallen_angel"],
+      "traps":    ["falling_column", "wind_blast", "collapse"],
+      "bonuses":  ["prayer_stone", "broken_halo", "manna"]
+    },
+    "7": {
+      "theme": "dead_forest",
+      "enemies":  ["skeleton_witch", "necromancer", "mimic", "phantom_knight"],
+      "traps":    ["voice_of_relatives", "mirror", "bottom_spikes"],
+      "bonuses":  ["sinner_map", "righteous_shadow", "hope_torch"]
+    },
+    "8": {
+      "theme": "machine",
+      "enemies":  ["stone_golem", "blood_demon", "magician_demon"],
+      "traps":    ["crusher", "conveyor", "gear_trap", "steam_jet"],
+      "bonuses":  ["holy_water", "angel_feather", "prayer_stone"]
+    },
+    "9": {
+      "theme": "void_space",
+      "enemies":  ["dark_entity", "reaper", "phantom_knight"],
+      "traps":    ["gravity_shift", "void_tear", "darkness"],
+      "bonuses":  ["burnt_wings", "righteous_shadow", "broken_halo"]
+    },
+    "10": {
+      "theme": "lucifer_throne",
+      "enemies":  ["fallen_angel", "dark_entity", "demon_archer", "mimic"],
+      "traps":    ["lava_pit", "void_tear", "crusher", "fake_soul", "demon_deal"],
+      "bonuses":  ["holy_water", "prayer_stone", "angel_feather", "sinner_map", "manna"]
+    }
+  },
+
+  "levels": [
+    {
+      "id": 1, "circle": 1, "name": "Перший Крок", "type": "vertical",
+      "difficulty": 1, "souls_count": 1,
+      "soul_types": ["innocent"],
+      "enemies":  ["skeleton"],
+      "traps":    ["collapse"],
+      "bonuses":  ["manna", "angel_feather"],
+      "special_mechanics": []
+    },
+    {
+      "id": 2, "circle": 1, "name": "Кам'яний Спуск", "type": "vertical",
+      "difficulty": 1, "souls_count": 2,
+      "soul_types": ["innocent", "innocent"],
+      "enemies":  ["skeleton", "skeleton_warrior"],
+      "traps":    ["collapse", "bottom_spikes"],
+      "bonuses":  ["manna", "prayer_stone"],
+      "special_mechanics": []
+    },
+    {
+      "id": 3, "circle": 1, "name": "Темні Коридори", "type": "labyrinth",
+      "difficulty": 1, "souls_count": 3,
+      "soul_types": ["innocent", "innocent", "broken"],
+      "enemies":  ["skeleton", "skeleton_archer"],
+      "traps":    ["ghost_platform", "bottom_spikes"],
+      "bonuses":  ["hope_torch", "manna"],
+      "special_mechanics": []
+    },
+    {
+      "id": 4, "circle": 1, "name": "Перший Грот", "type": "void",
+      "difficulty": 1, "souls_count": 5,
+      "soul_types": ["innocent", "innocent", "broken", "innocent", "sleeping"],
+      "enemies":  ["skeleton", "skeleton_warrior", "skeleton_archer"],
+      "traps":    ["collapse", "ghost_platform", "bottom_spikes"],
+      "bonuses":  ["manna", "angel_feather", "prayer_stone"],
+      "special_mechanics": []
+    },
+    {
+      "id": 5, "circle": 1, "name": "Тікай!", "type": "escape",
+      "difficulty": 1, "souls_count": 1,
+      "soul_types": ["innocent"],
+      "enemies":  ["skeleton"],
+      "traps":    ["collapse"],
+      "bonuses":  ["angel_feather"],
+      "special_mechanics": ["chase_shadow"]
+    },
+    {
+      "id": 6, "circle": 1, "name": "Розтріскані Склепіння", "type": "vertical",
+      "difficulty": 2, "souls_count": 2,
+      "soul_types": ["broken", "innocent"],
+      "enemies":  ["skeleton_warrior", "skeleton"],
+      "traps":    ["collapse", "ghost_platform"],
+      "bonuses":  ["prayer_stone", "manna"],
+      "special_mechanics": []
+    },
+    {
+      "id": 7, "circle": 1, "name": "Тунелі Тіней", "type": "labyrinth",
+      "difficulty": 2, "souls_count": 4,
+      "soul_types": ["innocent", "broken", "innocent", "sleeping"],
+      "enemies":  ["skeleton_archer", "skeleton_warrior"],
+      "traps":    ["darkness", "ghost_platform", "bottom_spikes"],
+      "bonuses":  ["hope_torch", "angel_feather"],
+      "special_mechanics": ["partial_darkness"]
+    },
+    {
+      "id": 8, "circle": 1, "name": "Схована Каплиця", "type": "vertical",
+      "difficulty": 2, "souls_count": 3,
+      "soul_types": ["sleeping", "innocent", "broken"],
+      "enemies":  ["skeleton_warrior", "skeleton_archer"],
+      "traps":    ["fake_soul", "collapse"],
+      "bonuses":  ["manna", "broken_halo", "prayer_stone"],
+      "special_mechanics": []
+    },
+    {
+      "id": 9, "circle": 1, "name": "Великий Грот", "type": "void",
+      "difficulty": 2, "souls_count": 7,
+      "soul_types": ["innocent","innocent","broken","broken","sleeping","innocent","trap"],
+      "enemies":  ["skeleton", "skeleton_warrior", "skeleton_archer"],
+      "traps":    ["collapse","ghost_platform","fake_soul","bottom_spikes"],
+      "bonuses":  ["manna","angel_feather","prayer_stone","hope_torch"],
+      "special_mechanics": []
+    },
+    {
+      "id": 10, "circle": 1, "name": "Страж Воріт", "type": "boss",
+      "difficulty": 3, "souls_count": 4,
+      "soul_types": ["innocent","innocent","broken","sleeping"],
+      "enemies":  ["skeleton_warrior", "skeleton_archer"],
+      "traps":    ["collapse","bottom_spikes"],
+      "bonuses":  ["holy_water","prayer_stone"],
+      "special_mechanics": ["boss_fight", "boss_stone_golem"]
+    },
+
+    {
+      "id": 11, "circle": 2, "name": "Гнилі Береги", "type": "vertical",
+      "difficulty": 2, "souls_count": 1,
+      "soul_types": ["innocent"],
+      "enemies":  ["skeleton"],
+      "traps":    ["sinking_platform"],
+      "bonuses":  ["holy_water", "manna"],
+      "special_mechanics": []
+    },
+    {
+      "id": 12, "circle": 2, "name": "Трясовина", "type": "vertical",
+      "difficulty": 2, "souls_count": 2,
+      "soul_types": ["innocent", "broken"],
+      "enemies":  ["skeleton", "undead_archer"],
+      "traps":    ["sinking_platform", "poison_gas"],
+      "bonuses":  ["holy_water", "hope_torch"],
+      "special_mechanics": []
+    },
+    {
+      "id": 13, "circle": 2, "name": "Туманні Лабіринти", "type": "labyrinth",
+      "difficulty": 2, "souls_count": 3,
+      "soul_types": ["innocent", "broken", "innocent"],
+      "enemies":  ["undead_archer", "skeleton_witch"],
+      "traps":    ["poison_gas", "ghost_platform", "sinking_platform"],
+      "bonuses":  ["hope_torch", "broken_halo"],
+      "special_mechanics": ["fog_visibility"]
+    },
+    {
+      "id": 14, "circle": 2, "name": "Затоплений Льох", "type": "void",
+      "difficulty": 2, "souls_count": 6,
+      "soul_types": ["innocent","broken","innocent","sleeping","innocent","broken"],
+      "enemies":  ["skeleton", "undead_archer", "skeleton_witch"],
+      "traps":    ["sinking_platform","poison_gas","bottom_spikes"],
+      "bonuses":  ["holy_water","manna","hope_torch"],
+      "special_mechanics": ["underwater_sections", "air_meter"]
+    },
+    {
+      "id": 15, "circle": 2, "name": "Болотяна Погоня", "type": "escape",
+      "difficulty": 2, "souls_count": 1,
+      "soul_types": ["innocent"],
+      "enemies":  ["undead_archer"],
+      "traps":    ["sinking_platform", "poison_gas"],
+      "bonuses":  ["holy_water"],
+      "special_mechanics": ["chase_swamp_wave"]
+    },
+    {
+      "id": 16, "circle": 2, "name": "Гнилі Платформи", "type": "vertical",
+      "difficulty": 3, "souls_count": 2,
+      "soul_types": ["broken", "sleeping"],
+      "enemies":  ["skeleton_witch", "skeleton"],
+      "traps":    ["sinking_platform", "ghost_platform"],
+      "bonuses":  ["broken_halo", "manna"],
+      "special_mechanics": []
+    },
+    {
+      "id": 17, "circle": 2, "name": "Зелений Лабіринт", "type": "labyrinth",
+      "difficulty": 3, "souls_count": 4,
+      "soul_types": ["innocent","broken","sleeping","innocent"],
+      "enemies":  ["undead_archer", "skeleton_witch", "necromancer"],
+      "traps":    ["poison_gas","sinking_platform","voice_of_relatives"],
+      "bonuses":  ["sinner_map","hope_torch"],
+      "special_mechanics": ["fog_visibility"]
+    },
+    {
+      "id": 18, "circle": 2, "name": "Острів Плачу", "type": "vertical",
+      "difficulty": 3, "souls_count": 3,
+      "soul_types": ["sleeping","innocent","broken"],
+      "enemies":  ["necromancer", "undead_archer"],
+      "traps":    ["sinking_platform","fake_soul"],
+      "bonuses":  ["holy_water","broken_halo"],
+      "special_mechanics": []
+    },
+    {
+      "id": 19, "circle": 2, "name": "Затоплена Катакомба", "type": "void",
+      "difficulty": 3, "souls_count": 8,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","innocent","trap"],
+      "enemies":  ["skeleton", "undead_archer", "skeleton_witch", "necromancer"],
+      "traps":    ["sinking_platform","poison_gas","ghost_platform","fake_soul"],
+      "bonuses":  ["holy_water","manna","hope_torch","broken_halo"],
+      "special_mechanics": ["underwater_sections","air_meter","fog_visibility"]
+    },
+    {
+      "id": 20, "circle": 2, "name": "Болотяна Відьма", "type": "boss",
+      "difficulty": 4, "souls_count": 4,
+      "soul_types": ["broken","innocent","sleeping","broken"],
+      "enemies":  ["undead_archer", "skeleton_witch"],
+      "traps":    ["sinking_platform","poison_gas"],
+      "bonuses":  ["holy_water","prayer_stone"],
+      "special_mechanics": ["boss_fight","boss_swamp_witch","underwater_sections"]
+    },
+
+    {
+      "id": 21, "circle": 3, "name": "Вугільний Спуск", "type": "vertical",
+      "difficulty": 3, "souls_count": 2,
+      "soul_types": ["innocent","broken"],
+      "enemies":  ["fire_golem"],
+      "traps":    ["lava_pit","bottom_spikes"],
+      "bonuses":  ["holy_water","manna"],
+      "special_mechanics": ["temperature_mechanic"]
+    },
+    {
+      "id": 22, "circle": 3, "name": "Лавові Стрибки", "type": "vertical",
+      "difficulty": 3, "souls_count": 2,
+      "soul_types": ["broken","innocent"],
+      "enemies":  ["fire_golem", "demon_archer"],
+      "traps":    ["lava_pit","lava_flow"],
+      "bonuses":  ["holy_water","righteous_shadow"],
+      "special_mechanics": ["temperature_mechanic","moving_platforms_lava"]
+    },
+    {
+      "id": 23, "circle": 3, "name": "Розпечені Тунелі", "type": "labyrinth",
+      "difficulty": 3, "souls_count": 3,
+      "soul_types": ["innocent","broken","sleeping"],
+      "enemies":  ["demon_archer", "blood_demon"],
+      "traps":    ["lava_flow","bottom_spikes","lava_pit"],
+      "bonuses":  ["holy_water","prayer_stone"],
+      "special_mechanics": ["temperature_mechanic"]
+    },
+    {
+      "id": 24, "circle": 3, "name": "Вогняна Печера", "type": "void",
+      "difficulty": 3, "souls_count": 6,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent"],
+      "enemies":  ["fire_golem", "demon_archer", "blood_demon"],
+      "traps":    ["lava_pit","lava_flow","bottom_spikes"],
+      "bonuses":  ["holy_water","manna","righteous_shadow"],
+      "special_mechanics": ["temperature_mechanic","rising_lava_slow"]
+    },
+    {
+      "id": 25, "circle": 3, "name": "Лава Наздоганяє", "type": "escape",
+      "difficulty": 3, "souls_count": 1,
+      "soul_types": ["sleeping"],
+      "enemies":  ["fire_golem"],
+      "traps":    ["lava_flow","lava_pit"],
+      "bonuses":  ["holy_water","angel_feather"],
+      "special_mechanics": ["rising_lava_fast"]
+    },
+    {
+      "id": 26, "circle": 3, "name": "Вулканічні Виступи", "type": "vertical",
+      "difficulty": 4, "souls_count": 2,
+      "soul_types": ["broken","sleeping"],
+      "enemies":  ["fire_golem", "blood_demon"],
+      "traps":    ["lava_pit","lava_flow","bottom_spikes"],
+      "bonuses":  ["righteous_shadow","prayer_stone"],
+      "special_mechanics": ["temperature_mechanic","fire_jets"]
+    },
+    {
+      "id": 27, "circle": 3, "name": "Пекельна Кузня", "type": "labyrinth",
+      "difficulty": 4, "souls_count": 4,
+      "soul_types": ["broken","innocent","sleeping","broken"],
+      "enemies":  ["blood_demon", "demon_archer"],
+      "traps":    ["lava_flow","steam_jet","bottom_spikes"],
+      "bonuses":  ["holy_water","manna"],
+      "special_mechanics": ["temperature_mechanic","fire_jets"]
+    },
+    {
+      "id": 28, "circle": 3, "name": "Острів у Вогні", "type": "vertical",
+      "difficulty": 4, "souls_count": 3,
+      "soul_types": ["sleeping","broken","innocent"],
+      "enemies":  ["fire_golem", "demon_archer"],
+      "traps":    ["fake_soul","lava_pit"],
+      "bonuses":  ["holy_water","broken_halo"],
+      "special_mechanics": ["temperature_mechanic"]
+    },
+    {
+      "id": 29, "circle": 3, "name": "Жерло Вулкану", "type": "void",
+      "difficulty": 4, "souls_count": 7,
+      "soul_types": ["innocent","broken","sleeping","trap","innocent","broken","innocent"],
+      "enemies":  ["fire_golem", "demon_archer", "blood_demon"],
+      "traps":    ["lava_pit","lava_flow","fake_soul","bottom_spikes"],
+      "bonuses":  ["holy_water","righteous_shadow","prayer_stone","manna"],
+      "special_mechanics": ["temperature_mechanic","rising_lava_slow","fire_jets"]
+    },
+    {
+      "id": 30, "circle": 3, "name": "Демон Вогню", "type": "boss",
+      "difficulty": 5, "souls_count": 5,
+      "soul_types": ["broken","innocent","sleeping","broken","innocent"],
+      "enemies":  ["fire_golem", "blood_demon"],
+      "traps":    ["lava_pit","lava_flow"],
+      "bonuses":  ["holy_water","angel_feather"],
+      "special_mechanics": ["boss_fight","boss_fire_golem","temperature_mechanic","rising_lava_slow"]
+    },
+
+    {
+      "id": 31, "circle": 4, "name": "Золоті Руїни", "type": "vertical",
+      "difficulty": 4, "souls_count": 2,
+      "soul_types": ["innocent","broken"],
+      "enemies":  ["mimic"],
+      "traps":    ["treasure_chest","fake_soul"],
+      "bonuses":  ["sinner_map","manna"],
+      "special_mechanics": ["sin_temptation"]
+    },
+    {
+      "id": 32, "circle": 4, "name": "Скарби і Пастки", "type": "vertical",
+      "difficulty": 4, "souls_count": 2,
+      "soul_types": ["broken","innocent"],
+      "enemies":  ["mimic", "succubus"],
+      "traps":    ["treasure_chest","mirror","fake_soul"],
+      "bonuses":  ["burnt_wings","manna"],
+      "special_mechanics": ["sin_temptation"]
+    },
+    {
+      "id": 33, "circle": 4, "name": "Темні Сховища", "type": "labyrinth",
+      "difficulty": 4, "souls_count": 4,
+      "soul_types": ["innocent","broken","innocent","sleeping"],
+      "enemies":  ["succubus", "hell_knight"],
+      "traps":    ["mirror","treasure_chest","ghost_platform"],
+      "bonuses":  ["sinner_map","broken_halo"],
+      "special_mechanics": ["sin_temptation","darkness"]
+    },
+    {
+      "id": 34, "circle": 4, "name": "Золота Печера", "type": "void",
+      "difficulty": 4, "souls_count": 7,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap"],
+      "enemies":  ["mimic", "succubus", "hell_knight"],
+      "traps":    ["treasure_chest","fake_soul","mirror","ghost_platform"],
+      "bonuses":  ["sinner_map","burnt_wings","manna"],
+      "special_mechanics": ["sin_temptation"]
+    },
+    {
+      "id": 35, "circle": 4, "name": "Жадібна Погоня", "type": "escape",
+      "difficulty": 4, "souls_count": 1,
+      "soul_types": ["sleeping"],
+      "enemies":  ["hell_knight"],
+      "traps":    ["treasure_chest"],
+      "bonuses":  ["angel_feather","burnt_wings"],
+      "special_mechanics": ["chase_hell_knight"]
+    },
+    {
+      "id": 36, "circle": 4, "name": "Обвалені Склепи", "type": "vertical",
+      "difficulty": 5, "souls_count": 3,
+      "soul_types": ["broken","innocent","sleeping"],
+      "enemies":  ["hell_knight", "mimic"],
+      "traps":    ["collapse","mirror","treasure_chest"],
+      "bonuses":  ["sinner_map","prayer_stone"],
+      "special_mechanics": ["sin_temptation"]
+    },
+    {
+      "id": 37, "circle": 4, "name": "Лабіринт Монет", "type": "labyrinth",
+      "difficulty": 5, "souls_count": 5,
+      "soul_types": ["innocent","broken","sleeping","broken","innocent"],
+      "enemies":  ["succubus", "hell_knight"],
+      "traps":    ["mirror","fake_soul","treasure_chest","ghost_platform"],
+      "bonuses":  ["sinner_map","broken_halo","manna"],
+      "special_mechanics": ["sin_temptation","moving_gold_platforms"]
+    },
+    {
+      "id": 38, "circle": 4, "name": "Фальшиве Багатство", "type": "vertical",
+      "difficulty": 5, "souls_count": 3,
+      "soul_types": ["trap","innocent","broken"],
+      "enemies":  ["succubus", "mimic"],
+      "traps":    ["fake_soul","treasure_chest","demon_deal"],
+      "bonuses":  ["righteous_shadow","burnt_wings"],
+      "special_mechanics": ["sin_temptation","demon_deal_offer"]
+    },
+    {
+      "id": 39, "circle": 4, "name": "Скарбниця", "type": "void",
+      "difficulty": 5, "souls_count": 10,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","innocent","broken","sleeping"],
+      "enemies":  ["mimic", "succubus", "hell_knight"],
+      "traps":    ["treasure_chest","fake_soul","mirror","demon_deal","ghost_platform"],
+      "bonuses":  ["sinner_map","burnt_wings","manna","broken_halo"],
+      "special_mechanics": ["sin_temptation","demon_deal_offer"]
+    },
+    {
+      "id": 40, "circle": 4, "name": "Колектор Душ", "type": "boss",
+      "difficulty": 6, "souls_count": 5,
+      "soul_types": ["broken","innocent","sleeping","broken","innocent"],
+      "enemies":  ["hell_knight", "succubus"],
+      "traps":    ["treasure_chest","fake_soul"],
+      "bonuses":  ["holy_water","righteous_shadow"],
+      "special_mechanics": ["boss_fight","boss_hell_knight","sin_temptation","demon_deal_offer"]
+    },
+
+    {
+      "id": 41, "circle": 5, "name": "Крижаний Поріг", "type": "vertical",
+      "difficulty": 5, "souls_count": 2,
+      "soul_types": ["innocent","broken"],
+      "enemies":  ["ice_golem"],
+      "traps":    ["ice_slide","cracking_ice"],
+      "bonuses":  ["hope_torch","manna"],
+      "special_mechanics": ["ice_physics"]
+    },
+    {
+      "id": 42, "circle": 5, "name": "Слизький Спуск", "type": "vertical",
+      "difficulty": 5, "souls_count": 3,
+      "soul_types": ["broken","innocent","sleeping"],
+      "enemies":  ["ice_golem", "magician_demon"],
+      "traps":    ["ice_slide","cracking_ice","ghost_platform"],
+      "bonuses":  ["hope_torch","angel_feather"],
+      "special_mechanics": ["ice_physics"]
+    },
+    {
+      "id": 43, "circle": 5, "name": "Крижані Коридори", "type": "labyrinth",
+      "difficulty": 5, "souls_count": 4,
+      "soul_types": ["innocent","broken","sleeping","innocent"],
+      "enemies":  ["magician_demon", "ice_golem"],
+      "traps":    ["cracking_ice","ghost_platform","ice_slide"],
+      "bonuses":  ["hope_torch","broken_halo"],
+      "special_mechanics": ["ice_physics","darkness"]
+    },
+    {
+      "id": 44, "circle": 5, "name": "Підлідна Пустота", "type": "void",
+      "difficulty": 5, "souls_count": 7,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap"],
+      "enemies":  ["ice_golem", "magician_demon"],
+      "traps":    ["cracking_ice","ice_slide","ghost_platform","bottom_spikes"],
+      "bonuses":  ["hope_torch","holy_water","angel_feather"],
+      "special_mechanics": ["ice_physics","underwater_sections"]
+    },
+    {
+      "id": 45, "circle": 5, "name": "Тріщини Наздоганяють", "type": "escape",
+      "difficulty": 5, "souls_count": 1,
+      "soul_types": ["sleeping"],
+      "enemies":  ["ice_golem"],
+      "traps":    ["cracking_ice","ice_slide"],
+      "bonuses":  ["angel_feather","hope_torch"],
+      "special_mechanics": ["ice_physics","chase_cracking_floor"]
+    },
+    {
+      "id": 46, "circle": 5, "name": "Провалля Льоду", "type": "vertical",
+      "difficulty": 6, "souls_count": 3,
+      "soul_types": ["broken","sleeping","innocent"],
+      "enemies":  ["magician_demon", "ice_golem"],
+      "traps":    ["cracking_ice","ghost_platform","ice_slide"],
+      "bonuses":  ["hope_torch","righteous_shadow"],
+      "special_mechanics": ["ice_physics"]
+    },
+    {
+      "id": 47, "circle": 5, "name": "Крижаний Лабіринт", "type": "labyrinth",
+      "difficulty": 6, "souls_count": 5,
+      "soul_types": ["innocent","broken","sleeping","broken","innocent"],
+      "enemies":  ["ice_golem", "magician_demon"],
+      "traps":    ["ice_slide","cracking_ice","darkness","ghost_platform"],
+      "bonuses":  ["hope_torch","broken_halo","manna"],
+      "special_mechanics": ["ice_physics","darkness"]
+    },
+    {
+      "id": 48, "circle": 5, "name": "Замерзлий Острів", "type": "vertical",
+      "difficulty": 6, "souls_count": 3,
+      "soul_types": ["sleeping","broken","innocent"],
+      "enemies":  ["frost_knight"],
+      "traps":    ["fake_soul","cracking_ice"],
+      "bonuses":  ["holy_water","hope_torch"],
+      "special_mechanics": ["ice_physics", "miniboss_frost_knight"]
+    },
+    {
+      "id": 49, "circle": 5, "name": "Замерзле Озеро", "type": "void",
+      "difficulty": 6, "souls_count": 8,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping"],
+      "enemies":  ["ice_golem", "magician_demon", "frost_knight"],
+      "traps":    ["cracking_ice","ice_slide","ghost_platform","fake_soul"],
+      "bonuses":  ["hope_torch","holy_water","angel_feather","broken_halo"],
+      "special_mechanics": ["ice_physics","underwater_sections","darkness"]
+    },
+    {
+      "id": 50, "circle": 5, "name": "Крижана Королева", "type": "boss",
+      "difficulty": 7, "souls_count": 5,
+      "soul_types": ["broken","innocent","sleeping","broken","innocent"],
+      "enemies":  ["frost_knight", "ice_golem"],
+      "traps":    ["cracking_ice","ice_slide"],
+      "bonuses":  ["holy_water","angel_feather"],
+      "special_mechanics": ["boss_fight","boss_winter_witch","ice_physics","cracking_arena"]
+    },
+
+    {
+      "id": 51, "circle": 6, "name": "Зруйнований Палац", "type": "vertical",
+      "difficulty": 6, "souls_count": 2,
+      "soul_types": ["innocent","broken"],
+      "enemies":  ["hell_knight"],
+      "traps":    ["falling_column","collapse"],
+      "bonuses":  ["prayer_stone","manna"],
+      "special_mechanics": ["wind_gusts"]
+    },
+    {
+      "id": 52, "circle": 6, "name": "Обвалені Колони", "type": "vertical",
+      "difficulty": 6, "souls_count": 3,
+      "soul_types": ["broken","innocent","sleeping"],
+      "enemies":  ["hell_knight", "demon_archer"],
+      "traps":    ["falling_column","wind_blast","collapse"],
+      "bonuses":  ["prayer_stone","broken_halo"],
+      "special_mechanics": ["wind_gusts"]
+    },
+    {
+      "id": 53, "circle": 6, "name": "Темні Зали", "type": "labyrinth",
+      "difficulty": 6, "souls_count": 5,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken"],
+      "enemies":  ["ghost_warrior", "demon_archer"],
+      "traps":    ["wind_blast","falling_column","ghost_platform"],
+      "bonuses":  ["broken_halo","manna"],
+      "special_mechanics": ["wind_gusts","darkness"]
+    },
+    {
+      "id": 54, "circle": 6, "name": "Підвали Гордині", "type": "void",
+      "difficulty": 6, "souls_count": 8,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping"],
+      "enemies":  ["hell_knight", "ghost_warrior", "demon_archer"],
+      "traps":    ["falling_column","wind_blast","collapse","ghost_platform"],
+      "bonuses":  ["prayer_stone","broken_halo","manna"],
+      "special_mechanics": ["wind_gusts"]
+    },
+    {
+      "id": 55, "circle": 6, "name": "Переслідування", "type": "escape",
+      "difficulty": 6, "souls_count": 1,
+      "soul_types": ["broken"],
+      "enemies":  ["fallen_angel"],
+      "traps":    ["wind_blast","falling_column"],
+      "bonuses":  ["angel_feather","prayer_stone"],
+      "special_mechanics": ["chase_fallen_angel","wind_gusts"]
+    },
+    {
+      "id": 56, "circle": 6, "name": "Статуї Брешуть", "type": "vertical",
+      "difficulty": 7, "souls_count": 3,
+      "soul_types": ["sleeping","broken","innocent"],
+      "enemies":  ["fallen_angel", "ghost_warrior"],
+      "traps":    ["mirror","falling_column","wind_blast"],
+      "bonuses":  ["sinner_map","prayer_stone"],
+      "special_mechanics": ["wind_gusts","false_indicators"]
+    },
+    {
+      "id": 57, "circle": 6, "name": "Коридори Слави", "type": "labyrinth",
+      "difficulty": 7, "souls_count": 5,
+      "soul_types": ["innocent","broken","sleeping","broken","innocent"],
+      "enemies":  ["fallen_angel", "demon_archer"],
+      "traps":    ["falling_column","ghost_platform","wind_blast","mirror"],
+      "bonuses":  ["broken_halo","manna","prayer_stone"],
+      "special_mechanics": ["wind_gusts","false_indicators"]
+    },
+    {
+      "id": 58, "circle": 6, "name": "Трон Порожній", "type": "vertical",
+      "difficulty": 7, "souls_count": 3,
+      "soul_types": ["sleeping","trap","broken"],
+      "enemies":  ["fallen_angel", "succubus"],
+      "traps":    ["demon_deal","fake_soul","falling_column"],
+      "bonuses":  ["righteous_shadow","broken_halo"],
+      "special_mechanics": ["wind_gusts","demon_deal_offer"]
+    },
+    {
+      "id": 59, "circle": 6, "name": "Зала Павших Янголів", "type": "void",
+      "difficulty": 7, "souls_count": 9,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping","broken"],
+      "enemies":  ["fallen_angel", "hell_knight", "ghost_warrior", "demon_archer"],
+      "traps":    ["falling_column","wind_blast","fake_soul","mirror","demon_deal"],
+      "bonuses":  ["prayer_stone","broken_halo","manna","sinner_map"],
+      "special_mechanics": ["wind_gusts","false_indicators","demon_deal_offer"]
+    },
+    {
+      "id": 60, "circle": 6, "name": "Архідемон Гордині", "type": "boss",
+      "difficulty": 8, "souls_count": 5,
+      "soul_types": ["broken","innocent","sleeping","broken","innocent"],
+      "enemies":  ["fallen_angel", "hell_knight"],
+      "traps":    ["wind_blast","falling_column"],
+      "bonuses":  ["holy_water","prayer_stone"],
+      "special_mechanics": ["boss_fight","boss_fallen_angel","wind_gusts"]
+    },
+
+    {
+      "id": 61, "circle": 7, "name": "Мертві Корені", "type": "vertical",
+      "difficulty": 7, "souls_count": 3,
+      "soul_types": ["innocent","broken","sleeping"],
+      "enemies":  ["skeleton_witch"],
+      "traps":    ["bottom_spikes","voice_of_relatives"],
+      "bonuses":  ["sinner_map","manna"],
+      "special_mechanics": ["npc_hints_unreliable"]
+    },
+    {
+      "id": 62, "circle": 7, "name": "Шипи і Тіні", "type": "vertical",
+      "difficulty": 7, "souls_count": 3,
+      "soul_types": ["broken","innocent","sleeping"],
+      "enemies":  ["phantom_knight", "skeleton_witch"],
+      "traps":    ["bottom_spikes","mirror","voice_of_relatives"],
+      "bonuses":  ["hope_torch","righteous_shadow"],
+      "special_mechanics": ["npc_hints_unreliable","darkness"]
+    },
+    {
+      "id": 63, "circle": 7, "name": "Гілки-Пастки", "type": "labyrinth",
+      "difficulty": 7, "souls_count": 5,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken"],
+      "enemies":  ["necromancer", "phantom_knight"],
+      "traps":    ["mirror","voice_of_relatives","ghost_platform"],
+      "bonuses":  ["sinner_map","broken_halo"],
+      "special_mechanics": ["npc_hints_unreliable","darkness"]
+    },
+    {
+      "id": 64, "circle": 7, "name": "Отруєне Коріння", "type": "void",
+      "difficulty": 7, "souls_count": 8,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping"],
+      "enemies":  ["skeleton_witch", "necromancer", "phantom_knight"],
+      "traps":    ["voice_of_relatives","mirror","bottom_spikes","ghost_platform"],
+      "bonuses":  ["sinner_map","hope_torch","righteous_shadow"],
+      "special_mechanics": ["npc_hints_unreliable"]
+    },
+    {
+      "id": 65, "circle": 7, "name": "Втеча з Лісу", "type": "escape",
+      "difficulty": 7, "souls_count": 1,
+      "soul_types": ["sleeping"],
+      "enemies":  ["phantom_knight"],
+      "traps":    ["voice_of_relatives","mirror"],
+      "bonuses":  ["angel_feather","sinner_map"],
+      "special_mechanics": ["chase_forest","npc_hints_unreliable"]
+    },
+    {
+      "id": 66, "circle": 7, "name": "Брехливі Шляхи", "type": "vertical",
+      "difficulty": 8, "souls_count": 3,
+      "soul_types": ["sleeping","broken","innocent"],
+      "enemies":  ["mimic", "skeleton_witch"],
+      "traps":    ["mirror","fake_soul","voice_of_relatives"],
+      "bonuses":  ["sinner_map","righteous_shadow"],
+      "special_mechanics": ["npc_hints_unreliable","false_indicators"]
+    },
+    {
+      "id": 67, "circle": 7, "name": "Деревний Лабіринт", "type": "labyrinth",
+      "difficulty": 8, "souls_count": 5,
+      "soul_types": ["innocent","broken","sleeping","broken","innocent"],
+      "enemies":  ["necromancer", "mimic", "phantom_knight"],
+      "traps":    ["mirror","voice_of_relatives","ghost_platform","bottom_spikes"],
+      "bonuses":  ["sinner_map","hope_torch","broken_halo"],
+      "special_mechanics": ["npc_hints_unreliable","darkness","false_indicators"]
+    },
+    {
+      "id": 68, "circle": 7, "name": "Заборонений Сад", "type": "vertical",
+      "difficulty": 8, "souls_count": 4,
+      "soul_types": ["sleeping","trap","broken","innocent"],
+      "enemies":  ["succubus", "mimic"],
+      "traps":    ["demon_deal","fake_soul","mirror"],
+      "bonuses":  ["righteous_shadow","sinner_map"],
+      "special_mechanics": ["npc_hints_unreliable","demon_deal_offer"]
+    },
+    {
+      "id": 69, "circle": 7, "name": "Серце Лісу", "type": "void",
+      "difficulty": 8, "souls_count": 9,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping","broken"],
+      "enemies":  ["skeleton_witch", "necromancer", "phantom_knight", "mimic"],
+      "traps":    ["voice_of_relatives","mirror","fake_soul","demon_deal","ghost_platform"],
+      "bonuses":  ["sinner_map","righteous_shadow","hope_torch","broken_halo"],
+      "special_mechanics": ["npc_hints_unreliable","darkness","demon_deal_offer","false_indicators"]
+    },
+    {
+      "id": 70, "circle": 7, "name": "Демон Омани", "type": "boss",
+      "difficulty": 9, "souls_count": 5,
+      "soul_types": ["broken","innocent","sleeping","broken","innocent"],
+      "enemies":  ["mimic", "phantom_knight"],
+      "traps":    ["fake_soul","mirror"],
+      "bonuses":  ["holy_water","sinner_map"],
+      "special_mechanics": ["boss_fight","boss_mimic","npc_hints_unreliable","boss_mimics_bonuses"]
+    },
+
+    {
+      "id": 71, "circle": 8, "name": "Залізний Поріг", "type": "vertical",
+      "difficulty": 8, "souls_count": 3,
+      "soul_types": ["innocent","broken","sleeping"],
+      "enemies":  ["stone_golem"],
+      "traps":    ["gear_trap","crusher"],
+      "bonuses":  ["holy_water","manna"],
+      "special_mechanics": ["moving_gears"]
+    },
+    {
+      "id": 72, "circle": 8, "name": "Шестерні і Прірви", "type": "vertical",
+      "difficulty": 8, "souls_count": 3,
+      "soul_types": ["broken","innocent","sleeping"],
+      "enemies":  ["stone_golem", "blood_demon"],
+      "traps":    ["crusher","conveyor","gear_trap"],
+      "bonuses":  ["angel_feather","prayer_stone"],
+      "special_mechanics": ["moving_gears","conveyor_belts"]
+    },
+    {
+      "id": 73, "circle": 8, "name": "Механічні Тунелі", "type": "labyrinth",
+      "difficulty": 8, "souls_count": 5,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken"],
+      "enemies":  ["blood_demon", "magician_demon"],
+      "traps":    ["crusher","steam_jet","gear_trap","conveyor"],
+      "bonuses":  ["holy_water","broken_halo"],
+      "special_mechanics": ["moving_gears","conveyor_belts","steam_jets"]
+    },
+    {
+      "id": 74, "circle": 8, "name": "Котельня", "type": "void",
+      "difficulty": 8, "souls_count": 8,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping"],
+      "enemies":  ["stone_golem", "blood_demon", "magician_demon"],
+      "traps":    ["crusher","steam_jet","conveyor","gear_trap"],
+      "bonuses":  ["holy_water","angel_feather","prayer_stone"],
+      "special_mechanics": ["moving_gears","conveyor_belts","steam_jets"]
+    },
+    {
+      "id": 75, "circle": 8, "name": "Конвеєр Смерті", "type": "escape",
+      "difficulty": 8, "souls_count": 1,
+      "soul_types": ["broken"],
+      "enemies":  ["stone_golem"],
+      "traps":    ["crusher","conveyor","gear_trap"],
+      "bonuses":  ["angel_feather","holy_water"],
+      "special_mechanics": ["conveyor_belts","chase_machine","moving_gears"]
+    },
+    {
+      "id": 76, "circle": 8, "name": "Пресові Камери", "type": "vertical",
+      "difficulty": 9, "souls_count": 3,
+      "soul_types": ["broken","sleeping","innocent"],
+      "enemies":  ["stone_golem", "magician_demon"],
+      "traps":    ["crusher","steam_jet","gear_trap"],
+      "bonuses":  ["righteous_shadow","prayer_stone"],
+      "special_mechanics": ["moving_gears","crusher_rooms"]
+    },
+    {
+      "id": 77, "circle": 8, "name": "Зубчасті Лабіринти", "type": "labyrinth",
+      "difficulty": 9, "souls_count": 6,
+      "soul_types": ["innocent","broken","sleeping","broken","innocent","sleeping"],
+      "enemies":  ["blood_demon", "magician_demon"],
+      "traps":    ["crusher","gear_trap","steam_jet","conveyor","ghost_platform"],
+      "bonuses":  ["holy_water","manna","angel_feather"],
+      "special_mechanics": ["moving_gears","conveyor_belts","steam_jets","crusher_rooms"]
+    },
+    {
+      "id": 78, "circle": 8, "name": "Реактор Болю", "type": "vertical",
+      "difficulty": 9, "souls_count": 4,
+      "soul_types": ["sleeping","trap","broken","innocent"],
+      "enemies":  ["succubus", "blood_demon"],
+      "traps":    ["demon_deal","steam_jet","crusher"],
+      "bonuses":  ["righteous_shadow","holy_water"],
+      "special_mechanics": ["moving_gears","demon_deal_offer"]
+    },
+    {
+      "id": 79, "circle": 8, "name": "Серце Машини", "type": "void",
+      "difficulty": 9, "souls_count": 10,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping","broken","innocent"],
+      "enemies":  ["stone_golem", "blood_demon", "magician_demon"],
+      "traps":    ["crusher","steam_jet","conveyor","gear_trap","demon_deal"],
+      "bonuses":  ["holy_water","angel_feather","prayer_stone","manna"],
+      "special_mechanics": ["moving_gears","conveyor_belts","steam_jets","crusher_rooms","demon_deal_offer"]
+    },
+    {
+      "id": 80, "circle": 8, "name": "Механічний Наглядач", "type": "boss",
+      "difficulty": 9, "souls_count": 5,
+      "soul_types": ["broken","innocent","sleeping","broken","innocent"],
+      "enemies":  ["stone_golem", "blood_demon"],
+      "traps":    ["crusher","gear_trap"],
+      "bonuses":  ["holy_water","angel_feather"],
+      "special_mechanics": ["boss_fight","boss_stone_golem_mech","moving_gears","crusher_arena"]
+    },
+
+    {
+      "id": 81, "circle": 9, "name": "Край Темряви", "type": "vertical",
+      "difficulty": 9, "souls_count": 3,
+      "soul_types": ["innocent","broken","sleeping"],
+      "enemies":  ["dark_entity"],
+      "traps":    ["darkness","void_tear"],
+      "bonuses":  ["burnt_wings","manna"],
+      "special_mechanics": ["gravity_instability"]
+    },
+    {
+      "id": 82, "circle": 9, "name": "Падіння Вгору", "type": "vertical",
+      "difficulty": 9, "souls_count": 3,
+      "soul_types": ["broken","innocent","sleeping"],
+      "enemies":  ["dark_entity", "phantom_knight"],
+      "traps":    ["gravity_shift","void_tear","darkness"],
+      "bonuses":  ["burnt_wings","righteous_shadow"],
+      "special_mechanics": ["gravity_instability","gravity_reversal"]
+    },
+    {
+      "id": 83, "circle": 9, "name": "Зоряні Тунелі", "type": "labyrinth",
+      "difficulty": 9, "souls_count": 6,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","sleeping"],
+      "enemies":  ["reaper", "phantom_knight"],
+      "traps":    ["void_tear","gravity_shift","darkness"],
+      "bonuses":  ["burnt_wings","broken_halo"],
+      "special_mechanics": ["gravity_instability","darkness"]
+    },
+    {
+      "id": 84, "circle": 9, "name": "Нульова Гравітація", "type": "void",
+      "difficulty": 9, "souls_count": 9,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping","broken"],
+      "enemies":  ["dark_entity", "reaper", "phantom_knight"],
+      "traps":    ["gravity_shift","void_tear","darkness","ghost_platform"],
+      "bonuses":  ["burnt_wings","righteous_shadow","broken_halo"],
+      "special_mechanics": ["zero_gravity","gravity_instability"]
+    },
+    {
+      "id": 85, "circle": 9, "name": "Безконечна Втеча", "type": "escape",
+      "difficulty": 9, "souls_count": 1,
+      "soul_types": ["sleeping"],
+      "enemies":  ["dark_entity"],
+      "traps":    ["void_tear","gravity_shift"],
+      "bonuses":  ["burnt_wings","angel_feather"],
+      "special_mechanics": ["chase_void","gravity_instability"]
+    },
+    {
+      "id": 86, "circle": 9, "name": "Розірваний Простір", "type": "vertical",
+      "difficulty": 10, "souls_count": 4,
+      "soul_types": ["broken","sleeping","innocent","broken"],
+      "enemies":  ["reaper", "dark_entity"],
+      "traps":    ["void_tear","gravity_shift","darkness"],
+      "bonuses":  ["burnt_wings","righteous_shadow"],
+      "special_mechanics": ["gravity_instability","gravity_reversal","space_tears"]
+    },
+    {
+      "id": 87, "circle": 9, "name": "Темний Лабіринт", "type": "labyrinth",
+      "difficulty": 10, "souls_count": 6,
+      "soul_types": ["innocent","broken","sleeping","broken","innocent","sleeping"],
+      "enemies":  ["dark_entity", "reaper"],
+      "traps":    ["darkness","void_tear","ghost_platform","gravity_shift"],
+      "bonuses":  ["hope_torch","burnt_wings","broken_halo"],
+      "special_mechanics": ["gravity_instability","complete_darkness","space_tears"]
+    },
+    {
+      "id": 88, "circle": 9, "name": "Острів між Світами", "type": "vertical",
+      "difficulty": 10, "souls_count": 4,
+      "soul_types": ["sleeping","trap","broken","innocent"],
+      "enemies":  ["reaper", "succubus"],
+      "traps":    ["demon_deal","void_tear","gravity_shift"],
+      "bonuses":  ["righteous_shadow","burnt_wings"],
+      "special_mechanics": ["zero_gravity","demon_deal_offer"]
+    },
+    {
+      "id": 89, "circle": 9, "name": "Між Світами", "type": "void",
+      "difficulty": 10, "souls_count": 12,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping","broken","innocent","sleeping","broken"],
+      "enemies":  ["dark_entity", "reaper", "phantom_knight"],
+      "traps":    ["gravity_shift","void_tear","darkness","demon_deal","ghost_platform"],
+      "bonuses":  ["burnt_wings","righteous_shadow","broken_halo","hope_torch"],
+      "special_mechanics": ["zero_gravity","gravity_instability","demon_deal_offer","space_tears"]
+    },
+    {
+      "id": 90, "circle": 9, "name": "Страж Безодні", "type": "boss",
+      "difficulty": 10, "souls_count": 5,
+      "soul_types": ["broken","innocent","sleeping","broken","innocent"],
+      "enemies":  ["dark_entity", "reaper"],
+      "traps":    ["void_tear","gravity_shift"],
+      "bonuses":  ["holy_water","burnt_wings"],
+      "special_mechanics": ["boss_fight","boss_dark_entity","zero_gravity","boss_fills_screen"]
+    },
+
+    {
+      "id": 91, "circle": 10, "name": "Підступи до Трону", "type": "vertical",
+      "difficulty": 10, "souls_count": 3,
+      "soul_types": ["innocent","broken","sleeping"],
+      "enemies":  ["fallen_angel", "demon_archer"],
+      "traps":    ["lava_pit","void_tear","crusher"],
+      "bonuses":  ["holy_water","prayer_stone"],
+      "special_mechanics": ["all_mechanics_mixed"]
+    },
+    {
+      "id": 92, "circle": 10, "name": "Охорона Першого Кола", "type": "labyrinth",
+      "difficulty": 10, "souls_count": 5,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken"],
+      "enemies":  ["fallen_angel", "dark_entity"],
+      "traps":    ["crusher","void_tear","lava_flow","darkness"],
+      "bonuses":  ["holy_water","angel_feather","sinner_map"],
+      "special_mechanics": ["all_mechanics_mixed","darkness"]
+    },
+    {
+      "id": 93, "circle": 10, "name": "Охорона Другого Кола", "type": "vertical",
+      "difficulty": 10, "souls_count": 4,
+      "soul_types": ["broken","sleeping","innocent","broken"],
+      "enemies":  ["demon_archer", "reaper"],
+      "traps":    ["lava_pit","gear_trap","void_tear"],
+      "bonuses":  ["righteous_shadow","prayer_stone"],
+      "special_mechanics": ["all_mechanics_mixed","temperature_mechanic"]
+    },
+    {
+      "id": 94, "circle": 10, "name": "Охорона Третього Кола", "type": "labyrinth",
+      "difficulty": 10, "souls_count": 6,
+      "soul_types": ["innocent","broken","sleeping","broken","innocent","sleeping"],
+      "enemies":  ["mimic", "dark_entity", "fallen_angel"],
+      "traps":    ["demon_deal","void_tear","fake_soul","crusher","lava_pit"],
+      "bonuses":  ["holy_water","sinner_map","manna"],
+      "special_mechanics": ["all_mechanics_mixed","demon_deal_offer","false_indicators"]
+    },
+    {
+      "id": 95, "circle": 10, "name": "Остання Пустота", "type": "void",
+      "difficulty": 10, "souls_count": 15,
+      "soul_types": ["innocent","broken","sleeping","innocent","broken","innocent","trap","sleeping","broken","innocent","sleeping","broken","innocent","broken","sleeping"],
+      "enemies":  ["fallen_angel", "dark_entity", "demon_archer", "reaper", "mimic"],
+      "traps":    ["lava_pit","void_tear","crusher","demon_deal","fake_soul","gravity_shift","darkness"],
+      "bonuses":  ["holy_water","prayer_stone","angel_feather","sinner_map","manna"],
+      "special_mechanics": ["all_mechanics_mixed","demon_deal_offer","zero_gravity","temperature_mechanic"]
+    },
+    {
+      "id": 96, "circle": 10, "name": "Фінальний Підйом I", "type": "escape",
+      "difficulty": 10, "souls_count": 1,
+      "soul_types": ["sleeping"],
+      "enemies":  ["fallen_angel"],
+      "traps":    ["lava_flow","void_tear"],
+      "bonuses":  ["holy_water","angel_feather"],
+      "special_mechanics": ["chase_all_elements","rising_lava_fast"]
+    },
+    {
+      "id": 97, "circle": 10, "name": "Фінальний Підйом II", "type": "vertical",
+      "difficulty": 10, "souls_count": 2,
+      "soul_types": ["broken","innocent"],
+      "enemies":  ["dark_entity", "reaper"],
+      "traps":    ["crusher","lava_pit","gravity_shift"],
+      "bonuses":  ["prayer_stone","righteous_shadow"],
+      "special_mechanics": ["all_mechanics_mixed","gravity_instability"]
+    },
+    {
+      "id": 98, "circle": 10, "name": "Фінальний Підйом III", "type": "escape",
+      "difficulty": 10, "souls_count": 1,
+      "soul_types": ["innocent"],
+      "enemies":  ["fallen_angel", "demon_archer"],
+      "traps":    ["void_tear","lava_flow","crusher"],
+      "bonuses":  ["angel_feather","holy_water"],
+      "special_mechanics": ["chase_lucifer_hand","all_mechanics_mixed"]
+    },
+    {
+      "id": 99, "circle": 10, "name": "Передчуття", "type": "vertical",
+      "difficulty": 10, "souls_count": 3,
+      "soul_types": ["sleeping","broken","innocent"],
+      "enemies":  ["mimic", "succubus", "reaper"],
+      "traps":    ["demon_deal","fake_soul","void_tear"],
+      "bonuses":  ["holy_water","righteous_shadow","prayer_stone"],
+      "special_mechanics": ["all_mechanics_mixed","demon_deal_offer","final_temptation"]
+    },
+    {
+      "id": 100, "circle": 10, "name": "Люцифер", "type": "boss",
+      "difficulty": 10, "souls_count": 5,
+      "soul_types": ["broken","innocent","sleeping","broken","innocent"],
+      "enemies":  ["fallen_angel", "dark_entity", "devil"],
+      "traps":    ["lava_pit","void_tear","gravity_shift"],
+      "bonuses":  ["holy_water","prayer_stone","angel_feather"],
+      "special_mechanics": [
+        "boss_fight", "boss_devil", "all_mechanics_mixed",
+        "multi_phase_boss", "rising_lava_fast", "zero_gravity",
+        "final_boss_arena"
+      ]
+    }
+  ]
+}

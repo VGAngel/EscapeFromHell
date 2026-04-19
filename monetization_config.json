@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "platform": "android",
+
+  "note": "Всі змінювані параметри тут. AdsManager.gd читає цей файл при старті.",
+
+  "plugins_required": {
+    "ads":  "admob-godot — https://github.com/poingstudios/godot-admob-plugin",
+    "iap":  "GodotGooglePlayBilling — https://github.com/godotengine/godot-google-play-billing"
+  },
+
+  "admob": {
+    "banner": {
+      "enabled": true,
+      "size": "ADAPTIVE_BANNER",
+      "position": "BOTTOM",
+      "reserved_height_px": 60,
+      "unit_id_release": "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX",
+      "unit_id_test":    "ca-app-pub-3940256099942544/6300978111"
+    },
+    "interstitial": {
+      "enabled": true,
+      "cooldown_seconds": 120,
+      "show_on": ["level_load_start", "level_complete_to_hub", "hub_to_next_level"],
+      "unit_id_release": "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX",
+      "unit_id_test":    "ca-app-pub-3940256099942544/1033173712"
+    }
+  },
+
+  "iap": {
+    "no_ads": {
+      "enabled": true,
+      "sku": "no_ads_forever",
+      "save_key": "no_ads_purchased"
+    },
+    "donate": {
+      "enabled": true,
+      "consumable": true,
+      "tiers": [
+        { "sku": "donate_1",  "label_key": "menu.donate_1"  },
+        { "sku": "donate_3",  "label_key": "menu.donate_3"  },
+        { "sku": "donate_5",  "label_key": "menu.donate_5"  },
+        { "sku": "donate_10", "label_key": "menu.donate_10" }
+      ]
+    }
+  },
+
+  "layout": {
+    "banner_height_px": 60,
+    "note": "Змінюй лише це число якщо банер інший розмір — решта підлаштується автоматично"
+  }
+}
