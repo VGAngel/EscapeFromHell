@@ -20,7 +20,7 @@ func _load() -> void:
 	if not file:
 		push_error("LevelConfig: cannot open " + CONFIG_PATH)
 		return
-	var parsed: Variant = JSON.parse_string(file.read_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not parsed is Dictionary:
 		push_error("LevelConfig: JSON parse failed or root is not a Dictionary")

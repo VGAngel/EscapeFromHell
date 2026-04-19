@@ -66,7 +66,7 @@ func _load_language(lang: String) -> void:
 	if not file:
 		push_error("Loc: cannot load language file: " + path)
 		return
-	var data: Variant = JSON.parse_string(file.read_as_text())
+	var data: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not data is Dictionary:
 		push_error("Loc: invalid JSON in " + path)
