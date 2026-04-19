@@ -59,7 +59,7 @@ func _ready() -> void:
 	_load()
 	_build_ui()
 	_apply_all()
-	modulate.a = 0.0
+	_root.modulate.a = 0.0
 	visible    = false
 
 # ── Persist ───────────────────────────────────────────────────────────────────
@@ -90,11 +90,11 @@ func open() -> void:
 	_refresh_widgets()
 	_switch_tab(0)
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
 
 func close() -> void:
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 0.0, FADE_DURATION)
 	tw.tween_callback(func() -> void:
 		visible = false
 		closed.emit()

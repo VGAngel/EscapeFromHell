@@ -39,7 +39,7 @@ var _btn_next:     Button         = null
 func _ready() -> void:
 	layer = 10
 	_build_ui()
-	modulate.a = 0.0
+	_root.modulate.a = 0.0
 	visible    = false
 
 # ── Public ────────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ func _animate_in(stats: Dictionary) -> void:
 
 	# 1. Fade in overlay + panel
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
 
 	# 2. Stars appear one by one
 	var star_labels: Array = _stars_row.get_children()
