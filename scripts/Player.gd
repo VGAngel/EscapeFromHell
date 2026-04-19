@@ -60,10 +60,10 @@ var _soul_shield_timer:       float = 0.0
 # ── Sin visuals ───────────────────────────────────────────────────────────────
 const SIN_SHADER_PATH := "res://shaders/player_sin.gdshader"
 const SIN_TEXTURES := [
-	"res://Assets/MyAssets/player_clean.png",
-	"res://Assets/MyAssets/player_tainted.png",
-	"res://Assets/MyAssets/player_fallen.png",
-	"res://Assets/MyAssets/player_demon.png",
+	"res://Assets/OurAssets/player_clean.png",
+	"res://Assets/OurAssets/player_tainted.png",
+	"res://Assets/OurAssets/player_fallen.png",
+	"res://Assets/OurAssets/player_demon.png",
 ]
 const SIN_THRESHOLDS := [0, 30, 60, 85]
 # modulate per state: clean → tainted → fallen → demon
