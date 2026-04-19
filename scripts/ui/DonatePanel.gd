@@ -30,9 +30,9 @@ var _lbl_thanks:  Label = null
 
 func _ready() -> void:
 	layer   = 10
-	visible = false
-	_root.modulate.a = 0.0
 	_build_ui()
+	_root.modulate.a = 0.0
+	visible = false
 	if AdsManager and AdsManager.has_signal("donate_purchased"):
 		AdsManager.donate_purchased.connect(_on_donate_purchased)
 
