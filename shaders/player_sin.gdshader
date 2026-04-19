@@ -54,35 +54,34 @@ float crack_zone(vec2 uv) {
 
 void fragment() {
 	vec4 tex = texture(TEXTURE, UV);
-	if (tex.a < 0.01) { COLOR = tex; return; }
-
 	vec3 col = tex.rgb;
 
-	// Визначаємо вагу кожного стану
+	float visible = step(0.01, tex.a);
+
 	// 0.0–0.33 = чистий→скверний, 0.33–0.66 = скверний→падений, 0.66–1.0 = падений→демон
 	float t_taint = clamp(sin_ratio / 0.33, 0.0, 1.0);
 	float t_fall  = clamp((sin_ratio - 0.33) / 0.33, 0.0, 1.0);
 	float t_demon = clamp((sin_ratio - 0.66) / 0.34, 0.0, 1.0);
 
-	// ── Чистий: золоте підсвічування (зникає при t_taint) ──────────────────
+	// ── Чистий: золоте підсвічування ───────────────────────────────────────
 	float clean_w = 1.0 - t_taint;
-	col = mix(col, clean_aura_color.rgb, clean_aura_strength * clean_w * tex.a);
+	col = mix(col, clean_aura_color.rgb, clean_aura_strength * clean_w * visible);
 
-	// ── Скверний: червоні очі + прожилки ────────────────────────────────────
-	float eye_m  = eye_zone(UV) * tex.a;
-	float vein_m = vein_zone(UV) * tex.a;
+	// ── Скверний: червоні очі + прожилки ───────────────────────────────────
+	float eye_m  = eye_zone(UV) * visible;
+	float vein_m = vein_zone(UV) * visible;
 	col = mix(col, taint_eye_color.rgb,  eye_m  * taint_eye_strength  * t_taint);
 	col = mix(col, taint_vein_color.rgb, vein_m * taint_vein_strength * t_taint);
 	col = mix(col, col * (1.0 - 0.15 * t_taint), t_taint);
 
-	// ── Падений: яскраве ліве oko, темно-фіолетова аура, темніша мантія ─────
-	float leye_m = left_eye_zone(UV) * tex.a;
+	// ── Падений: яскраве ліве oko, фіолетова аура, темніша мантія ──────────
+	float leye_m = left_eye_zone(UV) * visible;
 	col = mix(col, taint_eye_color.rgb, leye_m * 0.85 * t_fall);
 	col = mix(col, fall_aura_color.rgb, fall_aura_strength * t_fall * (1.0 - leye_m));
 	col = mix(col, col * (1.0 - fall_darken), t_fall * 0.6);
 
-	// ── Демон: обидва ока, тріщини, темна аура ───────────────────────────────
-	float crack_m = crack_zone(UV) * tex.a;
+	// ── Демон: обидва ока, тріщини, темна аура ──────────────────────────────
+	float crack_m = crack_zone(UV) * visible;
 	col = mix(col, demon_crack_color.rgb, crack_m * demon_crack_strength * t_demon);
 	col = mix(col, demon_aura_color.rgb, demon_aura_strength * t_demon * (1.0 - crack_m) * 0.5);
 	col = mix(col, col * (1.0 - demon_darken), t_demon * 0.7);
