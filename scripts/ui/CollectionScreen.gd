@@ -66,7 +66,7 @@ func _ready() -> void:
 	layer = 10
 	_load_souls()
 	_build_ui()
-	modulate.a = 0.0
+	_root.modulate.a = 0.0
 	visible = false
 
 func _load_souls() -> void:
@@ -90,11 +90,11 @@ func open() -> void:
 	_rebuild_grid()
 	_close_sheet_instant()
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
 
 func close() -> void:
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 0.0, FADE_DURATION)
 	tw.tween_callback(func() -> void:
 		visible = false
 		closed.emit()
