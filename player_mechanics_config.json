@@ -158,6 +158,35 @@
     "note": "Базово недоступно. З апгрейдом — можна зачепитись за стіну і висіти 2 сек."
   },
 
+  "sin_visuals": {
+    "shader_path": "res://shaders/player_sin.gdshader",
+    "states": [
+      {
+        "name": "clean",
+        "sin_min": 0,
+        "sin_max": 29,
+        "sin_ratio_range": [0.0, 0.0],
+        "description": "Базовий вигляд, м'яке золоте світло"
+      },
+      {
+        "name": "tainted",
+        "sin_min": 30,
+        "sin_max": 59,
+        "sin_ratio_range": [0.0, 1.0],
+        "description": "Очі злегка червоніють, темні прожилки на руках"
+      },
+      {
+        "name": "corrupt",
+        "sin_min": 60,
+        "sin_max": 100,
+        "sin_ratio_range": [1.0, 1.0],
+        "description": "Повна скверна — стала максимальна"
+      }
+    ],
+    "transition_speed": 2.0,
+    "note": "sin_ratio — uniform float у shaders/player_sin.gdshader. Player.gd плавно інтерполює до цільового значення"
+  },
+
   "animations": {
     "idle":          "player_idle",
     "walk":          "player_walk",

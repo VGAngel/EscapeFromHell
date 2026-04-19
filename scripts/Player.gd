@@ -57,6 +57,11 @@ var _upgrade_staff_purity:    bool  = false
 var _upgrade_soul_shield:     bool  = false
 var _soul_shield_timer:       float = 0.0
 
+# ── Sin shader ────────────────────────────────────────────────────────────────
+const SIN_SHADER_PATH := "res://shaders/player_sin.gdshader"
+const SIN_TRANSITION_SPEED := 2.0
+var _sin_ratio_current: float = 0.0
+
 # ── Child nodes ───────────────────────────────────────────────────────────────
 @onready var _anim: AnimationPlayer    = $AnimationPlayer
 @onready var _staff_area: Area2D       = $StaffArea
@@ -67,6 +72,14 @@ func _ready() -> void:
 	_apply_upgrades()
 	_soul_visual.visible = false
 	_staff_area.monitoring = false
+	_setup_sin_shader()
+
+func _setup_sin_shader() -> void:
+	var shader := load(SIN_SHADER_PATH) as Shader
+	if shader:
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		_sprite.material = mat
 
 func _apply_upgrades() -> void:
 	if not SaveManager:
@@ -104,6 +117,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_state()
 	_update_animation()
+	_update_sin_shader(delta)
 
 # ── Timers ────────────────────────────────────────────────────────────────────
 func _tick_timers(delta: float) -> void:
@@ -336,6 +350,21 @@ func _state_to_anim() -> String:
 		State.CARRYING:    return "player_carry_idle"
 		State.DEAD:        return "player_death"
 	return "player_idle"
+
+# ── Sin shader ────────────────────────────────────────────────────────────────
+func _update_sin_shader(delta: float) -> void:
+	if not _sprite or not _sprite.material:
+		return
+	var sin_pct: int = SaveManager.get_sin() if SaveManager else 0
+	var target: float
+	if sin_pct < 30:
+		target = 0.0
+	elif sin_pct < 60:
+		target = (sin_pct - 30.0) / 30.0
+	else:
+		target = 1.0
+	_sin_ratio_current = move_toward(_sin_ratio_current, target, SIN_TRANSITION_SPEED * delta)
+	(_sprite.material as ShaderMaterial).set_shader_parameter("sin_ratio", _sin_ratio_current)
 
 # ── Public helpers ────────────────────────────────────────────────────────────
 func get_staff_cooldown_ratio() -> float:
