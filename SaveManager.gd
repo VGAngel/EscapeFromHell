@@ -199,7 +199,7 @@ func _load() -> bool:
 
 	# Спробувати основний файл
 	if FileAccess.file_exists(path):
-		var result := _read_file(path)
+		var result: Variant = _read_file(path)
 		if result != null:
 			data = result
 			return true
@@ -208,7 +208,7 @@ func _load() -> bool:
 	var backup := _backup_path(_slot)
 	if FileAccess.file_exists(backup):
 		push_warning("SaveManager: main save corrupted, loading backup for slot %d" % _slot)
-		var result := _read_file(backup)
+		var result: Variant = _read_file(backup)
 		if result != null:
 			data = result
 			return true
@@ -225,7 +225,7 @@ func _write() -> void:
 	if FileAccess.file_exists(path):
 		var old := FileAccess.open(path, FileAccess.READ)
 		if old:
-			var old_content := old.read_as_text()
+			var old_content: String = old.read_as_text()
 			old.close()
 			var bak := FileAccess.open(backup, FileAccess.WRITE)
 			if bak:
