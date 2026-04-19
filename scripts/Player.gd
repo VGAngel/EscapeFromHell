@@ -57,10 +57,28 @@ var _upgrade_staff_purity:    bool  = false
 var _upgrade_soul_shield:     bool  = false
 var _soul_shield_timer:       float = 0.0
 
-# ── Sin shader ────────────────────────────────────────────────────────────────
+# ── Sin visuals ───────────────────────────────────────────────────────────────
 const SIN_SHADER_PATH := "res://shaders/player_sin.gdshader"
-const SIN_TRANSITION_SPEED := 2.0
-var _sin_ratio_current: float = 0.0
+const SIN_TEXTURES := [
+	"res://Assets/MyAssets/player_clean.png",
+	"res://Assets/MyAssets/player_tainted.png",
+	"res://Assets/MyAssets/player_fallen.png",
+	"res://Assets/MyAssets/player_demon.png",
+]
+const SIN_THRESHOLDS := [0, 30, 60, 85]
+# modulate per state: clean → tainted → fallen → demon
+const SIN_MODULATES := [
+	Color(1.05, 1.00, 0.88, 1.0),
+	Color(0.95, 0.88, 0.88, 1.0),
+	Color(0.80, 0.70, 0.90, 1.0),
+	Color(0.75, 0.60, 0.65, 1.0),
+]
+const SIN_BLEND_SPEED := 2.5
+
+var _sin_textures: Array = []
+var _sin_state_idx: int  = 0
+var _sin_blend_t: float  = 0.0
+var _sin_modulate: Color = Color.WHITE
 
 # ── Child nodes ───────────────────────────────────────────────────────────────
 @onready var _anim: AnimationPlayer    = $AnimationPlayer
@@ -75,11 +93,21 @@ func _ready() -> void:
 	_setup_sin_shader()
 
 func _setup_sin_shader() -> void:
+	for path in SIN_TEXTURES:
+		var tex = load(path) if ResourceLoader.exists(path) else null
+		_sin_textures.append(tex)
 	var shader := load(SIN_SHADER_PATH) as Shader
-	if shader:
-		var mat := ShaderMaterial.new()
-		mat.shader = shader
-		_sprite.material = mat
+	if not shader:
+		return
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	if _sin_textures[0]:
+		_sprite.texture = _sin_textures[0]
+	var next_tex = _sin_textures[1] if _sin_textures[1] else _sin_textures[0]
+	mat.set_shader_parameter("texture_next", next_tex)
+	mat.set_shader_parameter("blend_t", 0.0)
+	_sprite.material = mat
+	_sprite.modulate = SIN_MODULATES[0]
 
 func _apply_upgrades() -> void:
 	if not SaveManager:
@@ -351,20 +379,46 @@ func _state_to_anim() -> String:
 		State.DEAD:        return "player_death"
 	return "player_idle"
 
-# ── Sin shader ────────────────────────────────────────────────────────────────
+# ── Sin visuals ───────────────────────────────────────────────────────────────
 func _update_sin_shader(delta: float) -> void:
 	if not _sprite or not _sprite.material:
 		return
 	var sin_pct: int = SaveManager.get_sin() if SaveManager else 0
-	var target: float
-	if sin_pct < 30:
-		target = 0.0
-	elif sin_pct < 60:
-		target = (sin_pct - 30.0) / 30.0
-	else:
-		target = 1.0
-	_sin_ratio_current = move_toward(_sin_ratio_current, target, SIN_TRANSITION_SPEED * delta)
-	(_sprite.material as ShaderMaterial).set_shader_parameter("sin_ratio", _sin_ratio_current)
+
+	# Визначаємо поточний та наступний стан
+	var target_idx: int = 0
+	for i in range(SIN_THRESHOLDS.size() - 1, -1, -1):
+		if sin_pct >= SIN_THRESHOLDS[i]:
+			target_idx = i
+			break
+
+	var next_idx: int = mini(target_idx + 1, SIN_TEXTURES.size() - 1)
+
+	# Частка всередині поточного діапазону (0..1)
+	var lo: int = SIN_THRESHOLDS[target_idx]
+	var hi: int = SIN_THRESHOLDS[next_idx] if next_idx != target_idx else 100
+	var local_t: float = clamp(float(sin_pct - lo) / float(hi - lo), 0.0, 1.0)
+
+	# Якщо перейшли в новий стан — свапаємо текстури
+	if target_idx != _sin_state_idx:
+		_sin_state_idx = target_idx
+		if _sin_textures[target_idx]:
+			_sprite.texture = _sin_textures[target_idx]
+		_sin_blend_t = 0.0
+
+	# Плавно змішуємо до наступного стану
+	var target_blend: float = local_t
+	_sin_blend_t = move_toward(_sin_blend_t, target_blend, SIN_BLEND_SPEED * delta)
+
+	var mat := _sprite.material as ShaderMaterial
+	var next_tex = _sin_textures[next_idx] if _sin_textures[next_idx] else _sin_textures[target_idx]
+	mat.set_shader_parameter("texture_next", next_tex)
+	mat.set_shader_parameter("blend_t", _sin_blend_t)
+
+	# modulate — плавний перехід між кольорами станів
+	var target_mod: Color = SIN_MODULATES[target_idx].lerp(SIN_MODULATES[next_idx], local_t)
+	_sin_modulate = _sin_modulate.lerp(target_mod, delta * SIN_BLEND_SPEED)
+	_sprite.modulate = _sin_modulate
 
 # ── Public helpers ────────────────────────────────────────────────────────────
 func get_staff_cooldown_ratio() -> float:
