@@ -6,8 +6,8 @@ extends GutTest
 var lc: Node
 
 func before_each() -> void:
-	lc = preload("res://LevelConfig.gd").new()
-	# Inject test data without going through _load()
+	lc = autofree(preload("res://LevelConfig.gd").new())
+	# autofree() skips add_child → _ready() never called → _load() never runs
 	lc._levels_by_id = {
 		1:  {"id": 1,  "circle": 1, "type": "platformer", "souls_count": 2,
 			 "static": true, "difficulty": 1, "enemies": ["shade"], "traps": [], "bonuses": []},
@@ -28,7 +28,6 @@ func before_each() -> void:
 		"2": {"theme": "lustful", "enemies": ["lust_demon"], "traps": ["wind"], "bonuses": [],         "soul_types": ["broken"]},
 	}
 	lc._data = {"levels": [], "circle_defaults": lc._circle_defaults}
-	add_child_autofree(lc)
 
 # ── get_level_type ────────────────────────────────────────────────────────────
 

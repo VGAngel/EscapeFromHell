@@ -14,12 +14,11 @@ const TEST_DIFFICULTY_CFG := {
 }
 
 func before_each() -> void:
-	lg = preload("res://scripts/LevelGenerator.gd").new()
+	lg = autofree(preload("res://scripts/LevelGenerator.gd").new())
 	lg._cfg   = TEST_DIFFICULTY_CFG.duplicate(true)
 	lg._souls = {}
 	lg._static_levels = []
 	lg._hidden_soul_levels = {}
-	add_child_autofree(lg)
 
 # ── _circle_of ────────────────────────────────────────────────────────────────
 

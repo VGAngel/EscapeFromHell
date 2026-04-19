@@ -5,8 +5,8 @@ extends GutTest
 var hub: Node
 
 func before_each() -> void:
-	hub = preload("res://scripts/Hub.gd").new()
-	add_child_autofree(hub)
+	hub = autofree(preload("res://scripts/Hub.gd").new())
+	# autofree() skips _ready() — avoids crash on missing $Background etc.
 	if SaveManager:
 		SaveManager._reset()
 

@@ -7,8 +7,6 @@ var gm: Node
 
 func before_each() -> void:
 	gm = preload("res://scripts/GameManager.gd").new()
-	# Stub everything that touches scene tree or autoloads
-	stub(gm, "get_tree").to_return(null)
 	add_child_autofree(gm)
 	# Clean SaveManager state so _base_max_hp reads fresh upgrades
 	if SaveManager:
