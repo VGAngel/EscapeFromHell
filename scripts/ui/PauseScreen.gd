@@ -1,0 +1,377 @@
+extends CanvasLayer
+
+# Attach to a CanvasLayer (layer = 10) added as child of Level.tscn.
+# Open/close via toggle() or connect to HUD.pause_requested.
+#
+# Signals
+signal resumed
+signal settings_requested
+signal collection_requested
+
+# ── Constants ─────────────────────────────────────────────────────────────────
+const FADE_DURATION  := 0.2
+const SIN_COLORS := [
+	Color("#FFFFFF"),
+	Color("#FFAA00"),
+	Color("#FF4400"),
+	Color("#AA0000"),
+]
+const SIN_THRESHOLDS := [0, 30, 60, 85]
+
+# ── UI Nodes (built in code) ──────────────────────────────────────────────────
+var _root:          ColorRect   = null
+var _panel:         PanelContainer = null
+
+var _lbl_title:     Label       = null
+var _lbl_level:     Label       = null
+var _lbl_souls:     Label       = null
+var _sin_bar_bg:    ColorRect   = null
+var _sin_bar:       ColorRect   = null
+var _lbl_sin_pct:   Label       = null
+
+var _btn_resume:    Button      = null
+var _btn_collection: Button     = null
+var _btn_settings:  Button      = null
+var _btn_menu:      Button      = null
+
+# Confirmation sub-panel
+var _confirm_panel:  PanelContainer = null
+var _lbl_exit_title: Label      = null
+var _lbl_exit_msg:   Label      = null
+var _btn_exit_yes:   Button      = null
+var _btn_exit_no:    Button      = null
+
+# ── State ─────────────────────────────────────────────────────────────────────
+var _visible_flag: bool = false
+var _tween:        Tween = null
+
+# ── Init ──────────────────────────────────────────────────────────────────────
+
+func _ready() -> void:
+	layer = 10
+	_build_ui()
+	modulate.a = 0.0
+	visible = false
+	_confirm_panel.visible = false
+
+# ── Public ────────────────────────────────────────────────────────────────────
+
+func toggle() -> void:
+	if _visible_flag:
+		close()
+	else:
+		open()
+
+func open() -> void:
+	if _visible_flag:
+		return
+	_visible_flag = true
+	get_tree().paused = true
+	_refresh_stats()
+	_confirm_panel.visible = false
+	visible = true
+	_animate_in()
+
+func close() -> void:
+	if not _visible_flag:
+		return
+	_visible_flag = false
+	get_tree().paused = false
+	_animate_out()
+	resumed.emit()
+
+# ── Input ─────────────────────────────────────────────────────────────────────
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _visible_flag:
+		return
+	if event.is_action_pressed("ui_cancel"):
+		if _confirm_panel.visible:
+			_confirm_panel.visible = false
+		else:
+			close()
+		get_viewport().set_input_as_handled()
+
+# ── Stats refresh ─────────────────────────────────────────────────────────────
+
+func _refresh_stats() -> void:
+	var circle := GameManager.current_circle if GameManager else 1
+	var level  := GameManager.current_level_id if GameManager else 1
+	_lbl_level.text = "Коло %d • Рівень %d" % [circle, level]
+
+	var souls := SaveManager.get_total_souls() if SaveManager else 0
+	_lbl_souls.text = "👻 %d / 100" % souls
+
+	var sin := SaveManager.get_sin() if SaveManager else 0.0
+	_set_sin(sin)
+
+func _set_sin(value: float) -> void:
+	var ratio := clampf(value / 100.0, 0.0, 1.0)
+	_sin_bar.size.x = 120.0 * ratio
+	_sin_bar.color = _sin_color(value)
+	_lbl_sin_pct.text = "%.0f%%" % value
+
+func _sin_color(val: float) -> Color:
+	var col := SIN_COLORS[0]
+	for i in SIN_THRESHOLDS.size():
+		if val >= SIN_THRESHOLDS[i]:
+			col = SIN_COLORS[i]
+	return col
+
+# ── Animation ─────────────────────────────────────────────────────────────────
+
+func _animate_in() -> void:
+	if _tween:
+		_tween.kill()
+	_tween = create_tween()
+	_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_tween.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+
+func _animate_out() -> void:
+	if _tween:
+		_tween.kill()
+	_tween = create_tween()
+	_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	_tween.tween_callback(func() -> void: visible = false)
+
+# ── Button callbacks ──────────────────────────────────────────────────────────
+
+func _on_resume_pressed() -> void:
+	close()
+
+func _on_collection_pressed() -> void:
+	collection_requested.emit()
+
+func _on_settings_pressed() -> void:
+	settings_requested.emit()
+
+func _on_menu_pressed() -> void:
+	_confirm_panel.visible = true
+
+func _on_exit_yes_pressed() -> void:
+	_confirm_panel.visible = false
+	get_tree().paused = false
+	_visible_flag = false
+	visible = false
+	GameManager.load_main_menu()
+
+func _on_exit_no_pressed() -> void:
+	_confirm_panel.visible = false
+
+# ── Build UI ──────────────────────────────────────────────────────────────────
+
+func _build_ui() -> void:
+	# Dim overlay
+	_root = ColorRect.new()
+	_root.color = Color(0, 0, 0, 0.55)
+	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_root)
+
+	# Central panel
+	_panel = PanelContainer.new()
+	_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_panel.custom_minimum_size = Vector2(300, 0)
+	var style := StyleBoxFlat.new()
+	style.bg_color        = Color(0.08, 0.06, 0.10, 0.96)
+	style.border_width_left   = 1
+	style.border_width_right  = 1
+	style.border_width_top    = 1
+	style.border_width_bottom = 1
+	style.border_color    = Color(0.35, 0.28, 0.45)
+	style.corner_radius_top_left    = 16
+	style.corner_radius_top_right   = 16
+	style.corner_radius_bottom_left = 16
+	style.corner_radius_bottom_right = 16
+	style.content_margin_left   = 24.0
+	style.content_margin_right  = 24.0
+	style.content_margin_top    = 28.0
+	style.content_margin_bottom = 28.0
+	_panel.add_theme_stylebox_override("panel", style)
+	_root.add_child(_panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 14)
+	_panel.add_child(vbox)
+
+	# Title
+	_lbl_title = Label.new()
+	_lbl_title.text = "ПАУЗА"
+	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_title.add_theme_font_size_override("font_size", 26)
+	_lbl_title.add_theme_color_override("font_color", Color("#FFD700"))
+	vbox.add_child(_lbl_title)
+
+	_add_separator(vbox)
+
+	# Stats
+	_lbl_level = _make_stat_label("")
+	vbox.add_child(_lbl_level)
+
+	_lbl_souls = _make_stat_label("")
+	vbox.add_child(_lbl_souls)
+
+	# Mini sin bar
+	var sin_row := HBoxContainer.new()
+	sin_row.add_theme_constant_override("separation", 8)
+	vbox.add_child(sin_row)
+
+	var sin_lbl := Label.new()
+	sin_lbl.text = "😈"
+	sin_lbl.add_theme_font_size_override("font_size", 14)
+	sin_row.add_child(sin_lbl)
+
+	_sin_bar_bg = ColorRect.new()
+	_sin_bar_bg.custom_minimum_size = Vector2(120, 8)
+	_sin_bar_bg.color = Color(0.15, 0.15, 0.15)
+	_sin_bar_bg.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sin_row.add_child(_sin_bar_bg)
+
+	_sin_bar = ColorRect.new()
+	_sin_bar.position = Vector2.ZERO
+	_sin_bar.size = Vector2(0, 8)
+	_sin_bar.color = Color.WHITE
+	_sin_bar_bg.add_child(_sin_bar)
+
+	_lbl_sin_pct = Label.new()
+	_lbl_sin_pct.text = "0%"
+	_lbl_sin_pct.add_theme_font_size_override("font_size", 12)
+	_lbl_sin_pct.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+	_lbl_sin_pct.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sin_row.add_child(_lbl_sin_pct)
+
+	_add_separator(vbox)
+
+	# Buttons
+	_btn_resume = _make_button("Продовжити", true)
+	_btn_resume.pressed.connect(_on_resume_pressed)
+	vbox.add_child(_btn_resume)
+
+	_btn_collection = _make_button("Врятовані Душі", false)
+	_btn_collection.pressed.connect(_on_collection_pressed)
+	vbox.add_child(_btn_collection)
+
+	_btn_settings = _make_button("Налаштування", false)
+	_btn_settings.pressed.connect(_on_settings_pressed)
+	vbox.add_child(_btn_settings)
+
+	_btn_menu = _make_button("Головне Меню", false, true)
+	_btn_menu.pressed.connect(_on_menu_pressed)
+	vbox.add_child(_btn_menu)
+
+	_build_confirm_panel()
+
+func _build_confirm_panel() -> void:
+	_confirm_panel = PanelContainer.new()
+	_confirm_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_confirm_panel.custom_minimum_size = Vector2(280, 0)
+	_confirm_panel.z_index = 2
+
+	var style := StyleBoxFlat.new()
+	style.bg_color     = Color(0.10, 0.05, 0.06, 0.98)
+	style.border_width_left   = 1
+	style.border_width_right  = 1
+	style.border_width_top    = 1
+	style.border_width_bottom = 1
+	style.border_color = Color(0.55, 0.20, 0.20)
+	style.corner_radius_top_left    = 14
+	style.corner_radius_top_right   = 14
+	style.corner_radius_bottom_left = 14
+	style.corner_radius_bottom_right = 14
+	style.content_margin_left   = 22.0
+	style.content_margin_right  = 22.0
+	style.content_margin_top    = 22.0
+	style.content_margin_bottom = 22.0
+	_confirm_panel.add_theme_stylebox_override("panel", style)
+	_root.add_child(_confirm_panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	_confirm_panel.add_child(vbox)
+
+	_lbl_exit_title = Label.new()
+	_lbl_exit_title.text = "Вийти з рівня?"
+	_lbl_exit_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_exit_title.add_theme_font_size_override("font_size", 18)
+	_lbl_exit_title.add_theme_color_override("font_color", Color("#FF6644"))
+	vbox.add_child(_lbl_exit_title)
+
+	_lbl_exit_msg = Label.new()
+	_lbl_exit_msg.text = "Зібрані душі збережені.\nДуша в руках — буде втрачена."
+	_lbl_exit_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_lbl_exit_msg.add_theme_font_size_override("font_size", 13)
+	_lbl_exit_msg.add_theme_color_override("font_color", Color(0.75, 0.72, 0.70))
+	_lbl_exit_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(_lbl_exit_msg)
+
+	var btn_row := HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 12)
+	vbox.add_child(btn_row)
+
+	_btn_exit_yes = _make_button("Вийти", false, true)
+	_btn_exit_yes.custom_minimum_size.x = 110
+	_btn_exit_yes.pressed.connect(_on_exit_yes_pressed)
+	btn_row.add_child(_btn_exit_yes)
+
+	_btn_exit_no = _make_button("Залишитись", true)
+	_btn_exit_no.custom_minimum_size.x = 110
+	_btn_exit_no.pressed.connect(_on_exit_no_pressed)
+	btn_row.add_child(_btn_exit_no)
+
+# ── UI helpers ────────────────────────────────────────────────────────────────
+
+func _make_button(text: String, primary: bool, danger: bool = false) -> Button:
+	var btn := Button.new()
+	btn.text = text
+	btn.custom_minimum_size = Vector2(252, 44)
+	btn.add_theme_font_size_override("font_size", 15)
+
+	var normal := StyleBoxFlat.new()
+	var hover  := StyleBoxFlat.new()
+	var press  := StyleBoxFlat.new()
+	for s in [normal, hover, press]:
+		s.corner_radius_top_left    = 10
+		s.corner_radius_top_right   = 10
+		s.corner_radius_bottom_left = 10
+		s.corner_radius_bottom_right = 10
+
+	if danger:
+		normal.bg_color = Color(0.30, 0.08, 0.08)
+		hover.bg_color  = Color(0.45, 0.12, 0.12)
+		press.bg_color  = Color(0.22, 0.05, 0.05)
+		btn.add_theme_color_override("font_color", Color("#FF8866"))
+	elif primary:
+		normal.bg_color = Color(0.20, 0.18, 0.30)
+		hover.bg_color  = Color(0.30, 0.26, 0.44)
+		press.bg_color  = Color(0.15, 0.13, 0.22)
+		btn.add_theme_color_override("font_color", Color("#E8DEFF"))
+	else:
+		normal.bg_color = Color(0.13, 0.12, 0.16)
+		hover.bg_color  = Color(0.20, 0.18, 0.24)
+		press.bg_color  = Color(0.09, 0.08, 0.12)
+		btn.add_theme_color_override("font_color", Color(0.80, 0.78, 0.82))
+
+	btn.add_theme_stylebox_override("normal",   normal)
+	btn.add_theme_stylebox_override("hover",    hover)
+	btn.add_theme_stylebox_override("pressed",  press)
+	btn.add_theme_stylebox_override("focus",    normal)
+	return btn
+
+func _make_stat_label(text: String) -> Label:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_color_override("font_color", Color(0.78, 0.76, 0.80))
+	return lbl
+
+func _add_separator(parent: VBoxContainer) -> void:
+	var sep := HSeparator.new()
+	var sep_style := StyleBoxFlat.new()
+	sep_style.bg_color = Color(0.30, 0.25, 0.38)
+	sep_style.content_margin_top    = 1.0
+	sep_style.content_margin_bottom = 1.0
+	sep.add_theme_stylebox_override("separator", sep_style)
+	parent.add_child(sep)
