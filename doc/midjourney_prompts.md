@@ -68,7 +68,7 @@ clean dark priest robes, gentle holy light particles, peaceful expression,
 transparent background, flat cel shading, black outline, craftpix chibi style
 --ar 1:2 --v 6
 ```
-Файл: `Assets/MyAssets/player_clean.png`
+Файл: `Assets/OurAssets/player_clean.png`
 
 ### Стан 2 — Скверний (30–59% гріху)
 ```
@@ -78,7 +78,7 @@ robes slightly darker, dim flickering golden aura fading away, uneasy expression
 transparent background, flat cel shading, black outline, craftpix chibi style
 --ar 1:2 --v 6
 ```
-Файл: `Assets/MyAssets/player_tainted.png`
+Файл: `Assets/OurAssets/player_tainted.png`
 
 ### Стан 3 — Падений (60–84% гріху)
 ```
@@ -89,7 +89,7 @@ right eye still normal, conflicted expression,
 transparent background, flat cel shading, black outline, craftpix chibi style
 --ar 1:2 --v 6
 ```
-Файл: `Assets/MyAssets/player_fallen.png`
+Файл: `Assets/OurAssets/player_fallen.png`
 
 ### Стан 4 — Демон (85–100% гріху)
 ```
@@ -99,7 +99,7 @@ very dark robes, swirling dark red aura, menacing expression,
 transparent background, flat cel shading, black outline, craftpix chibi style
 --ar 1:2 --v 6
 ```
-Файл: `Assets/MyAssets/player_demon.png`
+Файл: `Assets/OurAssets/player_demon.png`
 
 ---
 
