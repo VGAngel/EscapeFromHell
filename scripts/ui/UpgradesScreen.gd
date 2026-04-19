@@ -31,7 +31,7 @@ func _ready() -> void:
 	layer = 10
 	_load_config()
 	_build_ui()
-	modulate.a = 0.0
+	_root.modulate.a = 0.0
 	visible    = false
 
 func _load_config() -> void:
@@ -51,11 +51,11 @@ func open() -> void:
 	_refresh_currency()
 	_switch_category(0)
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
 
 func close() -> void:
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 0.0, FADE_DURATION)
 	tw.tween_callback(func() -> void:
 		visible = false
 		closed.emit()
