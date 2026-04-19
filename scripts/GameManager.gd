@@ -120,6 +120,14 @@ func instant_death(cause: String = "fall") -> void:
 func heal(amount: int = 1) -> void:
 	_set_hp(mini(_hp + amount, _max_hp))
 
+# Called by LevelBase when Player emits hp_changed (external HP sync)
+func set_hp(hp: int, max_hp: int) -> void:
+	_max_hp = max_hp
+	_hp     = clampi(hp, 0, _max_hp)
+	hp_changed.emit(_hp, _max_hp)
+	if _hud:
+		_hud.set_hp(_hp, _max_hp)
+
 func _set_hp(value: int) -> void:
 	_hp = clampi(value, 0, _max_hp)
 	hp_changed.emit(_hp, _max_hp)
@@ -239,9 +247,9 @@ func complete_level() -> void:
 
 	level_completed.emit(current_level_id, stats)
 
-	# Show interstitial ad (handled by AdsManager)
-	if AdsManager:
-		AdsManager.show_interstitial_if_ready()
+	# Show interstitial ad between levels
+	if AdsManager and AdsManager.has_method("show_interstitial"):
+		AdsManager.show_interstitial()
 
 # ── Scene transitions ─────────────────────────────────────────────────────────
 
@@ -266,6 +274,8 @@ func load_main_menu() -> void:
 	get_tree().change_scene_to_file(SCENE_MAIN_MENU)
 
 func _change_scene_to_level(level_id: int) -> void:
+	# Set current_level_id BEFORE scene change so LevelBase._ready() can read it.
+	# LevelBase uses GameManager.current_level_id when its own export is default (1).
 	current_level_id = level_id
 	var level_type: String = LevelConfig.get_level_type(level_id) if LevelConfig else "platformer"
 	var scene_path: String = SCENE_BOSS_LEVEL if level_type == "boss" else SCENE_LEVEL
@@ -290,7 +300,7 @@ func start_escape_timer(duration: float) -> void:
 func _base_max_hp() -> int:
 	var base := 3
 	if SaveManager:
-		base += SaveManager.get_upgrade_level("extra_hearts")
+		base += SaveManager.get_upgrade_level("vitality")   # vitality: up to +3 (max 6 HP)
 	return clampi(base, 1, 6)
 
 func _calc_stars(found: int, total: int, deaths: int) -> int:

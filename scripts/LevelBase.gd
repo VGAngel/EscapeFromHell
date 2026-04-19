@@ -33,6 +33,11 @@ var _level_type:         String          = "platformer"
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
+	# When Level.tscn is loaded procedurally, the export stays at default 1.
+	# Read the real ID from GameManager which was set before the scene change.
+	if level_id == 1 and GameManager and GameManager.current_level_id > 1:
+		level_id = GameManager.current_level_id
+
 	_level_type = LevelConfig.get_level_type(level_id) if LevelConfig else "platformer"
 
 	if force_static or (LevelGenerator and LevelGenerator.is_static(level_id)):
