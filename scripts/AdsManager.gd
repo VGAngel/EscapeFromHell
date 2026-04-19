@@ -128,7 +128,7 @@ func _restore_purchases() -> void:
 	var result: Dictionary = _billing.queryPurchases("inapp")
 	if result.get("status", -1) == 0:
 		for purchase in result.get("purchases", []):
-			if purchase.get("sku") == SKU_NO_ADS:
+			if purchase.get("sku") == _sku_no_ads:
 				_remove_ads_locally()
 
 func purchase_no_ads() -> void:
@@ -152,10 +152,10 @@ func get_donate_tiers() -> Array:
 func _on_purchases_updated(purchases: Array) -> void:
 	for purchase in purchases:
 		var sku: String = purchase.get("sku", "")
-		if sku == SKU_NO_ADS:
+		if sku == _sku_no_ads:
 			_billing.acknowledgePurchase(purchase.get("purchase_token", ""))
 			_remove_ads_locally()
-		elif sku in SKUS_DONATE:
+		elif sku in _skus_donate:
 			_billing.consumePurchase(purchase.get("purchase_token", ""))
 			donate_purchased.emit(sku)
 
