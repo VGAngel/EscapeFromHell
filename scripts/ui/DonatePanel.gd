@@ -31,7 +31,7 @@ var _lbl_thanks:  Label = null
 func _ready() -> void:
 	layer   = 10
 	visible = false
-	modulate.a = 0.0
+	_root.modulate.a = 0.0
 	_build_ui()
 	if AdsManager and AdsManager.has_signal("donate_purchased"):
 		AdsManager.donate_purchased.connect(_on_donate_purchased)
@@ -44,11 +44,11 @@ func open() -> void:
 	_showing_thanks = false
 	_rebuild_cards()
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
 
 func close() -> void:
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	tw.tween_property(_root, "modulate:a", 0.0, FADE_DURATION)
 	tw.tween_callback(func() -> void:
 		visible = false
 		closed.emit()

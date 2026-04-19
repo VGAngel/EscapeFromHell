@@ -50,7 +50,7 @@ var _tween:        Tween = null
 func _ready() -> void:
 	layer = 10
 	_build_ui()
-	modulate.a = 0.0
+	_root.modulate.a = 0.0
 	visible = false
 	_confirm_panel.visible = false
 
@@ -125,14 +125,14 @@ func _animate_in() -> void:
 		_tween.kill()
 	_tween = create_tween()
 	_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	_tween.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+	_tween.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
 
 func _animate_out() -> void:
 	if _tween:
 		_tween.kill()
 	_tween = create_tween()
 	_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	_tween.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	_tween.tween_property(_root, "modulate:a", 0.0, FADE_DURATION)
 	_tween.tween_callback(func() -> void: visible = false)
 
 # ── Button callbacks ──────────────────────────────────────────────────────────
