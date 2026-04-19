@@ -23,8 +23,6 @@ const FADE_DURATION := 0.5
 const AD_BANNER_H   := 60
 
 # ── Child nodes ───────────────────────────────────────────────────────────────
-@onready var _bg:          Control       = $Background
-@onready var _title:       Label         = $TitleLabel
 @onready var _btn_play:    Button        = $ButtonsContainer/BtnPlay
 @onready var _btn_collect: Button        = $ButtonsContainer/BtnCollection
 @onready var _btn_settings:Button        = $ButtonsContainer/BtnSettings

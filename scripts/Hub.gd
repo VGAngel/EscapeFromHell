@@ -1,4 +1,4 @@
-extends Node
+extends Control
 
 # Scene: res://scenes/Hub.tscn
 # Shown before every level. Skippable via "Пропустити".
