@@ -29,33 +29,52 @@ func test_speaker_label_empty_string() -> void:
 
 # ── _pick_god_message ─────────────────────────────────────────────────────────
 
-func test_pick_god_message_level_1_without_savemanager() -> void:
-	# TODO: inject SaveManager mock with get_sin / get_total_souls / get_current_level
-	# so the conditional branches can be exercised deterministically.
-	pass
+func test_pick_god_message_level_1_returns_calm_message() -> void:
+	# Default SaveManager state: sin=0, souls=0, deals=0, level_id=1
+	hub._next_level_id = 1
+	var msg: Dictionary = hub._pick_god_message()
+	assert_eq(msg.get("style"), "calm")
+	assert_true(msg.get("text", "").length() > 0)
 
 func test_pick_god_message_high_sin_warning() -> void:
-	# TODO: set SaveManager sin > 70, assert style == "warning"
-	pass
+	SaveManager.set_sin(75.0)
+	hub._next_level_id = 1
+	var msg: Dictionary = hub._pick_god_message()
+	assert_eq(msg.get("style"), "warning")
 
 func test_pick_god_message_soul_milestone_10() -> void:
-	# TODO: set total_souls = 10 and hint "soul_milestone_10" not seen,
-	# assert returned text contains "Десять"
-	pass
+	for i in 10:
+		SaveManager.add_soul(i)
+	hub._next_level_id = 3  # no level-specific message for level 3
+	var msg: Dictionary = hub._pick_god_message()
+	assert_true(msg.get("text", "").contains("Десять"))
+	assert_eq(msg.get("style"), "warm")
 
 func test_pick_god_message_soul_milestone_not_repeated() -> void:
-	# TODO: mark "soul_milestone_10" as seen, assert milestone message NOT returned
-	pass
+	for i in 10:
+		SaveManager.add_soul(i)
+	SaveManager.mark_hint_seen("soul_milestone_10")
+	hub._next_level_id = 3
+	var msg: Dictionary = hub._pick_god_message()
+	assert_false(msg.get("text", "").contains("Десять"), "milestone should not repeat")
 
 func test_pick_god_message_99_souls() -> void:
-	# TODO: set total_souls = 99, assert solemn message about last soul
-	pass
+	for i in 99:
+		SaveManager.add_soul(i)
+	hub._next_level_id = 3
+	var msg: Dictionary = hub._pick_god_message()
+	assert_eq(msg.get("style"), "solemn")
+	assert_true(msg.get("text", "").contains("Одна"))
 
 func test_pick_god_message_returns_dict_or_empty() -> void:
-	# TODO: assert return type is Dictionary (may be empty {})
-	pass
+	hub._next_level_id = 3  # no level message, no souls, default state
+	var msg: Variant = hub._pick_god_message()
+	assert_true(msg is Dictionary)
 
 func test_pick_god_message_more_deals_accepted_than_refused() -> void:
-	# TODO: set demon_deals_accepted > deals_refused,
-	# assert "quiet" style message returned
-	pass
+	SaveManager.increment_demon_deals()
+	SaveManager.increment_demon_deals()
+	# deals_refused stays 0 → accepted(2) > refused(0)
+	hub._next_level_id = 1
+	var msg: Dictionary = hub._pick_god_message()
+	assert_eq(msg.get("style"), "quiet")
