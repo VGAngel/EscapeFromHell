@@ -1,112 +1,89 @@
 extends Node
 
-# Autoload: add to Project > Project Settings > Autoload as "SaveManager"
+# Autoload: SaveManager  (res://SaveManager.gd)
+# Single source of truth for all persistent game state.
+# All writes stay in-memory until _flush() is called.
+# _flush() is called: after level complete, on app pause, on window close.
 
-const SAVE_DIR       := "user://saves/"
-const MAX_SLOTS      := 3
-const CLOUD_ENABLED  := false  # увімкнути коли підключиш Steam/Google Play
+const SAVE_DIR     := "user://saves/"
+const SAVE_VERSION := 2
+const MAX_SLOTS    := 3
+const CLOUD_ENABLED := false
 
 var _slot: int = 0
-var data: Dictionary = {}
+var data: Dictionary = {}   # public for debug inspection; use methods to mutate
+
+# ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
 	_ensure_dir()
+	_reset()
 
-# ── Slots ─────────────────────────────────────────────────────
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_flush()
+
+# ── Slot management ───────────────────────────────────────────────────────────
 
 func get_slot() -> int:
 	return _slot
 
-# Завантажує слот і повертає true якщо збереження існує
 func load_slot(slot: int) -> bool:
 	_slot = clampi(slot, 0, MAX_SLOTS - 1)
 	return _load()
 
-# Повертає список всіх слотів з коротким preview
+func has_save(slot: int = -1) -> bool:
+	var s: int = slot if slot >= 0 else _slot
+	return FileAccess.file_exists(_save_path(s))
+
 func get_all_slots() -> Array:
 	var result: Array = []
 	for i in MAX_SLOTS:
-		var path := _save_path(i)
+		var path: String = _save_path(i)
 		if FileAccess.file_exists(path):
-			var file := FileAccess.open(path, FileAccess.READ)
-			var parsed: Variant = JSON.parse_string(file.read_as_text())
-			file.close()
-			if parsed is Dictionary:
+			var d: Variant = _read_file(path)
+			if d is Dictionary:
 				result.append({
-					"slot":         i,
-					"exists":       true,
-					"level":        parsed.get("current_level", 1),
-					"circle":       parsed.get("current_circle", 1),
-					"total_souls":  parsed.get("total_souls", 0),
-					"sin":          parsed.get("sin", 0.0)
+					"slot":        i,
+					"exists":      true,
+					"level":       d.get("current_level", 1),
+					"circle":      d.get("current_circle", 1),
+					"total_souls": d.get("total_souls", 0),
+					"sin":         d.get("sin", 0.0),
 				})
 				continue
-		result.append({ "slot": i, "exists": false })
+		result.append({"slot": i, "exists": false})
 	return result
 
 func delete_slot(slot: int) -> void:
-	var main   := _save_path(slot)
-	var backup := _backup_path(slot)
-	if FileAccess.file_exists(main):
-		DirAccess.remove_absolute(main)
-	if FileAccess.file_exists(backup):
-		DirAccess.remove_absolute(backup)
+	for path in [_save_path(slot), _backup_path(slot)]:
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(path)
 	if slot == _slot:
 		_reset()
 
-# ── Save / Load ───────────────────────────────────────────────
+# ── Explicit save ─────────────────────────────────────────────────────────────
 
 func save_after_level() -> void:
-	_write()
+	_flush()
 	if CLOUD_ENABLED:
 		_cloud_upload()
 
-func has_save(slot: int = _slot) -> bool:
-	return FileAccess.file_exists(_save_path(slot))
-
-# ── Progress ──────────────────────────────────────────────────
+# ── Progress ──────────────────────────────────────────────────────────────────
 
 func get_current_level() -> int:
 	return data.get("current_level", 1)
 
 func set_current_level(level: int) -> void:
-	data["current_level"] = level
+	data["current_level"] = maxi(level, 1)
 
 func get_current_circle() -> int:
 	return data.get("current_circle", 1)
 
 func set_current_circle(circle: int) -> void:
-	data["current_circle"] = circle
+	data["current_circle"] = maxi(circle, 1)
 
-# ── Souls ─────────────────────────────────────────────────────
-
-func get_saved_soul_ids() -> Array:
-	return data.get("saved_soul_ids", [])
-
-func add_soul(soul_id: int) -> void:
-	var ids: Array = get_saved_soul_ids()
-	if soul_id not in ids:
-		ids.append(soul_id)
-		data["saved_soul_ids"] = ids
-		data["total_souls"]    = ids.size()
-
-func get_total_souls() -> int:
-	return data.get("total_souls", 0)
-
-func get_hidden_soul_ids() -> Array:
-	return data.get("hidden_soul_ids", [])
-
-func add_hidden_soul(soul_id: String) -> void:
-	var ids: Array = get_hidden_soul_ids()
-	if soul_id not in ids:
-		ids.append(soul_id)
-		data["hidden_soul_ids"]      = ids
-		data["total_hidden_souls"]   = ids.size()
-
-func get_total_hidden_souls() -> int:
-	return data.get("total_hidden_souls", 0)
-
-# ── Sin ───────────────────────────────────────────────────────
+# ── Sin ───────────────────────────────────────────────────────────────────────
 
 func get_sin() -> float:
 	return data.get("sin", 0.0)
@@ -120,13 +97,13 @@ func add_sin(amount: float) -> void:
 func reduce_sin(amount: float) -> void:
 	set_sin(get_sin() - amount)
 
-# ── Currency ──────────────────────────────────────────────────
+# ── Light (currency) ──────────────────────────────────────────────────────────
 
 func get_light() -> int:
 	return data.get("light", 0)
 
 func add_light(amount: int) -> void:
-	data["light"] = get_light() + amount
+	data["light"] = get_light() + maxi(amount, 0)
 
 func spend_light(amount: int) -> bool:
 	if get_light() < amount:
@@ -134,7 +111,38 @@ func spend_light(amount: int) -> bool:
 	data["light"] = get_light() - amount
 	return true
 
-# ── Upgrades ──────────────────────────────────────────────────
+# ── Souls ─────────────────────────────────────────────────────────────────────
+
+func get_total_souls() -> int:
+	return data.get("total_souls", 0)
+
+func get_saved_soul_ids() -> Array:
+	return data.get("saved_soul_ids", [])
+
+func add_soul(soul_id: int) -> void:
+	var ids: Array = get_saved_soul_ids()
+	if soul_id not in ids:
+		ids.append(soul_id)
+		data["saved_soul_ids"] = ids
+		data["total_souls"]    = ids.size()
+
+func has_soul(soul_id: int) -> bool:
+	return soul_id in get_saved_soul_ids()
+
+func get_total_hidden_souls() -> int:
+	return data.get("total_hidden_souls", 0)
+
+func get_hidden_soul_ids() -> Array:
+	return data.get("hidden_soul_ids", [])
+
+func add_hidden_soul(soul_id: String) -> void:
+	var ids: Array = get_hidden_soul_ids()
+	if soul_id not in ids:
+		ids.append(soul_id)
+		data["hidden_soul_ids"]    = ids
+		data["total_hidden_souls"] = ids.size()
+
+# ── Upgrades ──────────────────────────────────────────────────────────────────
 
 func get_upgrade_level(upgrade_id: String) -> int:
 	return data.get("upgrades", {}).get(upgrade_id, 0)
@@ -142,12 +150,30 @@ func get_upgrade_level(upgrade_id: String) -> int:
 func set_upgrade_level(upgrade_id: String, level: int) -> void:
 	if not data.has("upgrades"):
 		data["upgrades"] = {}
-	data["upgrades"][upgrade_id] = level
+	data["upgrades"][upgrade_id] = maxi(level, 0)
 
 func has_upgrade(upgrade_id: String) -> bool:
 	return get_upgrade_level(upgrade_id) > 0
 
-# ── Rewards ───────────────────────────────────────────────────
+# ── Generic flags (boolean) ───────────────────────────────────────────────────
+# Used for one-time purchases, feature unlocks, etc.
+# AdsManager stores "no_ads_purchased" here via set_flag.
+
+func get_flag(key: String) -> bool:
+	return data.get("flags", {}).get(key, false)
+
+func set_flag(key: String, value: bool) -> void:
+	if not data.has("flags"):
+		data["flags"] = {}
+	data["flags"][key] = value
+	if value:
+		_flush()   # persist purchases immediately
+
+# Alias used by MainMenu — delegates to get_flag for consistency
+func has_reward(key: String) -> bool:
+	return get_flag(key)
+
+# ── Rewards list (consumable unlocks) ─────────────────────────────────────────
 
 func get_active_rewards() -> Array:
 	return data.get("active_rewards", [])
@@ -158,21 +184,21 @@ func add_reward(reward_id: String) -> void:
 		rewards.append(reward_id)
 		data["active_rewards"] = rewards
 
-func has_reward(reward_id: String) -> bool:
-	return reward_id in get_active_rewards()
+# ── Hints / tutorial ──────────────────────────────────────────────────────────
 
-# ── Endings ───────────────────────────────────────────────────
+func is_hint_seen(hint_id: String) -> bool:
+	return hint_id in data.get("seen_tutorial_hints", [])
 
-func get_unlocked_endings() -> Array:
-	return data.get("unlocked_endings", [])
+func mark_hint_seen(hint_id: String) -> void:
+	var seen: Array = data.get("seen_tutorial_hints", [])
+	if hint_id not in seen:
+		seen.append(hint_id)
+		data["seen_tutorial_hints"] = seen
 
-func unlock_ending(ending_id: String) -> void:
-	var endings: Array = get_unlocked_endings()
-	if ending_id not in endings:
-		endings.append(ending_id)
-		data["unlocked_endings"] = endings
+func clear_all_hints() -> void:
+	data["seen_tutorial_hints"] = []
 
-# ── Stats ─────────────────────────────────────────────────────
+# ── Statistics ────────────────────────────────────────────────────────────────
 
 func get_demon_deals_accepted() -> int:
 	return data.get("demon_deals_accepted", 0)
@@ -192,67 +218,39 @@ func get_secret_levels_found() -> int:
 func increment_secret_levels() -> void:
 	data["secret_levels_found"] = get_secret_levels_found() + 1
 
-# ── Tutorial ─────────────────────────────────────────────────
+# ── Endings ───────────────────────────────────────────────────────────────────
 
-func is_hint_seen(hint_id: String) -> bool:
-	return hint_id in data.get("seen_tutorial_hints", [])
+func get_unlocked_endings() -> Array:
+	return data.get("unlocked_endings", [])
 
-func mark_hint_seen(hint_id: String) -> void:
-	var seen: Array = data.get("seen_tutorial_hints", [])
-	if hint_id not in seen:
-		seen.append(hint_id)
-		data["seen_tutorial_hints"] = seen
+func unlock_ending(ending_id: String) -> void:
+	var endings: Array = get_unlocked_endings()
+	if ending_id not in endings:
+		endings.append(ending_id)
+		data["unlocked_endings"] = endings
 
-func clear_all_hints() -> void:
-	data["seen_tutorial_hints"] = []
-
-# ── Internal ──────────────────────────────────────────────────
+# ── Internal: load ────────────────────────────────────────────────────────────
 
 func _load() -> bool:
-	var path := _save_path(_slot)
-
-	# Спробувати основний файл
+	var path: String = _save_path(_slot)
 	if FileAccess.file_exists(path):
-		var result: Variant = _read_file(path)
-		if result != null:
-			data = result
+		var d: Variant = _read_file(path)
+		if d is Dictionary:
+			data = d
+			_migrate()
 			return true
 
-	# Основний пошкоджений — спробувати резервний
-	var backup := _backup_path(_slot)
+	var backup: String = _backup_path(_slot)
 	if FileAccess.file_exists(backup):
 		push_warning("SaveManager: main save corrupted, loading backup for slot %d" % _slot)
-		var result: Variant = _read_file(backup)
-		if result != null:
-			data = result
+		var d: Variant = _read_file(backup)
+		if d is Dictionary:
+			data = d
+			_migrate()
 			return true
 
 	_reset()
 	return false
-
-func _write() -> void:
-	var path   := _save_path(_slot)
-	var backup := _backup_path(_slot)
-	var json   := JSON.stringify(data, "\t")
-
-	# Якщо основний існує — скопіювати в резервний перед перезаписом
-	if FileAccess.file_exists(path):
-		var old := FileAccess.open(path, FileAccess.READ)
-		if old:
-			var old_content: String = old.read_as_text()
-			old.close()
-			var bak := FileAccess.open(backup, FileAccess.WRITE)
-			if bak:
-				bak.store_string(old_content)
-				bak.close()
-
-	# Записати основний
-	var file := FileAccess.open(path, FileAccess.WRITE)
-	if not file:
-		push_error("SaveManager: cannot write slot %d" % _slot)
-		return
-	file.store_string(json)
-	file.close()
 
 func _read_file(path: String) -> Variant:
 	var file := FileAccess.open(path, FileAccess.READ)
@@ -260,32 +258,76 @@ func _read_file(path: String) -> Variant:
 		return null
 	var parsed: Variant = JSON.parse_string(file.read_as_text())
 	file.close()
-	if parsed is Dictionary:
-		return parsed
-	return null
+	return parsed if parsed is Dictionary else null
+
+# ── Internal: write ───────────────────────────────────────────────────────────
+
+func _flush() -> void:
+	var path:   String = _save_path(_slot)
+	var backup: String = _backup_path(_slot)
+
+	# Promote current main to backup before overwriting
+	if FileAccess.file_exists(path):
+		var old := FileAccess.open(path, FileAccess.READ)
+		if old:
+			var content: String = old.read_as_text()
+			old.close()
+			var bak := FileAccess.open(backup, FileAccess.WRITE)
+			if bak:
+				bak.store_string(content)
+				bak.close()
+
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if not file:
+		push_error("SaveManager: cannot write slot %d — %s" % [_slot, FileAccess.get_open_error()])
+		return
+	file.store_string(JSON.stringify(data, "\t"))
+	file.close()
+
+# ── Internal: default data ────────────────────────────────────────────────────
 
 func _reset() -> void:
 	data = {
-		"current_level":        1,
-		"current_circle":       1,
-		"total_souls":          0,
-		"saved_soul_ids":       [],
-		"total_hidden_souls":   0,
-		"hidden_soul_ids":      [],
-		"sin":                  0.0,
-		"light":                0,
-		"upgrades":             {},
-		"unlocked_endings":     [],
-		"active_rewards":       [],
+		"version":             SAVE_VERSION,
+		"current_level":       1,
+		"current_circle":      1,
+		"sin":                 0.0,
+		"light":               0,
+		"total_souls":         0,
+		"saved_soul_ids":      [],
+		"total_hidden_souls":  0,
+		"hidden_soul_ids":     [],
+		"upgrades":            {},
+		"flags":               {},
+		"active_rewards":      [],
+		"unlocked_endings":    [],
 		"demon_deals_accepted": 0,
-		"deals_refused":        0,
-		"secret_levels_found":  0,
-		"seen_tutorial_hints":  []
+		"deals_refused":       0,
+		"secret_levels_found": 0,
+		"seen_tutorial_hints": [],
 	}
 
+# ── Internal: migration ───────────────────────────────────────────────────────
+
+func _migrate() -> void:
+	var v: int = data.get("version", 1)
+	if v == SAVE_VERSION:
+		return
+
+	# v1 → v2: active_rewards became flags dict
+	if v < 2:
+		var flags: Dictionary = data.get("flags", {})
+		for reward in data.get("active_rewards", []):
+			flags[reward] = true
+		data["flags"] = flags
+
+	data["version"] = SAVE_VERSION
+	_flush()
+
+# ── Internal: paths ───────────────────────────────────────────────────────────
+
 func _ensure_dir() -> void:
-	if not DirAccess.dir_exists_absolute(SAVE_DIR.left(-1)):
-		DirAccess.make_dir_absolute(SAVE_DIR.left(-1))
+	DirAccess.make_dir_recursive_absolute("user://saves")
 
 func _save_path(slot: int) -> String:
 	return SAVE_DIR + "save_%d.json" % slot
@@ -293,14 +335,12 @@ func _save_path(slot: int) -> String:
 func _backup_path(slot: int) -> String:
 	return SAVE_DIR + "save_%d_backup.json" % slot
 
-# ── Cloud (заглушки) ──────────────────────────────────────────
+# ── Cloud stubs ───────────────────────────────────────────────────────────────
 
 func _cloud_upload() -> void:
-	# TODO: підключити Steam Steamworks або Google Play
 	# Steam:  SteamworksSdk.file_write("save_%d.json" % _slot, JSON.stringify(data))
 	# Google: PlayGameServices.save_game(...)
 	pass
 
-func cloud_download(slot: int) -> void:
-	# TODO: завантажити з хмари і перезаписати локальний файл
+func cloud_download(_slot_idx: int) -> void:
 	pass
