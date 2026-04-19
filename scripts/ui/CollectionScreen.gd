@@ -351,6 +351,8 @@ func _close_sheet() -> void:
 
 func _close_sheet_instant() -> void:
 	_sheet_open = false
+	if not _sheet:
+		return
 	_sheet.position.y = 1280.0
 	_sheet.visible = false
 
