@@ -152,6 +152,8 @@ func _on_pursuer_caught(knockback: Vector2) -> void:
 func _on_respawn() -> void:
 	super()
 	if is_instance_valid(_pursuer):
-		_pursuer.position.y = _pursuer_start_y()
+		# Update _start_y first so reset_to_start() returns to the correct
+		# off-screen position (recalculated from spawn point each respawn).
+		_pursuer._start_y = _pursuer_start_y()
 		_pursuer.reset_to_start()
 		_schedule_pursuer_activate()

@@ -170,21 +170,21 @@ func test_knockback_in_signal_is_upward() -> void:
 	var p: Node = autofree(PursuerScript.new())
 	var player: CharacterBody2D = autofree(CharacterBody2D.new())
 	p.setup(player, {"knockback_force": 400.0, "contact_range": 64.0})
-	var caught_kb: Vector2 = Vector2.ZERO
-	p.player_caught.connect(func(kb: Vector2) -> void: caught_kb = kb)
+	watch_signals(p)
 	player.position = p.position
 	p._check_player_overlap()
-	assert_lt(caught_kb.y, 0.0)
+	var kb: Vector2 = get_signal_parameters(p, "player_caught", 0)[0]
+	assert_lt(kb.y, 0.0)
 
 func test_knockback_magnitude_matches_knockback_force() -> void:
 	var p: Node = autofree(PursuerScript.new())
 	var player: CharacterBody2D = autofree(CharacterBody2D.new())
 	p.setup(player, {"knockback_force": 500.0, "contact_range": 64.0})
-	var caught_kb: Vector2 = Vector2.ZERO
-	p.player_caught.connect(func(kb: Vector2) -> void: caught_kb = kb)
+	watch_signals(p)
 	player.position = p.position
 	p._check_player_overlap()
-	assert_almost_eq(caught_kb.length(), 500.0, 0.001)
+	var kb: Vector2 = get_signal_parameters(p, "player_caught", 0)[0]
+	assert_almost_eq(kb.length(), 500.0, 0.001)
 
 func test_contact_cooldown_set_after_signal() -> void:
 	var p: Node = autofree(PursuerScript.new())
@@ -259,13 +259,13 @@ func test_config_rising_mechanic_sets_rising_behavior() -> void:
 
 func test_config_unknown_mechanic_returns_defaults() -> void:
 	var el: Node = autofree(EscapeLevelScript.new())
-	var cfg := el._pursuer_config("nonexistent_mechanic")
+	var cfg: Dictionary = el._pursuer_config("nonexistent_mechanic")
 	assert_gt(cfg.get("speed", 0.0), 0.0)
 	assert_gt(cfg.get("knockback_force", 0.0), 0.0)
 
 func test_config_swamp_wave_has_oscillation() -> void:
 	var el: Node = autofree(EscapeLevelScript.new())
-	var cfg := el._pursuer_config("chase_swamp_wave")
+	var cfg: Dictionary = el._pursuer_config("chase_swamp_wave")
 	assert_gt(cfg.get("oscillation_amplitude", 0.0), 0.0)
 
 func test_config_lucifer_hand_is_fastest() -> void:
