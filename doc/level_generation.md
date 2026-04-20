@@ -6,7 +6,31 @@
 
 ## Підхід: Гібридний
 
-~35 рівнів — **статичні** (вручну). ~65 рівнів — **процедурні** (збираються з кімнат-блоків).
+**Всього рівнів: 145** (100 основних + 45 бічних).  
+~35 основних — **статичні** (вручну). ~65 основних — **процедурні** (збираються з кімнат-блоків).  
+45 бічних (лабіринт, void, escape) — всі процедурні, генеруються через той самий пул що і батьківське коло.
+
+---
+
+## Бічні рівні (branch levels)
+
+**ID схема:** `branch_id = parent_id + 100`. Бічні рівні мають `id > 100`.
+
+| Батьківський рівень | Тип гілки | Напрям | Branch ID |
+|--------------------|-----------|--------|-----------|
+| pos 3 кожного кола | `labyrinth` | праворуч | `+100` |
+| pos 4 кожного кола | `void` | ліворуч | `+100` |
+| pos 5 кожного кола | `escape` | праворуч | `+100` |
+| pos 7 кожного кола | `labyrinth` | праворуч | `+100` |
+| pos 9 кожного кола | `void` | ліворуч | `+100` |
+
+Приклади (коло 1): level 3 → branch **103**, level 4 → branch **104**, level 9 → branch **109**.  
+Приклади (коло 2): level 13 → **113**, level 14 → **114** … (коло 9): level 83 → **183**.
+
+**Бічні рівні в `LevelGenerator.gd`:**
+- `_is_branch(level_id)` → `level_id > 100`
+- `_parent_of(level_id)` → `level_id - 100`
+- `generate(branch_id)` — використовує `circle` і `difficulty` батьківського рівня; `is_branch = true`, `parent_id` заповнені в `GeneratedLevel`.
 
 ---
 
@@ -91,21 +115,30 @@ Seed = level_id  →  однаковий рівень завжди однако�
 
 ## Скрипт: LevelGenerator.gd
 
-**Що має робити:**
+**Реалізовані методи:**
 
 ```
-_load_config()          — читає level_generation_config.json
-_is_static(level_id)    — повертає true якщо рівень статичний
-generate(level_id)      — головна функція:
+_load_config()              — читає level_generation_config.json
+_load_souls()               — читає souls_collection.json, будує _hidden_soul_levels
+_is_static(level_id)        — true якщо рівень статичний
+_is_branch(level_id)        — true якщо level_id > 100 (бічний рівень)
+_parent_of(level_id)        — повертає level_id - 100 (або 0 для основних)
+generate(level_id) → GeneratedLevel:
+    is_branch = _is_branch(level_id)
+    effective_id = parent_id якщо branch, інакше level_id
+    circle = _circle_of(effective_id)
     seed(level_id)
-    rooms = _pick_rooms(circle, difficulty)
-    _assemble_rooms(rooms)
-    _place_soul(level_id)
-    _apply_difficulty(level_index_in_circle)
-_pick_rooms(circle, difficulty) → Array[PackedScene]
-_assemble_rooms(rooms)  — з'єднує кімнати послідовно
-_place_soul(level_id)   — вибирає душу з souls_collection.json
+    diff = _difficulty_for_index(_index_in_circle(effective_id))
+    room_scenes = _pick_rooms(circle, room_count)
+    soul_data = _soul_for_level(level_id, circle)
+_pick_rooms(circle, count)  → Array[String] — шляхи до .tscn
+_soul_for_level(level_id, circle) — з _hidden_soul_levels або з пулу кола
+is_branch(level_id)         — публічна обгортка
+get_parent_id(level_id)     — публічна обгортка
 ```
+
+**GeneratedLevel — поля результату:**
+`level_id`, `circle`, `is_static`, `is_branch`, `parent_id`, `room_scenes`, `soul_id`, `soul_data`, `enemy_count_mod`, `trap_density`, `room_count`, `circle_style`
 
 **Сцени кімнат:** `res://scenes/rooms/circle_{N}/room_{type}_{index}.tscn`
 
