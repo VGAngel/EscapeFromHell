@@ -29,6 +29,7 @@ var _souls_found:        int             = 0
 var _is_complete:        bool            = false
 var _escape_timer_total: float           = 0.0
 var _level_type:         String          = "platformer"
+var _respawn_position:   Vector2         = Vector2.ZERO  # updated by mid-altar
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ func _ready() -> void:
 	_spawn_player()
 	_connect_exit()
 	_connect_souls()
+	_connect_altars()
 	_setup_escape_timer()
 
 	GameManager.register_hud(_hud)
@@ -210,10 +212,24 @@ func _on_escape_timer_expired() -> void:
 func _on_respawn() -> void:
 	if not _player:
 		return
-	_player.respawn(_spawn_point.global_position)
+	var pos: Vector2 = _respawn_position if _respawn_position != Vector2.ZERO \
+		else _spawn_point.global_position
+	_player.respawn(pos)
 	if _level_type == "escape":
 		# Restart escape timer
 		_setup_escape_timer()
+
+# ── Altars ────────────────────────────────────────────────────────────────────
+
+func _connect_altars() -> void:
+	for altar in get_tree().get_nodes_in_group("altar"):
+		if altar.has_signal("respawn_bound"):
+			altar.respawn_bound.connect(_on_altar_respawn_bound)
+
+func _on_altar_respawn_bound(world_position: Vector2) -> void:
+	_respawn_position = world_position
+	if GameManager and GameManager.has_method("set_checkpoint"):
+		GameManager.set_checkpoint(world_position)
 
 func _ready_late() -> void:
 	# Connect GameManager respawn signal after all nodes are ready.
