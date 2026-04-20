@@ -142,10 +142,10 @@
   "sin_passive": {
 	"note": "Гріх накопичується пасивно під час гри",
 	"sources": [
-	  { "action": "staff_use",        "delta": +2  },
-	  { "action": "mimic_touch",      "delta": +10 },
-	  { "action": "demon_deal",       "delta": +20 },
-	  { "action": "death",            "delta": +5  },
+	  { "action": "staff_use",        "delta": 2  },
+	  { "action": "mimic_touch",      "delta": 10 },
+	  { "action": "demon_deal",       "delta": 20 },
+	  { "action": "death",            "delta": 5  },
 	  { "action": "exorcism_success", "delta": -3  },
 	  { "action": "level_complete_with_cleansing_upgrade", "delta": -5 }
 	]
