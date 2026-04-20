@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
 
   "currency": {
     "name": "Світло",
@@ -172,6 +172,19 @@
           "cost": 6,
           "max_level": 1,
           "effect": { "type": "stat", "stat": "demon_deal_sin_cost", "value": -0.1 }
+        },
+        {
+          "id": "sacred_stone",
+          "name": "Освячений Камінь",
+          "description": "З'являється мід-вівтар на вертикальних рівнях — можна прив'язати точку відродження ([E]) в середині підйому. Рів. 1: кожен 5-й вертикальний. Рів. 2: кожен 3-й. Рів. 3: кожен вертикальний.",
+          "cost_per_level": [7, 10, 13],
+          "max_level": 3,
+          "note": "Мід-вівтар розташований на половині висоти вертикального рівня. Якщо гравець не активував — рівень веде себе як зазвичай.",
+          "effects_per_level": [
+            { "type": "ability", "ability": "mid_altar", "every_n_verticals": 5 },
+            { "type": "ability", "ability": "mid_altar", "every_n_verticals": 3 },
+            { "type": "ability", "ability": "mid_altar", "every_n_verticals": 1 }
+          ]
         }
       ]
     },
