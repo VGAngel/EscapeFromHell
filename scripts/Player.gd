@@ -9,7 +9,7 @@ signal player_died
 signal hp_changed(current: int, maximum: int)
 
 # ── State ─────────────────────────────────────────────────────────────────────
-enum State { IDLE, WALK, JUMP, FALL, WALL_HANG, STAFF_SWING, PICKUP, CARRYING, DEAD }
+enum State { IDLE, WALK, JUMP, FALL, STAFF_SWING, PICKUP, CARRYING, DEAD }
 
 var state: State = State.IDLE
 
@@ -38,7 +38,7 @@ var _jump_hold_timer:   float = 0.0
 var _staff_timer:       float = 0.0
 var _pickup_timer:      float = 0.0
 var _invincibility_timer: float = 0.0
-var _wall_hang_timer:   float = 0.0
+var _jumps_done:        int   = 0
 var _was_on_floor:      bool  = false
 var _landing_decel_timer: float = 0.0
 
@@ -52,7 +52,7 @@ const FALL_DAMAGE_HEIGHT: float = 480.0
 
 # ── Upgrade flags (populated in _ready) ───────────────────────────────────────
 var _upgrade_quick_pickup:    bool  = false
-var _upgrade_wall_grab:       bool  = false
+var _upgrade_double_jump:     bool  = false
 var _upgrade_soft_landing:    bool  = false
 var _upgrade_staff_purity:    bool  = false
 var _upgrade_soul_shield:     bool  = false
@@ -125,7 +125,7 @@ func _apply_upgrades() -> void:
 	if SaveManager.get_upgrade_level("staff_cooldown") > 0:
 		staff_cooldown -= 1.5
 	_upgrade_quick_pickup = SaveManager.get_upgrade_level("quick_pickup") > 0
-	_upgrade_wall_grab    = SaveManager.get_upgrade_level("wall_grab") > 0
+	_upgrade_double_jump  = SaveManager.get_upgrade_level("double_jump") > 0
 	_upgrade_soft_landing = SaveManager.get_upgrade_level("soft_landing") > 0
 	_upgrade_staff_purity = SaveManager.get_upgrade_level("staff_purity") > 0
 	_upgrade_soul_shield  = SaveManager.get_upgrade_level("soul_shield") > 0
@@ -140,7 +140,6 @@ func _physics_process(delta: float) -> void:
 	_handle_gravity(delta)
 	_handle_movement(delta)
 	_handle_jump(delta)
-	_handle_wall_hang(delta)
 	_handle_staff()
 	_check_fall_damage()
 	move_and_slide()
@@ -155,17 +154,12 @@ func _tick_timers(delta: float) -> void:
 	_soul_shield_timer = maxf(_soul_shield_timer - delta, 0.0)
 	if _jump_buffer_timer > 0.0:
 		_jump_buffer_timer -= delta
-	if _wall_hang_timer > 0.0:
-		_wall_hang_timer -= delta
 
 # ── Gravity ───────────────────────────────────────────────────────────────────
 func _handle_gravity(delta: float) -> void:
 	if is_on_floor():
 		if not _was_on_floor and absf(velocity.x) > 50.0:
 			_landing_decel_timer = 0.05
-		velocity.y = 0.0
-		return
-	if state == State.WALL_HANG:
 		velocity.y = 0.0
 		return
 	if _jump_held and velocity.y < 0.0:
@@ -221,6 +215,13 @@ func _handle_jump(delta: float) -> void:
 		_coyote_timer = 0.0
 		_jump_held = true
 		_jump_hold_timer = 0.0
+	elif _jump_buffer_timer > 0.0 and _upgrade_double_jump \
+			and not is_on_floor() and _coyote_timer <= 0.0 and _jumps_done < 1:
+		velocity.y = -jump_force
+		_jump_buffer_timer = 0.0
+		_jump_held = true
+		_jump_hold_timer = 0.0
+		_jumps_done += 1
 
 	if Input.is_action_pressed("jump") and _jump_held:
 		_jump_hold_timer += delta
@@ -234,24 +235,7 @@ func _handle_jump(delta: float) -> void:
 	if is_on_floor():
 		_jump_held = false
 		_jump_hold_timer = 0.0
-
-# ── Wall hang ─────────────────────────────────────────────────────────────────
-func _handle_wall_hang(delta: float) -> void:
-	if not _upgrade_wall_grab:
-		return
-	if is_on_floor():
-		_wall_hang_timer = 2.0
-		if state == State.WALL_HANG:
-			state = State.IDLE
-		return
-	if is_on_wall() and not is_on_floor() and velocity.y > 0.0:
-		if _wall_hang_timer > 0.0 and Input.get_axis("move_left", "move_right") != 0.0:
-			state = State.WALL_HANG
-			velocity.y = 0.0
-			_wall_hang_timer -= delta
-			return
-	if state == State.WALL_HANG:
-		state = State.FALL
+		_jumps_done = 0
 
 # ── Staff ─────────────────────────────────────────────────────────────────────
 func _handle_staff() -> void:
@@ -368,7 +352,7 @@ func _drop_soul() -> void:
 
 # ── State update ──────────────────────────────────────────────────────────────
 func _update_state() -> void:
-	if state in [State.DEAD, State.STAFF_SWING, State.PICKUP, State.WALL_HANG]:
+	if state in [State.DEAD, State.STAFF_SWING, State.PICKUP]:
 		return
 	var on_floor: bool = is_on_floor()
 	var moving: bool = absf(velocity.x) > 10.0
@@ -389,7 +373,6 @@ func _state_to_anim() -> String:
 		State.WALK:        return "player_carry_walk" if carried_soul_id != "" else "player_walk"
 		State.JUMP:        return "player_jump"
 		State.FALL:        return "player_fall"
-		State.WALL_HANG:   return "player_wall_hang"
 		State.STAFF_SWING: return "player_staff_swing"
 		State.PICKUP:      return "player_pickup"
 		State.CARRYING:    return "player_carry_idle"

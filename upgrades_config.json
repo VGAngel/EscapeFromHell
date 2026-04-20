@@ -76,12 +76,12 @@
           "effect": { "type": "stat", "stat": "move_speed", "value": 0.15 }
         },
         {
-          "id": "wall_grab",
-          "name": "Чіпкість",
-          "description": "Можна чіплятись за стіну і висіти 2 секунди.",
+          "id": "double_jump",
+          "name": "Легкість Духу",
+          "description": "Ще один стрибок у повітрі. Душа, що очищується, стає легшою.",
           "cost": 6,
           "max_level": 1,
-          "effect": { "type": "ability", "ability": "wall_grab", "duration": 2 }
+          "effect": { "type": "ability", "ability": "double_jump" }
         },
         {
           "id": "soft_landing",
