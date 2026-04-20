@@ -71,40 +71,82 @@ func _init_static_level() -> void:
 func _init_procedural_level() -> void:
 	var gen: Object = LevelGenerator.generate(level_id)
 
-	var cursor_x: float = 0.0
-	for scene_path: String in gen.room_scenes:
-		if not ResourceLoader.exists(scene_path):
-			push_warning("Level: room scene not found: %s" % scene_path)
-			continue
-		var packed := load(scene_path) as PackedScene
-		if not packed:
-			continue
-		var room: Node2D = packed.instantiate()
-		room.position.x = cursor_x
-		_room_container.add_child(room)
-		cursor_x += _room_width(room)
+	if _level_type == "vertical":
+		_build_vertical_rooms(gen.room_scenes)
+	else:
+		_build_horizontal_rooms(gen.room_scenes)
 
 	_discover_souls()
 
-	# Override spawn/exit to match the assembled layout
-	_reposition_spawn_and_exit(cursor_x)
-
-	# Place the named soul if present
 	if gen.soul_id > 0:
 		_mark_primary_soul(gen.soul_id, gen.soul_data)
 
+# ── Room layout — horizontal (default) ───────────────────────────────────────
+
+func _build_horizontal_rooms(room_scenes: Array) -> void:
+	var cursor_x: float = 0.0
+	for scene_path: String in room_scenes:
+		var room: Node2D = _load_room(scene_path)
+		if not room:
+			continue
+		room.position.x = cursor_x
+		_room_container.add_child(room)
+		cursor_x += _room_width(room)
+	_reposition_spawn_and_exit_h(cursor_x)
+
+# ── Room layout — vertical (vertical level type) ──────────────────────────────
+
+## Vertical levels: player spawns at the BOTTOM and climbs UP to the altar.
+## Room scenes arrive as [entrance, main…, exit]; we reverse them so the
+## exit/altar room sits at y = 0 (top) and the entrance room is at the bottom.
+func _build_vertical_rooms(room_scenes: Array) -> void:
+	var reversed: Array = room_scenes.duplicate()
+	reversed.reverse()   # exit first → top; entrance last → bottom
+
+	var cursor_y: float = 0.0
+	for scene_path: String in reversed:
+		var room: Node2D = _load_room(scene_path)
+		if not room:
+			continue
+		room.position.y = cursor_y
+		_room_container.add_child(room)
+		cursor_y += _room_height(room)
+
+	_reposition_spawn_and_exit_v(cursor_y)
+
+# ── Room loader helper ────────────────────────────────────────────────────────
+
+func _load_room(scene_path: String) -> Node2D:
+	if not ResourceLoader.exists(scene_path):
+		push_warning("Level: room scene not found: %s" % scene_path)
+		return null
+	var packed := load(scene_path) as PackedScene
+	return packed.instantiate() as Node2D if packed else null
+
+# ── Dimension helpers ─────────────────────────────────────────────────────────
+
 func _room_width(room: Node2D) -> float:
-	# Rooms should export a "room_width" metadata or have a set size.
 	if room.has_meta("room_width"):
 		return float(room.get_meta("room_width"))
 	return 720.0  # default viewport width
 
-func _reposition_spawn_and_exit(total_width: float) -> void:
-	# Move spawn to the beginning of the first room if not manually placed.
+func _room_height(room: Node2D) -> float:
+	if room.has_meta("room_height"):
+		return float(room.get_meta("room_height"))
+	return 540.0  # default viewport height
+
+# ── Spawn / exit placement ────────────────────────────────────────────────────
+
+func _reposition_spawn_and_exit_h(total_width: float) -> void:
 	if _spawn_point.position == Vector2.ZERO:
-		_spawn_point.position = Vector2(80, -64)
-	# Move exit to the far-right of the last room.
-	_exit_area.position = Vector2(total_width - 80, _spawn_point.position.y)
+		_spawn_point.position = Vector2(80.0, -64.0)
+	_exit_area.position = Vector2(total_width - 80.0, _spawn_point.position.y)
+
+func _reposition_spawn_and_exit_v(total_height: float) -> void:
+	# Entrance room is at the bottom → spawn near the floor of the last room.
+	_spawn_point.position = Vector2(360.0, total_height - 80.0)
+	# Exit / altar is at the top of the first (exit) room.
+	_exit_area.position   = Vector2(360.0, 80.0)
 
 # ── Soul discovery ────────────────────────────────────────────────────────────
 
