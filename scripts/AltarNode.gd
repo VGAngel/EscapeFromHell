@@ -62,6 +62,8 @@ func _unhandled_input(event: InputEvent) -> void:
 # ── Activation ────────────────────────────────────────────────────────────────
 
 func _activate() -> void:
+	if _is_active:
+		return  # already bound — ignore repeated calls
 	_is_active = true
 	_update_prompt()
 	if _anim:

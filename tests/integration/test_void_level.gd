@@ -15,6 +15,15 @@ class SafeVoidLevel extends VoidLevelScript:
 
 func _make_vl() -> SafeVoidLevel:
 	var vl: SafeVoidLevel = SafeVoidLevel.new()
+	# Provide the child nodes LevelBase @onready vars expect
+	var hud := Node.new();     hud.name = "HUD"
+	var rc  := Node2D.new();   rc.name  = "RoomContainer"
+	var sp  := Marker2D.new(); sp.name  = "SpawnPoint"
+	var ex  := Area2D.new();   ex.name  = "Exit"
+	vl.add_child(hud)
+	vl.add_child(rc)
+	vl.add_child(sp)
+	vl.add_child(ex)
 	add_child_autofree(vl)
 	return vl
 
@@ -106,11 +115,12 @@ func test_pulse_exit_no_crash_with_null_exit() -> void:
 	assert_true(true)
 
 func test_pulse_exit_no_crash_with_freed_exit() -> void:
+	# Assign first, then free — avoids "previously freed" typed-property error.
 	var vl := _make_vl()
 	var exit := Area2D.new()
-	exit.free()
-	vl._exit_area = exit
-	vl._pulse_exit()
+	vl._exit_area = exit  # assign while valid
+	exit.free()            # now invalidate — _exit_area holds a freed ref
+	vl._pulse_exit()       # must not crash (is_instance_valid guard)
 	assert_true(true)
 
 # ── _on_soul_collected ────────────────────────────────────────────────────────
@@ -175,6 +185,7 @@ func test_find_camera_returns_null_without_camera() -> void:
 func test_find_camera_returns_child_camera() -> void:
 	var vl := _make_vl()
 	var cam := Camera2D.new()
+	cam.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	vl.add_child(cam)
 	var found: Camera2D = vl._find_camera()
 	# May find viewport camera first, but must return a Camera2D
@@ -187,8 +198,10 @@ func test_setup_camera_zoom_applies_to_child_camera() -> void:
 	var vl := _make_vl()
 	var cam := Camera2D.new()
 	cam.enabled = true
+	# Disable physics interpolation to suppress Godot 4.6 engine message
+	# ("Camera2D overridden to physics process mode") which GUT counts as failure.
+	cam.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	vl.add_child(cam)
-	# Force _find_camera to return our cam by temporarily making it current
 	cam.make_current()
 	vl._setup_camera_zoom()
 	assert_eq(cam.zoom, vl.CAMERA_ZOOM)

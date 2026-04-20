@@ -154,8 +154,7 @@ func _tick_timers(delta: float) -> void:
 		if _charge_telegraph <= 0.0 and state == BossState.CHARGE_TELEGRAPH:
 			_start_charge()
 
-	if _charge_timer > 0.0:
-		_charge_timer -= delta
+	# _charge_timer is decremented inside _do_charging() directly
 
 	if _wind_gust_timer > 0.0:
 		_wind_gust_timer -= delta
@@ -246,6 +245,7 @@ func _start_charge() -> void:
 	velocity.x = float(_stats.get("charge_speed", 450)) * _charge_dir
 
 func _do_charging(delta: float) -> void:
+	_charge_timer -= delta
 	if _charge_timer <= 0.0:
 		var cfg: Dictionary = _mechanic.get("charge_cycle", {})
 		_charge_cooldown = float(cfg.get("cooldown_after_charge", 2.5))
@@ -278,8 +278,8 @@ func _do_wind_gust() -> void:
 	_wind_gust_timer = float(hazard.get("gusts_interval", 4.0))
 
 # ── STUNNED ───────────────────────────────────────────────────────────────────
-func _do_stunned(_delta: float) -> void:
-	velocity.x = move_toward(velocity.x, 0.0, 800.0 * get_physics_process_delta_time())
+func _do_stunned(delta: float) -> void:
+	velocity.x = move_toward(velocity.x, 0.0, 800.0 * delta)
 
 func _on_stun_ended() -> void:
 	state = BossState.CHASE

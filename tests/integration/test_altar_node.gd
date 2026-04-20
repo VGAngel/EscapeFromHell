@@ -181,23 +181,17 @@ func test_input_ignored_when_already_active() -> void:
 # ── LevelBase._respawn_position integration ───────────────────────────────────
 
 func test_level_base_respawn_position_updated_on_altar_signal() -> void:
-	# Build a minimal LevelBase-like object and wire the signal manually
-	# (full LevelBase init requires scene tree — we test the callback directly)
-	var lb: Node2D = Node2D.new()
-	lb.set_script(preload("res://scripts/levels/LevelBase.gd"))
-	# Cannot call _ready() safely, but we can test _on_altar_respawn_bound directly
+	# Use autofree (no scene-tree entry) to avoid @onready / _ready() errors.
+	# _on_altar_respawn_bound only writes _respawn_position — no child nodes needed.
+	const LevelBaseScript := preload("res://scripts/levels/LevelBase.gd")
+	var lb: Node = autofree(LevelBaseScript.new())
 	lb.set("_respawn_position", Vector2.ZERO)
-	add_child_autofree(lb)
-
 	lb.call("_on_altar_respawn_bound", Vector2(128.0, -256.0))
 	assert_eq(lb.get("_respawn_position"), Vector2(128.0, -256.0))
 
 func test_level_base_respawn_uses_altar_position_over_spawn_point() -> void:
-	var lb: Node2D = Node2D.new()
-	lb.set_script(preload("res://scripts/levels/LevelBase.gd"))
+	const LevelBaseScript := preload("res://scripts/levels/LevelBase.gd")
+	var lb: Node = autofree(LevelBaseScript.new())
 	lb.set("_respawn_position", Vector2(200.0, -300.0))
-	add_child_autofree(lb)
-
-	# _on_altar_respawn_bound updates _respawn_position
 	lb.call("_on_altar_respawn_bound", Vector2(400.0, -600.0))
 	assert_eq(lb.get("_respawn_position"), Vector2(400.0, -600.0))
