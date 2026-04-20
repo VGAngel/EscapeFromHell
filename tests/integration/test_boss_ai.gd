@@ -217,37 +217,266 @@ func test_tick_sin_aura_no_signal_before_one_second() -> void:
 	boss._tick_sin_aura(0.4)   # timer < 1.0 → no emit yet
 	assert_signal_not_emitted(boss, "sin_aura_tick")
 
-# ── TODO ──────────────────────────────────────────────────────────────────────
+# ── _tick_timers — stun expiry ────────────────────────────────────────────────
 
-func test_transitions_to_chase_when_player_in_range() -> void:
-	# TODO: same as test_do_idle_transitions_to_chase — handled above
-	pass
+func test_stun_ends_after_duration() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.receive_knockback(Vector2.ZERO, 2.0)
+	boss._tick_timers(2.1)   # delta > stun_timer → _on_stun_ended()
+	assert_eq(boss.state, boss.BossState.CHASE)
+
+func test_stun_end_emits_boss_stun_ended_signal() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.receive_knockback(Vector2.ZERO, 1.0)
+	watch_signals(boss)
+	boss._tick_timers(1.1)
+	assert_signal_emitted(boss, "boss_stun_ended")
+
+func test_stun_timer_not_expired_before_duration() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.receive_knockback(Vector2.ZERO, 3.0)
+	boss._tick_timers(1.0)   # partial delta — still stunned
+	assert_eq(boss.state, boss.BossState.STUNNED)
+
+# ── _do_stunned ────────────────────────────────────────────────────────────────
+
+func test_do_stunned_decelerates_velocity() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.velocity.x = 500.0
+	boss._do_stunned(0.016)
+	assert_lt(boss.velocity.x, 500.0)
+
+# ── Charge telegraph & charging ───────────────────────────────────────────────
+
+func test_begin_charge_telegraph_sets_state() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"charge_cycle": {"telegraph_duration": 1.2}}
+	boss._player   = autofree(CharacterBody2D.new())
+	boss._begin_charge_telegraph()
+	assert_eq(boss.state, boss.BossState.CHARGE_TELEGRAPH)
+
+func test_begin_charge_telegraph_sets_timer() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"charge_cycle": {"telegraph_duration": 1.5}}
+	boss._player   = autofree(CharacterBody2D.new())
+	boss._begin_charge_telegraph()
+	assert_almost_eq(boss._charge_telegraph, 1.5, 0.001)
+
+func test_charge_starts_after_telegraph_expires() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"charge_cycle": {"telegraph_duration": 0.1,
+	                                   "charge_duration": 0.8,
+	                                   "charge_speed": 450},
+	                  "type": "dodge_and_collect"}
+	boss._stats = {"charge_speed": 450}
+	boss._player = autofree(CharacterBody2D.new())
+	boss._begin_charge_telegraph()
+	boss._tick_timers(0.2)   # telegraph expires → _start_charge()
+	assert_eq(boss.state, boss.BossState.CHARGING)
+
+func test_charging_transitions_to_chase_when_timer_expires() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"charge_cycle": {"cooldown_after_charge": 2.5}}
+	boss.state          = boss.BossState.CHARGING
+	boss._charge_timer  = 0.001
+	boss._do_charging(0.002)
+	assert_eq(boss.state, boss.BossState.CHASE)
+
+func test_charging_sets_cooldown_after_timer_expires() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"charge_cycle": {"cooldown_after_charge": 2.5}}
+	boss.state         = boss.BossState.CHARGING
+	boss._charge_timer = 0.001
+	boss._do_charging(0.002)
+	assert_almost_eq(boss._charge_cooldown, 2.5, 0.001)
+
+# ── Win condition — all mechanic types ────────────────────────────────────────
+
+func test_win_condition_dodge_and_collect() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic           = {"type": "dodge_and_collect"}
+	boss._collectibles_total = 1
+	watch_signals(boss)
+	boss.on_collectible_picked()
+	assert_signal_emitted(boss, "win_condition_met")
+
+func test_win_condition_lure_into_trap() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic           = {"type": "lure_into_trap"}
+	boss._collectibles_total = 2
+	boss.on_collectible_picked()
+	watch_signals(boss)
+	boss.on_collectible_picked()
+	assert_signal_emitted(boss, "win_condition_met")
+
+func test_win_condition_identify_and_evade_no_emit_on_collectible() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"type": "identify_and_evade"}
+	watch_signals(boss)
+	boss.on_collectible_picked()
+	assert_signal_not_emitted(boss, "win_condition_met")
+
+# ── on_player_reached_exit ────────────────────────────────────────────────────
+
+func test_on_player_reached_exit_win_when_collected_all() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic           = {"type": "collect_and_escape"}
+	boss._collectibles_total = 1
+	boss._collectibles_collected = 1
+	watch_signals(boss)
+	boss.on_player_reached_exit()
+	assert_signal_emitted(boss, "win_condition_met")
+
+func test_on_player_reached_exit_no_win_when_not_collected_all() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic           = {"type": "collect_and_escape"}
+	boss._collectibles_total = 3
+	boss._collectibles_collected = 1
+	watch_signals(boss)
+	boss.on_player_reached_exit()
+	assert_signal_not_emitted(boss, "win_condition_met")
+
+func test_on_player_reached_exit_win_when_stunned_identify_evade() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"type": "identify_and_evade"}
+	boss.state     = boss.BossState.STUNNED
+	watch_signals(boss)
+	boss.on_player_reached_exit()
+	assert_signal_emitted(boss, "win_condition_met")
+
+func test_on_player_reached_exit_no_win_when_chasing_identify_evade() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"type": "identify_and_evade"}
+	boss.state     = boss.BossState.CHASE
+	watch_signals(boss)
+	boss.on_player_reached_exit()
+	assert_signal_not_emitted(boss, "win_condition_met")
+
+# ── is_blocking_totem ─────────────────────────────────────────────────────────
+
+func test_is_blocking_totem_true_when_close() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic  = {"totems": {"blocked_when_boss_within": 120}}
+	boss.position   = Vector2.ZERO
+	assert_true(boss.is_blocking_totem(Vector2(100.0, 0.0)))
+
+func test_is_blocking_totem_false_when_far() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"totems": {"blocked_when_boss_within": 120}}
+	boss.position  = Vector2.ZERO
+	assert_false(boss.is_blocking_totem(Vector2(200.0, 0.0)))
+
+# ── register_arena_objects ────────────────────────────────────────────────────
+
+func test_register_arena_objects_sets_total() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	var obj1 := autofree(Node.new())
+	var obj2 := autofree(Node.new())
+	boss.register_arena_objects([obj1, obj2])
+	assert_eq(boss._collectibles_total, 2)
+
+func test_register_arena_objects_replaces_previous() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.register_arena_objects([autofree(Node.new()), autofree(Node.new())])
+	boss.register_arena_objects([autofree(Node.new())])
+	assert_eq(boss._collectibles_total, 1)
+
+# ── boss_10 phase advance at 3 collectibles ───────────────────────────────────
+
+func test_boss10_advances_phase_at_three_collectibles() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.boss_id              = "boss_10"
+	boss._mechanic            = {"type": "collect_and_escape"}
+	boss._collectibles_total  = 10
+	boss._phase_cfg = [{"behavior": "chase"}, {"behavior": "slow_patrol"}]
+	boss.on_collectible_picked()
+	boss.on_collectible_picked()
+	boss.on_collectible_picked()   # third → advance_phase
+	assert_eq(boss._current_phase, 1)
+
+func test_non_boss10_does_not_advance_at_three() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.boss_id             = "boss_05"
+	boss._mechanic           = {"type": "dodge_and_collect"}
+	boss._collectibles_total = 10
+	boss._phase_cfg = [{"behavior": "chase"}, {"behavior": "slow_patrol"}]
+	boss.on_collectible_picked()
+	boss.on_collectible_picked()
+	boss.on_collectible_picked()
+	assert_eq(boss._current_phase, 0)  # no auto-advance for other bosses
+
+# ── _get_anim_name ────────────────────────────────────────────────────────────
+
+func test_get_anim_name_idle() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.state = boss.BossState.IDLE
+	assert_eq(boss._get_anim_name(), "boss_idle")
+
+func test_get_anim_name_chase() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.state = boss.BossState.CHASE
+	assert_eq(boss._get_anim_name(), "boss_walk")
+
+func test_get_anim_name_stunned() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.state = boss.BossState.STUNNED
+	assert_eq(boss._get_anim_name(), "boss_stun")
+
+func test_get_anim_name_charging() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.state = boss.BossState.CHARGING
+	assert_eq(boss._get_anim_name(), "boss_charge")
+
+func test_get_anim_name_charge_telegraph() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.state = boss.BossState.CHARGE_TELEGRAPH
+	assert_eq(boss._get_anim_name(), "boss_charge_telegraph")
+
+func test_get_anim_name_phase_transition() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.state = boss.BossState.PHASE_TRANSITION
+	assert_eq(boss._get_anim_name(), "boss_idle")
+
+# ── _do_wind_gust ─────────────────────────────────────────────────────────────
+
+func test_do_wind_gust_applies_force_to_player() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"wind_hazard": {"push_force": 200, "gusts_interval": 4.0}}
+	var player: CharacterBody2D = autofree(CharacterBody2D.new())
+	player.position = Vector2(300.0, 0.0)
+	boss._player    = player
+	boss._do_wind_gust()
+	assert_ne(player.velocity, Vector2.ZERO)
+
+func test_do_wind_gust_no_crash_without_player() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"wind_hazard": {"push_force": 200, "gusts_interval": 4.0}}
+	boss._player   = null
+	boss._do_wind_gust()
+	assert_true(true)
+
+# ── _destroy_copies ───────────────────────────────────────────────────────────
+
+func test_destroy_copies_clears_array() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	var copy1 := Node2D.new()
+	var copy2 := Node2D.new()
+	add_child_autofree(copy1)
+	add_child_autofree(copy2)
+	boss._copies = [copy1, copy2]
+	boss._destroy_copies()
+	assert_eq(boss._copies.size(), 0)
+
+# ── TODO (requires physics or scene tree) ─────────────────────────────────────
 
 func test_transitions_back_to_patrol_when_player_out_of_range() -> void:
 	# TODO: requires processing frames to observe state machine over time
 	pass
 
-func test_phase_changes_at_hp_threshold() -> void:
-	# TODO: BossAI has no HP — damage/phase-change is mechanic-specific
-	# (e.g. soul collection → advance_phase). Covered by test_advance_phase_*.
-	pass
-
-func test_win_condition_emitted_at_zero_hp() -> void:
-	# TODO: no generic HP system; win comes from mechanic-specific conditions
-	pass
-
-func test_boss_does_not_move_while_stunned() -> void:
-	# TODO: requires physics process frames + CharacterBody2D in scene tree
-	pass
-
-func test_stun_ends_after_duration() -> void:
-	# TODO: requires _tick_timers(delta) called with cumulative delta ≥ stun_timer
-	pass
-
 func test_phase_2_increases_speed() -> void:
-	# TODO: speed change is config-driven; needs injected multi-phase config
+	# TODO: move_speed is set once from stats, not per-phase — no current mechanism
 	pass
 
 func test_phase_3_activates_special_attack() -> void:
-	# TODO: special attack patterns are behavior-string driven; need config
+	# TODO: special attacks are behavior-string driven; need config + scene
 	pass
