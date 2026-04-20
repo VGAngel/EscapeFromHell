@@ -86,6 +86,73 @@ func test_player_knockback_applied_on_hit() -> void:
 	# TODO: call _apply_knockback(Vector2.RIGHT); assert _knockback_vel.x > 0
 	pass
 
+# ── receive_hit (pursuer / external hazard) ────────────────────────────────────
+
+const PlayerScript := preload("res://scripts/Player.gd")
+
+func test_receive_hit_reduces_hp() -> void:
+	var p: Node = autofree(PlayerScript.new())
+	p.current_hp = 3
+	p.max_hp     = 3
+	p.receive_hit(1, Vector2.ZERO)
+	assert_eq(p.current_hp, 2)
+
+func test_receive_hit_applies_knockback_when_not_invincible() -> void:
+	var p: Node = autofree(PlayerScript.new())
+	p.current_hp          = 3
+	p._invincibility_timer = 0.0
+	p._soul_shield_timer   = 0.0
+	p.velocity            = Vector2.ZERO
+	p.receive_hit(1, Vector2(0.0, -400.0))
+	assert_lt(p.velocity.y, 0.0)   # velocity pushed upward
+
+func test_receive_hit_blocked_when_invincible() -> void:
+	var p: Node = autofree(PlayerScript.new())
+	p.current_hp          = 3
+	p._invincibility_timer = 1.0   # already invincible
+	p.velocity            = Vector2.ZERO
+	p.receive_hit(1, Vector2(0.0, -400.0))
+	assert_eq(p.current_hp, 3)          # HP unchanged
+	assert_almost_eq(p.velocity.y, 0.0, 0.001)  # no knockback
+
+func test_receive_hit_blocked_by_soul_shield() -> void:
+	var p: Node = autofree(PlayerScript.new())
+	p.current_hp         = 3
+	p._soul_shield_timer  = 2.0
+	p.velocity           = Vector2.ZERO
+	p.receive_hit(1, Vector2(0.0, -400.0))
+	assert_eq(p.current_hp, 3)
+
+func test_receive_hit_sets_invincibility_after_hit() -> void:
+	var p: Node = autofree(PlayerScript.new())
+	p.current_hp          = 3
+	p._invincibility_timer = 0.0
+	p.receive_hit(1, Vector2.ZERO)
+	assert_gt(p._invincibility_timer, 0.0)
+
+func test_receive_hit_emits_hp_changed_signal() -> void:
+	var p: Node = autofree(PlayerScript.new())
+	p.current_hp = 3
+	p.max_hp     = 3
+	watch_signals(p)
+	p.receive_hit(1, Vector2.ZERO)
+	assert_signal_emitted(p, "hp_changed")
+
+func test_receive_hit_kills_at_zero_hp() -> void:
+	var p: Node = autofree(PlayerScript.new())
+	p.current_hp = 1
+	watch_signals(p)
+	p.receive_hit(1, Vector2.ZERO)
+	assert_signal_emitted(p, "player_died")
+
+func test_receive_hit_knockback_adds_to_existing_velocity() -> void:
+	var p: Node = autofree(PlayerScript.new())
+	p.current_hp = 3
+	p.velocity   = Vector2(100.0, 0.0)   # already moving right
+	p.receive_hit(1, Vector2(0.0, -300.0))
+	assert_almost_eq(p.velocity.x, 100.0, 0.001)  # horizontal unchanged
+	assert_lt(p.velocity.y, 0.0)                   # vertical pushed up
+
 # ── Staff ─────────────────────────────────────────────────────────────────────
 
 func test_staff_hit_damages_enemy_in_range() -> void:

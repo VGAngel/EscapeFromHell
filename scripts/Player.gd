@@ -293,6 +293,15 @@ func _check_fall_damage() -> void:
 		_fall_start_y = 0.0
 
 # ── Damage & death ────────────────────────────────────────────────────────────
+
+## Called by external hazards (Pursuer, traps, etc.).
+## Applies damage and, if the hit landed, adds an instant velocity impulse.
+func receive_hit(amount: int, knockback: Vector2) -> void:
+	var was_blocked := _invincibility_timer > 0.0 or _soul_shield_timer > 0.0
+	_take_damage(amount)
+	if not was_blocked:
+		velocity += knockback
+
 func _take_damage(amount: int) -> void:
 	if _invincibility_timer > 0.0:
 		return
@@ -305,12 +314,14 @@ func _take_damage(amount: int) -> void:
 		_die()
 	else:
 		_shake_camera(0.15, 8.0)
-		_anim.play("player_hurt")
+		if _anim:
+			_anim.play("player_hurt")
 
 func _die() -> void:
 	state = State.DEAD
 	velocity = Vector2.ZERO
-	_anim.play("player_death")
+	if _anim:
+		_anim.play("player_death")
 	_shake_camera(0.3, 12.0)
 	if carried_soul_id != "":
 		soul_dropped.emit(carried_soul_id, global_position)
@@ -422,6 +433,8 @@ func _update_sin_shader(delta: float) -> void:
 
 # ── Public helpers ────────────────────────────────────────────────────────────
 func _shake_camera(duration: float, intensity: float) -> void:
+	if not is_inside_tree():
+		return
 	var camera := get_viewport().get_camera_2d()
 	if not camera:
 		return
