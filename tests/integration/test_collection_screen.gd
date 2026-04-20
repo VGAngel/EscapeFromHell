@@ -238,20 +238,121 @@ func test_notify_soul_added_refreshes_named_counter() -> void:
 	screen.notify_soul_added(1)
 	assert_true(screen._lbl_named.text.contains("1"))
 
+# ── Sheet content ─────────────────────────────────────────────────────────────
+
+func test_show_sheet_displays_story_text() -> void:
+	screen._show_sheet(TEST_NAMED[0], false)
+	assert_eq(screen._sheet_text.text, "Тест")
+
+func test_show_sheet_sin_shown_for_named_with_sin() -> void:
+	screen._show_sheet(TEST_NAMED[1], false)  # sin="greed"
+	assert_true(screen._sheet_extra.text.contains("greed"))
+	assert_true(screen._sheet_extra.visible)
+
+func test_show_sheet_extra_hidden_when_sin_is_none() -> void:
+	screen._show_sheet(TEST_NAMED[0], false)  # sin="none" → extra hidden
+	assert_false(screen._sheet_extra.visible)
+
+func test_show_sheet_reward_shown_for_hidden_soul() -> void:
+	screen._show_sheet(TEST_HIDDEN[0], true)
+	assert_true(screen._sheet_extra.text.contains("Додаткове життя"))
+	assert_true(screen._sheet_extra.visible)
+
+func test_show_sheet_not_found_hint_text() -> void:
+	screen._show_sheet_not_found(TEST_NAMED[0])
+	assert_true(screen._sheet_text.text.contains("Продовжуй"))
+
+func test_show_sheet_not_found_hides_age() -> void:
+	screen._show_sheet_not_found(TEST_NAMED[0])
+	assert_false(screen._sheet_age.visible)
+
+func test_show_sheet_not_found_hides_separator() -> void:
+	screen._show_sheet_not_found(TEST_NAMED[0])
+	assert_false(screen._sheet_sep.visible)
+
+# ── Cell press flow ───────────────────────────────────────────────────────────
+
+func test_cell_press_opens_not_found_when_unsaved() -> void:
+	# soul id=1 is unsaved by default
+	var cell: Button = screen._cell_nodes[1]
+	cell.pressed.emit()
+	assert_true(screen._sheet_open)
+	assert_eq(screen._sheet_name.text, "Душа не знайдена")
+
+func test_cell_press_opens_sheet_for_saved_soul() -> void:
+	SaveManager.add_soul(1)
+	screen._rebuild_grid()
+	await get_tree().process_frame
+	var cell: Button = screen._cell_nodes[1]
+	cell.pressed.emit()
+	assert_true(screen._sheet_open)
+	assert_eq(screen._sheet_name.text, "Іван")
+
+# ── Notifications ──────────────────────────────────────────────────────────────
+
+func test_notify_hidden_soul_added_refreshes_counter() -> void:
+	screen.open()
+	SaveManager.add_hidden_soul("h1")
+	screen.notify_hidden_soul_added("h1")
+	assert_true(screen._lbl_hidden.text.contains("1"))
+
+# ── Completion label ───────────────────────────────────────────────────────────
+
+func test_completion_label_shown_at_100_souls() -> void:
+	for i in range(1, 101):
+		SaveManager.add_soul(i)
+	screen.notify_soul_added(1)
+	assert_true(screen._completion_lbl.visible)
+
+func test_lbl_named_turns_gold_at_100_souls() -> void:
+	for i in range(1, 101):
+		SaveManager.add_soul(i)
+	screen.open()
+	assert_eq(screen._lbl_named.get_theme_color("font_color"), Color("#FFD700"))
+
+# ── Filter button highlight ────────────────────────────────────────────────────
+
+func test_circle_tab_one_active_after_switch() -> void:
+	screen._on_circle_tab(1)
+	assert_eq(screen._circle_tabs[1].modulate, Color.WHITE)
+
+func test_circle_tab_all_dimmed_after_switch_to_one() -> void:
+	screen._on_circle_tab(1)
+	assert_ne(screen._circle_tabs[0].modulate, Color.WHITE)
+
+func test_type_btn_broken_active_after_switch() -> void:
+	screen._on_type_btn("broken")
+	assert_eq(screen._type_btns["broken"].modulate, Color.WHITE)
+
+func test_type_btn_all_dimmed_after_switch_to_broken() -> void:
+	screen._on_type_btn("broken")
+	assert_ne(screen._type_btns["all"].modulate, Color.WHITE)
+
+func test_missing_btn_white_when_active() -> void:
+	screen._on_missing_toggle()
+	assert_eq(screen._btn_missing.modulate, Color.WHITE)
+
+func test_missing_btn_dimmed_when_inactive() -> void:
+	assert_ne(screen._btn_missing.modulate, Color.WHITE)
+
+# ── Real config integration ────────────────────────────────────────────────────
+
+func test_real_config_loads_100_named_souls() -> void:
+	var real: Node = preload("res://scripts/ui/CollectionScreen.gd").new()
+	add_child_autofree(real)
+	assert_eq(real._named_souls.size(), 100)
+
+func test_real_config_loads_20_hidden_souls() -> void:
+	var real: Node = preload("res://scripts/ui/CollectionScreen.gd").new()
+	add_child_autofree(real)
+	assert_eq(real._hidden_souls.size(), 20)
+
 # ── TODO ──────────────────────────────────────────────────────────────────────
 
 func test_close_emits_signal() -> void:
 	# TODO: signal emitted inside tween callback — cannot test synchronously
 	pass
 
-func test_cell_press_opens_sheet_for_saved_soul() -> void:
-	# TODO: requires SaveManager soul, then simulating Button.pressed
-	pass
-
 func test_escape_key_closes_sheet_not_screen() -> void:
 	# TODO: requires InputEvent simulation for "ui_cancel"
-	pass
-
-func test_completion_label_shown_at_100_souls() -> void:
-	# TODO: requires 100 saved souls + notify_soul_added — heavy state setup
 	pass
