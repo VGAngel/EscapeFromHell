@@ -5,7 +5,7 @@ extends GutTest
 # PlaceholderRoom generates walls/platforms in _ready() and exposes
 # room_width / room_height as node metadata so LevelBase can read them.
 
-const RoomScript := preload("res://scripts/PlaceholderRoom.gd")
+const RoomScript := preload("res://scripts/rooms/PlaceholderRoom.gd")
 
 func _make_room(type: String, idx: int, circle: int = 1) -> Node2D:
 	var room: Node2D = Node2D.new()

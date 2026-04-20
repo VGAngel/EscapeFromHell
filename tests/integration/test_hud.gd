@@ -6,7 +6,7 @@ extends GutTest
 var hud: Node
 
 func before_each() -> void:
-	hud = preload("res://scripts/HUD.gd").new()
+	hud = preload("res://scripts/ui/HUD.gd").new()
 	add_child_autofree(hud)
 	if SaveManager:
 		SaveManager._reset()

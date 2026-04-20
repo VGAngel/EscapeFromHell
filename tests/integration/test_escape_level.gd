@@ -6,7 +6,7 @@ extends GutTest
 # EscapeLevel tests use SafeEscapeLevel + _make_safe_el() to avoid
 # crashing on _ready() (which calls LevelBase super() + _spawn_pursuer).
 
-const EscapeLevelScript := preload("res://scripts/EscapeLevel.gd")
+const EscapeLevelScript := preload("res://scripts/levels/EscapeLevel.gd")
 const PursuerScript      := preload("res://scripts/enemies/Pursuer.gd")
 
 # ── SafeEscapeLevel helper ────────────────────────────────────────────────────

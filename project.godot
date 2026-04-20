@@ -11,19 +11,19 @@ config_version=5
 [application]
 
 config/name="EscapeFromHell"
-run/main_scene="res://MainMenu.tscn"
+run/main_scene="res://scenes/ui/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
 PhantomCameraManager="*uid://duq6jhf6unyis"
-GameManager="*res://scripts/GameManager.gd"
-SaveManager="*res://SaveManager.gd"
-LevelConfig="*res://LevelConfig.gd"
-AdsManager="*res://scripts/AdsManager.gd"
-TutorialManager="*res://scripts/TutorialManager.gd"
-LevelGenerator="*res://scripts/LevelGenerator.gd"
+GameManager="*res://scripts/managers/GameManager.gd"
+SaveManager="*res://scripts/managers/SaveManager.gd"
+LevelConfig="*res://scripts/managers/LevelConfig.gd"
+AdsManager="*res://scripts/managers/AdsManager.gd"
+TutorialManager="*res://scripts/managers/TutorialManager.gd"
+LevelGenerator="*res://scripts/levels/LevelGenerator.gd"
 
 [display]
 

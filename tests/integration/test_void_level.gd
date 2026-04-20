@@ -7,7 +7,7 @@ extends GutTest
 # We use a SafeVoidLevel inner class that overrides _ready() to a no-op so we
 # can test individual methods in isolation.
 
-class SafeVoidLevel extends preload("res://scripts/VoidLevel.gd"):
+class SafeVoidLevel extends preload("res://scripts/levels/VoidLevel.gd"):
 	func _ready() -> void:
 		pass  # skip full LevelBase + VoidLevel init
 

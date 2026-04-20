@@ -35,7 +35,7 @@ func _rebuild_collision() -> void:
 func _rebuild_visual() -> void:
 	if _visual and is_instance_valid(_visual):
 		_visual.queue_free()
-	var script := load("res://scripts/PlaceholderVisual.gd")
+	var script := load("res://scripts/rooms/PlaceholderVisual.gd")
 	if not script:
 		return
 	_visual = Node2D.new()

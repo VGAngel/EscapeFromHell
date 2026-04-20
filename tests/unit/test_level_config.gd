@@ -6,7 +6,7 @@ extends GutTest
 var lc: Node
 
 func before_each() -> void:
-	lc = autofree(preload("res://LevelConfig.gd").new())
+	lc = autofree(preload("res://scripts/managers/LevelConfig.gd").new())
 	# autofree() skips add_child → _ready() never called → _load() never runs
 	lc._levels_by_id = {
 		1:  {"id": 1,  "circle": 1, "type": "platformer", "souls_count": 2,

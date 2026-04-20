@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://bosslevel1tsc"]
+
+[ext_resource type="Script" path="res://scripts/levels/BossLevel.gd" id="1_bosslevel"]
+[ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="2_hud"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_exit"]
+size = Vector2(80.0, 160.0)
+
+[node name="BossLevel" type="Node2D"]
+script = ExtResource("1_bosslevel")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 1
+script = ExtResource("2_hud")
+
+[node name="RoomContainer" type="Node2D" parent="."]
+
+[node name="SpawnPoint" type="Marker2D" parent="."]
+position = Vector2(80.0, -64.0)
+
+[node name="Exit" type="Area2D" parent="."]
+position = Vector2(640.0, -64.0)
+collision_layer = 0
+collision_mask = 1
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Exit"]
+shape = SubResource("RectangleShape2D_exit")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(1.0, 1.0)
+limit_smoothed = true

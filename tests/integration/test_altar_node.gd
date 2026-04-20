@@ -184,7 +184,7 @@ func test_level_base_respawn_position_updated_on_altar_signal() -> void:
 	# Build a minimal LevelBase-like object and wire the signal manually
 	# (full LevelBase init requires scene tree — we test the callback directly)
 	var lb: Node2D = Node2D.new()
-	lb.set_script(preload("res://scripts/LevelBase.gd"))
+	lb.set_script(preload("res://scripts/levels/LevelBase.gd"))
 	# Cannot call _ready() safely, but we can test _on_altar_respawn_bound directly
 	lb.set("_respawn_position", Vector2.ZERO)
 	add_child_autofree(lb)
@@ -194,7 +194,7 @@ func test_level_base_respawn_position_updated_on_altar_signal() -> void:
 
 func test_level_base_respawn_uses_altar_position_over_spawn_point() -> void:
 	var lb: Node2D = Node2D.new()
-	lb.set_script(preload("res://scripts/LevelBase.gd"))
+	lb.set_script(preload("res://scripts/levels/LevelBase.gd"))
 	lb.set("_respawn_position", Vector2(200.0, -300.0))
 	add_child_autofree(lb)
 

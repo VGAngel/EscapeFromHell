@@ -316,5 +316,5 @@ func _fade_out_and_load() -> void:
 	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
 	tw.tween_callback(func() -> void:
 		GameManager.load_next_level() if GameManager else \
-			get_tree().change_scene_to_file("res://scenes/Level.tscn")
+			get_tree().change_scene_to_file("res://scenes/levels/Level.tscn")
 	)

@@ -4,201 +4,201 @@
   "character": "Данило — колишній священик, тепер напівдемон",
 
   "movement": {
-    "walk_speed": 180,
-    "run_speed": 180,
-    "note": "Немає окремого бігу — одна швидкість ходьби",
+	"walk_speed": 180,
+	"run_speed": 180,
+	"note": "Немає окремого бігу — одна швидкість ходьби",
 
-    "acceleration": 800,
-    "deceleration": 1200,
-    "air_acceleration": 500,
+	"acceleration": 800,
+	"deceleration": 1200,
+	"air_acceleration": 500,
 
-    "gravity": 900,
-    "max_fall_speed": 600,
+	"gravity": 900,
+	"max_fall_speed": 600,
 
-    "coyote_time": 0.12,
-    "note_coyote": "Можна стрибнути ще 0.12 сек після того як зійшов з платформи",
+	"coyote_time": 0.12,
+	"note_coyote": "Можна стрибнути ще 0.12 сек після того як зійшов з платформи",
 
-    "jump_buffer": 0.1,
-    "note_buffer": "Якщо натиснув стрибок за 0.1 сек до приземлення — стрибок зарахується"
+	"jump_buffer": 0.1,
+	"note_buffer": "Якщо натиснув стрибок за 0.1 сек до приземлення — стрибок зарахується"
   },
 
   "jump": {
-    "jump_force": 420,
-    "variable_jump": true,
-    "variable_jump_note": "Утримуй кнопку — стрибок вищий. Відпустив раніше — нижчий.",
-    "min_jump_force": 200,
-    "max_jump_height_hold_time": 0.25,
-    "double_jump": false,
-    "wall_jump": false,
-    "note": "Подвійний стрибок і wall jump відсутні базово. Апгрейди можуть додати wall grab."
+	"jump_force": 420,
+	"variable_jump": true,
+	"variable_jump_note": "Утримуй кнопку — стрибок вищий. Відпустив раніше — нижчий.",
+	"min_jump_force": 200,
+	"max_jump_height_hold_time": 0.25,
+	"double_jump": false,
+	"wall_jump": false,
+	"note": "Подвійний стрибок і wall jump відсутні базово. Апгрейди можуть додати wall grab."
   },
 
   "staff": {
-    "note": "Посох — захист молитвою. Відштовхує ворога, не вбиває.",
+	"note": "Посох — захист молитвою. Відштовхує ворога, не вбиває.",
 
-    "input": "action_button",
-    "animation": "staff_swing_forward",
+	"input": "action_button",
+	"animation": "staff_swing_forward",
 
-    "pushback": {
-      "range": 80,
-      "angle": "forward",
-      "enemy_knockback_distance": 180,
-      "enemy_stun_duration": 2.5,
-      "note": "Ворог відлітає вперед і оглушений 2.5 сек — не переслідує, не атакує"
-    },
+	"pushback": {
+	  "range": 80,
+	  "angle": "forward",
+	  "enemy_knockback_distance": 180,
+	  "enemy_stun_duration": 2.5,
+	  "note": "Ворог відлітає вперед і оглушений 2.5 сек — не переслідує, не атакує"
+	},
 
-    "cooldown": 4.5,
-    "visual_cooldown": "staff_glow_fades_refills",
+	"cooldown": 4.5,
+	"visual_cooldown": "staff_glow_fades_refills",
 
-    "charges": {
-      "default": null,
-      "note": "Базово — без ліміту зарядів, тільки cooldown. Апгрейд може збільшити швидкість перезарядки."
-    },
+	"charges": {
+	  "default": null,
+	  "note": "Базово — без ліміту зарядів, тільки cooldown. Апгрейд може збільшити швидкість перезарядки."
+	},
 
-    "sin_cost": 2,
-    "note_sin": "Кожен удар посохом +2% гріху. Використовуєш силу пітьми навіть для захисту.",
+	"sin_cost": 2,
+	"note_sin": "Кожен удар посохом +2% гріху. Використовуєш силу пітьми навіть для захисту.",
 
-    "cannot_use_when": ["carrying_soul", "during_minigame"],
-    "note_carry": "З душею в руках посох недоступний — обидві руки зайняті",
+	"cannot_use_when": ["carrying_soul", "during_minigame"],
+	"note_carry": "З душею в руках посох недоступний — обидві руки зайняті",
 
-    "upgrades_interaction": {
-      "staff_reach": {
-        "upgrade_id": "staff_reach",
-        "effect": "range_plus_40",
-        "note": "Радіус удару +40px"
-      },
-      "staff_cooldown": {
-        "upgrade_id": "staff_cooldown",
-        "effect": "cooldown_minus_1.5",
-        "note": "Cooldown 4.5 → 3.0 сек"
-      },
-      "staff_purity": {
-        "upgrade_id": "staff_purity",
-        "effect": "sin_cost_zero",
-        "note": "Удар посохом більше не додає гріх. Молитва чиста."
-      }
-    }
+	"upgrades_interaction": {
+	  "staff_reach": {
+		"upgrade_id": "staff_reach",
+		"effect": "range_plus_40",
+		"note": "Радіус удару +40px"
+	  },
+	  "staff_cooldown": {
+		"upgrade_id": "staff_cooldown",
+		"effect": "cooldown_minus_1.5",
+		"note": "Cooldown 4.5 → 3.0 сек"
+	  },
+	  "staff_purity": {
+		"upgrade_id": "staff_purity",
+		"effect": "sin_cost_zero",
+		"note": "Удар посохом більше не додає гріх. Молитва чиста."
+	  }
+	}
   },
 
   "interactions": {
-    "soul_pickup": {
-      "input": "auto_on_touch",
-      "with_quick_pickup_upgrade": "no_animation",
-      "without_upgrade": {
-        "animation": "pickup_reach",
-        "duration": 0.6,
-        "note": "0.6 сек анімації підбору — гравець стоїть на місці"
-      }
-    },
+	"soul_pickup": {
+	  "input": "auto_on_touch",
+	  "with_quick_pickup_upgrade": "no_animation",
+	  "without_upgrade": {
+		"animation": "pickup_reach",
+		"duration": 0.6,
+		"note": "0.6 сек анімації підбору — гравець стоїть на місці"
+	  }
+	},
 
-    "soul_drop": {
-      "trigger": "player_death",
-      "result": "soul_falls_to_ground"
-    },
+	"soul_drop": {
+	  "trigger": "player_death",
+	  "result": "soul_falls_to_ground"
+	},
 
-    "exorcism": {
-      "input": "hold_action_near_mimic",
-      "note": "Те саме що посох але утримання — детальніше в soul_mechanics_config.json"
-    },
+	"exorcism": {
+	  "input": "hold_action_near_mimic",
+	  "note": "Те саме що посох але утримання — детальніше в soul_mechanics_config.json"
+	},
 
-    "minigame_interact": {
-      "input": "action_on_approach",
-      "note": "При наближенні до сплячої душі автоматично з'являється підказка"
-    },
+	"minigame_interact": {
+	  "input": "action_on_approach",
+	  "note": "При наближенні до сплячої душі автоматично з'являється підказка"
+	},
 
-    "pressure_plate": {
-      "trigger": "stand_on",
-      "note": "Автоматично — просто стій на плиті"
-    }
+	"pressure_plate": {
+	  "trigger": "stand_on",
+	  "note": "Автоматично — просто стій на плиті"
+	}
   },
 
   "damage": {
-    "sources": ["enemy_touch", "lava", "spike", "fall_from_height"],
+	"sources": ["enemy_touch", "lava", "spike", "fall_from_height"],
 
-    "hit_stun": 0.4,
-    "invincibility_after_hit": 1.2,
-    "visual_hit": "player_flashes_red",
+	"hit_stun": 0.4,
+	"invincibility_after_hit": 1.2,
+	"visual_hit": "player_flashes_red",
 
-    "fall_damage": {
-      "enabled": true,
-      "safe_fall_height": 320,
-      "damage_threshold": 480,
-      "note": "Падіння більше 480px — втрата HP. Апгрейд soft_landing збільшує поріг на 50%."
-    },
+	"fall_damage": {
+	  "enabled": true,
+	  "safe_fall_height": 320,
+	  "damage_threshold": 480,
+	  "note": "Падіння більше 480px — втрата HP. Апгрейд soft_landing збільшує поріг на 50%."
+	},
 
-    "death": {
-      "trigger": "hp_reaches_zero",
-      "see": "death_system_config.json"
-    }
+	"death": {
+	  "trigger": "hp_reaches_zero",
+	  "see": "death_system_config.json"
+	}
   },
 
   "hp": {
-    "base": 3,
-    "max_with_upgrades": 6,
-    "visual": "heart_icons_in_hud",
-    "note": "Апгрейд vitality додає +1 HP за рівень, максимум 3 рази"
+	"base": 3,
+	"max_with_upgrades": 6,
+	"visual": "heart_icons_in_hud",
+	"note": "Апгрейд vitality додає +1 HP за рівень, максимум 3 рази"
   },
 
   "sin_passive": {
-    "note": "Гріх накопичується пасивно під час гри",
-    "sources": [
-      { "action": "staff_use",        "delta": +2  },
-      { "action": "mimic_touch",      "delta": +10 },
-      { "action": "demon_deal",       "delta": +20 },
-      { "action": "death",            "delta": +5  },
-      { "action": "exorcism_success", "delta": -3  },
-      { "action": "level_complete_with_cleansing_upgrade", "delta": -5 }
-    ]
+	"note": "Гріх накопичується пасивно під час гри",
+	"sources": [
+	  { "action": "staff_use",        "delta": +2  },
+	  { "action": "mimic_touch",      "delta": +10 },
+	  { "action": "demon_deal",       "delta": +20 },
+	  { "action": "death",            "delta": +5  },
+	  { "action": "exorcism_success", "delta": -3  },
+	  { "action": "level_complete_with_cleansing_upgrade", "delta": -5 }
+	]
   },
 
   "wall_grab": {
-    "enabled_by_upgrade": "wall_grab",
-    "hang_duration": 2.0,
-    "input": "move_into_wall_while_airborne",
-    "note": "Базово недоступно. З апгрейдом — можна зачепитись за стіну і висіти 2 сек."
+	"enabled_by_upgrade": "wall_grab",
+	"hang_duration": 2.0,
+	"input": "move_into_wall_while_airborne",
+	"note": "Базово недоступно. З апгрейдом — можна зачепитись за стіну і висіти 2 сек."
   },
 
   "sin_visuals": {
-    "shader_path": "res://shaders/player_sin.gdshader",
-    "states": [
-      {
-        "name": "clean",
-        "sin_min": 0,
-        "sin_max": 29,
-        "sin_ratio_range": [0.0, 0.0],
-        "description": "Базовий вигляд, м'яке золоте світло"
-      },
-      {
-        "name": "tainted",
-        "sin_min": 30,
-        "sin_max": 59,
-        "sin_ratio_range": [0.0, 1.0],
-        "description": "Очі злегка червоніють, темні прожилки на руках"
-      },
-      {
-        "name": "corrupt",
-        "sin_min": 60,
-        "sin_max": 100,
-        "sin_ratio_range": [1.0, 1.0],
-        "description": "Повна скверна — стала максимальна"
-      }
-    ],
-    "transition_speed": 2.0,
-    "note": "sin_ratio — uniform float у shaders/player_sin.gdshader. Player.gd плавно інтерполює до цільового значення"
+	"shader_path": "res://shaders/player_sin.gdshader",
+	"states": [
+	  {
+		"name": "clean",
+		"sin_min": 0,
+		"sin_max": 29,
+		"sin_ratio_range": [0.0, 0.0],
+		"description": "Базовий вигляд, м'яке золоте світло"
+	  },
+	  {
+		"name": "tainted",
+		"sin_min": 30,
+		"sin_max": 59,
+		"sin_ratio_range": [0.0, 1.0],
+		"description": "Очі злегка червоніють, темні прожилки на руках"
+	  },
+	  {
+		"name": "corrupt",
+		"sin_min": 60,
+		"sin_max": 100,
+		"sin_ratio_range": [1.0, 1.0],
+		"description": "Повна скверна — стала максимальна"
+	  }
+	],
+	"transition_speed": 2.0,
+	"note": "sin_ratio — uniform float у shaders/player_sin.gdshader. Player.gd плавно інтерполює до цільового значення"
   },
 
   "animations": {
-    "idle":          "player_idle",
-    "walk":          "player_walk",
-    "jump_rise":     "player_jump",
-    "jump_fall":     "player_fall",
-    "land":          "player_land",
-    "hurt":          "player_hurt",
-    "death":         "player_death",
-    "pickup":        "player_pickup",
-    "staff_swing":   "player_staff_swing",
-    "wall_hang":     "player_wall_hang",
-    "carrying_idle": "player_carry_idle",
-    "carrying_walk": "player_carry_walk"
+	"idle":          "player_idle",
+	"walk":          "player_walk",
+	"jump_rise":     "player_jump",
+	"jump_fall":     "player_fall",
+	"land":          "player_land",
+	"hurt":          "player_hurt",
+	"death":         "player_death",
+	"pickup":        "player_pickup",
+	"staff_swing":   "player_staff_swing",
+	"wall_hang":     "player_wall_hang",
+	"carrying_idle": "player_carry_idle",
+	"carrying_walk": "player_carry_walk"
   }
 }

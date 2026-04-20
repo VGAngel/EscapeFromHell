@@ -6,7 +6,7 @@ extends GutTest
 var gm: Node
 
 func before_each() -> void:
-	gm = preload("res://scripts/GameManager.gd").new()
+	gm = preload("res://scripts/managers/GameManager.gd").new()
 	add_child_autofree(gm)
 	# Clean SaveManager state so _base_max_hp reads fresh upgrades
 	if SaveManager:

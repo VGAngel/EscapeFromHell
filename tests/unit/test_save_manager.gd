@@ -6,7 +6,7 @@ extends GutTest
 var sm: Node
 
 func before_each() -> void:
-	sm = preload("res://SaveManager.gd").new()
+	sm = preload("res://scripts/managers/SaveManager.gd").new()
 	add_child_autofree(sm)
 	# _ready() already called _reset() — state is clean
 

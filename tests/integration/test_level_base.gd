@@ -15,7 +15,7 @@ extends GutTest
 #    to the node BEFORE add_child_autofree() is called.
 #    Used for _discover_souls which needs get_tree().get_nodes_in_group().
 
-const LevelBaseScript := preload("res://scripts/LevelBase.gd")
+const LevelBaseScript := preload("res://scripts/levels/LevelBase.gd")
 
 class SafeLevel extends LevelBaseScript:
 	func _ready() -> void:

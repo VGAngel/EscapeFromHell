@@ -14,7 +14,7 @@ const TEST_DIFFICULTY_CFG := {
 }
 
 func before_each() -> void:
-	lg = autofree(preload("res://scripts/LevelGenerator.gd").new())
+	lg = autofree(preload("res://scripts/levels/LevelGenerator.gd").new())
 	lg._cfg   = TEST_DIFFICULTY_CFG.duplicate(true)
 	lg._souls = {}
 	lg._static_levels = []

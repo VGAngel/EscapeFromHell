@@ -12,7 +12,7 @@ extends GutTest
 #    then add_child_autofree().  Used for anything that calls _flash_notify
 #    or get_viewport() / get_tree().
 
-const BossLevelScript := preload("res://scripts/BossLevel.gd")
+const BossLevelScript := preload("res://scripts/levels/BossLevel.gd")
 
 class SafeBossLevel extends BossLevelScript:
 	func _ready() -> void:
