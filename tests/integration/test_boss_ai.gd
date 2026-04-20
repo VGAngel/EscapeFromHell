@@ -370,8 +370,8 @@ func test_is_blocking_totem_false_when_far() -> void:
 
 func test_register_arena_objects_sets_total() -> void:
 	var boss: Node = autofree(BossAIScript.new())
-	var obj1 := autofree(Node.new())
-	var obj2 := autofree(Node.new())
+	var obj1: Node = autofree(Node.new())
+	var obj2: Node = autofree(Node.new())
 	boss.register_arena_objects([obj1, obj2])
 	assert_eq(boss._collectibles_total, 2)
 
