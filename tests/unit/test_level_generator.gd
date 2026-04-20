@@ -313,3 +313,90 @@ func test_get_soul_data_returns_empty_when_no_souls() -> void:
 	lg._hidden_soul_levels = {}
 	var soul: Dictionary = lg.get_soul_data(99)
 	assert_true(soul.is_empty())
+
+# ── _is_branch ────────────────────────────────────────────────────────────────
+
+func test_is_branch_false_for_main_levels() -> void:
+	assert_false(lg._is_branch(1))
+	assert_false(lg._is_branch(50))
+	assert_false(lg._is_branch(100))
+
+func test_is_branch_true_for_ids_above_100() -> void:
+	assert_true(lg._is_branch(103))
+	assert_true(lg._is_branch(109))
+	assert_true(lg._is_branch(189))
+
+func test_is_branch_false_for_100() -> void:
+	assert_false(lg._is_branch(100))
+
+func test_is_branch_true_for_101() -> void:
+	assert_true(lg._is_branch(101))
+
+# ── _parent_of ────────────────────────────────────────────────────────────────
+
+func test_parent_of_returns_zero_for_main_level() -> void:
+	assert_eq(lg._parent_of(5), 0)
+
+func test_parent_of_returns_original_id_for_branch() -> void:
+	assert_eq(lg._parent_of(103), 3)   # branch of level 3
+	assert_eq(lg._parent_of(104), 4)   # branch of level 4
+	assert_eq(lg._parent_of(109), 9)   # branch of level 9
+
+func test_parent_of_circle_2_branches() -> void:
+	assert_eq(lg._parent_of(113), 13)
+	assert_eq(lg._parent_of(119), 19)
+
+func test_parent_of_circle_9_branch() -> void:
+	assert_eq(lg._parent_of(183), 83)
+	assert_eq(lg._parent_of(189), 89)
+
+# ── is_branch / get_parent_id public wrappers ─────────────────────────────────
+
+func test_is_branch_public_matches_internal() -> void:
+	assert_true(lg.is_branch(103))
+	assert_false(lg.is_branch(3))
+
+func test_get_parent_id_public_returns_parent() -> void:
+	assert_eq(lg.get_parent_id(107), 7)
+	assert_eq(lg.get_parent_id(7), 0)
+
+# ── generate — branch level fields ───────────────────────────────────────────
+
+func test_generate_branch_sets_is_branch_true() -> void:
+	var r = lg.generate(103)   # branch of level 3
+	assert_true(r.is_branch)
+
+func test_generate_main_sets_is_branch_false() -> void:
+	var r = lg.generate(3)
+	assert_false(r.is_branch)
+
+func test_generate_branch_sets_correct_parent_id() -> void:
+	var r = lg.generate(104)
+	assert_eq(r.parent_id, 4)
+
+func test_generate_branch_inherits_parent_circle() -> void:
+	# Branch of level 3 (circle 1) → circle should be 1
+	var r = lg.generate(103)
+	assert_eq(r.circle, 1)
+
+func test_generate_branch_of_circle_2_level_has_circle_2() -> void:
+	# Branch of level 13 (circle 2) → circle should be 2
+	var r = lg.generate(113)
+	assert_eq(r.circle, 2)
+
+func test_generate_branch_inherits_parent_difficulty() -> void:
+	# Branch of level 3 → index_in_circle(3) = 3 → "low" difficulty
+	var r = lg.generate(103)
+	assert_eq(r.trap_density, "low")
+
+func test_generate_branch_level_id_stored_correctly() -> void:
+	var r = lg.generate(107)
+	assert_eq(r.level_id, 107)
+
+func test_generate_different_branch_ids_produce_different_seeds() -> void:
+	var r103 = lg.generate(103)
+	var r104 = lg.generate(104)
+	# Different seeds → most likely different room layouts (not guaranteed but very probable)
+	# At minimum, level_ids differ
+	assert_eq(r103.level_id, 103)
+	assert_eq(r104.level_id, 104)

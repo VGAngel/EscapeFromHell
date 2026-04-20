@@ -10,16 +10,18 @@ const ROOM_SCENE_PATTERN  := "res://scenes/rooms/circle_%d/room_%s_%d.tscn"
 # ── Public result type ────────────────────────────────────────────────────────
 
 class GeneratedLevel:
-	var level_id:      int      = 0
-	var circle:        int      = 0
-	var is_static:     bool     = false
-	var room_scenes:   Array    = []   # Array[String] — paths to .tscn
-	var soul_id:       int      = 0    # 0 = none
+	var level_id:      int        = 0
+	var circle:        int        = 0
+	var is_static:     bool       = false
+	var is_branch:     bool       = false   # true for branch levels (id > 100)
+	var parent_id:     int        = 0       # non-zero for branch levels
+	var room_scenes:   Array      = []      # Array[String] — paths to .tscn
+	var soul_id:       int        = 0       # 0 = none
 	var soul_data:     Dictionary = {}
-	var enemy_count_mod: int    = 0
-	var trap_density:  String   = "medium"
-	var room_count:    int      = 4
-	var circle_style:  String   = ""
+	var enemy_count_mod: int      = 0
+	var trap_density:  String     = "medium"
+	var room_count:    int        = 4
+	var circle_style:  String     = ""
 
 # ── Internal data ─────────────────────────────────────────────────────────────
 
@@ -82,8 +84,13 @@ func _load_souls() -> void:
 # the caller loads the hand-made scene directly via LevelConfig.
 func generate(level_id: int) -> GeneratedLevel:
 	var result := GeneratedLevel.new()
-	result.level_id = level_id
-	result.circle   = _circle_of(level_id)
+	result.level_id  = level_id
+	result.is_branch = _is_branch(level_id)
+	result.parent_id = _parent_of(level_id)
+
+	# Branch levels share their parent's circle
+	var effective_id: int = result.parent_id if result.is_branch else level_id
+	result.circle = _circle_of(effective_id)
 
 	if _is_static(level_id):
 		result.is_static = true
@@ -94,9 +101,9 @@ func generate(level_id: int) -> GeneratedLevel:
 	# Seed: same level always produces the same layout
 	seed(level_id)
 
-	var circle:    int    = result.circle
-	var idx:       int    = _index_in_circle(level_id)   # 1–10
-	var diff:      Dictionary = _difficulty_for_index(idx)
+	var circle: int = result.circle
+	var idx:    int = _index_in_circle(effective_id)   # 1–10
+	var diff:   Dictionary = _difficulty_for_index(idx)
 
 	result.enemy_count_mod = diff.get("enemy_count_mod", 0)
 	result.trap_density    = diff.get("trap_density", "medium")
@@ -111,6 +118,14 @@ func generate(level_id: int) -> GeneratedLevel:
 
 func is_static(level_id: int) -> bool:
 	return _is_static(level_id)
+
+## Returns true if level_id is a branch level (id > 100, branches of circles 1-9).
+func is_branch(level_id: int) -> bool:
+	return _is_branch(level_id)
+
+## Returns the parent level ID for a branch level, or 0 for main levels.
+func get_parent_id(level_id: int) -> int:
+	return _parent_of(level_id)
 
 # Returns the soul dict for a given level (used by arena scenes for display).
 func get_soul_data(level_id: int) -> Dictionary:
@@ -184,7 +199,19 @@ func _difficulty_for_index(idx_in_circle: int) -> Dictionary:
 func _is_static(level_id: int) -> bool:
 	return level_id in _static_levels
 
+## Branch levels have id > 100. Their parent = level_id - 100.
+## Branch IDs: 103–109 (circle 1), 113–119 (circle 2), …, 183–189 (circle 9).
+func _is_branch(level_id: int) -> bool:
+	return level_id > 100
+
+func _parent_of(level_id: int) -> int:
+	if _is_branch(level_id):
+		return level_id - 100
+	return 0
+
 func _circle_of(level_id: int) -> int:
+	# For main levels 1-100: circle = ceil(id / 10)
+	# Branch levels should never reach here directly; generate() passes effective_id.
 	return ceili(float(level_id) / 10.0)
 
 func _index_in_circle(level_id: int) -> int:
