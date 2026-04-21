@@ -15,8 +15,8 @@ var state: State = State.IDLE
 
 # ── Stats (base values, modified by upgrades at runtime) ──────────────────────
 var walk_speed:       float = 180.0
-var jump_force:       float = 420.0
-var min_jump_force:   float = 200.0
+var jump_force:       float = 540.0
+var min_jump_force:   float = 240.0
 var gravity:          float = 900.0
 var max_fall_speed:   float = 600.0
 var acceleration:     float = 800.0

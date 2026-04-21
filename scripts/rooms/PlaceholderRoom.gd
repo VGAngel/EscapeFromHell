@@ -25,6 +25,16 @@ extends Node2D
 @export var room_height: float = 540.0
 
 const WALL_T: float = 32.0
+const PLATFORM_T: float = 16.0
+
+# Three-row platform layout (540-tall room).
+# Row heights assume jump_force=540 / gravity=900 → max rise 162 px and
+# walking-head clearance at y=418. ROW_LOW bottom (=y+8) sits at 398,
+# leaving a 20 px corridor. Each row is 80 px above the next so both
+# climbing up and dropping down stay within the jump budget.
+const ROW_LOW:  float = 390.0
+const ROW_MID:  float = 310.0
+const ROW_HIGH: float = 230.0
 
 # Per-circle base colors (index 0 = unused, 1-10 = circles)
 const CIRCLE_COLORS: Array = [
@@ -138,12 +148,18 @@ func _build_walls() -> void:
 		"main":
 			_add_main_platforms()
 		"entrance":
-			# Low platform near bottom-center — gives footing on spawn
-			_add_platform(Vector2(room_width / 2.0, room_height - WALL_T - 80.0),
-						  Vector2(240.0, WALL_T))
+			# Footing on spawn, plus a stepping stone to reach the doors.
+			_add_platform(Vector2(room_width / 2.0, ROW_LOW),
+						  Vector2(240.0, PLATFORM_T))
+			_add_platform(Vector2(room_width / 2.0, ROW_MID),
+						  Vector2(160.0, PLATFORM_T))
 		"exit":
-			# Two raised ledges near the top for the altar area
-			_add_platform(Vector2(room_width / 2.0, WALL_T + 120.0), Vector2(300.0, WALL_T))
+			# Ladder of shelves up to the altar — each row reachable from
+			# the one below within the 162 px jump budget.
+			_add_platform(Vector2(room_width * 0.30, ROW_LOW),  Vector2(140.0, PLATFORM_T))
+			_add_platform(Vector2(room_width * 0.70, ROW_LOW),  Vector2(140.0, PLATFORM_T))
+			_add_platform(Vector2(room_width * 0.50, ROW_MID),  Vector2(180.0, PLATFORM_T))
+			_add_platform(Vector2(room_width * 0.50, ROW_HIGH), Vector2(240.0, PLATFORM_T))
 
 const ONE_WAY_SCRIPT     := preload("res://scripts/platforms/OneWayPlatform.gd")
 const CRUMBLING_SCRIPT   := preload("res://scripts/platforms/CrumblingPlatform.gd")
@@ -156,6 +172,8 @@ const SIN_SCRIPT         := preload("res://scripts/platforms/SinPlatform.gd")
 const ILLUSORY_SCRIPT    := preload("res://scripts/platforms/IllusoryPlatform.gd")
 const ICE_SCRIPT         := preload("res://scripts/platforms/IcePlatform.gd")
 const SOUL_BRIDGE_SCRIPT := preload("res://scripts/platforms/SoulBridgePlatform.gd")
+
+const BASE_PLATFORM_SCRIPT := preload("res://scripts/platforms/BasePlatform.gd")
 
 const WIND_ZONE_SCRIPT  := preload("res://scripts/environments/WindZone.gd")
 const LAVA_ZONE_SCRIPT  := preload("res://scripts/environments/LavaZone.gd")
@@ -212,30 +230,50 @@ func _add_swamp_zone() -> void:
 	add_child(zone)
 
 func _add_main_platforms() -> void:
-	# Five distinct layouts keyed by room_index % 5 so even large pools vary.
-	# Each variant mixes in one special platform type so players meet each
-	# mechanic within a short sequence of rooms.
+	# Three-row platform layout so the player can drop from any shelf,
+	# fall to the floor, and climb back up. Rows live at ROW_LOW/MID/HIGH
+	# (80 px apart, all within the 162 px jump budget). Columns sit at
+	# ~22% / 50% / 78% of the room width so gaps between shelves stay
+	# inside the ~185 px horizontal jump range at an 80-px rise.
 	#
-	# Heights: player (40×90) walks at y≈463 (center) with head ≈ y=418.
-	# Platforms stay ≤ y=320 so their bottom face sits at y≤336 — plenty
-	# of clearance for the 90px-tall player. Moving_vertical goes UP (-60)
-	# so it can't dip into the walking corridor.
+	# Each variant keeps the same scaffolding and just swaps one shelf
+	# for a special type so players meet each mechanic in sequence.
+	var col_l: float = room_width * 0.22
+	var col_c: float = room_width * 0.50
+	var col_r: float = room_width * 0.78
+	var shelf: Vector2 = Vector2(110.0, PLATFORM_T)
+	var wide:  Vector2 = Vector2(200.0, PLATFORM_T)
+
 	match room_index % 5:
-		0:  # zigzag staircase — middle step is one-way
-			_add_platform(Vector2(180, 200), Vector2(140, WALL_T))
-			_add_typed_platform(Vector2(380, 280), Vector2(140, WALL_T), "one_way")
-			_add_platform(Vector2(560, 200), Vector2(140, WALL_T))
-		1:  # single wide shelf — crumbles under you
-			_add_typed_platform(Vector2(room_width / 2.0, 240), Vector2(320, WALL_T), "crumbling")
-		2:  # two shelves — left one is a bounce pad
-			_add_typed_platform(Vector2(220, 300), Vector2(160, WALL_T), "bounce")
-			_add_platform(Vector2(500, 300), Vector2(160, WALL_T))
-		3:  # high static + mid moving horizontal
-			_add_platform(Vector2(240, 180), Vector2(160, WALL_T))
-			_add_typed_platform(Vector2(500, 300), Vector2(160, WALL_T), "moving_horizontal")
-		4:  # center pillar — bottom rises upward only
-			_add_platform(Vector2(room_width / 2.0, 180), Vector2(120, WALL_T))
-			_add_typed_platform(Vector2(room_width / 2.0, 320), Vector2(120, WALL_T), "moving_vertical")
+		0:  # zigzag — mid-center is one-way (drop through)
+			_add_platform(Vector2(col_l, ROW_LOW),  shelf)
+			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
+			_add_typed_platform(Vector2(col_c, ROW_MID), shelf, "one_way")
+			_add_platform(Vector2(col_l, ROW_HIGH), shelf)
+			_add_platform(Vector2(col_r, ROW_HIGH), shelf)
+		1:  # wide crumbling shelf in the middle row
+			_add_platform(Vector2(col_l, ROW_LOW),  shelf)
+			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
+			_add_typed_platform(Vector2(col_c, ROW_MID), wide, "crumbling")
+			_add_platform(Vector2(col_c, ROW_HIGH), shelf)
+		2:  # bounce pad bottom-left, static ladder on the right
+			_add_typed_platform(Vector2(col_l, ROW_LOW), shelf, "bounce")
+			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
+			_add_platform(Vector2(col_c, ROW_MID),  shelf)
+			_add_platform(Vector2(col_l, ROW_HIGH), shelf)
+			_add_platform(Vector2(col_r, ROW_HIGH), shelf)
+		3:  # horizontal mover bridges the mid row
+			_add_platform(Vector2(col_l, ROW_LOW),  shelf)
+			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
+			_add_typed_platform(Vector2(col_c, ROW_MID), shelf, "moving_horizontal")
+			_add_platform(Vector2(col_l, ROW_HIGH), shelf)
+			_add_platform(Vector2(col_r, ROW_HIGH), shelf)
+		4:  # vertical mover shuttles between mid and high rows
+			_add_platform(Vector2(col_l, ROW_LOW),  shelf)
+			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
+			_add_typed_platform(Vector2(col_c, ROW_MID), shelf, "moving_vertical")
+			_add_platform(Vector2(col_l, ROW_HIGH), shelf)
+			_add_platform(Vector2(col_r, ROW_HIGH), shelf)
 
 func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 	# Circle-specific overrides — each circle reshapes the same procedural
@@ -323,15 +361,16 @@ func _add_wall(wall_name: String, pos: Vector2, size: Vector2) -> void:
 	add_child(body)
 
 func _add_platform(pos: Vector2, size: Vector2) -> void:
+	# BasePlatform handles both the collision shape and the PlaceholderVisual,
+	# so plain stone shelves show up on screen instead of being invisible
+	# air-walls the player bumps into.
 	var body := StaticBody2D.new()
+	body.set_script(BASE_PLATFORM_SCRIPT)
 	body.name = "Platform_%d" % get_child_count()
 	body.position = pos
 	body.collision_layer = 1
-	var shape_node := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = size
-	shape_node.shape = rect
-	body.add_child(shape_node)
+	body.set("platform_type", "stone")
+	body.set("size", size)
 	add_child(body)
 
 # ── Visuals ───────────────────────────────────────────────────────────────────
