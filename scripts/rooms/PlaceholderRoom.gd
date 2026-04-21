@@ -149,6 +149,8 @@ const ONE_WAY_SCRIPT   := preload("res://scripts/platforms/OneWayPlatform.gd")
 const CRUMBLING_SCRIPT := preload("res://scripts/platforms/CrumblingPlatform.gd")
 const BOUNCE_SCRIPT    := preload("res://scripts/platforms/BouncePlatform.gd")
 const MOVING_SCRIPT    := preload("res://scripts/platforms/MovingPlatform.gd")
+const MUD_SCRIPT       := preload("res://scripts/platforms/MudPlatform.gd")
+const ASH_SCRIPT       := preload("res://scripts/platforms/AshPlatform.gd")
 
 const WIND_ZONE_SCRIPT  := preload("res://scripts/environments/WindZone.gd")
 const LAVA_ZONE_SCRIPT  := preload("res://scripts/environments/LavaZone.gd")
@@ -224,8 +226,17 @@ func _add_main_platforms() -> void:
 			_add_typed_platform(Vector2(room_width / 2.0, 380), Vector2(120, WALL_T), "moving_vertical")
 
 func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
+	# Circle-specific overrides — circle 4 swaps crumbling for mud, circle 5
+	# for ash (faster crumble, no regen). Keeps the procedural layouts
+	# identical while giving each circle its own platform flavour.
+	var resolved: String = type
+	if circle == 4 and type == "crumbling":
+		resolved = "mud"
+	elif circle == 5 and type == "crumbling":
+		resolved = "ash"
+
 	var body: PhysicsBody2D = null
-	match type:
+	match resolved:
 		"one_way":
 			body = StaticBody2D.new()
 			body.set_script(ONE_WAY_SCRIPT)
@@ -235,6 +246,12 @@ func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 		"bounce":
 			body = StaticBody2D.new()
 			body.set_script(BOUNCE_SCRIPT)
+		"mud":
+			body = StaticBody2D.new()
+			body.set_script(MUD_SCRIPT)
+		"ash":
+			body = StaticBody2D.new()
+			body.set_script(ASH_SCRIPT)
 		"moving_horizontal":
 			body = AnimatableBody2D.new()
 			body.set_script(MOVING_SCRIPT)

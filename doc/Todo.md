@@ -151,7 +151,7 @@
 | 3.10 | Середовищні ефекти: лава (circle_3) | `scripts/environments/LavaZone.gd` | ✅ |
 | 3.11 | Середовищні ефекти: болото, отрута (circle_4) | `scripts/environments/SwampZone.gd` | ✅ |
 | 3.12 | Боси 20, 30, 50 | `scripts/enemies/BossCircle{2,3,5}.gd` + `scripts/levels/BossLevel.gd` | ✅ |
-| 3.13 | Платформи circle_2–5 (moving, bounce, mud, ash) | `scripts/platforms/` | ⬜ |
+| 3.13 | Платформи circle_2–5 (moving, bounce, mud, ash) | `scripts/platforms/` | ✅ |
 | 3.14 | Void / Labyrinth / Escape рівні (branch) — circle_1 | `scenes/rooms/circle_1_branch/` | ⬜ |
 
 ---
