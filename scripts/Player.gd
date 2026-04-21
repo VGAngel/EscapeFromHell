@@ -58,6 +58,7 @@ var _upgrade_staff_purity:     bool  = false
 var _upgrade_soul_shield:      bool  = false
 var _upgrade_temptation_resist: bool = false
 var _soul_shield_timer:        float = 0.0
+var _temp_double_jump_timer:   float = 0.0
 
 # ── Sin visuals ───────────────────────────────────────────────────────────────
 const SIN_SHADER_PATH := "res://shaders/player_sin.gdshader"
@@ -243,9 +244,10 @@ func _physics_process(delta: float) -> void:
 
 # ── Timers ────────────────────────────────────────────────────────────────────
 func _tick_timers(delta: float) -> void:
-	_staff_timer       = maxf(_staff_timer - delta, 0.0)
-	_invincibility_timer = maxf(_invincibility_timer - delta, 0.0)
-	_soul_shield_timer = maxf(_soul_shield_timer - delta, 0.0)
+	_staff_timer             = maxf(_staff_timer - delta, 0.0)
+	_invincibility_timer     = maxf(_invincibility_timer - delta, 0.0)
+	_soul_shield_timer       = maxf(_soul_shield_timer - delta, 0.0)
+	_temp_double_jump_timer  = maxf(_temp_double_jump_timer - delta, 0.0)
 	if _jump_buffer_timer > 0.0:
 		_jump_buffer_timer -= delta
 
@@ -313,7 +315,7 @@ func _handle_jump(delta: float) -> void:
 		_jump_held = true
 		_jump_hold_timer = 0.0
 		_tutorial_hint("jump")
-	elif _jump_buffer_timer > 0.0 and _upgrade_double_jump \
+	elif _jump_buffer_timer > 0.0 and (_upgrade_double_jump or _temp_double_jump_timer > 0.0) \
 			and not is_on_floor() and _coyote_timer <= 0.0 and _jumps_done < 1:
 		velocity.y = -jump_force
 		_jump_buffer_timer = 0.0
@@ -552,6 +554,16 @@ func _shake_camera(duration: float, intensity: float) -> void:
 	var shaker: Node = get_node_or_null("/root/CameraShake")
 	if shaker and shaker.has_method("shake"):
 		shaker.shake(duration, intensity)
+
+func heal(amount: int) -> void:
+	current_hp = mini(current_hp + amount, max_hp)
+	hp_changed.emit(current_hp, max_hp)
+
+func apply_invincibility(duration: float) -> void:
+	_invincibility_timer = maxf(_invincibility_timer, duration)
+
+func apply_temp_double_jump(duration: float) -> void:
+	_temp_double_jump_timer = maxf(_temp_double_jump_timer, duration)
 
 func get_staff_cooldown_ratio() -> float:
 	return 1.0 - (_staff_timer / staff_cooldown)
