@@ -65,6 +65,26 @@ func _ready() -> void:
 	_find_player()
 	add_to_group("boss")
 	_start_phase(0)
+	_make_placeholder_sprite_from_config()
+
+## Generate a solid-colour placeholder from bosses_config.json visual section.
+## Subclasses that load real SpriteFrames should override or no-op this.
+func _make_placeholder_sprite_from_config() -> void:
+	if not _sprite:
+		return
+	if _sprite.texture != null:
+		return   # respect any texture already set on the scene
+	var visual: Dictionary = _cfg.get("visual", {})
+	var col := Color(visual.get("placeholder_color", "#AA3300")) as Color
+	var size_arr: Variant = visual.get("size", [64, 96])
+	var w: int = 64
+	var h: int = 96
+	if size_arr is Array and (size_arr as Array).size() == 2:
+		w = int((size_arr as Array)[0])
+		h = int((size_arr as Array)[1])
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(col)
+	_sprite.texture = ImageTexture.create_from_image(img)
 
 func _load_config() -> void:
 	var file := FileAccess.open(CONFIG_PATH, FileAccess.READ)

@@ -79,6 +79,12 @@ func _build_procedural_arena() -> void:
 	match level_id:
 		10:
 			_build_arena_boss_01()
+		20:
+			_build_arena_boss_02()
+		30:
+			_build_arena_boss_03()
+		50:
+			_build_arena_boss_05()
 		_:
 			pass  # other bosses fall back to hand-made scene when authored
 
@@ -141,6 +147,123 @@ func _add_static_rect(parent: Node, pos: Vector2, sz: Vector2) -> void:
 	cs.shape = rect
 	body.add_child(cs)
 	parent.add_child(body)
+
+# ── Arena helpers ─────────────────────────────────────────────────────────────
+
+func _add_arena_walls(room: Node, w: float, h: float, wall_t: float) -> void:
+	_add_static_rect(room, Vector2(w * 0.5, h - wall_t * 0.5), Vector2(w, wall_t))
+	_add_static_rect(room, Vector2(w * 0.5, wall_t * 0.5),     Vector2(w, wall_t))
+	_add_static_rect(room, Vector2(wall_t * 0.5, h * 0.5),     Vector2(wall_t, h))
+	_add_static_rect(room, Vector2(w - wall_t * 0.5, h * 0.5), Vector2(wall_t, h))
+
+func _spawn_boss_at(room: Node, scene_path: String, pos: Vector2) -> void:
+	var scene := load(scene_path) as PackedScene
+	if not scene:
+		return
+	var boss_node := scene.instantiate() as Node2D
+	if not boss_node:
+		return
+	boss_node.position = pos
+	room.add_child(boss_node)
+
+func _spawn_collectible(room: Node, scene_path: String, pos: Vector2, index: int) -> void:
+	var scene := load(scene_path) as PackedScene
+	if not scene:
+		return
+	var node := scene.instantiate() as Node2D
+	if not node:
+		return
+	node.position = pos
+	if "fragment_index" in node:
+		node.fragment_index = index
+	if "totem_index" in node:
+		node.totem_index = index
+	room.add_child(node)
+
+# ── Boss 02 — Хранитель Вітрів (activate_in_sequence, flying) ─────────────────
+func _build_arena_boss_02() -> void:
+	const W: float = 900.0
+	const H: float = 700.0
+	const WALL_T: float = 32.0
+	var room := Node2D.new()
+	room.name = "Arena_Boss02"
+	room.set_meta("room_width",  W)
+	room.set_meta("room_height", H)
+	_room_container.add_child(room)
+	_add_arena_walls(room, W, H, WALL_T)
+
+	# Vertical stack of platforms (totems sit on them)
+	_add_static_rect(room, Vector2(180.0, 540.0), Vector2(180.0, WALL_T))
+	_add_static_rect(room, Vector2(W * 0.5, 400.0), Vector2(180.0, WALL_T))
+	_add_static_rect(room, Vector2(W - 180.0, 260.0), Vector2(180.0, WALL_T))
+
+	_spawn_point.position = Vector2(90.0, H - WALL_T - 60.0)
+	_exit_area.position   = Vector2(W - 80.0, H - WALL_T - 60.0)
+
+	_spawn_boss_at(room, "res://scenes/enemies/BossCircle2.tscn",
+				   Vector2(W * 0.5, 180.0))
+
+	var totem_path := "res://scenes/enemies/Totem.tscn"
+	_spawn_collectible(room, totem_path, Vector2(180.0,   520.0), 0)
+	_spawn_collectible(room, totem_path, Vector2(W * 0.5, 380.0), 1)
+	_spawn_collectible(room, totem_path, Vector2(W - 180.0, 240.0), 2)
+
+# ── Boss 03 — Вогняний Колос (lure_into_trap, multi-tier) ─────────────────────
+func _build_arena_boss_03() -> void:
+	const W: float = 1000.0
+	const H: float = 600.0
+	const WALL_T: float = 32.0
+	var room := Node2D.new()
+	room.name = "Arena_Boss03"
+	room.set_meta("room_width",  W)
+	room.set_meta("room_height", H)
+	_room_container.add_child(room)
+	_add_arena_walls(room, W, H, WALL_T)
+
+	# Upper-tier platforms where fire crystals sit
+	_add_static_rect(room, Vector2(220.0, 380.0), Vector2(200.0, WALL_T))
+	_add_static_rect(room, Vector2(W * 0.5, 260.0), Vector2(200.0, WALL_T))
+	_add_static_rect(room, Vector2(W - 220.0, 380.0), Vector2(200.0, WALL_T))
+
+	_spawn_point.position = Vector2(80.0, H - WALL_T - 60.0)
+	_exit_area.position   = Vector2(W - 80.0, H - WALL_T - 60.0)
+
+	_spawn_boss_at(room, "res://scenes/enemies/BossCircle3.tscn",
+				   Vector2(W * 0.5, H - WALL_T - 80.0))
+
+	var frag_path := "res://scenes/enemies/KeyFragment.tscn"
+	_spawn_collectible(room, frag_path, Vector2(220.0,    350.0), 0)
+	_spawn_collectible(room, frag_path, Vector2(W * 0.5,  230.0), 1)
+	_spawn_collectible(room, frag_path, Vector2(W - 220.0, 350.0), 2)
+
+# ── Boss 05 — Гнів Втілений (dodge_and_collect, charge/wall-stun) ─────────────
+func _build_arena_boss_05() -> void:
+	const W: float = 1200.0   # wider so wall charges have room to build up
+	const H: float = 500.0
+	const WALL_T: float = 32.0
+	var room := Node2D.new()
+	room.name = "Arena_Boss05"
+	room.set_meta("room_width",  W)
+	room.set_meta("room_height", H)
+	_room_container.add_child(room)
+	_add_arena_walls(room, W, H, WALL_T)
+
+	# Two low shelves to add vertical variety but leave long clear lines
+	# for the boss's charge mechanic.
+	_add_static_rect(room, Vector2(300.0,  340.0), Vector2(160.0, WALL_T))
+	_add_static_rect(room, Vector2(W - 300.0, 340.0), Vector2(160.0, WALL_T))
+
+	_spawn_point.position = Vector2(80.0, H - WALL_T - 60.0)
+	_exit_area.position   = Vector2(W - 80.0, H - WALL_T - 60.0)
+
+	_spawn_boss_at(room, "res://scenes/enemies/BossCircle5.tscn",
+				   Vector2(W * 0.5, H - WALL_T - 80.0))
+
+	# Souls near the walls (boss wall-charges → stuns on impact)
+	var frag_path := "res://scenes/enemies/KeyFragment.tscn"
+	_spawn_collectible(room, frag_path, Vector2(80.0,      H - WALL_T - 40.0), 0)
+	_spawn_collectible(room, frag_path, Vector2(W - 80.0,  H - WALL_T - 40.0), 1)
+	_spawn_collectible(room, frag_path, Vector2(W * 0.5,   H - WALL_T - 40.0), 2)
 
 # ── Process: prayer mechanic ──────────────────────────────────────────────────
 
