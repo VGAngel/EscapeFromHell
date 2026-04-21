@@ -16,8 +16,10 @@ extends Node2D
 @export var force_static: bool = false  # skip generator, use existing scene children
 
 # ── Child node references ─────────────────────────────────────────────────────
-@onready var _hud:             Node       = $HUD
-@onready var _pause_screen:    Node       = $PauseScreen
+@onready var _hud:               Node       = $HUD
+@onready var _pause_screen:      Node       = $PauseScreen
+@onready var _collection_screen: Node       = get_node_or_null("CollectionScreen")
+@onready var _settings_screen:   Node       = get_node_or_null("SettingsScreen")
 @onready var _room_container:  Node2D     = $RoomContainer
 @onready var _spawn_point:     Marker2D   = $SpawnPoint
 @onready var _exit_area:       Area2D     = $Exit
@@ -58,6 +60,8 @@ func _ready() -> void:
 	GameManager.register_hud(_hud)
 	GameManager.begin_level(level_id, _souls_required)
 	_hud.pause_requested.connect(_pause_screen.toggle)
+	_pause_screen.collection_requested.connect(_on_pause_collection)
+	_pause_screen.settings_requested.connect(_on_pause_settings)
 	_connect_level_complete()
 
 	if LevelConfig and LevelConfig.has_mechanic(level_id, "tutorial_trigger"):
@@ -387,6 +391,16 @@ func _fire_tutorial_hints() -> void:
 
 func _get_boss() -> Node:
 	return get_tree().get_first_node_in_group("boss")
+
+# ── Pause overlay callbacks ───────────────────────────────────────────────────
+
+func _on_pause_collection() -> void:
+	if _collection_screen and _collection_screen.has_method("open"):
+		_collection_screen.open()
+
+func _on_pause_settings() -> void:
+	if _settings_screen and _settings_screen.has_method("open"):
+		_settings_screen.open()
 
 # ── Pause ─────────────────────────────────────────────────────────────────────
 # ESC is handled by HUD._unhandled_input → pause_requested → _pause_screen.toggle().

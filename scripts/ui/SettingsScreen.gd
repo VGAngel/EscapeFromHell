@@ -56,6 +56,7 @@ var _toggle_vsync:  Button         = null
 
 func _ready() -> void:
 	layer = 10
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load()
 	_build_ui()
 	_apply_all()

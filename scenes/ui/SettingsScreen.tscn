@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://settings001"]
+
+[ext_resource type="Script" path="res://scripts/ui/SettingsScreen.gd" id="1_set"]
+
+[node name="SettingsScreen" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_set")

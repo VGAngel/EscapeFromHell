@@ -64,6 +64,7 @@ var _completion_lbl: Label         = null
 
 func _ready() -> void:
 	layer = 10
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load_souls()
 	_build_ui()
 	_root.modulate.a = 0.0
