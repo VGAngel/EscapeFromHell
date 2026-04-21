@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="EscapeFromHell"
+config/version="0.1.0"
 run/main_scene="res://scenes/ui/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -28,6 +29,7 @@ SceneTransition="*res://scripts/managers/SceneTransition.gd"
 CameraShake="*res://scripts/managers/CameraShake.gd"
 SoundManager="*res://scripts/managers/SoundManager.gd"
 ParticleEffects="*res://scripts/managers/ParticleEffects.gd"
+Loc="*res://scripts/managers/LocalizationManager.gd"
 
 [display]
 

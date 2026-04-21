@@ -243,12 +243,12 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 9.1 | AdsManager: rewarded ads (continues) | `scripts/AdsManager.gd` | ✅ скелет |
-| 9.2 | IAP: Donate Light пакети | `scripts/ui/DonatePanel.gd` | ✅ скелет |
-| 9.3 | Android build: export preset, icons | `export_presets.cfg` | ⬜ |
+| 9.1 | AdsManager: rewarded ads (continues) | `scripts/managers/AdsManager.gd` | ✅ скелет (очікує SDK) |
+| 9.2 | IAP: Donate Light пакети | `scripts/ui/DonatePanel.gd` | ✅ скелет (очікує SDK) |
+| 9.3 | Android build: export preset, icons | `export_presets.cfg` | 🟡 (package/version заповнено; icons — art) |
 | 9.4 | iOS build: export preset, signing | `export_presets.cfg` | ⬜ |
-| 9.5 | Локалізація: UA / EN | `scripts/LocalizationManager.gd` | ✅ скелет |
-| 9.6 | Privacy policy screen | — | ⬜ |
+| 9.5 | Локалізація: UA / EN + Loc autoload | `scripts/managers/LocalizationManager.gd` | ✅ |
+| 9.6 | Privacy policy screen (UA+EN) | `scripts/ui/PrivacyPolicy.gd` | ✅ |
 | 9.7 | App Store / Google Play metadata | — | ⬜ |
 
 ---
