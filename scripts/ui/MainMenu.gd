@@ -20,7 +20,6 @@ extends Control
 const SCENE_HUB    := "res://scenes/Hub.tscn"
 const SCENE_LEVEL  := "res://scenes/levels/Level.tscn"
 const FADE_DURATION := 0.5
-const AD_BANNER_H   := 60
 
 # ── Child nodes ───────────────────────────────────────────────────────────────
 @onready var _btn_play:    Button        = $ButtonsContainer/BtnPlay
@@ -54,7 +53,10 @@ func _ready() -> void:
 	_version_lbl.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0.1")
 
 	_apply_banner_space()
-	if AdsManager and AdsManager.has_signal("no_ads_purchased"):
+	var sa: Node = get_node_or_null("/root/SafeArea")
+	if sa:
+		sa.changed.connect(_apply_banner_space)
+	elif AdsManager and AdsManager.has_signal("no_ads_purchased"):
 		AdsManager.no_ads_purchased.connect(_apply_banner_space)
 
 	# Fade in
@@ -73,10 +75,15 @@ func _apply_banner_space() -> void:
 		var buttons: Control = $ButtonsContainer
 		buttons.offset_bottom = 900.0 - banner_h
 
-## Separate helper so tests can stub without needing AdsManager fully up.
+## Separate helper so tests can stub without needing SafeArea fully up.
+## Prefers AdsManager (always the freshest value) and falls back to
+## SafeArea for projects that push insets without an AdsManager.
 func get_banner_height() -> int:
 	if AdsManager and AdsManager.has_method("get_banner_height"):
 		return int(AdsManager.get_banner_height())
+	var sa: Node = get_node_or_null("/root/SafeArea")
+	if sa and "bottom_reserved" in sa:
+		return int(sa.bottom_reserved)
 	return 0
 
 # ── Button state ──────────────────────────────────────────────────────────────
@@ -206,7 +213,10 @@ func _build_fallback_ui() -> void:
 	ver.add_theme_font_size_override("font_size", 11)
 	ver.add_theme_color_override("font_color", Color(0.35, 0.33, 0.40))
 	ver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	ver.position = Vector2(-80, -AD_BANNER_H - 22)
+	# Banner-aware position is applied in _apply_banner_space; default
+	# uses a 60 px banner so the version label is visible before that
+	# runs (mainly matters for tests that skip the full _ready flow).
+	ver.position = Vector2(-80, -82)
 	add_child(ver)
 
 	# Overlay screens (empty CanvasLayers — scripts assign themselves)

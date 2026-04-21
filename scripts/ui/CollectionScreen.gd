@@ -338,8 +338,10 @@ func _open_sheet() -> void:
 	if _sheet_tween:
 		_sheet_tween.kill()
 	_sheet_tween = create_tween()
+	var sa: Node = get_node_or_null("/root/SafeArea")
+	var banner: float = float(sa.bottom_reserved) if sa else 60.0
 	_sheet_tween.tween_property(_sheet, "position:y",
-		1280.0 - _sheet.size.y - 60.0, 0.22).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUART)
+		1280.0 - _sheet.size.y - banner, 0.22).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUART)
 
 func _close_sheet() -> void:
 	if not _sheet_open:

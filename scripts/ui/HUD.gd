@@ -9,7 +9,6 @@ signal pause_requested
 # ── Constants ─────────────────────────────────────────────────────────────────
 const MAX_HEARTS      := 6
 const LEVEL_INFO_TIME := 3.0
-const AD_BANNER_H     := 60  # px reserved at bottom for ad banner
 
 const SIN_COLORS := [
 	Color("#FFFFFF"),   # 0–29
@@ -37,6 +36,9 @@ var _souls_level:  Label            = null
 # Sin bar
 var _sin_bar:      ColorRect        = null
 var _sin_bar_bg:   ColorRect        = null
+
+# Bottom row (kept as a field so _apply_safe_area can reposition it)
+var _bottom_row:   HBoxContainer    = null
 
 # Escape timer bar (escape levels only)
 var _escape_bar:   ColorRect        = null
@@ -372,6 +374,24 @@ func _build_ui() -> void:
 	_build_sin_bar()
 	_build_pause_button()
 
+	_apply_safe_area()
+	if Engine.has_singleton("SafeArea") or get_node_or_null("/root/SafeArea"):
+		SafeArea.changed.connect(_apply_safe_area)
+
+## Reposition edge-anchored HUD pieces so the ad banner never covers
+## them. Delegated to SafeArea so "no_ads" purchase reclaims the space
+## automatically.
+func _apply_safe_area() -> void:
+	var sa: Node = get_node_or_null("/root/SafeArea")
+	var banner: int = int(sa.bottom_reserved) if sa else 0
+	var vp_h: float = get_viewport().get_visible_rect().size.y
+
+	if _sin_bar_bg:
+		_sin_bar_bg.position.y = vp_h - float(banner) - 6.0
+	if _bottom_row:
+		# 8 px gap above sin bar + 36 px row height.
+		_bottom_row.position.y = vp_h - float(banner) - 6.0 - 36.0 - 8.0
+
 func _build_escape_bar() -> void:
 	_escape_bg = ColorRect.new()
 	_escape_bg.set_anchors_preset(Control.PRESET_TOP_WIDE)
@@ -451,26 +471,25 @@ func _build_top_row() -> void:
 	_root.add_child(_timer_label)
 
 func _build_bottom_row() -> void:
-	var bottom_y: float = 1280 - AD_BANNER_H - 6 - 36 - 8  # above sin bar + ad banner
-
-	var bottom := HBoxContainer.new()
-	bottom.position = Vector2(8, bottom_y)
-	bottom.size = Vector2(704, 36)
-	bottom.add_theme_constant_override("separation", 6)
-	_root.add_child(bottom)
+	# Y position is applied in _apply_safe_area so banner toggles reflow.
+	_bottom_row = HBoxContainer.new()
+	_bottom_row.position = Vector2(8, 0)
+	_bottom_row.size = Vector2(704, 36)
+	_bottom_row.add_theme_constant_override("separation", 6)
+	_root.add_child(_bottom_row)
 
 	# Ability slots (left)
 	_ability_row = HBoxContainer.new()
 	_ability_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_ability_row.add_theme_constant_override("separation", 4)
-	bottom.add_child(_ability_row)
+	_bottom_row.add_child(_ability_row)
 
 	# Active bonuses (center)
 	_bonus_row = HBoxContainer.new()
 	_bonus_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_bonus_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_bonus_row.add_theme_constant_override("separation", 4)
-	bottom.add_child(_bonus_row)
+	_bottom_row.add_child(_bonus_row)
 
 	# Level souls counter (right)
 	_souls_level = Label.new()
@@ -478,7 +497,7 @@ func _build_bottom_row() -> void:
 	_souls_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_souls_level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_souls_level.add_theme_font_size_override("font_size", 14)
-	bottom.add_child(_souls_level)
+	_bottom_row.add_child(_souls_level)
 
 func _build_pause_button() -> void:
 	_pause_btn = Button.new()
@@ -498,10 +517,9 @@ func _on_pause_btn_pressed() -> void:
 	pause_requested.emit()
 
 func _build_sin_bar() -> void:
-	var bar_y: float = 1280 - AD_BANNER_H - 6
-
+	# Y position is applied in _apply_safe_area so banner toggles reflow.
 	_sin_bar_bg = ColorRect.new()
-	_sin_bar_bg.position = Vector2(0, bar_y)
+	_sin_bar_bg.position = Vector2(0, 0)
 	_sin_bar_bg.size = Vector2(720, 6)
 	_sin_bar_bg.color = Color(0.12, 0.12, 0.12)
 	_root.add_child(_sin_bar_bg)

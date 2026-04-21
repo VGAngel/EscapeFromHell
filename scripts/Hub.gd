@@ -336,6 +336,8 @@ func _build_skip_indicator() -> void:
 	panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	panel.offset_left = -130
 	panel.offset_right = 130
+	# Y offsets come from SafeArea so the panel never slides under the
+	# ad banner. Re-applied whenever the banner expands or collapses.
 	panel.offset_top = -80
 	panel.offset_bottom = -30
 
@@ -361,6 +363,28 @@ func _build_skip_indicator() -> void:
 	add_child(panel)
 	_skip_indicator = panel
 	_skip_progress  = bar
+
+	_apply_safe_area()
+	var sa: Node = get_node_or_null("/root/SafeArea")
+	if sa:
+		sa.changed.connect(_apply_safe_area)
+
+## Pull the skip indicator and the prologue BottomBar above the ad
+## banner. Delegated to SafeArea so "no_ads" purchase reclaims the
+## reserved strip automatically.
+func _apply_safe_area() -> void:
+	var sa: Node = get_node_or_null("/root/SafeArea")
+	var banner: int = int(sa.bottom_reserved) if sa else 0
+
+	if _skip_indicator:
+		_skip_indicator.offset_bottom = -30.0 - float(banner)
+		_skip_indicator.offset_top    = -80.0 - float(banner)
+
+	# BottomBar sits flush with the banner; lift it when the banner is
+	# present so the action buttons never slide under it.
+	if _bottom_bar:
+		_bottom_bar.offset_bottom = 1220.0 - float(banner)
+		_bottom_bar.offset_top    = 1150.0 - float(banner)
 
 # ── Button callbacks ──────────────────────────────────────────────────────────
 
