@@ -108,7 +108,7 @@ func _tick_timers(delta: float) -> void:
 		_give_up_timer -= delta
 
 # ── PATROL ────────────────────────────────────────────────────────────────────
-func _do_patrol(delta: float) -> void:
+func _do_patrol(_delta: float) -> void:
 	velocity.x = move_speed * _patrol_dir
 
 	var dist_from_origin: float = global_position.x - _patrol_origin.x
