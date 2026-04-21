@@ -59,8 +59,8 @@
 |---|--------|-------|--------|
 | 1.2.1 | BaseEnemy: patrol, detect, attack, hp | `scripts/enemies/BaseEnemy.gd` | ✅ |
 | 1.2.2 | ShadowLost: конкретний ворог кола 1 | `scripts/enemies/ShadowLost.gd` | ✅ |
-| 1.2.3 | PaleWanderer: повільний бродяга кола 1 | `scripts/enemies/PaleWanderer.gd` | ⬜ |
-| 1.2.4 | Сцени ворогів + placeholder спрайти | `scenes/enemies/ShadowLost.tscn` | 🟡 (1/19) |
+| 1.2.3 | PaleWanderer: повільний бродяга кола 1 | `scripts/enemies/PaleWanderer.gd` | ✅ |
+| 1.2.4 | Сцени ворогів + placeholder спрайти | `scenes/enemies/` | 🟡 (2/19) |
 | 1.2.5 | Розміщення ворогів у PlaceholderRoom (room_main) | `scripts/rooms/PlaceholderRoom.gd` | ✅ |
 
 ### 1.3 Платформи
@@ -100,10 +100,10 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 1.6.1 | SaveManager: save/load до файлу | `SaveManager.gd` | ✅ |
-| 1.6.2 | Зберігати: current_level, circle, sin, hp, upgrades | `SaveManager.gd` | ⬜ перевір |
-| 1.6.3 | Зберігати: collected souls per level | `SaveManager.gd` | ⬜ перевір |
-| 1.6.4 | Auto-save після кожного рівня | `scripts/GameManager.gd` | ⬜ |
+| 1.6.1 | SaveManager: save/load до файлу | `scripts/managers/SaveManager.gd` | ✅ |
+| 1.6.2 | Зберігати: current_level, circle, sin, upgrades, light | `scripts/managers/SaveManager.gd` | ✅ (hp per-run тільки) |
+| 1.6.3 | Зберігати: collected souls (saved_soul_ids + hidden) | `scripts/managers/SaveManager.gd` | ✅ |
+| 1.6.4 | Auto-save після кожного рівня | `scripts/managers/GameManager.gd:238` | ✅ |
 
 ### 1.7 Перший boss (рівень 10)
 

@@ -211,6 +211,47 @@ func _update_spatial_audio() -> void:
 	else:
 		_breath_player.stop()
 
+# ── Config loading ────────────────────────────────────────────────────────────
+## Load one entry from res://enemies_config.json by id and apply it to this
+## instance. Populates stats (move_speed, detection_range, patrol_distance,
+## alert_duration) and generates a solid-colour placeholder sprite from
+## placeholder_color + size. Call from a subclass _ready() before super._ready().
+func _apply_enemy_config(enemy_id: String, config_path: String = "res://enemies_config.json") -> void:
+	var file := FileAccess.open(config_path, FileAccess.READ)
+	if not file:
+		push_warning("BaseEnemy: cannot open " + config_path)
+		return
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not (parsed is Dictionary):
+		return
+	for entry in parsed.get("enemies", []):
+		if entry.get("id", "") != enemy_id:
+			continue
+		move_speed      = float(entry.get("move_speed",      move_speed))
+		detection_range = float(entry.get("detection_range", detection_range))
+		patrol_distance = float(entry.get("patrol_distance", patrol_distance))
+		alert_duration  = float(entry.get("alert_duration",  alert_duration))
+
+		var col := Color(entry.get("placeholder_color", "#888888")) as Color
+		var sz_raw: Variant = entry.get("size", [20, 32])
+		var w: int = 20
+		var h: int = 32
+		if sz_raw is Array and (sz_raw as Array).size() == 2:
+			w = int((sz_raw as Array)[0])
+			h = int((sz_raw as Array)[1])
+		_make_placeholder_sprite(col, Vector2(w, h))
+		return
+
+func _make_placeholder_sprite(color: Color, sz: Vector2) -> void:
+	if not _sprite:
+		return
+	var w := int(maxf(sz.x, 1.0))
+	var h := int(maxf(sz.y, 1.0))
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(color)
+	_sprite.texture = ImageTexture.create_from_image(img)
+
 # ── Player contact damage ─────────────────────────────────────────────────────
 func _check_player_contact(delta: float) -> void:
 	if _hit_cooldown > 0.0:

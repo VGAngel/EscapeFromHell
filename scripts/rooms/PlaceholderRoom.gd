@@ -56,21 +56,27 @@ func _ready() -> void:
 
 # ── Enemy spawning ────────────────────────────────────────────────────────────
 
-const ENEMY_SCENES := {
-	1: "res://scenes/enemies/ShadowLost.tscn",
+# Each circle has a pool of enemy scenes. One is picked per "main" room based
+# on room_index so rooms feel varied without being fully random.
+const ENEMY_POOLS := {
+	1: [
+		"res://scenes/enemies/ShadowLost.tscn",
+		"res://scenes/enemies/PaleWanderer.tscn",
+	],
 }
 
 func _spawn_enemies() -> void:
 	if room_type != "main":
 		return
-	var scene_path: String = ENEMY_SCENES.get(circle, "")
-	if scene_path == "" or not ResourceLoader.exists(scene_path):
+	var pool: Array = ENEMY_POOLS.get(circle, [])
+	if pool.is_empty():
+		return
+	var scene_path: String = pool[room_index % pool.size()]
+	if not ResourceLoader.exists(scene_path):
 		return
 	var packed := load(scene_path) as PackedScene
 	if not packed:
 		return
-	# Spawn position varies with room_index so enemies don't always sit in the
-	# same spot across runs. Y is just above the floor.
 	var enemy := packed.instantiate() as Node2D
 	if not enemy:
 		return
