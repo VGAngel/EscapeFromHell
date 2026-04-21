@@ -275,11 +275,11 @@ func restart_level() -> void:
 
 func load_hub() -> void:
 	_is_transitioning = false
-	get_tree().change_scene_to_file(SCENE_HUB)
+	_change_scene(SCENE_HUB)
 
 func load_main_menu() -> void:
 	_is_transitioning = false
-	get_tree().change_scene_to_file(SCENE_MAIN_MENU)
+	_change_scene(SCENE_MAIN_MENU)
 
 func _change_scene_to_level(level_id: int) -> void:
 	# Set current_level_id BEFORE scene change so LevelBase._ready() can read it.
@@ -287,7 +287,16 @@ func _change_scene_to_level(level_id: int) -> void:
 	current_level_id = level_id
 	var level_type: String = LevelConfig.get_level_type(level_id) if LevelConfig else "platformer"
 	var scene_path: String = SCENE_BOSS_LEVEL if level_type == "boss" else SCENE_LEVEL
-	get_tree().change_scene_to_file(scene_path)
+	_change_scene(scene_path)
+
+## Fade-to-black wrapper; falls back to an immediate swap if the autoload is
+## unavailable (e.g. in unit tests that don't boot the full project).
+func _change_scene(scene_path: String) -> void:
+	var st: Node = get_node_or_null("/root/SceneTransition")
+	if st and st.has_method("change_scene_to"):
+		st.change_scene_to(scene_path)
+	else:
+		get_tree().change_scene_to_file(scene_path)
 
 # ── Bonus / Ability tracking ──────────────────────────────────────────────────
 

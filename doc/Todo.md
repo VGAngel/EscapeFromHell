@@ -92,7 +92,7 @@
 | 1.5.1 | `begin_level` / `end_level` | `scripts/GameManager.gd` | ✅ |
 | 1.5.2 | `collect_soul(soul_id)` → light calculation | `scripts/GameManager.gd` | ✅ |
 | 1.5.3 | Смерть → `SIN_ON_DEATH`, respawn | `scripts/GameManager.gd` | ✅ |
-| 1.5.4 | Transition між рівнями (fade) | `scripts/GameManager.gd` | ⬜ |
+| 1.5.4 | Transition між рівнями (fade) | `scripts/managers/SceneTransition.gd` | ✅ |
 | 1.5.5 | `level_complete` screen: stats + next level | `scripts/ui/LevelComplete.gd` | ✅ |
 | 1.5.6 | Death limit per level type | `scripts/GameManager.gd` | ✅ |
 
@@ -219,7 +219,7 @@
 | 7.3 | Музика: ambient per circle (9 треків + hub) | `assets/music/` | ⬜ |
 | 7.4 | Particle effects: soul glow, death, staff swing | — | ⬜ |
 | 7.5 | Screen shake при ударі, смерті | `scripts/CameraShake.gd` | ⬜ |
-| 7.6 | Transition ефект між рівнями (fade to black) | `scripts/SceneTransition.gd` | ⬜ |
+| 7.6 | Transition ефект між рівнями (fade to black) | `scripts/managers/SceneTransition.gd` | ✅ |
 | 7.7 | Спрайти гравця (idle/walk/jump/attack/carry) | `assets/sprites/player/` | ⬜ |
 | 7.8 | Спрайти ворогів (всі 18 типів) | `assets/sprites/enemies/` | ⬜ |
 | 7.9 | Тайлсети по колах (10 стилів) | `assets/tilesets/` | ⬜ |
