@@ -391,6 +391,11 @@ func _add_platform(pos: Vector2, size: Vector2) -> void:
 	body.set("platform_type", "stone")
 	body.set("size", size)
 	add_child(body)
+	# One-way: player can jump up through the shelf from below and land on top.
+	var shape: CollisionShape2D = body.get("_shape")
+	if shape:
+		shape.one_way_collision = true
+		shape.one_way_collision_margin = 2.0
 
 # ── Visuals ───────────────────────────────────────────────────────────────────
 
