@@ -215,22 +215,27 @@ func _add_main_platforms() -> void:
 	# Five distinct layouts keyed by room_index % 5 so even large pools vary.
 	# Each variant mixes in one special platform type so players meet each
 	# mechanic within a short sequence of rooms.
+	#
+	# Heights: player (40×90) walks at y≈463 (center) with head ≈ y=418.
+	# Platforms stay ≤ y=320 so their bottom face sits at y≤336 — plenty
+	# of clearance for the 90px-tall player. Moving_vertical goes UP (-60)
+	# so it can't dip into the walking corridor.
 	match room_index % 5:
 		0:  # zigzag staircase — middle step is one-way
-			_add_platform(Vector2(180, 200), Vector2(160, WALL_T))
-			_add_typed_platform(Vector2(380, 320), Vector2(160, WALL_T), "one_way")
-			_add_platform(Vector2(560, 200), Vector2(160, WALL_T))
+			_add_platform(Vector2(180, 200), Vector2(140, WALL_T))
+			_add_typed_platform(Vector2(380, 280), Vector2(140, WALL_T), "one_way")
+			_add_platform(Vector2(560, 200), Vector2(140, WALL_T))
 		1:  # single wide shelf — crumbles under you
-			_add_typed_platform(Vector2(room_width / 2.0, 280), Vector2(400, WALL_T), "crumbling")
-		2:  # two low shelves — left one is a bounce pad
-			_add_typed_platform(Vector2(200, 360), Vector2(200, WALL_T), "bounce")
-			_add_platform(Vector2(520, 360), Vector2(200, WALL_T))
-		3:  # high static + low moving horizontal
-			_add_platform(Vector2(240, 180), Vector2(180, WALL_T))
-			_add_typed_platform(Vector2(480, 380), Vector2(180, WALL_T), "moving_horizontal")
-		4:  # center pillar — bottom rises/falls
-			_add_platform(Vector2(room_width / 2.0, 200), Vector2(120, WALL_T))
-			_add_typed_platform(Vector2(room_width / 2.0, 380), Vector2(120, WALL_T), "moving_vertical")
+			_add_typed_platform(Vector2(room_width / 2.0, 240), Vector2(320, WALL_T), "crumbling")
+		2:  # two shelves — left one is a bounce pad
+			_add_typed_platform(Vector2(220, 300), Vector2(160, WALL_T), "bounce")
+			_add_platform(Vector2(500, 300), Vector2(160, WALL_T))
+		3:  # high static + mid moving horizontal
+			_add_platform(Vector2(240, 180), Vector2(160, WALL_T))
+			_add_typed_platform(Vector2(500, 300), Vector2(160, WALL_T), "moving_horizontal")
+		4:  # center pillar — bottom rises upward only
+			_add_platform(Vector2(room_width / 2.0, 180), Vector2(120, WALL_T))
+			_add_typed_platform(Vector2(room_width / 2.0, 320), Vector2(120, WALL_T), "moving_vertical")
 
 func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 	# Circle-specific overrides — each circle reshapes the same procedural
@@ -293,7 +298,10 @@ func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 			body = AnimatableBody2D.new()
 			body.set_script(MOVING_SCRIPT)
 			body.set("move_axis", "vertical")
-			body.set("distance",  80.0)
+			# Negative distance → platform rises UP from its start position.
+			# If we moved down it would sweep through the walking corridor
+			# (player head ≈ y=418 standing on the floor).
+			body.set("distance",  -80.0)
 		_:
 			_add_platform(pos, sz)
 			return
