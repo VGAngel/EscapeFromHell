@@ -17,6 +17,12 @@ var state: State = State.PATROL
 @export var alert_duration:    float = 1.0
 @export var patrol_distance:   float = 120.0
 
+# ── Contact damage ────────────────────────────────────────────────────────────
+@export var contact_damage:    int   = 1
+@export var contact_range:     float = 28.0
+@export var contact_knockback: float = 280.0
+const HIT_COOLDOWN_TIME: float = 1.0
+
 # ── Runtime ───────────────────────────────────────────────────────────────────
 var _player: CharacterBody2D = null
 var _chase_timer:    float = 0.0
@@ -27,6 +33,7 @@ var _last_known_pos: Vector2 = Vector2.ZERO
 var _patrol_origin:  Vector2 = Vector2.ZERO
 var _patrol_dir:     float   = 1.0
 var _facing_right:   bool    = true
+var _hit_cooldown:   float   = 0.0
 
 const GRAVITY: float = 900.0
 
@@ -62,6 +69,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_facing()
 	_update_animation()
+	_check_player_contact(delta)
 
 # ── Gravity ───────────────────────────────────────────────────────────────────
 func _apply_gravity(delta: float) -> void:
@@ -193,7 +201,7 @@ func on_soul_picked_up_nearby(pickup_position: Vector2, alert_radius: float) -> 
 
 # ── Spatial audio ─────────────────────────────────────────────────────────────
 func _update_spatial_audio() -> void:
-	if not _player or not _breath_player:
+	if not _player or not _breath_player or not _breath_player.stream:
 		return
 	var dist: float = global_position.distance_to(_player.global_position)
 	if dist < 300.0 and state in [State.PATROL, State.ALERT]:
@@ -202,6 +210,22 @@ func _update_spatial_audio() -> void:
 		_breath_player.volume_db = lerp(-20.0, -6.0, 1.0 - (dist / 300.0))
 	else:
 		_breath_player.stop()
+
+# ── Player contact damage ─────────────────────────────────────────────────────
+func _check_player_contact(delta: float) -> void:
+	if _hit_cooldown > 0.0:
+		_hit_cooldown -= delta
+		return
+	if not _player or state == State.STUNNED:
+		return
+	if contact_damage <= 0:
+		return
+	if global_position.distance_to(_player.global_position) > contact_range:
+		return
+	_hit_cooldown = HIT_COOLDOWN_TIME
+	if _player.has_method("receive_hit"):
+		var dir: Vector2 = (_player.global_position - global_position).normalized()
+		_player.receive_hit(contact_damage, dir * contact_knockback)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 func _update_facing() -> void:
@@ -224,6 +248,8 @@ func _update_animation() -> void:
 	if not _anim:
 		return
 	var anim: String = _get_anim_name()
+	if not _anim.has_animation(anim):
+		return
 	if _anim.current_animation != anim:
 		_anim.play(anim)
 

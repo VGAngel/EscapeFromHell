@@ -50,8 +50,33 @@ func _ready() -> void:
 
 	if not Engine.is_editor_hint():
 		_build_walls()
+		_spawn_enemies()
 
 	queue_redraw()
+
+# ── Enemy spawning ────────────────────────────────────────────────────────────
+
+const ENEMY_SCENES := {
+	1: "res://scenes/enemies/ShadowLost.tscn",
+}
+
+func _spawn_enemies() -> void:
+	if room_type != "main":
+		return
+	var scene_path: String = ENEMY_SCENES.get(circle, "")
+	if scene_path == "" or not ResourceLoader.exists(scene_path):
+		return
+	var packed := load(scene_path) as PackedScene
+	if not packed:
+		return
+	# Spawn position varies with room_index so enemies don't always sit in the
+	# same spot across runs. Y is just above the floor.
+	var enemy := packed.instantiate() as Node2D
+	if not enemy:
+		return
+	var x_offset: float = 140.0 + float((room_index * 73) % 320)
+	enemy.position = Vector2(x_offset, room_height - WALL_T - 40.0)
+	add_child(enemy)
 
 # ── Physics walls ─────────────────────────────────────────────────────────────
 

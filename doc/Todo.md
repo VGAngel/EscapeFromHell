@@ -58,10 +58,10 @@
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
 | 1.2.1 | BaseEnemy: patrol, detect, attack, hp | `scripts/enemies/BaseEnemy.gd` | ✅ |
-| 1.2.2 | ShadowLost: конкретний ворог кола 1 | `scripts/enemies/ShadowLost.gd` | ⬜ |
+| 1.2.2 | ShadowLost: конкретний ворог кола 1 | `scripts/enemies/ShadowLost.gd` | ✅ |
 | 1.2.3 | PaleWanderer: повільний бродяга кола 1 | `scripts/enemies/PaleWanderer.gd` | ⬜ |
-| 1.2.4 | Сцени ворогів + placeholder спрайти | `scenes/enemies/` | ⬜ |
-| 1.2.5 | Розміщення ворогів у PlaceholderRoom (room_main) | `scripts/PlaceholderRoom.gd` | ⬜ |
+| 1.2.4 | Сцени ворогів + placeholder спрайти | `scenes/enemies/ShadowLost.tscn` | 🟡 (1/19) |
+| 1.2.5 | Розміщення ворогів у PlaceholderRoom (room_main) | `scripts/rooms/PlaceholderRoom.gd` | ✅ |
 
 ### 1.3 Платформи
 
