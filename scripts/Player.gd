@@ -67,8 +67,6 @@ const SIN_TEXTURES := [
 	"res://Assets/OurAssets/player_fallen.png",
 	"res://Assets/OurAssets/player_demon.png",
 ]
-const PLAYER_FALLBACK_TEXTURE := "res://Assets/OurAssets/player_idle.png"
-
 # ── Dark_Elves animation pack ─────────────────────────────────────────────────
 const PLAYER_SPRITE_BASE := "res://Assets/rpg-platformer-game-assets/1_Main_character/Dark_Elves/PNG/PNG Sequences/"
 # Maps Player state → anim-name we play on AnimatedSprite2D → Dark_Elves folder.
@@ -131,18 +129,14 @@ func _setup_sin_shader() -> void:
 		var tex = load(path) if ResourceLoader.exists(path) else null
 		_sin_textures.append(tex)
 
-	# Without a fallback the Player Sprite2D stays texture-less → invisible.
-	# Until the four sin-state textures ship, fall back to player_idle.png
-	# (single texture, no blending).
-	var fallback: Texture2D = null
-	if ResourceLoader.exists(PLAYER_FALLBACK_TEXTURE):
-		fallback = load(PLAYER_FALLBACK_TEXTURE) as Texture2D
-	for i in _sin_textures.size():
-		if not _sin_textures[i]:
-			_sin_textures[i] = fallback
-
+	# Dark_Elves frames drive the visuals via AnimatedSprite2D
+	# (_load_player_frames). The Sprite2D + shader path below is kept for
+	# when the four sin-state PNGs ship; until then it no-ops and the
+	# sin-modulate tint still applies to AnimatedSprite2D each frame.
 	if not _sin_textures[0]:
-		_report_missing_sprite()
+		_sin_modulate = SIN_MODULATES[0]
+		if _anim_sprite:
+			_anim_sprite.modulate = _sin_modulate
 		return
 
 	_sprite.texture = _sin_textures[0]
@@ -208,16 +202,6 @@ func _collect_pngs(path: String) -> Array:
 			frames.append(tex)
 	return frames
 
-func _report_missing_sprite() -> void:
-	if not is_inside_tree():
-		return
-	var d: Node = get_node_or_null("/root/DebugOverlay")
-	if d and d.has_method("error"):
-		d.error("Player: no sprite — жодна з player_*.png не знайдена " +
-			"(SIN_TEXTURES + " + PLAYER_FALLBACK_TEXTURE + "). " +
-			"Гравець буде невидимим.")
-	else:
-		push_error("Player: no sprite texture available")
 
 func _apply_upgrades() -> void:
 	if not SaveManager:
