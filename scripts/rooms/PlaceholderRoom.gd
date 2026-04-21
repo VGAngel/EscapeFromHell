@@ -152,7 +152,7 @@ func _build_walls() -> void:
 						   Vector2(room_width, WALL_T))
 	if needs_ceiling:
 		_add_wall("Ceiling", Vector2(room_width / 2.0, WALL_T / 2.0),
-						     Vector2(room_width, WALL_T))
+							 Vector2(room_width, WALL_T))
 	_add_wall("WallL", Vector2(WALL_T / 2.0, room_height / 2.0),
 					   Vector2(WALL_T, room_height))
 	_add_wall("WallR", Vector2(room_width - WALL_T / 2.0, room_height / 2.0),

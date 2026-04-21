@@ -207,7 +207,7 @@ func _make_buy_btn(id: String, cost: int, cur_level: int, max_level: int,
 
 # ── Buy ───────────────────────────────────────────────────────────────────────
 
-func _on_buy(id: String, cost: int, cur_level: int, max_level: int) -> void:
+func _on_buy(id: String, cost: int, cur_level: int, _max_level: int) -> void:
 	if not SaveManager:
 		return
 	if not SaveManager.spend_light(cost):
