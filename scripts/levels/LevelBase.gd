@@ -21,6 +21,7 @@ extends Node2D
 @onready var _spawn_point:     Marker2D   = $SpawnPoint
 @onready var _exit_area:       Area2D     = $Exit
 @onready var _level_complete:  Node       = get_node_or_null("LevelComplete")
+@onready var _soul_reveal:     Node       = get_node_or_null("SoulRevealPanel")
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 var _player:             CharacterBody2D = null
@@ -219,6 +220,13 @@ func _on_soul_collected(soul: Node) -> void:
 	var soul_id: int = soul.get_meta("soul_id", 0)
 	_souls_found += 1
 	GameManager.collect_soul(soul_id)
+
+	# Named souls pop a short reveal panel with the epitaph.
+	if _soul_reveal and _soul_reveal.has_method("show_soul") \
+			and soul.has_method("get_soul_data"):
+		var data: Dictionary = soul.get_soul_data()
+		if data.has("name") and data.get("name", "") != "":
+			_soul_reveal.show_soul(data)
 
 	# Boss mechanic hook — forward to boss if present
 	var boss: Node = _get_boss()

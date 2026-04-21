@@ -162,14 +162,14 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 4.1 | Підключити `souls_collection.json` до LevelGenerator | `scripts/LevelGenerator.gd` | ✅ |
-| 4.2 | Soul.tscn: відображення імені при підборі | `Soul.tscn`, `Soul.gd` | ⬜ |
-| 4.3 | CollectionScreen: список врятованих душ | `scripts/ui/CollectionScreen.gd` | ✅ скелет |
+| 4.1 | Підключити `souls_collection.json` до LevelGenerator | `scripts/levels/LevelGenerator.gd` | ✅ |
+| 4.2 | Soul: відображення імені при підборі | `scripts/Soul.gd` | ✅ |
+| 4.3 | CollectionScreen: список врятованих душ | `scripts/ui/CollectionScreen.gd` | ✅ |
 | 4.4 | Приховані душі: placement у StaticRoom | — | ⬜ |
-| 4.5 | Приховані душі: `soul_sense` підсвітка | `Soul.gd` | ⬜ |
-| 4.6 | Логіка `soul_memory` (залишається при смерті) | `scripts/Player.gd`, `scripts/GameManager.gd` | ⬜ |
-| 4.7 | Іменна душа: показати portrait + short lore | `scripts/ui/SoulRevealPanel.gd` | ⬜ |
-| 4.8 | Доставка душі до алтаря на рівні | `scripts/LevelBase.gd` | ⬜ |
+| 4.5 | Приховані душі: `soul_sense` підсвітка | `scripts/Soul.gd` | ⬜ |
+| 4.6 | Логіка soul_memory (saved_soul_ids persist globally) | `scripts/managers/SaveManager.gd` | ✅ (permissive) |
+| 4.7 | Іменна душа: reveal panel з епітафією | `scripts/ui/SoulRevealPanel.gd` | ✅ |
+| 4.8 | Доставка душі до алтаря на рівні | `scripts/levels/LevelBase.gd` | ⬜ |
 
 ---
 
