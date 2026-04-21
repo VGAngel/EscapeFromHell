@@ -180,7 +180,7 @@ func _enter_give_up() -> void:
 	enemy_lost_target.emit(self)
 	_play_sound("give_up")
 
-func _do_give_up(delta: float) -> void:
+func _do_give_up(_delta: float) -> void:
 	var dir: float = sign(_last_known_pos.x - global_position.x)
 	velocity.x = move_speed * 0.6 * dir
 
