@@ -68,6 +68,7 @@ const PROLOGUE := [
 @onready var _btn_souls:      Button        = $BottomBar/BtnSouls
 @onready var _btn_continue:   Button        = $BottomBar/BtnContinue
 @onready var _btn_skip:       Button        = $BtnSkip
+@onready var _btn_menu:       Button        = get_node_or_null("BtnMenu")
 @onready var _upgrades:       CanvasLayer   = $UpgradesScreen
 @onready var _collection:     CanvasLayer   = $CollectionScreen
 
@@ -94,6 +95,8 @@ func _ready() -> void:
 	_btn_souls.pressed.connect(_on_souls)
 	_btn_continue.pressed.connect(_on_continue)
 	_btn_skip.pressed.connect(_on_skip)
+	if _btn_menu:
+		_btn_menu.pressed.connect(_on_menu)
 
 	_upgrades.closed.connect(_on_upgrades_closed)
 	_collection.closed.connect(_on_collection_closed)
@@ -168,6 +171,8 @@ func _reset_skip_state() -> void:
 func _show_hub() -> void:
 	_bottom_bar.visible = true
 	_btn_skip.visible   = true
+	if _btn_menu:
+		_btn_menu.visible = true
 	_god_portrait.visible    = true
 	_player_portrait.visible = true
 	_show_god_message()
@@ -277,6 +282,8 @@ func _start_prologue() -> void:
 	_in_prologue = true
 	_bottom_bar.visible   = false
 	_btn_skip.visible     = false
+	if _btn_menu:
+		_btn_menu.visible = false
 	_prologue_step        = 0
 	_bg.modulate          = Color.BLACK
 	_god_portrait.visible = false
@@ -388,10 +395,21 @@ func _on_continue() -> void:
 func _on_skip() -> void:
 	_fade_out_and_load()
 
+func _on_menu() -> void:
+	var tw := create_tween()
+	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	tw.tween_callback(func() -> void:
+		if GameManager and GameManager.has_method("load_main_menu"):
+			GameManager.load_main_menu()
+		else:
+			get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn"))
+
 func _fade_out_and_load() -> void:
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
 	tw.tween_callback(func() -> void:
-		GameManager.load_next_level() if GameManager else \
+		if GameManager and GameManager.has_method("start_level"):
+			GameManager.start_level(_next_level_id)
+		else:
 			get_tree().change_scene_to_file("res://scenes/levels/Level.tscn")
 	)

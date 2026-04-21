@@ -288,6 +288,18 @@ func load_next_level() -> void:
 		return
 	_change_scene_to_level(next_id)
 
+## Start a specific level id without incrementing — use this from Hub where
+## `current_level_id` already reflects the next-to-play level (bumped by
+## complete_level on the previous run, or 1 on a fresh save).
+func start_level(level_id: int) -> void:
+	_is_transitioning = false
+	if level_id < 1:
+		level_id = 1
+	if level_id > 100:
+		_trigger_ending()
+		return
+	_change_scene_to_level(level_id)
+
 func _trigger_ending() -> void:
 	pending_ending = _pick_ending()
 	if SaveManager and SaveManager.has_method("unlock_ending"):
