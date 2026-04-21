@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://bosslevel1tsc"]
+[gd_scene load_steps=5 format=3 uid="uid://bosslevel1tsc"]
 
 [ext_resource type="Script" path="res://scripts/levels/BossLevel.gd" id="1_bosslevel"]
 [ext_resource type="PackedScene" uid="uid://hud1tscn0001" path="res://scenes/ui/HUD.tscn" id="2_hud"]
+[ext_resource type="PackedScene" uid="uid://levelcomplete01" path="res://scenes/ui/LevelComplete.tscn" id="3_lc"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_exit"]
 size = Vector2(80.0, 160.0)
@@ -10,6 +11,8 @@ size = Vector2(80.0, 160.0)
 script = ExtResource("1_bosslevel")
 
 [node name="HUD" parent="." instance=ExtResource("2_hud")]
+
+[node name="LevelComplete" parent="." instance=ExtResource("3_lc")]
 
 [node name="RoomContainer" type="Node2D" parent="."]
 

@@ -93,7 +93,7 @@
 | 1.5.2 | `collect_soul(soul_id)` → light calculation | `scripts/GameManager.gd` | ✅ |
 | 1.5.3 | Смерть → `SIN_ON_DEATH`, respawn | `scripts/GameManager.gd` | ✅ |
 | 1.5.4 | Transition між рівнями (fade) | `scripts/GameManager.gd` | ⬜ |
-| 1.5.5 | `level_complete` screen: stats + next level | `scripts/ui/LevelComplete.gd` | ⬜ |
+| 1.5.5 | `level_complete` screen: stats + next level | `scripts/ui/LevelComplete.gd` | ✅ |
 | 1.5.6 | Death limit per level type | `scripts/GameManager.gd` | ✅ |
 
 ### 1.6 Збереження

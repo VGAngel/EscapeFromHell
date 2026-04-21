@@ -16,10 +16,11 @@ extends Node2D
 @export var force_static: bool = false  # skip generator, use existing scene children
 
 # ── Child node references ─────────────────────────────────────────────────────
-@onready var _hud:            Node      = $HUD
-@onready var _room_container: Node2D    = $RoomContainer
-@onready var _spawn_point:    Marker2D  = $SpawnPoint
-@onready var _exit_area:      Area2D    = $Exit
+@onready var _hud:             Node       = $HUD
+@onready var _room_container:  Node2D     = $RoomContainer
+@onready var _spawn_point:     Marker2D   = $SpawnPoint
+@onready var _exit_area:       Area2D     = $Exit
+@onready var _level_complete:  Node       = get_node_or_null("LevelComplete")
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 var _player:             CharacterBody2D = null
@@ -54,6 +55,7 @@ func _ready() -> void:
 
 	GameManager.register_hud(_hud)
 	GameManager.begin_level(level_id, _souls_required)
+	_connect_level_complete()
 
 	if LevelConfig and LevelConfig.has_mechanic(level_id, "tutorial_trigger"):
 		_fire_tutorial_hints()
@@ -234,6 +236,17 @@ func _complete_level() -> void:
 		return
 	_is_complete = true
 	GameManager.complete_level()
+
+func _connect_level_complete() -> void:
+	if not _level_complete or not _level_complete.has_method("show_results"):
+		return
+	if not GameManager:
+		return
+	GameManager.level_completed.connect(_on_level_completed)
+
+func _on_level_completed(_id: int, stats: Dictionary) -> void:
+	if _level_complete and _level_complete.has_method("show_results"):
+		_level_complete.show_results(stats)
 
 # ── Escape timer ──────────────────────────────────────────────────────────────
 
