@@ -103,8 +103,8 @@ func _refresh_stats() -> void:
 	var souls := SaveManager.get_total_souls() if SaveManager else 0
 	_lbl_souls.text = "👻 %d / 100" % souls
 
-	var sin := SaveManager.get_sin() if SaveManager else 0.0
-	_set_sin(sin)
+	var sin_val := SaveManager.get_sin() if SaveManager else 0.0
+	_set_sin(sin_val)
 
 func _set_sin(value: float) -> void:
 	var ratio := clampf(value / 100.0, 0.0, 1.0)
