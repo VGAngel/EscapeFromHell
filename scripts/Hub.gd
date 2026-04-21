@@ -19,8 +19,10 @@ extends Control
 #   └── CollectionScreen (CanvasLayer) ← scripts/ui/CollectionScreen.gd
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-const MSG_AUTO_HIDE   := 8.0
-const FADE_DURATION   := 0.4
+const MSG_AUTO_HIDE       := 8.0
+const FADE_DURATION       := 0.4
+const SKIP_HOLD_DURATION  := 2.0
+const SKIP_HINT_DELAY     := 0.25
 
 const MSG_COLORS := {
 	"calm":      Color("#FFFFFF"),
@@ -77,6 +79,10 @@ var _msg_visible:    bool  = false
 var _in_prologue:    bool  = false
 var _prologue_step:  int   = 0
 var _awaiting_tap:   bool  = false
+var _skip_held:      bool  = false
+var _skip_timer:     float = 0.0
+var _skip_indicator: Control    = null
+var _skip_progress:  ProgressBar = null
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -94,6 +100,7 @@ func _ready() -> void:
 
 	_setup_continue_label()
 	_refresh_currency()
+	_build_skip_indicator()
 
 	modulate.a = 0.0
 	var tw := create_tween()
@@ -114,14 +121,47 @@ func _process(delta: float) -> void:
 		if _msg_timer <= 0.0:
 			_hide_message()
 
+	if _in_prologue and _skip_held:
+		_skip_timer += delta
+		if _skip_timer >= SKIP_HINT_DELAY and _skip_indicator and not _skip_indicator.visible:
+			_skip_indicator.visible = true
+		if _skip_progress:
+			_skip_progress.value = _skip_timer
+		if _skip_timer >= SKIP_HOLD_DURATION:
+			_reset_skip_state()
+			_end_prologue()
+
 func _input(event: InputEvent) -> void:
-	if _in_prologue and _awaiting_tap:
-		if event is InputEventScreenTouch and event.pressed:
+	if not _in_prologue:
+		return
+
+	if event is InputEventKey and event.is_echo():
+		return
+
+	var is_input_event: bool = event is InputEventKey \
+		or event is InputEventScreenTouch \
+		or event is InputEventMouseButton
+	if not is_input_event:
+		return
+
+	if event.pressed:
+		if not _skip_held:
+			_skip_held = true
+			_skip_timer = 0.0
+	else:
+		var was_short_tap := _skip_held and _skip_timer < SKIP_HOLD_DURATION
+		_reset_skip_state()
+		if was_short_tap and _awaiting_tap:
 			_awaiting_tap = false
 			_advance_prologue()
-		elif event is InputEventKey and event.pressed:
-			_awaiting_tap = false
-			_advance_prologue()
+
+func _reset_skip_state() -> void:
+	_skip_held = false
+	_skip_timer = 0.0
+	if _skip_indicator:
+		_skip_indicator.visible = false
+	if _skip_progress:
+		_skip_progress.value = 0.0
 
 # ── Hub display ───────────────────────────────────────────────────────────────
 
@@ -272,11 +312,48 @@ func _advance_prologue() -> void:
 func _end_prologue() -> void:
 	_in_prologue    = false
 	_prologue_done  = true
+	_reset_skip_state()
 	if SaveManager:
 		SaveManager.mark_hint_seen("prologue_done")
 	_hide_message()
 	await get_tree().create_timer(0.6).timeout
 	_show_hub()
+
+# ── Skip indicator ────────────────────────────────────────────────────────────
+
+func _build_skip_indicator() -> void:
+	var panel := PanelContainer.new()
+	panel.name = "SkipIndicator"
+	panel.visible = false
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	panel.offset_left = -130
+	panel.offset_right = 130
+	panel.offset_top = -80
+	panel.offset_bottom = -30
+
+	var vbox := VBoxContainer.new()
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_theme_constant_override("separation", 6)
+	panel.add_child(vbox)
+
+	var label := Label.new()
+	label.text = "Тримай щоб пропустити"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_color_override("font_color", Color("#DDDDDD"))
+	vbox.add_child(label)
+
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.min_value = 0.0
+	bar.max_value = SKIP_HOLD_DURATION
+	bar.value = 0.0
+	bar.custom_minimum_size = Vector2(240, 6)
+	vbox.add_child(bar)
+
+	add_child(panel)
+	_skip_indicator = panel
+	_skip_progress  = bar
 
 # ── Button callbacks ──────────────────────────────────────────────────────────
 
