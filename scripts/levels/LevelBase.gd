@@ -246,7 +246,8 @@ func _on_player_died() -> void:
 	GameManager.trigger_death(cause)
 
 func _on_player_hp_changed(hp: int, max_hp: int) -> void:
-	GameManager.set_hp(hp, max_hp) if GameManager.has_method("set_hp") else null
+	if GameManager and GameManager.has_method("set_hp"):
+		GameManager.set_hp(hp, max_hp)
 
 # ── Level complete ────────────────────────────────────────────────────────────
 

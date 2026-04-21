@@ -198,14 +198,14 @@ func _pick_god_message() -> Dictionary:
 	if not SaveManager:
 		return {}
 
-	var sin: float   = SaveManager.get_sin()
-	var souls: int   = SaveManager.get_total_souls()
+	var sin_val: float = SaveManager.get_sin()
+	var souls: int     = SaveManager.get_total_souls()
 	var level: int   = _next_level_id
 
 	# Conditional checks (priority order)
 	if SaveManager.get_demon_deals_accepted() > SaveManager.get_deals_refused():
 		return {"text": "Я бачив. Нічого не кажу. Просто бачив.", "style": "quiet"}
-	if sin > 70.0:
+	if sin_val > 70.0:
 		return {"text": "Данило. Я ще тут. Але ти йдеш не в той бік.", "style": "warning"}
 	if souls == 99:
 		return {"text": "Одна залишилась. Остання завжди найважча. Не через пекло — через тебе.", "style": "solemn"}

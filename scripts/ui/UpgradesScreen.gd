@@ -299,10 +299,10 @@ func _build_cat_tabs(parent: VBoxContainer) -> void:
 	for i in _categories.size():
 		var cat: Dictionary = _categories[i]
 		var icon: String = cat_icons[i] if i < cat_icons.size() else ""
-		var name: String = cat.get("name", cat_names[i] if i < cat_names.size() else "")
+		var cat_label: String = cat.get("name", cat_names[i] if i < cat_names.size() else "")
 
 		var btn := Button.new()
-		btn.text = "%s %s" % [icon, name]
+		btn.text = "%s %s" % [icon, cat_label]
 		btn.custom_minimum_size = Vector2(0, 44)
 		btn.focus_mode = Control.FOCUS_NONE
 		btn.add_theme_font_size_override("font_size", 13)

@@ -27,7 +27,6 @@ var _billing: Object = null
 # dev builds, CI) AdsManager flips into a visible mock flow so MainMenu /
 # DonatePanel / level transitions work end-to-end without real SDKs.
 var _mock_mode:          bool        = false
-var _mock_overlay_layer: CanvasLayer = null
 var _mock_banner_layer:  CanvasLayer = null
 
 func _ready() -> void:

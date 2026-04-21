@@ -175,7 +175,9 @@ func _process(delta: float) -> void:
 		_play_time += delta
 		if _timer_label:
 			var total_s: int = int(_play_time)
-			_timer_label.text = "%02d:%02d" % [total_s / 60, total_s % 60]
+			@warning_ignore("integer_division")
+			var minutes: int = total_s / 60
+			_timer_label.text = "%02d:%02d" % [minutes, total_s % 60]
 
 	# Sin pulse at >= 85%
 	if _sin >= 85.0:
