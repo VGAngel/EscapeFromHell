@@ -203,6 +203,12 @@ func _do_return(_delta: float) -> void:
 func _do_stunned() -> void:
 	velocity.x = move_toward(velocity.x, 0.0, 600.0 * get_physics_process_delta_time())
 
+func stun(duration: float) -> void:
+	state = State.STUNNED
+	_stun_timer = maxf(_stun_timer, duration)
+	velocity.x = 0.0
+	_play_sound("stun")
+
 func receive_knockback(direction: Vector2, stun_duration: float) -> void:
 	state = State.STUNNED
 	_stun_timer = stun_duration
