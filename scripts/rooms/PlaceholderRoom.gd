@@ -148,11 +148,15 @@ func _build_walls() -> void:
 		"main":
 			_add_main_platforms()
 		"entrance":
-			# Footing on spawn, plus a stepping stone to reach the doors.
-			_add_platform(Vector2(room_width / 2.0, ROW_LOW),
+			# Safe landing shelf near the top — LevelBase spawns the
+			# player ~97 px above this for a short, visible drop.
+			# Stepping stones descend toward the door at the floor.
+			_add_platform(Vector2(room_width / 2.0, ROW_HIGH),
 						  Vector2(240.0, PLATFORM_T))
 			_add_platform(Vector2(room_width / 2.0, ROW_MID),
 						  Vector2(160.0, PLATFORM_T))
+			_add_platform(Vector2(room_width / 2.0, ROW_LOW),
+						  Vector2(200.0, PLATFORM_T))
 		"exit":
 			# Ladder of shelves up to the altar — each row reachable from
 			# the one below within the 162 px jump budget.

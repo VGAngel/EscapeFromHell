@@ -153,15 +153,13 @@ func _build_horizontal_rooms(room_scenes: Array) -> void:
 
 # ── Room layout — vertical (vertical level type) ──────────────────────────────
 
-## Vertical levels: player spawns at the BOTTOM and climbs UP to the altar.
-## Room scenes arrive as [entrance, main…, exit]; we reverse them so the
-## exit/altar room sits at y = 0 (top) and the entrance room is at the bottom.
+## Vertical levels: player spawns at the TOP on a safe shelf and descends
+## to the altar at the bottom. Room scenes arrive as [entrance, main…, exit]
+## in play order — we keep that order so the entrance sits at y = 0 (top)
+## and the exit/altar lands at the bottom of the stack.
 func _build_vertical_rooms(room_scenes: Array) -> void:
-	var reversed: Array = room_scenes.duplicate()
-	reversed.reverse()   # exit first → top; entrance last → bottom
-
 	var cursor_y: float = 0.0
-	for scene_path: String in reversed:
+	for scene_path: String in room_scenes:
 		var room: Node2D = _load_room(scene_path)
 		if not room:
 			continue
@@ -213,10 +211,13 @@ func _reposition_spawn_and_exit_h(total_width: float) -> void:
 	_exit_area.position = Vector2(total_width - 80.0, _spawn_point.position.y)
 
 func _reposition_spawn_and_exit_v(total_height: float) -> void:
-	# Entrance room is at the bottom → spawn near the floor of the last room.
-	_spawn_point.position = Vector2(360.0, total_height - 80.0)
-	# Exit / altar is at the top of the first (exit) room.
-	_exit_area.position   = Vector2(360.0, 80.0)
+	# Entrance room is at the top → spawn on the safe shelf the entrance
+	# room builds at ROW_HIGH (y≈230). Dropping the player ~97 px above
+	# that shelf gives a short, visible landing and stays well under the
+	# fall-damage threshold.
+	_spawn_point.position = Vector2(360.0, 80.0)
+	# Exit / altar sits at the bottom of the exit room (last in the stack).
+	_exit_area.position   = Vector2(360.0, total_height - 80.0)
 
 # ── Soul discovery ────────────────────────────────────────────────────────────
 

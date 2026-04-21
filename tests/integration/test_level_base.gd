@@ -197,30 +197,30 @@ func test_reposition_h_preserves_custom_spawn_position() -> void:
 
 # ── _reposition_spawn_and_exit_v ──────────────────────────────────────────────
 
-func test_reposition_v_spawn_placed_near_bottom() -> void:
+func test_reposition_v_spawn_placed_near_top() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)  # 3 rooms × 540
-	assert_almost_eq(lb._spawn_point.position.y, 1540.0, 0.001)  # 1620 - 80
+	assert_almost_eq(lb._spawn_point.position.y, 80.0, 0.001)
 
 func test_reposition_v_spawn_x_is_centered() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)
 	assert_almost_eq(lb._spawn_point.position.x, 360.0, 0.001)
 
-func test_reposition_v_exit_placed_near_top() -> void:
+func test_reposition_v_exit_placed_near_bottom() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)
-	assert_almost_eq(lb._exit_area.position.y, 80.0, 0.001)
+	assert_almost_eq(lb._exit_area.position.y, 1540.0, 0.001)  # 1620 - 80
 
 func test_reposition_v_exit_x_is_centered() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)
 	assert_almost_eq(lb._exit_area.position.x, 360.0, 0.001)
 
-func test_reposition_v_exit_above_spawn() -> void:
+func test_reposition_v_spawn_above_exit() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)
-	assert_lt(lb._exit_area.position.y, lb._spawn_point.position.y)
+	assert_lt(lb._spawn_point.position.y, lb._exit_area.position.y)
 
 # ── _load_room ────────────────────────────────────────────────────────────────
 
@@ -233,9 +233,9 @@ func test_load_room_returns_null_for_nonexistent_path() -> void:
 
 func test_build_vertical_rooms_stacks_rooms_top_to_bottom() -> void:
 	# Verify vertical stacking by calling helpers directly with fake rooms.
-	# We build rooms manually, assign meta, then check y positions after
-	# calling _reposition_spawn_and_exit_v — the ordering logic is internal
-	# but the net effect (spawn at bottom, exit at top) is what matters.
+	# Net effect we care about: spawn sits at the TOP (on the entrance
+	# room's safe shelf) and the altar/exit sits at the BOTTOM of the
+	# last room. Room-build order mirrors [entrance, main…, exit].
 	var lb: Node = _make_safe_lb()
 
 	# Fake two rooms: each 540 px tall
@@ -244,16 +244,15 @@ func test_build_vertical_rooms_stacks_rooms_top_to_bottom() -> void:
 	var room_b := Node2D.new()
 	room_b.set_meta("room_height", 540)
 
-	# Simulate what _build_vertical_rooms does after reversing
-	room_a.position.y = 0.0          # exit room → top
-	room_b.position.y = 540.0        # entrance room → bottom
+	room_a.position.y = 0.0          # entrance room → top
+	room_b.position.y = 540.0        # exit room → bottom
 	lb._room_container.add_child(room_a)
 	lb._room_container.add_child(room_b)
 
 	lb._reposition_spawn_and_exit_v(1080.0)
 
-	assert_lt(lb._exit_area.position.y, lb._spawn_point.position.y,
-		"exit (altar) must be above spawn (entrance)")
+	assert_lt(lb._spawn_point.position.y, lb._exit_area.position.y,
+		"spawn (top) must be above exit/altar (bottom) on vertical levels")
 
 # ── Altar respawn position ────────────────────────────────────────────────────
 
