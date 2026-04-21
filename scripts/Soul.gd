@@ -42,6 +42,9 @@ func _on_body_entered(body: Node2D) -> void:
 	var fx: Node = get_node_or_null("/root/ParticleEffects")
 	if fx and fx.has_method("spawn"):
 		fx.spawn("soul_pickup", global_position)
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("show_hint"):
+		tm.show_hint("soul_pickup")
 	soul_collected.emit(self)
 	# Fade out then free — the signal handler already has what it needs.
 	var tw := create_tween()

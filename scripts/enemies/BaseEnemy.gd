@@ -133,10 +133,12 @@ func _enter_alert() -> void:
 	state = State.ALERT
 	_alert_timer = alert_duration
 	velocity.x = 0.0
-	_alert_icon.visible = true
+	if _alert_icon:
+		_alert_icon.visible = true
 	_last_known_pos = _player.global_position
 	enemy_alerted.emit(self)
 	_play_sound("alert")
+	_tutorial_hint("enemy_nearby")
 
 func _do_alert(_delta: float) -> void:
 	if _alert_timer <= 0.0:
@@ -147,6 +149,7 @@ func _do_alert(_delta: float) -> void:
 func _enter_chase() -> void:
 	state = State.CHASE
 	_chase_timer = chase_duration
+	_tutorial_hint("enemy_chasing")
 
 func _do_chase(delta: float) -> void:
 	if not _player:
@@ -378,6 +381,13 @@ func _hide_question_mark() -> void:
 
 func _play_sound(event: String) -> void:
 	pass  # override in subclass
+
+func _tutorial_hint(hint_id: String) -> void:
+	if not is_inside_tree():
+		return
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("show_hint"):
+		tm.show_hint(hint_id)
 
 func _update_animation() -> void:
 	var anim: String = _get_anim_name()

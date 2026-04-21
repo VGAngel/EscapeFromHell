@@ -188,6 +188,7 @@ func _handle_movement(delta: float) -> void:
 		_facing_right = dir > 0.0
 		_sprite.flip_h = not _facing_right
 		velocity.x = move_toward(velocity.x, dir * walk_speed, accel * delta)
+		_tutorial_hint("move")
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, effective_decel * delta)
 
@@ -218,6 +219,7 @@ func _handle_jump(delta: float) -> void:
 		_coyote_timer = 0.0
 		_jump_held = true
 		_jump_hold_timer = 0.0
+		_tutorial_hint("jump")
 	elif _jump_buffer_timer > 0.0 and _upgrade_double_jump \
 			and not is_on_floor() and _coyote_timer <= 0.0 and _jumps_done < 1:
 		velocity.y = -jump_force
@@ -252,6 +254,7 @@ func _handle_staff() -> void:
 	state = State.STAFF_SWING
 	_staff_timer = staff_cooldown
 	_anim.play("player_staff_swing")
+	_tutorial_hint("staff")
 
 	var fx_origin: Vector2 = global_position + Vector2(40.0 if _facing_right else -40.0, -10.0)
 	_spawn_fx("staff_swing", fx_origin, _facing_right)
@@ -471,3 +474,10 @@ func _spawn_fx(preset: String, at: Vector2, facing_right: bool = true) -> void:
 	var fx: Node = get_node_or_null("/root/ParticleEffects")
 	if fx and fx.has_method("spawn"):
 		fx.spawn(preset, at, facing_right)
+
+func _tutorial_hint(hint_id: String) -> void:
+	if not is_inside_tree():
+		return
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("show_hint"):
+		tm.show_hint(hint_id)

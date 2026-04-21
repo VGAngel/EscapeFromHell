@@ -230,7 +230,7 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 8.1 | TutorialManager: показ підказок у правильний момент | `scripts/TutorialManager.gd` | ✅ скелет |
+| 8.1 | TutorialManager + hooks (move/jump/staff/soul/enemy) | `scripts/managers/TutorialManager.gd` + Player/Soul/BaseEnemy | ✅ |
 | 8.2 | Tutorial рівень 1: рух, стрибок | `scenes/levels/level_1.tscn` | ⬜ |
 | 8.3 | Tutorial рівень 2: підбір душі | `scenes/levels/level_2.tscn` | ⬜ |
 | 8.4 | God messages при відкритті нових кіл | `scripts/ui/GodMessage.gd` | ⬜ |
