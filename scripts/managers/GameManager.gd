@@ -15,10 +15,12 @@ signal soul_collected_in_level(found: int, total: int)
 signal game_over  # reserved for future hard-fail states
 
 # ── Scene paths ───────────────────────────────────────────────────────────────
-const SCENE_LEVEL      := "res://scenes/levels/Level.tscn"
-const SCENE_BOSS_LEVEL := "res://scenes/levels/BossLevel.tscn"
-const SCENE_HUB        := "res://scenes/Hub.tscn"
-const SCENE_MAIN_MENU  := "res://scenes/ui/MainMenu.tscn"
+const SCENE_LEVEL        := "res://scenes/levels/Level.tscn"
+const SCENE_BOSS_LEVEL   := "res://scenes/levels/BossLevel.tscn"
+const SCENE_VOID_LEVEL   := "res://scenes/levels/VoidLevel.tscn"
+const SCENE_ESCAPE_LEVEL := "res://scenes/levels/EscapeLevel.tscn"
+const SCENE_HUB          := "res://scenes/Hub.tscn"
+const SCENE_MAIN_MENU    := "res://scenes/ui/MainMenu.tscn"
 
 # ── Death config constants ────────────────────────────────────────────────────
 const SIN_ON_DEATH         := 5.0
@@ -288,8 +290,15 @@ func _change_scene_to_level(level_id: int) -> void:
 	# LevelBase uses GameManager.current_level_id when its own export is default (1).
 	current_level_id = level_id
 	var level_type: String = LevelConfig.get_level_type(level_id) if LevelConfig else "platformer"
-	var scene_path: String = SCENE_BOSS_LEVEL if level_type == "boss" else SCENE_LEVEL
+	var scene_path: String = _scene_for_level_type(level_type)
 	_change_scene(scene_path)
+
+func _scene_for_level_type(level_type: String) -> String:
+	match level_type:
+		"boss":   return SCENE_BOSS_LEVEL
+		"void":   return SCENE_VOID_LEVEL
+		"escape": return SCENE_ESCAPE_LEVEL
+		_:        return SCENE_LEVEL   # platformer, vertical, labyrinth
 
 ## Fade-to-black wrapper; falls back to an immediate swap if the autoload is
 ## unavailable (e.g. in unit tests that don't boot the full project).
