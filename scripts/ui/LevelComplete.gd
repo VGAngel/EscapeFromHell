@@ -60,8 +60,6 @@ func _fill_static(stats: Dictionary) -> void:
 	var sin_d:   float = stats.get("sin_delta",    0.0)
 	var sin_t:   float = stats.get("sin_total",    0.0)
 	var light:   int   = stats.get("light_earned", 0)
-	var stars:   int   = stats.get("stars",        1)
-
 	_lbl_subtitle.text = "Коло %d • Рівень %d" % [circle, level]
 
 	# Stars — hidden until animation
@@ -95,7 +93,6 @@ func _animate_in(stats: Dictionary) -> void:
 	# 2. Stars appear one by one
 	var star_labels: Array = _stars_row.get_children()
 	for i in 3:
-		var delay: float = FADE_DURATION + i * STAR_DELAY
 		var filled: bool = i < stars
 		tw.tween_interval(STAR_DELAY)
 		tw.tween_callback(_reveal_star.bind(star_labels[i], filled))

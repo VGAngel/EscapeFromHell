@@ -151,7 +151,7 @@ func _enter_chase() -> void:
 	_chase_timer = chase_duration
 	_tutorial_hint("enemy_chasing")
 
-func _do_chase(delta: float) -> void:
+func _do_chase(_delta: float) -> void:
 	if not _player:
 		_enter_give_up()
 		return
