@@ -38,16 +38,20 @@ var _hit_cooldown:   float   = 0.0
 const GRAVITY: float = 900.0
 
 # ── Child nodes ───────────────────────────────────────────────────────────────
-@onready var _anim:           AnimationPlayer = $AnimationPlayer
-@onready var _sprite:         Sprite2D        = $Sprite2D
-@onready var _alert_icon:     Node2D          = $AlertIcon
-@onready var _breath_player:  AudioStreamPlayer2D = $BreathPlayer
+@onready var _anim:           AnimationPlayer     = get_node_or_null("AnimationPlayer")
+@onready var _sprite:         Sprite2D            = get_node_or_null("Sprite2D")
+@onready var _anim_sprite:    AnimatedSprite2D    = get_node_or_null("AnimatedSprite2D")
+@onready var _alert_icon:     Node2D              = get_node_or_null("AlertIcon")
+@onready var _breath_player:  AudioStreamPlayer2D = get_node_or_null("BreathPlayer")
 
 func _ready() -> void:
 	_patrol_origin = global_position
-	_alert_icon.visible = false
+	if _alert_icon:
+		_alert_icon.visible = false
 	add_to_group("enemy")
 	_find_player()
+	if _anim_sprite and _anim_sprite.sprite_frames:
+		_anim_sprite.play("enemy_idle")
 
 func _find_player() -> void:
 	_player = get_tree().get_first_node_in_group("player") as CharacterBody2D
@@ -233,15 +237,87 @@ func _apply_enemy_config(enemy_id: String, config_path: String = "res://enemies_
 		patrol_distance = float(entry.get("patrol_distance", patrol_distance))
 		alert_duration  = float(entry.get("alert_duration",  alert_duration))
 
-		var col := Color(entry.get("placeholder_color", "#888888")) as Color
-		var sz_raw: Variant = entry.get("size", [20, 32])
-		var w: int = 20
-		var h: int = 32
-		if sz_raw is Array and (sz_raw as Array).size() == 2:
-			w = int((sz_raw as Array)[0])
-			h = int((sz_raw as Array)[1])
-		_make_placeholder_sprite(col, Vector2(w, h))
+		# Try to load real animated sprites first; fall back to a solid-colour
+		# placeholder if the sprite map or asset folder is unavailable.
+		if not _load_sprite_frames_from_map(enemy_id):
+			var col := Color(entry.get("placeholder_color", "#888888")) as Color
+			var sz_raw: Variant = entry.get("size", [20, 32])
+			var w: int = 20
+			var h: int = 32
+			if sz_raw is Array and (sz_raw as Array).size() == 2:
+				w = int((sz_raw as Array)[0])
+				h = int((sz_raw as Array)[1])
+			_make_placeholder_sprite(col, Vector2(w, h))
 		return
+
+## Load animation PNG sequences for enemy_id from enemy_sprite_map.json
+## into an AnimatedSprite2D child (if one is present). Returns true if at
+## least one animation loaded successfully.
+func _load_sprite_frames_from_map(enemy_id: String) -> bool:
+	if not _anim_sprite:
+		return false
+	var map_file := FileAccess.open("res://enemy_sprite_map.json", FileAccess.READ)
+	if not map_file:
+		return false
+	var map: Variant = JSON.parse_string(map_file.get_as_text())
+	map_file.close()
+	if not (map is Dictionary):
+		return false
+
+	var base_path:    String = map.get("base_path", "res://Assets/enemies/")
+	var anim_subpath: String = map.get("anim_subpath", "PNG/PNG Sequences/")
+	var entry: Dictionary = map.get("enemies", {}).get(enemy_id, {})
+	if entry.is_empty():
+		return false
+
+	var pack:      String     = entry.get("pack", "")
+	var character: String     = entry.get("character", "")
+	var anims:     Dictionary = entry.get("animations", {})
+	if pack == "" or character == "" or anims.is_empty():
+		return false
+
+	var sf := SpriteFrames.new()
+	var any_loaded := false
+	for anim_name in anims.keys():
+		var folder: String = anims[anim_name]
+		var full_path: String = "%s%s/%s/%s%s/" % [base_path, pack, character, anim_subpath, folder]
+		var frames: Array = _collect_frames_in_dir(full_path)
+		if frames.is_empty():
+			continue
+		sf.add_animation(anim_name)
+		sf.set_animation_loop(anim_name, anim_name != "enemy_death")
+		sf.set_animation_speed(anim_name, 12.0)
+		for tex in frames:
+			sf.add_frame(anim_name, tex)
+		any_loaded = true
+
+	if not any_loaded:
+		return false
+	_anim_sprite.sprite_frames = sf
+	# Chibi sprites ship on a large (~900×900) canvas; scale down so the
+	# figure reads at roughly the player/enemy silhouette size.
+	_anim_sprite.scale = Vector2(0.15, 0.15)
+	return true
+
+func _collect_frames_in_dir(path: String) -> Array:
+	var frames: Array = []
+	var dir := DirAccess.open(path)
+	if not dir:
+		return frames
+	var files: Array = []
+	dir.list_dir_begin()
+	var name: String = dir.get_next()
+	while name != "":
+		if not dir.current_is_dir() and name.ends_with(".png") and not name.begins_with("."):
+			files.append(name)
+		name = dir.get_next()
+	dir.list_dir_end()
+	files.sort()
+	for f in files:
+		var tex: Texture2D = load(path + f) as Texture2D
+		if tex:
+			frames.append(tex)
+	return frames
 
 func _make_placeholder_sprite(color: Color, sz: Vector2) -> void:
 	if not _sprite:
@@ -274,7 +350,10 @@ func _update_facing() -> void:
 		_facing_right = true
 	elif velocity.x < -10.0:
 		_facing_right = false
-	_sprite.flip_h = not _facing_right
+	if _sprite:
+		_sprite.flip_h = not _facing_right
+	if _anim_sprite:
+		_anim_sprite.flip_h = not _facing_right
 
 func _show_question_mark() -> void:
 	pass  # override or use AnimationPlayer
@@ -286,9 +365,18 @@ func _play_sound(event: String) -> void:
 	pass  # override in subclass
 
 func _update_animation() -> void:
+	var anim: String = _get_anim_name()
+
+	# Prefer AnimatedSprite2D with loaded SpriteFrames (real sprites path).
+	if _anim_sprite and _anim_sprite.sprite_frames \
+			and _anim_sprite.sprite_frames.has_animation(anim):
+		if _anim_sprite.animation != anim:
+			_anim_sprite.play(anim)
+		return
+
+	# Fall back to AnimationPlayer (placeholder / future hand-authored anims).
 	if not _anim:
 		return
-	var anim: String = _get_anim_name()
 	if not _anim.has_animation(anim):
 		return
 	if _anim.current_animation != anim:
