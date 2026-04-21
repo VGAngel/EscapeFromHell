@@ -190,7 +190,7 @@ func _do_give_up(delta: float) -> void:
 		state = State.RETURN
 
 # ── RETURN ────────────────────────────────────────────────────────────────────
-func _do_return(delta: float) -> void:
+func _do_return(_delta: float) -> void:
 	var dir: float = sign(_patrol_origin.x - global_position.x)
 	velocity.x = move_speed * 0.7 * dir
 
