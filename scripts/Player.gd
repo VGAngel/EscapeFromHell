@@ -51,12 +51,13 @@ const FALL_SAFE_HEIGHT:   float = 320.0
 const FALL_DAMAGE_HEIGHT: float = 480.0
 
 # ── Upgrade flags (populated in _ready) ───────────────────────────────────────
-var _upgrade_quick_pickup:    bool  = false
-var _upgrade_double_jump:     bool  = false
-var _upgrade_soft_landing:    bool  = false
-var _upgrade_staff_purity:    bool  = false
-var _upgrade_soul_shield:     bool  = false
-var _soul_shield_timer:       float = 0.0
+var _upgrade_quick_pickup:     bool  = false
+var _upgrade_double_jump:      bool  = false
+var _upgrade_soft_landing:     bool  = false
+var _upgrade_staff_purity:     bool  = false
+var _upgrade_soul_shield:      bool  = false
+var _upgrade_temptation_resist: bool = false
+var _soul_shield_timer:        float = 0.0
 
 # ── Sin visuals ───────────────────────────────────────────────────────────────
 const SIN_SHADER_PATH := "res://shaders/player_sin.gdshader"
@@ -125,11 +126,12 @@ func _apply_upgrades() -> void:
 		staff_range += 40.0
 	if SaveManager.get_upgrade_level("staff_cooldown") > 0:
 		staff_cooldown -= 1.5
-	_upgrade_quick_pickup = SaveManager.get_upgrade_level("quick_pickup") > 0
-	_upgrade_double_jump  = SaveManager.get_upgrade_level("double_jump") > 0
-	_upgrade_soft_landing = SaveManager.get_upgrade_level("soft_landing") > 0
-	_upgrade_staff_purity = SaveManager.get_upgrade_level("staff_purity") > 0
-	_upgrade_soul_shield  = SaveManager.get_upgrade_level("soul_shield") > 0
+	_upgrade_quick_pickup      = SaveManager.get_upgrade_level("quick_pickup") > 0
+	_upgrade_double_jump       = SaveManager.get_upgrade_level("double_jump") > 0
+	_upgrade_soft_landing      = SaveManager.get_upgrade_level("soft_landing") > 0
+	_upgrade_staff_purity      = SaveManager.get_upgrade_level("staff_purity") > 0
+	_upgrade_soul_shield       = SaveManager.get_upgrade_level("soul_shield") > 0
+	_upgrade_temptation_resist = SaveManager.get_upgrade_level("temptation_resist") > 0
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:

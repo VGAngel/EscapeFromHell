@@ -240,6 +240,11 @@ func complete_level() -> void:
 	if SaveManager:
 		SaveManager.add_light(light_earned)
 		SaveManager.set_current_level(current_level_id + 1)
+		# Cleansing upgrade — each level reduces accumulated sin a bit.
+		# Tier 1: -1% per level. Higher tiers (if multi-level) scale linearly.
+		var cleansing_tier: int = SaveManager.get_upgrade_level("cleansing")
+		if cleansing_tier > 0:
+			reduce_sin(float(cleansing_tier))
 		SaveManager.save_after_level()
 		if _hud and _hud.has_method("set_light"):
 			_hud.set_light(SaveManager.get_light())

@@ -179,12 +179,12 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 5.1 | Sin tracking в GameManager | `scripts/GameManager.gd` | ✅ |
-| 5.2 | Sin → зміна кольору HUD bar | `scripts/HUD.gd` | ⬜ |
-| 5.3 | High-sin: faith_platforms зникають (circle_6) | `scripts/platforms/FaithPlatform.gd` | ⬜ |
+| 5.1 | Sin tracking в GameManager | `scripts/managers/GameManager.gd` | ✅ |
+| 5.2 | Sin → зміна кольору HUD bar | `scripts/ui/HUD.gd` | ✅ |
+| 5.3 | High-sin: faith_platforms зникають (circle_6) | `scripts/platforms/FaithPlatform.gd` | ✅ |
 | 5.4 | Угоди з демонами: UI, логіка, +sin | `scripts/ui/DemonDealPanel.gd` | ⬜ |
-| 5.5 | `temptation_resist` апгрейд | `scripts/Player.gd` | ⬜ |
-| 5.6 | `cleansing` апгрейд: знижує гріх після рівня | `scripts/GameManager.gd` | ⬜ |
+| 5.5 | `temptation_resist` прапорець на Player | `scripts/Player.gd` | ✅ (очікує DemonDealPanel) |
+| 5.6 | `cleansing` апгрейд: знижує гріх після рівня | `scripts/managers/GameManager.gd` | ✅ |
 | 5.7 | Milestone рівень 50: наративна подія | `scenes/levels/level_50.tscn` | ⬜ |
 | 5.8 | Milestone рівень 100: 4 варіанти кінцівки | `scripts/GameManager.gd` | ⬜ |
 | 5.9 | Кінцівки: Redemption / Damnation / Void / Hidden | `scenes/endings/` | ⬜ |
