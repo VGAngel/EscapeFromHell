@@ -253,6 +253,9 @@ func _handle_staff() -> void:
 	_staff_timer = staff_cooldown
 	_anim.play("player_staff_swing")
 
+	var fx_origin: Vector2 = global_position + Vector2(40.0 if _facing_right else -40.0, -10.0)
+	_spawn_fx("staff_swing", fx_origin, _facing_right)
+
 	_staff_area.monitoring = true
 	await get_tree().create_timer(0.15).timeout
 	var hit := _apply_staff_hit()
@@ -326,6 +329,7 @@ func _die() -> void:
 	if _anim:
 		_anim.play("player_death")
 	_shake_camera(0.3, 12.0)
+	_spawn_fx("death", global_position)
 	if carried_soul_id != "":
 		soul_dropped.emit(carried_soul_id, global_position)
 		_drop_soul()
@@ -459,3 +463,11 @@ func respawn(spawn_position: Vector2) -> void:
 	tw.tween_property(_sprite, "modulate:a", 1.0, 0.4)
 	hp_changed.emit(current_hp, max_hp)
 	_anim.play("player_respawn_breath")
+	_spawn_fx("respawn", global_position)
+
+func _spawn_fx(preset: String, at: Vector2, facing_right: bool = true) -> void:
+	if not is_inside_tree():
+		return
+	var fx: Node = get_node_or_null("/root/ParticleEffects")
+	if fx and fx.has_method("spawn"):
+		fx.spawn(preset, at, facing_right)

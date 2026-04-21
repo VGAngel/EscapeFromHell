@@ -84,7 +84,7 @@ func _draw() -> void:
 	# Arrow hint along wind_direction
 	var arrow_col := Color(0.80, 0.90, 1.00, 0.35)
 	var a := Vector2.ZERO
-	var b := a + wind_direction * min(zone_size.x, zone_size.y) * 0.35
+	var b: Vector2 = a + wind_direction * minf(zone_size.x, zone_size.y) * 0.35
 	draw_line(a, b, arrow_col, 2.0)
 	var tip := wind_direction.rotated(PI * 0.85) * 8.0
 	draw_line(b, b + tip, arrow_col, 2.0)

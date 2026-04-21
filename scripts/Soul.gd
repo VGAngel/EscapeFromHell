@@ -39,6 +39,9 @@ func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
 	_spawn_name_label()
+	var fx: Node = get_node_or_null("/root/ParticleEffects")
+	if fx and fx.has_method("spawn"):
+		fx.spawn("soul_pickup", global_position)
 	soul_collected.emit(self)
 	# Fade out then free — the signal handler already has what it needs.
 	var tw := create_tween()

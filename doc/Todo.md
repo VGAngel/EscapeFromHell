@@ -217,7 +217,7 @@
 | 7.1 | SoundManager autoload + SFX pool + music crossfade | `scripts/managers/SoundManager.gd` | ✅ (очікує audio файли) |
 | 7.2 | Sound effects: jump, attack, soul pickup, death | `audio/sfx/` | ⬜ (audio assets) |
 | 7.3 | Музика: ambient per circle (9 треків + hub) | `audio/music/` | ⬜ (audio assets) |
-| 7.4 | Particle effects: soul glow, death, staff swing | — | ⬜ |
+| 7.4 | Particle effects: soul pickup, death, staff, respawn, crumble | `scripts/managers/ParticleEffects.gd` | ✅ |
 | 7.5 | Screen shake при ударі, смерті | `scripts/managers/CameraShake.gd` | ✅ |
 | 7.6 | Transition ефект між рівнями (fade to black) | `scripts/managers/SceneTransition.gd` | ✅ |
 | 7.7 | Спрайти гравця (idle/walk/jump/attack/carry) | `Assets/OurAssets/` | ⬜ (art) |

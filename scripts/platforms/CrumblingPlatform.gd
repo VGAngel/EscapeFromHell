@@ -43,6 +43,9 @@ func _on_body_entered(body: Node2D) -> void:
 	_fade_out_and_disable()
 
 func _fade_out_and_disable() -> void:
+	var fx: Node = get_node_or_null("/root/ParticleEffects")
+	if fx and fx.has_method("spawn"):
+		fx.spawn("crumble", global_position)
 	var tw := create_tween()
 	if _visual:
 		tw.tween_property(_visual, "modulate:a", 0.0, FADE_DURATION)
