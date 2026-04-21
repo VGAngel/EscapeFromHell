@@ -108,24 +108,61 @@ func _build_walls() -> void:
 			# Two raised ledges near the top for the altar area
 			_add_platform(Vector2(room_width / 2.0, WALL_T + 120.0), Vector2(300.0, WALL_T))
 
+const ONE_WAY_SCRIPT   := preload("res://scripts/platforms/OneWayPlatform.gd")
+const CRUMBLING_SCRIPT := preload("res://scripts/platforms/CrumblingPlatform.gd")
+const BOUNCE_SCRIPT    := preload("res://scripts/platforms/BouncePlatform.gd")
+const MOVING_SCRIPT    := preload("res://scripts/platforms/MovingPlatform.gd")
+
 func _add_main_platforms() -> void:
-	# Five distinct layouts keyed by room_index % 5 so even large pools vary
+	# Five distinct layouts keyed by room_index % 5 so even large pools vary.
+	# Each variant mixes in one special platform type so players meet each
+	# mechanic within a short sequence of rooms.
 	match room_index % 5:
-		0:  # zigzag staircase
+		0:  # zigzag staircase — middle step is one-way
 			_add_platform(Vector2(180, 200), Vector2(160, WALL_T))
-			_add_platform(Vector2(380, 320), Vector2(160, WALL_T))
+			_add_typed_platform(Vector2(380, 320), Vector2(160, WALL_T), "one_way")
 			_add_platform(Vector2(560, 200), Vector2(160, WALL_T))
-		1:  # single wide shelf
-			_add_platform(Vector2(room_width / 2.0, 280), Vector2(400, WALL_T))
-		2:  # two low shelves
-			_add_platform(Vector2(200, 360), Vector2(200, WALL_T))
+		1:  # single wide shelf — crumbles under you
+			_add_typed_platform(Vector2(room_width / 2.0, 280), Vector2(400, WALL_T), "crumbling")
+		2:  # two low shelves — left one is a bounce pad
+			_add_typed_platform(Vector2(200, 360), Vector2(200, WALL_T), "bounce")
 			_add_platform(Vector2(520, 360), Vector2(200, WALL_T))
-		3:  # high and low
+		3:  # high static + low moving horizontal
 			_add_platform(Vector2(240, 180), Vector2(180, WALL_T))
-			_add_platform(Vector2(480, 380), Vector2(180, WALL_T))
-		4:  # center pillar base
+			_add_typed_platform(Vector2(480, 380), Vector2(180, WALL_T), "moving_horizontal")
+		4:  # center pillar — bottom rises/falls
 			_add_platform(Vector2(room_width / 2.0, 200), Vector2(120, WALL_T))
-			_add_platform(Vector2(room_width / 2.0, 380), Vector2(120, WALL_T))
+			_add_typed_platform(Vector2(room_width / 2.0, 380), Vector2(120, WALL_T), "moving_vertical")
+
+func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
+	var body: PhysicsBody2D = null
+	match type:
+		"one_way":
+			body = StaticBody2D.new()
+			body.set_script(ONE_WAY_SCRIPT)
+		"crumbling":
+			body = StaticBody2D.new()
+			body.set_script(CRUMBLING_SCRIPT)
+		"bounce":
+			body = StaticBody2D.new()
+			body.set_script(BOUNCE_SCRIPT)
+		"moving_horizontal":
+			body = AnimatableBody2D.new()
+			body.set_script(MOVING_SCRIPT)
+			body.set("move_axis", "horizontal")
+			body.set("distance",  140.0)
+		"moving_vertical":
+			body = AnimatableBody2D.new()
+			body.set_script(MOVING_SCRIPT)
+			body.set("move_axis", "vertical")
+			body.set("distance",  80.0)
+		_:
+			_add_platform(pos, sz)
+			return
+	body.name = "TypedPlatform_%d" % get_child_count()
+	body.position = pos
+	body.set("size", sz)
+	add_child(body)
 
 func _add_wall(wall_name: String, pos: Vector2, size: Vector2) -> void:
 	var body := StaticBody2D.new()

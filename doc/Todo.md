@@ -73,7 +73,7 @@
 | 1.3.4 | `crumbling` — розсипається після торкання | `scripts/platforms/CrumblingPlatform.gd` | ✅ |
 | 1.3.5 | `moving_horizontal` / `moving_vertical` | `scripts/platforms/MovingPlatform.gd` | ✅ |
 | 1.3.6 | `bounce` — відштовхує гравця вгору | `scripts/platforms/BouncePlatform.gd` | ✅ |
-| 1.3.7 | Додати платформи в PlaceholderRoom для circle_1 | `scripts/PlaceholderRoom.gd` | ⬜ |
+| 1.3.7 | Додати платформи в PlaceholderRoom для circle_1 | `scripts/rooms/PlaceholderRoom.gd` | ✅ |
 
 ### 1.4 HUD
 
