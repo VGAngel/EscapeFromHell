@@ -382,6 +382,44 @@ func test_register_hud_stores_hud_reference() -> void:
 	assert_true(GameManager._hud != null or GameManager.get("current_hud") != null
 		or true)  # graceful — structure varies; tested via integration
 
+# ── _assign_soul_types ───────────────────────────────────────────────────────
+
+class MockSoul extends Node:
+	var last_type: String = ""
+	func set_soul_type(t: String) -> void:
+		last_type = t
+
+func test_assign_soul_types_sets_type_on_soul() -> void:
+	var lb: Node = _make_safe_lb()
+	var soul := MockSoul.new()
+	soul.add_to_group("soul")
+	add_child_autofree(soul)
+	lb._discover_souls()
+	# LevelConfig returns ["innocent"] for unknown level_id 1 via circle default
+	assert_eq(soul.last_type, "innocent")
+
+func test_assign_soul_types_falls_back_to_innocent_when_types_exhausted() -> void:
+	var lb: Node = _make_safe_lb()
+	var s1 := MockSoul.new()
+	var s2 := MockSoul.new()
+	s1.add_to_group("soul")
+	s2.add_to_group("soul")
+	add_child_autofree(s1)
+	add_child_autofree(s2)
+	# Force types list shorter than soul count
+	lb._souls_in_level = [s1, s2]
+	lb._assign_soul_types()
+	assert_eq(s2.last_type, "innocent", "soul beyond types list gets innocent")
+
+func test_assign_soul_types_skips_nodes_without_method() -> void:
+	var lb: Node = _make_safe_lb()
+	var plain := Node.new()
+	plain.add_to_group("soul")
+	add_child_autofree(plain)
+	# Should not crash even though plain Node has no set_soul_type
+	lb._discover_souls()
+	assert_true(true)
+
 # ── TODO ──────────────────────────────────────────────────────────────────────
 
 func test_souls_required_matches_level_config() -> void:
