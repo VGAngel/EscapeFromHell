@@ -123,12 +123,12 @@
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
 | 2.1 | Hub.gd: навігація до рівнів, алтарь | `scripts/Hub.gd` | ✅ |
-| 2.2 | Hub сцена з NPC, алтарем, виходами | `scenes/Hub.tscn` | ⬜ |
-| 2.3 | UpgradesScreen: відображення, покупка | `scripts/ui/UpgradesScreen.gd` | ✅ скелет |
-| 2.4 | UpgradesScreen: підключити до SaveManager | `scripts/ui/UpgradesScreen.gd` | ⬜ |
+| 2.2 | Hub сцена з NPC, алтарем, виходами | `scenes/Hub.tscn` | ✅ |
+| 2.3 | UpgradesScreen: відображення, покупка | `scripts/ui/UpgradesScreen.gd` | ✅ |
+| 2.4 | UpgradesScreen: підключити до SaveManager | `scripts/ui/UpgradesScreen.gd` | ✅ |
 | 2.5 | Застосування апгрейдів до Player в `_ready` | `scripts/Player.gd` | ✅ |
-| 2.6 | Light currency: відображення в Hub і HUD | `scripts/HUD.gd`, `scripts/Hub.gd` | ⬜ |
-| 2.7 | Перевірити всі 22 апгрейди з `upgrades_config.json` | — | ⬜ |
+| 2.6 | Light currency: відображення в Hub і HUD | `scripts/ui/HUD.gd`, `scripts/Hub.gd` | ✅ |
+| 2.7 | Перевірити всі 25 апгрейдів з `upgrades_config.json` | `upgrades_config.json` | ✅ |
 | 2.8 | DonatePanel: IAP placeholder | `scripts/ui/DonatePanel.gd` | ✅ скелет |
 
 ---

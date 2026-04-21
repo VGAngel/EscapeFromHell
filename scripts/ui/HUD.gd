@@ -26,6 +26,7 @@ var _root:         Control          = null
 var _hearts:       HBoxContainer    = null
 var _level_label:  Label            = null
 var _souls_total:  Label            = null
+var _light_label:  Label            = null
 var _timer_label:  Label            = null
 
 # Bottom row
@@ -80,6 +81,7 @@ func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
 	_set_sin(SaveManager.get_sin() if SaveManager else 0.0)
 	_set_souls_total(SaveManager.get_total_souls() if SaveManager else 0)
 	_set_souls_level(0, souls_total)
+	_set_light(SaveManager.get_light() if SaveManager else 0)
 
 	_level_label.text = "Коло %d • Рівень %d" % [circle, level]
 	_level_label.modulate.a = 1.0
@@ -118,6 +120,11 @@ func add_soul_found() -> void:
 func set_total_souls(total: int) -> void:
 	_set_souls_total(total)
 	_pulse_node(_souls_total, 0.3)
+
+func set_light(amount: int) -> void:
+	_set_light(amount)
+	if _light_label:
+		_pulse_node(_light_label, 0.3)
 
 func start_bonus(bonus_id: String, icon_char: String, duration: float) -> void:
 	if _active_bonuses.has(bonus_id):
@@ -235,6 +242,10 @@ func _set_souls_total(total: int) -> void:
 
 func _set_souls_level(found: int, total: int) -> void:
 	_souls_level.text = "👻 %d / %d" % [found, total]
+
+func _set_light(amount: int) -> void:
+	if _light_label:
+		_light_label.text = "💡 %d" % amount
 
 func _sin_color(sin_val: float) -> Color:
 	var col := SIN_COLORS[0]
@@ -398,13 +409,24 @@ func _build_top_row() -> void:
 	_level_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 0.85))
 	top.add_child(_level_label)
 
-	# Total souls (right)
+	# Light + total souls (right, stacked)
+	var right_col := VBoxContainer.new()
+	right_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_col.add_theme_constant_override("separation", 0)
+	top.add_child(right_col)
+
 	_souls_total = Label.new()
 	_souls_total.text = "👻 0 / 100"
 	_souls_total.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_souls_total.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_souls_total.add_theme_font_size_override("font_size", 14)
-	top.add_child(_souls_total)
+	right_col.add_child(_souls_total)
+
+	_light_label = Label.new()
+	_light_label.text = "💡 0"
+	_light_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_light_label.add_theme_font_size_override("font_size", 13)
+	_light_label.add_theme_color_override("font_color", Color("#FFD060"))
+	right_col.add_child(_light_label)
 
 	# Play timer (centered under level label, fades in after level info fades out)
 	_timer_label = Label.new()

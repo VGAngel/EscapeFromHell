@@ -239,6 +239,8 @@ func complete_level() -> void:
 		SaveManager.add_light(light_earned)
 		SaveManager.set_current_level(current_level_id + 1)
 		SaveManager.save_after_level()
+		if _hud and _hud.has_method("set_light"):
+			_hud.set_light(SaveManager.get_light())
 
 	var stats := {
 		"level_id":    current_level_id,
