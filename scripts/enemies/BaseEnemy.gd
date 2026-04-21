@@ -235,7 +235,7 @@ func _update_spatial_audio() -> void:
 ## instance. Populates stats (move_speed, detection_range, patrol_distance,
 ## alert_duration) and generates a solid-colour placeholder sprite from
 ## placeholder_color + size. Call from a subclass _ready() before super._ready().
-func _apply_enemy_config(enemy_id: String, config_path: String = "res://enemies_config.json") -> void:
+func _apply_enemy_config(id: String, config_path: String = "res://enemies_config.json") -> void:
 	if _config_applied:
 		return
 	_config_applied = true
@@ -248,7 +248,7 @@ func _apply_enemy_config(enemy_id: String, config_path: String = "res://enemies_
 	if not (parsed is Dictionary):
 		return
 	for entry in parsed.get("enemies", []):
-		if entry.get("id", "") != enemy_id:
+		if entry.get("id", "") != id:
 			continue
 		move_speed      = float(entry.get("move_speed",      move_speed))
 		detection_range = float(entry.get("detection_range", detection_range))
@@ -257,7 +257,7 @@ func _apply_enemy_config(enemy_id: String, config_path: String = "res://enemies_
 
 		# Try to load real animated sprites first; fall back to a solid-colour
 		# placeholder if the sprite map or asset folder is unavailable.
-		if not _load_sprite_frames_from_map(enemy_id):
+		if not _load_sprite_frames_from_map(id):
 			var col := Color(entry.get("placeholder_color", "#888888")) as Color
 			var sz_raw: Variant = entry.get("size", [20, 32])
 			var w: int = 20
@@ -271,7 +271,7 @@ func _apply_enemy_config(enemy_id: String, config_path: String = "res://enemies_
 ## Load animation PNG sequences for enemy_id from enemy_sprite_map.json
 ## into an AnimatedSprite2D child (if one is present). Returns true if at
 ## least one animation loaded successfully.
-func _load_sprite_frames_from_map(enemy_id: String) -> bool:
+func _load_sprite_frames_from_map(id: String) -> bool:
 	if not _anim_sprite:
 		return false
 	var map_file := FileAccess.open("res://enemy_sprite_map.json", FileAccess.READ)
@@ -284,7 +284,7 @@ func _load_sprite_frames_from_map(enemy_id: String) -> bool:
 
 	var base_path:    String = map.get("base_path", "res://Assets/enemies/")
 	var anim_subpath: String = map.get("anim_subpath", "PNG/PNG Sequences/")
-	var entry: Dictionary = map.get("enemies", {}).get(enemy_id, {})
+	var entry: Dictionary = map.get("enemies", {}).get(id, {})
 	if entry.is_empty():
 		return false
 

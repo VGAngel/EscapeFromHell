@@ -371,7 +371,8 @@ func _build_ui() -> void:
 func _build_escape_bar() -> void:
 	_escape_bg = ColorRect.new()
 	_escape_bg.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_escape_bg.size = Vector2(720, 8)
+	# Only offset_bottom controls height — anchors already fix width to viewport.
+	_escape_bg.offset_bottom = 8.0
 	_escape_bg.color = Color(0.15, 0.15, 0.15)
 	_escape_bg.visible = false
 	_root.add_child(_escape_bg)
@@ -387,8 +388,10 @@ func _build_top_row() -> void:
 	var top := HBoxContainer.new()
 	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	top.add_theme_constant_override("separation", 0)
-	top.position = Vector2(8, 12)
-	top.size = Vector2(704, 32)
+	top.offset_left   =  8.0
+	top.offset_right  = -8.0
+	top.offset_top    = 12.0
+	top.offset_bottom = 44.0
 	_root.add_child(top)
 
 	# Hearts (left)
@@ -437,8 +440,8 @@ func _build_top_row() -> void:
 	_timer_label.add_theme_font_size_override("font_size", 14)
 	_timer_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75, 0.85))
 	_timer_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_timer_label.position = Vector2(0, 46)
-	_timer_label.size = Vector2(720, 20)
+	_timer_label.offset_top    = 46.0
+	_timer_label.offset_bottom = 66.0
 	_timer_label.modulate.a = 0.0
 	_root.add_child(_timer_label)
 

@@ -404,7 +404,7 @@ func _state_to_anim() -> String:
 func _update_sin_shader(delta: float) -> void:
 	if not _sprite or not _sprite.material:
 		return
-	var sin_pct: int = SaveManager.get_sin() if SaveManager else 0
+	var sin_pct: int = int(SaveManager.get_sin()) if SaveManager else 0
 
 	# Визначаємо поточний та наступний стан
 	var target_idx: int = 0
