@@ -24,6 +24,13 @@ extends Node2D
 ## Height in pixels.
 @export var room_height: float = 540.0
 
+## Set by LevelBase for vertical levels. Removes floor/ceiling at room junctions
+## so the player can pass freely between stacked rooms:
+##   entrance → ceiling kept, floor removed
+##   main     → ceiling removed, floor removed
+##   exit     → ceiling removed, floor kept
+@export var is_vertical: bool = false
+
 const WALL_T: float = 32.0
 const PLATFORM_T: float = 16.0
 
@@ -134,14 +141,22 @@ func _spawn_enemies() -> void:
 # ── Physics walls ─────────────────────────────────────────────────────────────
 
 func _build_walls() -> void:
-	_add_wall("Floor",   Vector2(room_width / 2.0, room_height - WALL_T / 2.0),
-						 Vector2(room_width, WALL_T))
-	_add_wall("Ceiling", Vector2(room_width / 2.0, WALL_T / 2.0),
-						 Vector2(room_width, WALL_T))
-	_add_wall("WallL",   Vector2(WALL_T / 2.0, room_height / 2.0),
-						 Vector2(WALL_T, room_height))
-	_add_wall("WallR",   Vector2(room_width - WALL_T / 2.0, room_height / 2.0),
-						 Vector2(WALL_T, room_height))
+	# In vertical levels the player descends through stacked rooms.
+	# Remove the floor on rooms that open downward and the ceiling on rooms
+	# that open upward, so there is no physics barrier between rooms.
+	var needs_floor:   bool = not is_vertical or room_type == "exit"
+	var needs_ceiling: bool = not is_vertical or room_type == "entrance"
+
+	if needs_floor:
+		_add_wall("Floor", Vector2(room_width / 2.0, room_height - WALL_T / 2.0),
+						   Vector2(room_width, WALL_T))
+	if needs_ceiling:
+		_add_wall("Ceiling", Vector2(room_width / 2.0, WALL_T / 2.0),
+						     Vector2(room_width, WALL_T))
+	_add_wall("WallL", Vector2(WALL_T / 2.0, room_height / 2.0),
+					   Vector2(WALL_T, room_height))
+	_add_wall("WallR", Vector2(room_width - WALL_T / 2.0, room_height / 2.0),
+					   Vector2(WALL_T, room_height))
 
 	# Variant mid-platforms based on room_index so rooms differ visually
 	match room_type:
@@ -386,9 +401,13 @@ func _draw() -> void:
 	# Background fill
 	draw_rect(Rect2(0, 0, room_width, room_height), bg)
 
-	# Walls (editor-visible even without physics)
-	draw_rect(Rect2(0, room_height - WALL_T, room_width, WALL_T), wall_c)  # floor
-	draw_rect(Rect2(0, 0, room_width, WALL_T),                   wall_c)  # ceiling
+	# Walls — match physics: omit floor/ceiling that are open in vertical levels
+	var needs_floor:   bool = not is_vertical or room_type == "exit"
+	var needs_ceiling: bool = not is_vertical or room_type == "entrance"
+	if needs_floor:
+		draw_rect(Rect2(0, room_height - WALL_T, room_width, WALL_T), wall_c)
+	if needs_ceiling:
+		draw_rect(Rect2(0, 0, room_width, WALL_T), wall_c)
 	draw_rect(Rect2(0, 0, WALL_T, room_height),                  wall_c)  # left
 	draw_rect(Rect2(room_width - WALL_T, 0, WALL_T, room_height), wall_c)  # right
 

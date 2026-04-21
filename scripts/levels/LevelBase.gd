@@ -166,6 +166,7 @@ func _build_vertical_rooms(room_scenes: Array) -> void:
 		if not room:
 			continue
 		room.position.y = cursor_y
+		room.set("is_vertical", true)  # remove floor/ceiling at room junctions
 		_room_container.add_child(room)
 		cursor_y += _room_height(room)
 
