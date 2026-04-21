@@ -142,6 +142,8 @@ func _build_ui() -> void:
 	# Central panel
 	_panel = PanelContainer.new()
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	_panel.custom_minimum_size = Vector2(320, 0)
 
 	var style := StyleBoxFlat.new()

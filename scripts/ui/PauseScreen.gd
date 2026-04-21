@@ -172,6 +172,8 @@ func _build_ui() -> void:
 	# Central panel
 	_panel = PanelContainer.new()
 	_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	_panel.custom_minimum_size = Vector2(300, 0)
 	var style := StyleBoxFlat.new()
 	style.bg_color        = Color(0.08, 0.06, 0.10, 0.96)
@@ -265,6 +267,8 @@ func _build_ui() -> void:
 func _build_confirm_panel() -> void:
 	_confirm_panel = PanelContainer.new()
 	_confirm_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_confirm_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_confirm_panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	_confirm_panel.custom_minimum_size = Vector2(280, 0)
 	_confirm_panel.z_index = 2
 
