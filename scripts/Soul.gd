@@ -9,22 +9,60 @@ extends Area2D
 
 signal soul_collected(soul: Area2D)
 
-var _base_y:    float      = 0.0
-var _time:      float      = 0.0
-var _soul_id:   int        = 0
-var _soul_data: Dictionary = {}
-var _is_hidden: bool       = false   # hidden souls fade unless soul_sense active
+const _TEXTURES := {
+	"innocent": preload("res://Assets/OurAssets/base_soul.png"),
+	"sleeping":  preload("res://Assets/OurAssets/sleeping_soul.png"),
+	"mimic":     preload("res://Assets/OurAssets/mimic.png"),
+}
+
+var _base_y:     float      = 0.0
+var _time:       float      = 0.0
+var _soul_id:    int        = 0
+var _soul_data:  Dictionary = {}
+var _is_hidden:  bool       = false
+var _soul_type:  String     = "innocent"
+var _pulse_tween: Tween     = null
 
 func _ready() -> void:
 	add_to_group("soul")
 	_base_y = global_position.y
 	body_entered.connect(_on_body_entered)
+	_start_pulse()
+
+## Sets the soul type ("innocent" / "sleeping" / "mimic") and updates texture + pulse.
+func set_soul_type(type: String) -> void:
+	_soul_type = type
+	$Sprite2D.texture = _TEXTURES.get(type, _TEXTURES["innocent"])
+	_start_pulse()
+
+func _start_pulse() -> void:
+	if _pulse_tween:
+		_pulse_tween.kill()
+	_pulse_tween = create_tween().set_loops()
+	match _soul_type:
+		"innocent":
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.6, 0.8)
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 1.0, 0.8)
+		"sleeping":
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.4, 1.8)
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.9, 1.8)
+		"mimic":
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.7, 0.15)
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 1.0, 0.40)
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.85, 0.60)
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 1.0, 0.20)
 
 func _process(delta: float) -> void:
 	_time += delta
 	position.y = _base_y + sin(_time * 2.5) * 10.0
 	if _is_hidden:
 		_update_hidden_visibility()
+	if _soul_type == "mimic":
+		_update_mimic_highlight()
+
+func _update_mimic_highlight() -> void:
+	var has_recognition := SaveManager and SaveManager.has_upgrade("recognition")
+	$Sprite2D.modulate = Color.RED if has_recognition else Color.WHITE
 
 ## Hidden souls are nearly invisible unless the player bought the
 ## `soul_sense` upgrade — then they pulse at full alpha so they're findable.

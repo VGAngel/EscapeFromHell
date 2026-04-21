@@ -236,6 +236,14 @@ func _discover_souls() -> void:
 		_souls_in_level.append(soul)
 	var cfg_count: int = LevelConfig.get_souls_count(level_id) if LevelConfig else _souls_in_level.size()
 	_souls_required = mini(_souls_in_level.size(), maxi(cfg_count, 1))
+	_assign_soul_types()
+
+func _assign_soul_types() -> void:
+	var types: Array = LevelConfig.get_soul_types(level_id) if LevelConfig else []
+	for i: int in _souls_in_level.size():
+		var soul: Node = _souls_in_level[i]
+		if soul.has_method("set_soul_type"):
+			soul.set_soul_type(types[i] if i < types.size() else "innocent")
 
 func _mark_primary_soul(soul_id: int, soul_data: Dictionary) -> void:
 	# Tag the first untagged soul node with the named-soul data.
