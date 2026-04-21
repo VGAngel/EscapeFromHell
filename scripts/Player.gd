@@ -68,6 +68,28 @@ const SIN_TEXTURES := [
 	"res://Assets/OurAssets/player_demon.png",
 ]
 const PLAYER_FALLBACK_TEXTURE := "res://Assets/OurAssets/player_idle.png"
+
+# ── Dark_Elves animation pack ─────────────────────────────────────────────────
+const PLAYER_SPRITE_BASE := "res://Assets/rpg-platformer-game-assets/1_Main_character/Dark_Elves/PNG/PNG Sequences/"
+# Maps Player state → anim-name we play on AnimatedSprite2D → Dark_Elves folder.
+const PLAYER_ANIM_FOLDERS := {
+	"player_idle":          "Idle",
+	"player_walk":          "Walking",
+	"player_jump":          "Jump Loop",
+	"player_fall":          "Falling Down",
+	"player_staff_swing":   "Slashing",
+	"player_pickup":        "Idle",
+	"player_carry_idle":    "Idle",
+	"player_carry_walk":    "Walking",
+	"player_hurt":          "Hurt",
+	"player_death":         "Dying",
+	"player_respawn_breath":"Idle",
+}
+const PLAYER_SPRITE_SCALE  := 0.15   # Dark_Elves ship on ~900×900 canvases
+const PLAYER_SPRITE_FPS    := 12.0
+const NON_LOOPING_ANIMS    := ["player_death", "player_staff_swing",
+							   "player_pickup", "player_hurt",
+							   "player_respawn_breath"]
 const SIN_THRESHOLDS := [0, 30, 60, 85]
 # modulate per state: clean → tainted → fallen → demon
 const SIN_MODULATES := [
@@ -84,10 +106,11 @@ var _sin_blend_t: float  = 0.0
 var _sin_modulate: Color = Color.WHITE
 
 # ── Child nodes ───────────────────────────────────────────────────────────────
-@onready var _anim: AnimationPlayer    = $AnimationPlayer
-@onready var _staff_area: Area2D       = $StaffArea
-@onready var _soul_visual: Node2D      = $SoulCarryVisual
-@onready var _sprite: Sprite2D         = $Sprite2D
+@onready var _anim: AnimationPlayer         = $AnimationPlayer
+@onready var _staff_area: Area2D            = $StaffArea
+@onready var _soul_visual: Node2D           = $SoulCarryVisual
+@onready var _sprite: Sprite2D              = $Sprite2D
+@onready var _anim_sprite: AnimatedSprite2D = get_node_or_null("AnimatedSprite2D")
 
 func _ready() -> void:
 	add_to_group("player")
@@ -95,6 +118,7 @@ func _ready() -> void:
 	_soul_visual.visible = false
 	_staff_area.monitoring = false
 	_setup_sin_shader()
+	_load_player_frames()
 	# Level.tscn ships with its own Camera2D at (0,0); that one becomes
 	# current first since it's earlier in the tree. Force the Player camera
 	# to take over so it follows us instead.
@@ -132,6 +156,57 @@ func _setup_sin_shader() -> void:
 		mat.set_shader_parameter("blend_t", 0.0)
 		_sprite.material = mat
 	_sprite.modulate = SIN_MODULATES[0]
+
+## Build SpriteFrames from the Dark_Elves PNG sequences and play idle.
+## Each anim points at a folder under PLAYER_SPRITE_BASE. Missing folders
+## skip quietly — state falls back to existing AnimationPlayer path.
+func _load_player_frames() -> void:
+	if not _anim_sprite:
+		return
+	var sf := SpriteFrames.new()
+	var any_loaded := false
+	for anim_name in PLAYER_ANIM_FOLDERS.keys():
+		var folder: String = PLAYER_ANIM_FOLDERS[anim_name]
+		var dir_path: String = "%s%s/" % [PLAYER_SPRITE_BASE, folder]
+		var frames: Array = _collect_pngs(dir_path)
+		if frames.is_empty():
+			continue
+		sf.add_animation(anim_name)
+		sf.set_animation_loop(anim_name, not (anim_name in NON_LOOPING_ANIMS))
+		sf.set_animation_speed(anim_name, PLAYER_SPRITE_FPS)
+		for tex in frames:
+			sf.add_frame(anim_name, tex)
+		any_loaded = true
+	if not any_loaded:
+		if is_inside_tree():
+			var d: Node = get_node_or_null("/root/DebugOverlay")
+			if d and d.has_method("warn"):
+				d.warn("Player: Dark_Elves frames not found under " + PLAYER_SPRITE_BASE)
+		return
+	_anim_sprite.sprite_frames = sf
+	_anim_sprite.scale = Vector2(PLAYER_SPRITE_SCALE, PLAYER_SPRITE_SCALE)
+	if sf.has_animation("player_idle"):
+		_anim_sprite.play("player_idle")
+
+func _collect_pngs(path: String) -> Array:
+	var frames: Array = []
+	var dir := DirAccess.open(path)
+	if not dir:
+		return frames
+	var files: Array = []
+	dir.list_dir_begin()
+	var fname: String = dir.get_next()
+	while fname != "":
+		if not dir.current_is_dir() and fname.ends_with(".png") and not fname.begins_with("."):
+			files.append(fname)
+		fname = dir.get_next()
+	dir.list_dir_end()
+	files.sort()
+	for f in files:
+		var tex: Texture2D = load(path + f) as Texture2D
+		if tex:
+			frames.append(tex)
+	return frames
 
 func _report_missing_sprite() -> void:
 	if not is_inside_tree():
@@ -219,6 +294,8 @@ func _handle_movement(delta: float) -> void:
 	if dir != 0.0:
 		_facing_right = dir > 0.0
 		_sprite.flip_h = not _facing_right
+		if _anim_sprite:
+			_anim_sprite.flip_h = not _facing_right
 		velocity.x = move_toward(velocity.x, dir * walk_speed, accel * delta)
 		_tutorial_hint("move")
 	else:
@@ -417,7 +494,13 @@ func _update_state() -> void:
 # ── Animation ─────────────────────────────────────────────────────────────────
 func _update_animation() -> void:
 	var anim_name: String = _state_to_anim()
-	if _anim.current_animation != anim_name:
+	# Prefer AnimatedSprite2D (Dark_Elves frames) when present.
+	if _anim_sprite and _anim_sprite.sprite_frames \
+			and _anim_sprite.sprite_frames.has_animation(anim_name):
+		if _anim_sprite.animation != anim_name:
+			_anim_sprite.play(anim_name)
+	# Fall back to AnimationPlayer driven Sprite2D.
+	if _anim and _anim.has_animation(anim_name) and _anim.current_animation != anim_name:
 		_anim.play(anim_name)
 
 func _state_to_anim() -> String:
@@ -434,7 +517,9 @@ func _state_to_anim() -> String:
 
 # ── Sin visuals ───────────────────────────────────────────────────────────────
 func _update_sin_shader(delta: float) -> void:
-	if not _sprite or not _sprite.material:
+	# Modulate-tint even without the shader so Dark_Elves frames still
+	# colour-shift with sin. Shader-blend path still runs if present.
+	if not _sprite:
 		return
 	var sin_pct: int = int(SaveManager.get_sin()) if SaveManager else 0
 
@@ -464,14 +549,17 @@ func _update_sin_shader(delta: float) -> void:
 	_sin_blend_t = move_toward(_sin_blend_t, target_blend, SIN_BLEND_SPEED * delta)
 
 	var mat := _sprite.material as ShaderMaterial
-	var next_tex = _sin_textures[next_idx] if _sin_textures[next_idx] else _sin_textures[target_idx]
-	mat.set_shader_parameter("texture_next", next_tex)
-	mat.set_shader_parameter("blend_t", _sin_blend_t)
+	if mat:
+		var next_tex = _sin_textures[next_idx] if _sin_textures[next_idx] else _sin_textures[target_idx]
+		mat.set_shader_parameter("texture_next", next_tex)
+		mat.set_shader_parameter("blend_t", _sin_blend_t)
 
 	# modulate — плавний перехід між кольорами станів
 	var target_mod: Color = SIN_MODULATES[target_idx].lerp(SIN_MODULATES[next_idx], local_t)
 	_sin_modulate = _sin_modulate.lerp(target_mod, delta * SIN_BLEND_SPEED)
 	_sprite.modulate = _sin_modulate
+	if _anim_sprite:
+		_anim_sprite.modulate = _sin_modulate
 
 # ── Public helpers ────────────────────────────────────────────────────────────
 func _shake_camera(duration: float, intensity: float) -> void:
@@ -496,8 +584,12 @@ func respawn(spawn_position: Vector2) -> void:
 	_sprite.modulate.a = 0.0
 	var tw := create_tween()
 	tw.tween_property(_sprite, "modulate:a", 1.0, 0.4)
+	if _anim_sprite:
+		_anim_sprite.modulate.a = 0.0
+		tw.parallel().tween_property(_anim_sprite, "modulate:a", 1.0, 0.4)
 	hp_changed.emit(current_hp, max_hp)
-	_anim.play("player_respawn_breath")
+	if _anim and _anim.has_animation("player_respawn_breath"):
+		_anim.play("player_respawn_breath")
 	_spawn_fx("respawn", global_position)
 
 func _spawn_fx(preset: String, at: Vector2, facing_right: bool = true) -> void:
