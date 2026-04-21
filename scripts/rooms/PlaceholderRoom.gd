@@ -63,6 +63,42 @@ const ENEMY_POOLS := {
 		"res://scenes/enemies/ShadowLost.tscn",
 		"res://scenes/enemies/PaleWanderer.tscn",
 	],
+	2: [
+		"res://scenes/enemies/WindShade.tscn",
+		"res://scenes/enemies/PaleWanderer.tscn",
+	],
+	3: [
+		"res://scenes/enemies/FlameImp.tscn",
+		"res://scenes/enemies/FireHound.tscn",
+	],
+	4: [
+		"res://scenes/enemies/SwampCrawler.tscn",
+		"res://scenes/enemies/BogPhantom.tscn",
+	],
+	5: [
+		"res://scenes/enemies/RageShade.tscn",
+		"res://scenes/enemies/FrostKnight.tscn",
+	],
+	6: [
+		"res://scenes/enemies/HeresyPriest.tscn",
+		"res://scenes/enemies/CursedStone.tscn",
+	],
+	7: [
+		"res://scenes/enemies/HellKnight.tscn",
+		"res://scenes/enemies/BloodHound.tscn",
+	],
+	8: [
+		"res://scenes/enemies/MimicShade.tscn",
+		"res://scenes/enemies/ClockworkGuard.tscn",
+	],
+	9: [
+		"res://scenes/enemies/FrostShade.tscn",
+		"res://scenes/enemies/SilentStalker.tscn",
+	],
+	10: [
+		"res://scenes/enemies/VoidSentinel.tscn",
+		"res://scenes/enemies/ThroneGuard.tscn",
+	],
 }
 
 func _spawn_enemies() -> void:

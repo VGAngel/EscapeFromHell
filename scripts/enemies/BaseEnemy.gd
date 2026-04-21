@@ -23,6 +23,13 @@ var state: State = State.PATROL
 @export var contact_knockback: float = 280.0
 const HIT_COOLDOWN_TIME: float = 1.0
 
+# ── Config binding ────────────────────────────────────────────────────────────
+## If set in the scene, BaseEnemy._ready() auto-loads stats from
+## enemies_config.json entry with this id and pulls sprite frames from
+## enemy_sprite_map.json. Subclasses (ShadowLost, PaleWanderer) that call
+## _apply_enemy_config() themselves can leave this empty.
+@export var enemy_id: String = ""
+
 # ── Runtime ───────────────────────────────────────────────────────────────────
 var _player: CharacterBody2D = null
 var _chase_timer:    float = 0.0
@@ -34,6 +41,7 @@ var _patrol_origin:  Vector2 = Vector2.ZERO
 var _patrol_dir:     float   = 1.0
 var _facing_right:   bool    = true
 var _hit_cooldown:   float   = 0.0
+var _config_applied: bool    = false
 
 const GRAVITY: float = 900.0
 
@@ -48,6 +56,10 @@ func _ready() -> void:
 	_patrol_origin = global_position
 	if _alert_icon:
 		_alert_icon.visible = false
+	# Auto-apply config when enemy_id is set via the scene and a subclass
+	# hasn't already applied it from its own _ready().
+	if enemy_id != "" and not _config_applied:
+		_apply_enemy_config(enemy_id)
 	add_to_group("enemy")
 	_find_player()
 	if _anim_sprite and _anim_sprite.sprite_frames:
@@ -221,6 +233,9 @@ func _update_spatial_audio() -> void:
 ## alert_duration) and generates a solid-colour placeholder sprite from
 ## placeholder_color + size. Call from a subclass _ready() before super._ready().
 func _apply_enemy_config(enemy_id: String, config_path: String = "res://enemies_config.json") -> void:
+	if _config_applied:
+		return
+	_config_applied = true
 	var file := FileAccess.open(config_path, FileAccess.READ)
 	if not file:
 		push_warning("BaseEnemy: cannot open " + config_path)
