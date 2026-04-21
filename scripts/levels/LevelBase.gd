@@ -17,6 +17,7 @@ extends Node2D
 
 # ── Child node references ─────────────────────────────────────────────────────
 @onready var _hud:             Node       = $HUD
+@onready var _pause_screen:    Node       = $PauseScreen
 @onready var _room_container:  Node2D     = $RoomContainer
 @onready var _spawn_point:     Marker2D   = $SpawnPoint
 @onready var _exit_area:       Area2D     = $Exit
@@ -56,6 +57,7 @@ func _ready() -> void:
 
 	GameManager.register_hud(_hud)
 	GameManager.begin_level(level_id, _souls_required)
+	_hud.pause_requested.connect(_pause_screen.toggle)
 	_connect_level_complete()
 
 	if LevelConfig and LevelConfig.has_mechanic(level_id, "tutorial_trigger"):
@@ -386,15 +388,8 @@ func _get_boss() -> Node:
 	return get_tree().get_first_node_in_group("boss")
 
 # ── Pause ─────────────────────────────────────────────────────────────────────
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
-		_toggle_pause()
-
-func _toggle_pause() -> void:
-	get_tree().paused = not get_tree().paused
-	# PauseScreen visibility is handled by the PauseScreen node itself
-	# via its own _unhandled_input or by connecting to the HUD signal.
+# ESC is handled by HUD._unhandled_input → pause_requested → _pause_screen.toggle().
+# PauseScreen owns get_tree().paused state.
 
 # ── DebugOverlay forwarders ───────────────────────────────────────────────────
 func _report_warn(msg: String) -> void:

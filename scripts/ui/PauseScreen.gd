@@ -49,6 +49,7 @@ var _tween:        Tween = null
 
 func _ready() -> void:
 	layer = 10
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_ui()
 	_root.modulate.a = 0.0
 	visible = false
