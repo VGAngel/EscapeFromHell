@@ -47,6 +47,9 @@ var _escape_bg:    ColorRect        = null
 # Pause button (on-screen companion to the Esc key binding)
 var _pause_btn:    Button           = null
 
+# Mobile on-screen controls (Android)
+var _mobile_controls: Control       = null
+
 # ── Runtime state ─────────────────────────────────────────────────────────────
 var _hp:           int   = 3
 var _max_hp:       int   = 3
@@ -74,6 +77,7 @@ var _hearts_tween: Tween = null
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
+	add_to_group("hud")
 	_build_ui()
 
 func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
@@ -373,6 +377,7 @@ func _build_ui() -> void:
 	_build_bottom_row()
 	_build_sin_bar()
 	_build_pause_button()
+	_build_mobile_controls()
 
 	_apply_safe_area()
 	if Engine.has_singleton("SafeArea") or get_node_or_null("/root/SafeArea"):
@@ -515,6 +520,15 @@ func _build_pause_button() -> void:
 
 func _on_pause_btn_pressed() -> void:
 	pause_requested.emit()
+
+func show_pray_button(value: bool) -> void:
+	if _mobile_controls:
+		_mobile_controls.show_pray_button(value)
+
+func _build_mobile_controls() -> void:
+	var mc_script: GDScript = preload("res://scripts/ui/MobileControls.gd")
+	_mobile_controls = mc_script.new()
+	_root.add_child(_mobile_controls)
 
 func _build_sin_bar() -> void:
 	# Y position is applied in _apply_safe_area so banner toggles reflow.
