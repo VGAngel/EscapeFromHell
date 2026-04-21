@@ -243,8 +243,8 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 9.1 | AdsManager: rewarded ads (continues) | `scripts/managers/AdsManager.gd` | ✅ скелет (очікує SDK) |
-| 9.2 | IAP: Donate Light пакети | `scripts/ui/DonatePanel.gd` | ✅ скелет (очікує SDK) |
+| 9.1 | AdsManager: banner + interstitial + rewarded + mock mode | `scripts/managers/AdsManager.gd` | ✅ |
+| 9.2 | IAP: Donate Light пакети + mock purchase | `scripts/ui/DonatePanel.gd` + AdsManager | ✅ |
 | 9.3 | Android build: export preset, icons | `export_presets.cfg` | 🟡 (package/version заповнено; icons — art) |
 | 9.4 | iOS build: export preset, signing | `export_presets.cfg` | ⬜ |
 | 9.5 | Локалізація: UA / EN + Loc autoload | `scripts/managers/LocalizationManager.gd` | ✅ |
