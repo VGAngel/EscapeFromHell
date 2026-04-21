@@ -186,8 +186,8 @@
 | 5.5 | `temptation_resist` прапорець на Player | `scripts/Player.gd` | ✅ (очікує DemonDealPanel) |
 | 5.6 | `cleansing` апгрейд: знижує гріх після рівня | `scripts/managers/GameManager.gd` | ✅ |
 | 5.7 | Milestone рівень 50: наративна подія | `scenes/levels/level_50.tscn` | ⬜ |
-| 5.8 | Milestone рівень 100: 4 варіанти кінцівки | `scripts/GameManager.gd` | ⬜ |
-| 5.9 | Кінцівки: Redemption / Damnation / Void / Hidden | `scenes/endings/` | ⬜ |
+| 5.8 | Milestone рівень 100: 6 варіантів кінцівки | `scripts/managers/GameManager.gd:_pick_ending` | ✅ |
+| 5.9 | Кінцівки: saint/redeemed/bound/fallen/traitor/rebel | `scenes/endings/EndingScreen.tscn` | ✅ |
 
 ---
 

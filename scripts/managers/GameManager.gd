@@ -21,6 +21,7 @@ const SCENE_VOID_LEVEL   := "res://scenes/levels/VoidLevel.tscn"
 const SCENE_ESCAPE_LEVEL := "res://scenes/levels/EscapeLevel.tscn"
 const SCENE_HUB          := "res://scenes/Hub.tscn"
 const SCENE_MAIN_MENU    := "res://scenes/ui/MainMenu.tscn"
+const SCENE_ENDING       := "res://scenes/endings/EndingScreen.tscn"
 
 # ── Death config constants ────────────────────────────────────────────────────
 const SIN_ON_DEATH         := 5.0
@@ -52,6 +53,11 @@ var _level_start_time:     float = 0.0
 
 var _forgiveness_used: bool = false  # once per level
 var _is_transitioning: bool = false
+
+## Set by _pick_ending() when the player clears level 100.
+## EndingScreen reads this, then clears it, so the screen can show the
+## right variant without GameManager needing an explicit API.
+var pending_ending: String = ""
 
 # HUD reference (set by level scene after instantiation)
 var _hud: Node = null
@@ -272,11 +278,43 @@ func complete_level() -> void:
 
 func load_next_level() -> void:
 	_is_transitioning = false
+	# Clearing level 100 triggers an ending based on sin + souls + deals.
+	if current_level_id >= 100:
+		_trigger_ending()
+		return
 	var next_id: int = current_level_id + 1
 	if next_id > 100:
-		load_main_menu()
+		_trigger_ending()
 		return
 	_change_scene_to_level(next_id)
+
+func _trigger_ending() -> void:
+	pending_ending = _pick_ending()
+	if SaveManager and SaveManager.has_method("unlock_ending"):
+		SaveManager.unlock_ending(pending_ending)
+	_change_scene(SCENE_ENDING)
+
+func _pick_ending() -> String:
+	if not SaveManager:
+		return "saint"
+	var souls: int  = SaveManager.get_total_souls()
+	var sin_v: float = SaveManager.get_sin()
+	var deals: int  = SaveManager.get_demon_deals_accepted()
+
+	# Hidden "rebel" ending is reserved for future unlock conditions.
+	if souls >= 100:
+		if sin_v < 20.0:
+			return "saint"
+		elif sin_v <= 50.0:
+			return "redeemed"
+		elif sin_v <= 80.0:
+			return "bound"
+		else:
+			return "fallen"
+	# < 100 souls
+	if deals > 0:
+		return "traitor"
+	return "bound"
 
 func restart_level() -> void:
 	_is_transitioning = false
