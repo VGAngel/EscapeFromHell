@@ -28,6 +28,7 @@ const AD_BANNER_H   := 60
 @onready var _btn_settings:Button        = $ButtonsContainer/BtnSettings
 @onready var _btn_no_ads:  Button        = $ButtonsContainer/BtnNoAds
 @onready var _btn_donate:  Button        = $ButtonsContainer/BtnDonate
+@onready var _btn_exit:    Button        = get_node_or_null("ButtonsContainer/BtnExit")
 @onready var _version_lbl: Label         = $VersionLabel
 @onready var _collection:  CanvasLayer   = $CollectionScreen
 @onready var _settings:    CanvasLayer   = $SettingsScreen
@@ -41,6 +42,8 @@ func _ready() -> void:
 	_btn_settings.pressed.connect(_on_settings)
 	_btn_no_ads.pressed.connect(_on_no_ads)
 	_btn_donate.pressed.connect(_on_donate)
+	if _btn_exit:
+		_btn_exit.pressed.connect(_on_exit)
 
 	_collection.closed.connect(_on_overlay_closed)
 	_settings.closed.connect(_on_overlay_closed)
@@ -99,6 +102,12 @@ func _on_no_ads() -> void:
 func _on_donate() -> void:
 	_donate.open()
 	_set_interactive(false)
+
+func _on_exit() -> void:
+	_set_interactive(false)
+	var tw := create_tween()
+	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
+	tw.tween_callback(func() -> void: get_tree().quit())
 
 func _on_overlay_closed() -> void:
 	_refresh_buttons()
@@ -161,6 +170,7 @@ func _build_fallback_ui() -> void:
 		["BtnSettings",   "Налаштування"],
 		["BtnNoAds",      "Без реклами"],
 		["BtnDonate",     "Пожертвувати"],
+		["BtnExit",       "Вихід"],
 	]
 	for pair in btn_defs:
 		var btn := _make_menu_btn(pair[1], pair[0] == "BtnPlay")

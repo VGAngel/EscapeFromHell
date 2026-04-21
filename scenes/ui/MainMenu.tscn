@@ -74,6 +74,12 @@ custom_minimum_size = Vector2(0, 80)
 theme_override_font_sizes/font_size = 28
 text = "Підтримати"
 
+[node name="BtnExit" type="Button" parent="ButtonsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+theme_override_font_sizes/font_size = 28
+text = "Вихід"
+
 [node name="VersionLabel" type="Label" parent="."]
 layout_mode = 1
 offset_left = 0.0
