@@ -13,6 +13,7 @@ var _base_y:    float      = 0.0
 var _time:      float      = 0.0
 var _soul_id:   int        = 0
 var _soul_data: Dictionary = {}
+var _is_hidden: bool       = false   # hidden souls fade unless soul_sense active
 
 func _ready() -> void:
 	add_to_group("soul")
@@ -22,6 +23,17 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	position.y = _base_y + sin(_time * 2.5) * 10.0
+	if _is_hidden:
+		_update_hidden_visibility()
+
+## Hidden souls are nearly invisible unless the player bought the
+## `soul_sense` upgrade — then they pulse at full alpha so they're findable.
+func _update_hidden_visibility() -> void:
+	var has_sense := SaveManager and SaveManager.has_upgrade("soul_sense")
+	if has_sense:
+		modulate.a = 0.55 + 0.45 * (0.5 + 0.5 * sin(_time * 3.0))
+	else:
+		modulate.a = 0.12
 
 func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
@@ -48,6 +60,14 @@ func get_soul_data() -> Dictionary:
 
 func has_name() -> bool:
 	return _soul_data.has("name") and _soul_data["name"] != ""
+
+## Mark this soul as a hidden-placement pickup. Soul stays nearly invisible
+## unless the player bought the `soul_sense` upgrade.
+func set_hidden(hidden: bool) -> void:
+	_is_hidden = hidden
+	if hidden:
+		# Start dim right away so level-open is consistent regardless of _process timing.
+		modulate.a = 0.12
 
 # ── Floating name label ───────────────────────────────────────────────────────
 
