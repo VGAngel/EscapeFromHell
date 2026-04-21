@@ -202,7 +202,7 @@
 | 6.3 | Кімнати + вороги circle_8 (fraud_machine) | — | ⬜ |
 | 6.4 | Кімнати + вороги circle_9 (betrayal_ice) | — | ⬜ |
 | 6.5 | Кімнати + вороги circle_10 (throne_abyss) | — | ⬜ |
-| 6.6 | Платформи circle_6–10 (faith, sin, illusory, ice, soul_bridge) | `scripts/platforms/` | ⬜ |
+| 6.6 | Платформи circle_6–10 (faith, sin, illusory, ice, soul_bridge) | `scripts/platforms/` | ✅ |
 | 6.7 | Боси 70, 100 | `scripts/enemies/BossCircle{7,10}.gd` + `scripts/levels/BossLevel.gd` | ✅ |
 | 6.8 | Фінальний бос (рівень 100) — фаза 1/2/3 | `scripts/enemies/BossCircle10.gd` + BossAI phases | ✅ |
 | 6.9 | Всі 45 branch-рівнів (void/labyrinth/escape) | `scenes/rooms/circle_*_branch/` | ⬜ |

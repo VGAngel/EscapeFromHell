@@ -145,12 +145,17 @@ func _build_walls() -> void:
 			# Two raised ledges near the top for the altar area
 			_add_platform(Vector2(room_width / 2.0, WALL_T + 120.0), Vector2(300.0, WALL_T))
 
-const ONE_WAY_SCRIPT   := preload("res://scripts/platforms/OneWayPlatform.gd")
-const CRUMBLING_SCRIPT := preload("res://scripts/platforms/CrumblingPlatform.gd")
-const BOUNCE_SCRIPT    := preload("res://scripts/platforms/BouncePlatform.gd")
-const MOVING_SCRIPT    := preload("res://scripts/platforms/MovingPlatform.gd")
-const MUD_SCRIPT       := preload("res://scripts/platforms/MudPlatform.gd")
-const ASH_SCRIPT       := preload("res://scripts/platforms/AshPlatform.gd")
+const ONE_WAY_SCRIPT     := preload("res://scripts/platforms/OneWayPlatform.gd")
+const CRUMBLING_SCRIPT   := preload("res://scripts/platforms/CrumblingPlatform.gd")
+const BOUNCE_SCRIPT      := preload("res://scripts/platforms/BouncePlatform.gd")
+const MOVING_SCRIPT      := preload("res://scripts/platforms/MovingPlatform.gd")
+const MUD_SCRIPT         := preload("res://scripts/platforms/MudPlatform.gd")
+const ASH_SCRIPT         := preload("res://scripts/platforms/AshPlatform.gd")
+const FAITH_SCRIPT       := preload("res://scripts/platforms/FaithPlatform.gd")
+const SIN_SCRIPT         := preload("res://scripts/platforms/SinPlatform.gd")
+const ILLUSORY_SCRIPT    := preload("res://scripts/platforms/IllusoryPlatform.gd")
+const ICE_SCRIPT         := preload("res://scripts/platforms/IcePlatform.gd")
+const SOUL_BRIDGE_SCRIPT := preload("res://scripts/platforms/SoulBridgePlatform.gd")
 
 const WIND_ZONE_SCRIPT  := preload("res://scripts/environments/WindZone.gd")
 const LAVA_ZONE_SCRIPT  := preload("res://scripts/environments/LavaZone.gd")
@@ -226,14 +231,24 @@ func _add_main_platforms() -> void:
 			_add_typed_platform(Vector2(room_width / 2.0, 380), Vector2(120, WALL_T), "moving_vertical")
 
 func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
-	# Circle-specific overrides — circle 4 swaps crumbling for mud, circle 5
-	# for ash (faster crumble, no regen). Keeps the procedural layouts
-	# identical while giving each circle its own platform flavour.
+	# Circle-specific overrides — each circle reshapes the same procedural
+	# layout by swapping in its thematic platform type. Keeps the room
+	# geometry stable while giving each circle a distinct feel.
 	var resolved: String = type
-	if circle == 4 and type == "crumbling":
-		resolved = "mud"
-	elif circle == 5 and type == "crumbling":
-		resolved = "ash"
+	match circle:
+		4:
+			if type == "crumbling": resolved = "mud"
+		5:
+			if type == "crumbling": resolved = "ash"
+		6:
+			if type == "crumbling": resolved = "faith"
+		7:
+			if type == "crumbling": resolved = "illusory"
+			elif type == "one_way": resolved = "sin_platform"
+		9:
+			if type == "one_way":   resolved = "ice"
+		10:
+			if type == "one_way":   resolved = "soul_bridge"
 
 	var body: PhysicsBody2D = null
 	match resolved:
@@ -252,6 +267,21 @@ func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 		"ash":
 			body = StaticBody2D.new()
 			body.set_script(ASH_SCRIPT)
+		"faith":
+			body = StaticBody2D.new()
+			body.set_script(FAITH_SCRIPT)
+		"sin_platform":
+			body = StaticBody2D.new()
+			body.set_script(SIN_SCRIPT)
+		"illusory":
+			body = StaticBody2D.new()
+			body.set_script(ILLUSORY_SCRIPT)
+		"ice":
+			body = StaticBody2D.new()
+			body.set_script(ICE_SCRIPT)
+		"soul_bridge":
+			body = StaticBody2D.new()
+			body.set_script(SOUL_BRIDGE_SCRIPT)
 		"moving_horizontal":
 			body = AnimatableBody2D.new()
 			body.set_script(MOVING_SCRIPT)
