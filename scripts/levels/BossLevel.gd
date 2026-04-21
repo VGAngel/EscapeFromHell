@@ -66,9 +66,81 @@ func _ready() -> void:
 	_build_notify_layer()
 	_build_boss_intro()
 
-# Boss levels are always hand-crafted — skip procedural generator
+# Called from LevelBase._ready() BEFORE the player spawns, so arena walls
+# and boss are in place when move_and_slide starts.
 func _init_static_level() -> void:
-	super()   # just calls _discover_souls()
+	if not _get_boss():
+		_build_procedural_arena()
+	super()   # _discover_souls — picks up any souls we placed
+
+# ── Procedural arena ──────────────────────────────────────────────────────────
+
+func _build_procedural_arena() -> void:
+	match level_id:
+		10:
+			_build_arena_boss_01()
+		_:
+			pass  # other bosses fall back to hand-made scene when authored
+
+func _build_arena_boss_01() -> void:
+	const W: float = 1600.0
+	const H: float = 540.0
+	const WALL_T: float = 32.0
+
+	# Room root (kept separate so _room_container holds a tidy single child)
+	var room := Node2D.new()
+	room.name = "Arena_Boss01"
+	room.set_meta("room_width",  W)
+	room.set_meta("room_height", H)
+	_room_container.add_child(room)
+
+	# Walls (floor / ceiling / left / right)
+	_add_static_rect(room, Vector2(W * 0.5, H - WALL_T * 0.5), Vector2(W, WALL_T))
+	_add_static_rect(room, Vector2(W * 0.5, WALL_T * 0.5),     Vector2(W, WALL_T))
+	_add_static_rect(room, Vector2(WALL_T * 0.5, H * 0.5),     Vector2(WALL_T, H))
+	_add_static_rect(room, Vector2(W - WALL_T * 0.5, H * 0.5), Vector2(WALL_T, H))
+
+	# Three mid-platforms for vertical variety
+	_add_static_rect(room, Vector2(380.0, 360.0),  Vector2(220.0, WALL_T))
+	_add_static_rect(room, Vector2(800.0, 260.0),  Vector2(220.0, WALL_T))
+	_add_static_rect(room, Vector2(1220.0, 360.0), Vector2(220.0, WALL_T))
+
+	# Spawn / exit positions for this arena
+	_spawn_point.position = Vector2(90.0, H - WALL_T - 60.0)
+	_exit_area.position   = Vector2(W - 80.0, H - WALL_T - 80.0)
+
+	# Boss (mid-arena)
+	var boss_scene := load("res://scenes/enemies/BossCircle1.tscn") as PackedScene
+	if boss_scene:
+		var boss_node := boss_scene.instantiate() as Node2D
+		boss_node.position = Vector2(W * 0.5, H - WALL_T - 60.0)
+		room.add_child(boss_node)
+
+	# Three key fragments scattered at distinct heights
+	var frag_scene := load("res://scenes/enemies/KeyFragment.tscn") as PackedScene
+	if frag_scene:
+		var positions: Array = [
+			Vector2(380.0,  330.0),   # on first platform
+			Vector2(800.0,  230.0),   # on middle platform
+			Vector2(1220.0, 330.0),   # on third platform
+		]
+		for i in positions.size():
+			var frag := frag_scene.instantiate() as Node2D
+			frag.position = positions[i]
+			if frag.has_method("set"):
+				frag.set("fragment_index", i)
+			room.add_child(frag)
+
+func _add_static_rect(parent: Node, pos: Vector2, sz: Vector2) -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.position = pos
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = sz
+	cs.shape = rect
+	body.add_child(cs)
+	parent.add_child(body)
 
 # ── Process: prayer mechanic ──────────────────────────────────────────────────
 

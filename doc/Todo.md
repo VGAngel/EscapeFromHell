@@ -109,9 +109,9 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 1.7.1 | BossLevel.gd: статична арена | `scripts/BossLevel.gd` | ✅ |
-| 1.7.2 | Boss circle_1: поведінка (phase 1/2) | `scripts/enemies/BossCircle1.gd` | ⬜ |
-| 1.7.3 | Сцена арени level_10 | `scenes/levels/level_10.tscn` | ⬜ |
+| 1.7.1 | BossLevel.gd: статична арена | `scripts/levels/BossLevel.gd` | ✅ |
+| 1.7.2 | Boss circle_1: поведінка | `scripts/enemies/BossCircle1.gd` | ✅ |
+| 1.7.3 | Сцена арени level_10 | `scripts/levels/BossLevel.gd:_build_arena_boss_01` | ✅ (procedural) |
 | 1.7.4 | Кат-сцена перед/після боса | — | ⬜ |
 
 ---
