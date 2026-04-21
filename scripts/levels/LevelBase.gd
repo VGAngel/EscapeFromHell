@@ -130,13 +130,15 @@ func _build_vertical_rooms(room_scenes: Array) -> void:
 
 func _load_room(scene_path: String) -> Node2D:
 	if not ResourceLoader.exists(scene_path):
-		push_warning("Level: room scene not found: %s" % scene_path)
+		_report_warn("LevelBase: room scene not found — %s (level_id=%d)" % [scene_path, level_id])
 		return null
 	var packed := load(scene_path) as PackedScene
 	if not packed:
+		_report_warn("LevelBase: room failed to load as PackedScene — %s" % scene_path)
 		return null
 	var room: Node2D = packed.instantiate() as Node2D
 	if not room:
+		_report_warn("LevelBase: room instantiate returned null — %s" % scene_path)
 		return null
 	# Patch `circle` BEFORE the room is added to the tree so PlaceholderRoom._ready
 	# picks the right background colour and enemy pool even when we fell back to a
@@ -192,7 +194,7 @@ func _mark_primary_soul(soul_id: int, soul_data: Dictionary) -> void:
 func _spawn_player() -> void:
 	var player_scene := load("res://scenes/Player.tscn") as PackedScene
 	if not player_scene:
-		push_error("Level: res://scenes/Player.tscn not found")
+		_report_error("LevelBase: res://scenes/Player.tscn not found or failed to load")
 		return
 	_player = player_scene.instantiate() as CharacterBody2D
 	_player.global_position = _spawn_point.global_position
@@ -347,3 +349,20 @@ func _toggle_pause() -> void:
 	get_tree().paused = not get_tree().paused
 	# PauseScreen visibility is handled by the PauseScreen node itself
 	# via its own _unhandled_input or by connecting to the HUD signal.
+
+# ── DebugOverlay forwarders ───────────────────────────────────────────────────
+func _report_warn(msg: String) -> void:
+	if is_inside_tree():
+		var d: Node = get_node_or_null("/root/DebugOverlay")
+		if d and d.has_method("warn"):
+			d.warn(msg)
+			return
+	push_warning(msg)
+
+func _report_error(msg: String) -> void:
+	if is_inside_tree():
+		var d: Node = get_node_or_null("/root/DebugOverlay")
+		if d and d.has_method("error"):
+			d.error(msg)
+			return
+	push_error(msg)

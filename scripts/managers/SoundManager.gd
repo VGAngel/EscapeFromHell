@@ -108,9 +108,16 @@ func _try_load_stream(path: String) -> AudioStream:
 	if not ResourceLoader.exists(path):
 		if not _warned.has(path):
 			_warned[path] = true
-			push_warning("SoundManager: audio not found — " + path)
+			_report_warn("SoundManager: audio not found — " + path)
 		return null
 	return load(path) as AudioStream
+
+func _report_warn(msg: String) -> void:
+	var d: Node = get_node_or_null("/root/DebugOverlay")
+	if d and d.has_method("warn"):
+		d.warn(msg)
+	else:
+		push_warning(msg)
 
 func _free_sfx_slot() -> AudioStreamPlayer:
 	for p in _sfx_pool:

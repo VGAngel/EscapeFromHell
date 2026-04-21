@@ -40,12 +40,12 @@ func _ready() -> void:
 func _load_config() -> void:
 	var file := FileAccess.open(CONFIG_PATH, FileAccess.READ)
 	if not file:
-		push_error("LevelGenerator: level_generation_config.json not found")
+		_report_error("LevelGenerator: level_generation_config.json not found at %s" % CONFIG_PATH)
 		return
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not parsed is Dictionary:
-		push_error("LevelGenerator: failed to parse level_generation_config.json")
+		_report_error("LevelGenerator: failed to parse %s (invalid JSON)" % CONFIG_PATH)
 		return
 	_cfg = parsed
 
@@ -63,7 +63,7 @@ func _load_config() -> void:
 func _load_souls() -> void:
 	var file := FileAccess.open(SOULS_PATH, FileAccess.READ)
 	if not file:
-		push_warning("LevelGenerator: souls_collection.json not found")
+		_report_warn("LevelGenerator: souls_collection.json not found at %s" % SOULS_PATH)
 		return
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
@@ -186,7 +186,24 @@ func _resolve_room_path(circle: int, type: String, idx: int) -> String:
 	if type == "main":
 		# Clamp main index to what circle_1 ships with (24 variants).
 		fallback_idx = ((idx - 1) % 24) + 1
+	_report_warn("LevelGenerator: %s fallback — circle %d/%s_%d missing, using circle_1/%s_%d" % [
+		type, circle, type, idx, type, fallback_idx])
 	return ROOM_SCENE_PATTERN % [1, type, fallback_idx]
+
+# ── DebugOverlay forwarders ───────────────────────────────────────────────────
+func _report_error(msg: String) -> void:
+	var d: Node = Engine.get_main_loop().root.get_node_or_null("DebugOverlay") if Engine.get_main_loop() else null
+	if d and d.has_method("error"):
+		d.error(msg)
+	else:
+		push_error(msg)
+
+func _report_warn(msg: String) -> void:
+	var d: Node = Engine.get_main_loop().root.get_node_or_null("DebugOverlay") if Engine.get_main_loop() else null
+	if d and d.has_method("warn"):
+		d.warn(msg)
+	else:
+		push_warning(msg)
 
 func _pick_unique_room_index(used: Array, pool_size: int) -> int:
 	if used.size() >= pool_size:
