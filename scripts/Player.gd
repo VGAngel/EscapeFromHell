@@ -67,6 +67,7 @@ const SIN_TEXTURES := [
 	"res://Assets/OurAssets/player_fallen.png",
 	"res://Assets/OurAssets/player_demon.png",
 ]
+const PLAYER_FALLBACK_TEXTURE := "res://Assets/OurAssets/player_idle.png"
 const SIN_THRESHOLDS := [0, 30, 60, 85]
 # modulate per state: clean → tainted → fallen → demon
 const SIN_MODULATES := [
@@ -105,18 +106,43 @@ func _setup_sin_shader() -> void:
 	for path in SIN_TEXTURES:
 		var tex = load(path) if ResourceLoader.exists(path) else null
 		_sin_textures.append(tex)
-	var shader := load(SIN_SHADER_PATH) as Shader
-	if not shader:
+
+	# Without a fallback the Player Sprite2D stays texture-less → invisible.
+	# Until the four sin-state textures ship, fall back to player_idle.png
+	# (single texture, no blending).
+	var fallback: Texture2D = null
+	if ResourceLoader.exists(PLAYER_FALLBACK_TEXTURE):
+		fallback = load(PLAYER_FALLBACK_TEXTURE) as Texture2D
+	for i in _sin_textures.size():
+		if not _sin_textures[i]:
+			_sin_textures[i] = fallback
+
+	if not _sin_textures[0]:
+		_report_missing_sprite()
 		return
-	var mat := ShaderMaterial.new()
-	mat.shader = shader
-	if _sin_textures[0]:
-		_sprite.texture = _sin_textures[0]
-	var next_tex = _sin_textures[1] if _sin_textures[1] else _sin_textures[0]
-	mat.set_shader_parameter("texture_next", next_tex)
-	mat.set_shader_parameter("blend_t", 0.0)
-	_sprite.material = mat
+
+	_sprite.texture = _sin_textures[0]
+
+	var shader := load(SIN_SHADER_PATH) as Shader
+	if shader:
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		var next_tex = _sin_textures[1] if _sin_textures[1] else _sin_textures[0]
+		mat.set_shader_parameter("texture_next", next_tex)
+		mat.set_shader_parameter("blend_t", 0.0)
+		_sprite.material = mat
 	_sprite.modulate = SIN_MODULATES[0]
+
+func _report_missing_sprite() -> void:
+	if not is_inside_tree():
+		return
+	var d: Node = get_node_or_null("/root/DebugOverlay")
+	if d and d.has_method("error"):
+		d.error("Player: no sprite — жодна з player_*.png не знайдена " +
+			"(SIN_TEXTURES + " + PLAYER_FALLBACK_TEXTURE + "). " +
+			"Гравець буде невидимим.")
+	else:
+		push_error("Player: no sprite texture available")
 
 func _apply_upgrades() -> void:
 	if not SaveManager:
