@@ -85,6 +85,10 @@ func _build_procedural_arena() -> void:
 			_build_arena_boss_03()
 		50:
 			_build_arena_boss_05()
+		70:
+			_build_arena_boss_07()
+		100:
+			_build_arena_boss_10()
 		_:
 			pass  # other bosses fall back to hand-made scene when authored
 
@@ -235,6 +239,77 @@ func _build_arena_boss_03() -> void:
 	_spawn_collectible(room, frag_path, Vector2(220.0,    350.0), 0)
 	_spawn_collectible(room, frag_path, Vector2(W * 0.5,  230.0), 1)
 	_spawn_collectible(room, frag_path, Vector2(W - 220.0, 350.0), 2)
+
+# ── Boss 07 — Зрадник (identify_and_evade, 3 copies) ──────────────────────────
+func _build_arena_boss_07() -> void:
+	const W: float = 1100.0
+	const H: float = 600.0
+	const WALL_T: float = 32.0
+	var room := Node2D.new()
+	room.name = "Arena_Boss07"
+	room.set_meta("room_width",  W)
+	room.set_meta("room_height", H)
+	_room_container.add_child(room)
+	_add_arena_walls(room, W, H, WALL_T)
+
+	# Labyrinth-ish platforms — copies scatter across the arena
+	_add_static_rect(room, Vector2(260.0, 400.0),   Vector2(200.0, WALL_T))
+	_add_static_rect(room, Vector2(W - 260.0, 400.0), Vector2(200.0, WALL_T))
+	_add_static_rect(room, Vector2(W * 0.5, 280.0), Vector2(240.0, WALL_T))
+
+	_spawn_point.position = Vector2(80.0, H - WALL_T - 60.0)
+	_exit_area.position   = Vector2(W - 80.0, H - WALL_T - 60.0)
+
+	_spawn_boss_at(room, "res://scenes/enemies/BossCircle7.tscn",
+				   Vector2(W * 0.5, H - WALL_T - 80.0))
+
+	# Spawn 3 copies — BossAI.spawn_copies wires setup_as_copy so only
+	# the real one takes staff hits.
+	var boss_node: Node = _get_boss()
+	var copy_scene := load("res://scenes/enemies/BossCircle7.tscn") as PackedScene
+	if boss_node and boss_node.has_method("spawn_copies") and copy_scene:
+		boss_node.spawn_copies(copy_scene, 3)
+
+# ── Boss 10 — Люцифер (3 phases, sin_aura, prayer_ritual) ─────────────────────
+func _build_arena_boss_10() -> void:
+	const W: float = 1280.0
+	const H: float = 720.0
+	const WALL_T: float = 32.0
+	var room := Node2D.new()
+	room.name = "Arena_Boss10"
+	room.set_meta("room_width",  W)
+	room.set_meta("room_height", H)
+	_room_container.add_child(room)
+	_add_arena_walls(room, W, H, WALL_T)
+
+	# Pedestals where the 5 final souls sit
+	_add_static_rect(room, Vector2(220.0,  H - WALL_T - 120.0), Vector2(80.0, 24.0))
+	_add_static_rect(room, Vector2(W - 220.0, H - WALL_T - 120.0), Vector2(80.0, 24.0))
+	_add_static_rect(room, Vector2(320.0, 300.0), Vector2(80.0, 24.0))
+	_add_static_rect(room, Vector2(W - 320.0, 300.0), Vector2(80.0, 24.0))
+	_add_static_rect(room, Vector2(W * 0.5, 180.0), Vector2(80.0, 24.0))
+
+	_spawn_point.position = Vector2(80.0, H - WALL_T - 60.0)
+	_exit_area.position   = Vector2(W - 80.0, H - WALL_T - 60.0)
+
+	_spawn_boss_at(room, "res://scenes/enemies/BossCircle10.tscn",
+				   Vector2(W * 0.5, H - WALL_T - 120.0))
+
+	# Five final souls; BossAI phase transitions trigger at 3 and 5 picks.
+	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
+	if soul_scene:
+		var positions: Array = [
+			Vector2(220.0,  H - WALL_T - 150.0),
+			Vector2(W - 220.0, H - WALL_T - 150.0),
+			Vector2(320.0, 270.0),
+			Vector2(W - 320.0, 270.0),
+			Vector2(W * 0.5, 150.0),
+		]
+		for pos in positions:
+			var soul := soul_scene.instantiate() as Node2D
+			if soul:
+				soul.position = pos
+				room.add_child(soul)
 
 # ── Boss 05 — Гнів Втілений (dodge_and_collect, charge/wall-stun) ─────────────
 func _build_arena_boss_05() -> void:
