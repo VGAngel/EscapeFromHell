@@ -169,8 +169,9 @@ func _build_vertical_rooms(room_scenes: Array) -> void:
 		var room: Node2D = _load_room(scene_path)
 		if not room:
 			continue
+		if "is_vertical" in room:
+			room.is_vertical = true
 		room.position.y = cursor_y
-		room.set("is_vertical", true)  # remove floor/ceiling at room junctions
 		_room_container.add_child(room)
 		cursor_y += _room_height(room)
 
@@ -190,12 +191,13 @@ func _load_room(scene_path: String) -> Node2D:
 	if not room:
 		_report_warn("LevelBase: room instantiate returned null — %s" % scene_path)
 		return null
-	# Patch `circle` BEFORE the room is added to the tree so PlaceholderRoom._ready
-	# picks the right background colour and enemy pool even when we fell back to a
-	# circle_1 scene for a later circle.
+	# Patch exported vars BEFORE the room is added to the tree so PlaceholderRoom._ready
+	# picks the right background colour, enemy pool, and config queries.
 	var target_circle: int = ceili(float(level_id) / 10.0)
 	if "circle" in room and room.circle != target_circle:
 		room.circle = target_circle
+	if "level_id" in room:
+		room.level_id = level_id
 	return room
 
 # ── Dimension helpers ─────────────────────────────────────────────────────────
@@ -232,7 +234,8 @@ func _discover_souls() -> void:
 	_souls_in_level.clear()
 	for soul in get_tree().get_nodes_in_group("soul"):
 		_souls_in_level.append(soul)
-	_souls_required = _souls_in_level.size()
+	var cfg_count: int = LevelConfig.get_souls_count(level_id) if LevelConfig else _souls_in_level.size()
+	_souls_required = mini(_souls_in_level.size(), maxi(cfg_count, 1))
 
 func _mark_primary_soul(soul_id: int, soul_data: Dictionary) -> void:
 	# Tag the first untagged soul node with the named-soul data.

@@ -31,6 +31,9 @@ extends Node2D
 ##   exit     → ceiling removed, floor kept
 @export var is_vertical: bool = false
 
+## Level ID — set by LevelBase so config queries work.
+@export var level_id: int = 0
+
 const WALL_T: float = 32.0
 const PLATFORM_T: float = 16.0
 
@@ -69,64 +72,57 @@ func _ready() -> void:
 		_build_walls()
 		_spawn_enemies()
 		_spawn_environment_hazard()
+		_spawn_soul()
+		_spawn_altar()
 
 	queue_redraw()
 
 # ── Enemy spawning ────────────────────────────────────────────────────────────
 
-# Each circle has a pool of enemy scenes. One is picked per "main" room based
-# on room_index so rooms feel varied without being fully random.
-const ENEMY_POOLS := {
-	1: [
-		"res://scenes/enemies/ShadowLost.tscn",
-		"res://scenes/enemies/PaleWanderer.tscn",
-	],
-	2: [
-		"res://scenes/enemies/WindShade.tscn",
-		"res://scenes/enemies/PaleWanderer.tscn",
-	],
-	3: [
-		"res://scenes/enemies/FlameImp.tscn",
-		"res://scenes/enemies/FireHound.tscn",
-	],
-	4: [
-		"res://scenes/enemies/SwampCrawler.tscn",
-		"res://scenes/enemies/BogPhantom.tscn",
-	],
-	5: [
-		"res://scenes/enemies/RageShade.tscn",
-		"res://scenes/enemies/FrostKnight.tscn",
-	],
-	6: [
-		"res://scenes/enemies/HeresyPriest.tscn",
-		"res://scenes/enemies/CursedStone.tscn",
-	],
-	7: [
-		"res://scenes/enemies/HellKnight.tscn",
-		"res://scenes/enemies/BloodHound.tscn",
-	],
-	8: [
-		"res://scenes/enemies/MimicShade.tscn",
-		"res://scenes/enemies/ClockworkGuard.tscn",
-	],
-	9: [
-		"res://scenes/enemies/FrostShade.tscn",
-		"res://scenes/enemies/SilentStalker.tscn",
-	],
-	10: [
-		"res://scenes/enemies/VoidSentinel.tscn",
-		"res://scenes/enemies/ThroneGuard.tscn",
-	],
+# Maps levels_config.json enemy_type strings → placeholder scene paths.
+# These scenes serve until per-enemy art ships; swap path here, not in config.
+const ENEMY_SCENE_MAP := {
+	"skeleton":         "res://scenes/enemies/ShadowLost.tscn",
+	"skeleton_warrior": "res://scenes/enemies/PaleWanderer.tscn",
+	"skeleton_archer":  "res://scenes/enemies/PaleWanderer.tscn",
+	"undead_archer":    "res://scenes/enemies/PaleWanderer.tscn",
+	"skeleton_witch":   "res://scenes/enemies/WindShade.tscn",
+	"necromancer":      "res://scenes/enemies/WindShade.tscn",
+	"stone_golem":      "res://scenes/enemies/CursedStone.tscn",
+	"fire_golem":       "res://scenes/enemies/FlameImp.tscn",
+	"ice_golem":        "res://scenes/enemies/FrostShade.tscn",
+	"succubus":         "res://scenes/enemies/RageShade.tscn",
+	"hell_knight":      "res://scenes/enemies/HellKnight.tscn",
+	"demon_archer":     "res://scenes/enemies/FireHound.tscn",
+	"magician_demon":   "res://scenes/enemies/HeresyPriest.tscn",
+	"blood_demon":      "res://scenes/enemies/BloodHound.tscn",
+	"mimic":            "res://scenes/enemies/MimicShade.tscn",
+	"ghost_warrior":    "res://scenes/enemies/WindShade.tscn",
+	"phantom_knight":   "res://scenes/enemies/SilentStalker.tscn",
+	"dark_entity":      "res://scenes/enemies/VoidSentinel.tscn",
+	"reaper":           "res://scenes/enemies/ThroneGuard.tscn",
+	"fallen_angel":     "res://scenes/enemies/FrostKnight.tscn",
+}
+
+# Fallback pools used when LevelConfig is absent (editor preview, unit tests).
+const ENEMY_FALLBACK_POOLS := {
+	1:  ["res://scenes/enemies/ShadowLost.tscn",   "res://scenes/enemies/PaleWanderer.tscn"],
+	2:  ["res://scenes/enemies/WindShade.tscn",    "res://scenes/enemies/PaleWanderer.tscn"],
+	3:  ["res://scenes/enemies/FlameImp.tscn",     "res://scenes/enemies/FireHound.tscn"],
+	4:  ["res://scenes/enemies/SwampCrawler.tscn", "res://scenes/enemies/BogPhantom.tscn"],
+	5:  ["res://scenes/enemies/RageShade.tscn",    "res://scenes/enemies/FrostKnight.tscn"],
+	6:  ["res://scenes/enemies/HeresyPriest.tscn", "res://scenes/enemies/CursedStone.tscn"],
+	7:  ["res://scenes/enemies/HellKnight.tscn",   "res://scenes/enemies/BloodHound.tscn"],
+	8:  ["res://scenes/enemies/MimicShade.tscn",   "res://scenes/enemies/ClockworkGuard.tscn"],
+	9:  ["res://scenes/enemies/FrostShade.tscn",   "res://scenes/enemies/SilentStalker.tscn"],
+	10: ["res://scenes/enemies/VoidSentinel.tscn", "res://scenes/enemies/ThroneGuard.tscn"],
 }
 
 func _spawn_enemies() -> void:
 	if room_type != "main":
 		return
-	var pool: Array = ENEMY_POOLS.get(circle, [])
-	if pool.is_empty():
-		return
-	var scene_path: String = pool[room_index % pool.size()]
-	if not ResourceLoader.exists(scene_path):
+	var scene_path: String = _pick_enemy_scene()
+	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
 		return
 	var packed := load(scene_path) as PackedScene
 	if not packed:
@@ -137,6 +133,63 @@ func _spawn_enemies() -> void:
 	var x_offset: float = 140.0 + float((room_index * 73) % 320)
 	enemy.position = Vector2(x_offset, room_height - WALL_T - 40.0)
 	add_child(enemy)
+
+func _pick_enemy_scene() -> String:
+	if LevelConfig and level_id > 0:
+		var types: Array = LevelConfig.get_enemies(level_id)
+		if not types.is_empty():
+			var type_key: String = types[room_index % types.size()]
+			var path: String = ENEMY_SCENE_MAP.get(type_key, "")
+			if not path.is_empty():
+				return path
+	var pool: Array = ENEMY_FALLBACK_POOLS.get(circle, [])
+	if pool.is_empty():
+		return ""
+	return pool[room_index % pool.size()]
+
+# ── Soul spawning ─────────────────────────────────────────────────────────────
+
+func _spawn_soul() -> void:
+	if room_type != "main":
+		return
+	var soul_path := "res://scenes/Soul.tscn"
+	if not ResourceLoader.exists(soul_path):
+		return
+	var packed := load(soul_path) as PackedScene
+	if not packed:
+		return
+	var soul := packed.instantiate() as Node2D
+	if not soul:
+		return
+	soul.add_to_group("soul")
+	# Place the soul on the high platform so the player must platformer to reach it.
+	soul.position = Vector2(room_width * 0.5, ROW_HIGH - 24.0)
+	add_child(soul)
+
+# ── Altar spawning ────────────────────────────────────────────────────────────
+
+const ALTAR_SCRIPT := preload("res://scripts/AltarNode.gd")
+
+func _spawn_altar() -> void:
+	if room_type != "exit":
+		return
+	var altar := Node2D.new()
+	altar.set_script(ALTAR_SCRIPT)
+	altar.name = "AltarNode"
+	altar.add_to_group("altar")
+	# Altar sits on the high-platform shelf in the exit room.
+	altar.position = Vector2(room_width * 0.5, ROW_HIGH - 32.0)
+
+	var area := Area2D.new()
+	area.name = "Area2D"
+	var col := CollisionShape2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = 64.0
+	col.shape = shape
+	area.add_child(col)
+	altar.add_child(area)
+
+	add_child(altar)
 
 # ── Physics walls ─────────────────────────────────────────────────────────────
 
@@ -203,18 +256,33 @@ const SWAMP_ZONE_SCRIPT := preload("res://scripts/environments/SwampZone.gd")
 func _spawn_environment_hazard() -> void:
 	if room_type != "main":
 		return
-	# Only half the main rooms get a hazard — keeps the challenge varied.
+	# Only even-indexed rooms get a hazard — keeps the challenge varied.
 	if room_index % 2 != 0:
 		return
-	match circle:
-		2:
+	# Pull trap list from config when available; fall back to circle heuristic.
+	var traps: Array = []
+	if LevelConfig and level_id > 0:
+		traps = LevelConfig.get_traps(level_id)
+	if traps.is_empty():
+		traps = _fallback_traps_for_circle(circle)
+	if traps.is_empty():
+		return
+	var trap_type: String = traps[room_index % traps.size()]
+	match trap_type:
+		"wind_blast":
 			_add_wind_zone()
-		3:
+		"lava_pit", "lava_flow":
 			_add_lava_zone()
-		4:
+		"sinking_platform", "poison_gas":
 			_add_swamp_zone()
-		_:
-			pass
+		# Other trap types will have dedicated scenes when art ships.
+
+func _fallback_traps_for_circle(c: int) -> Array:
+	match c:
+		2: return ["sinking_platform", "poison_gas"]
+		3: return ["lava_pit", "lava_flow"]
+		4: return ["sinking_platform"]
+		_: return []
 
 func _add_wind_zone() -> void:
 	var zone := Area2D.new()
