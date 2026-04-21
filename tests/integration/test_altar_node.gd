@@ -195,3 +195,81 @@ func test_level_base_respawn_uses_altar_position_over_spawn_point() -> void:
 	lb.set("_respawn_position", Vector2(200.0, -300.0))
 	lb.call("_on_altar_respawn_bound", Vector2(400.0, -600.0))
 	assert_eq(lb.get("_respawn_position"), Vector2(400.0, -600.0))
+
+# ── pray action as alternate input ───────────────────────────────────────────
+
+func test_pray_action_activates_altar_when_player_in_range() -> void:
+	var altar := _make_altar()
+	var player := _make_player()
+	altar._on_body_entered(player)
+	watch_signals(altar)
+	var ev := InputEventAction.new()
+	ev.action  = "pray"
+	ev.pressed = true
+	altar._unhandled_input(ev)
+	assert_signal_emitted(altar, "respawn_bound")
+
+func test_pray_action_ignored_when_player_not_in_range() -> void:
+	var altar := _make_altar()
+	watch_signals(altar)
+	var ev := InputEventAction.new()
+	ev.action  = "pray"
+	ev.pressed = true
+	altar._unhandled_input(ev)
+	assert_signal_not_emitted(altar, "respawn_bound")
+
+func test_pray_action_ignored_when_altar_already_active() -> void:
+	var altar := _make_altar()
+	var player := _make_player()
+	altar._on_body_entered(player)
+	altar._activate()
+	watch_signals(altar)
+	var ev := InputEventAction.new()
+	ev.action  = "pray"
+	ev.pressed = true
+	altar._unhandled_input(ev)
+	assert_signal_not_emitted(altar, "respawn_bound")
+
+# ── pray button via HUD group ─────────────────────────────────────────────────
+
+func test_set_pray_button_no_crash_without_hud_in_tree() -> void:
+	var altar := _make_altar()
+	# No HUD in scene → must not crash
+	altar._set_pray_button(true)
+	assert_true(true)
+
+func test_set_pray_button_shows_via_hud_in_group() -> void:
+	var altar := _make_altar()
+	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	add_child_autofree(hud)   # _ready() adds it to "hud" group
+
+	altar._set_pray_button(true)
+	assert_true(hud._mobile_controls.btn_pray.visible)
+
+func test_set_pray_button_hides_via_hud_in_group() -> void:
+	var altar := _make_altar()
+	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	add_child_autofree(hud)
+
+	altar._set_pray_button(true)
+	altar._set_pray_button(false)
+	assert_false(hud._mobile_controls.btn_pray.visible)
+
+func test_pray_button_shown_on_body_entered() -> void:
+	var altar := _make_altar()
+	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	add_child_autofree(hud)
+	var player := _make_player()
+
+	altar._on_body_entered(player)
+	assert_true(hud._mobile_controls.btn_pray.visible)
+
+func test_pray_button_hidden_on_body_exited() -> void:
+	var altar := _make_altar()
+	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	add_child_autofree(hud)
+	var player := _make_player()
+
+	altar._on_body_entered(player)
+	altar._on_body_exited(player)
+	assert_false(hud._mobile_controls.btn_pray.visible)

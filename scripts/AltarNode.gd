@@ -23,6 +23,9 @@ signal respawn_bound(world_position: Vector2)
 ## Input action name. Must exist in Project → Input Map; fallback: "ui_accept".
 const INTERACT_ACTION := "interact"
 
+## Mobile on-screen 🙏 button fires this action — accepted as alternate to interact.
+const PRAY_ACTION := "pray"
+
 # ── State ─────────────────────────────────────────────────────────────────────
 
 ## True once the player has bound respawn to this altar.
@@ -54,6 +57,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var pressed: bool = (
 		(InputMap.has_action(INTERACT_ACTION) and event.is_action_pressed(INTERACT_ACTION))
+		or (InputMap.has_action(PRAY_ACTION) and event.is_action_pressed(PRAY_ACTION))
 		or event.is_action_pressed("ui_accept")
 	)
 	if pressed:
@@ -76,11 +80,13 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		_player_in_range = true
 		_update_prompt()
+		_set_pray_button(true)
 
 func _on_body_exited(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		_player_in_range = false
 		_update_prompt()
+		_set_pray_button(false)
 
 # ── Prompt ────────────────────────────────────────────────────────────────────
 
@@ -101,3 +107,8 @@ func bind_silently() -> void:
 	_update_prompt()
 	if _anim and not _anim.is_playing():
 		_anim.play("altar_activate")
+
+func _set_pray_button(value: bool) -> void:
+	var hud: Node = get_tree().get_first_node_in_group("hud") if get_tree() else null
+	if hud and hud.has_method("show_pray_button"):
+		hud.show_pray_button(value)
