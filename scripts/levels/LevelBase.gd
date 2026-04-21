@@ -67,12 +67,21 @@ func _ready() -> void:
 # ── Static vs procedural ──────────────────────────────────────────────────────
 
 func _init_static_level() -> void:
-	# Rooms are already children of RoomContainer in the saved .tscn.
-	# Just count souls that exist in the tree.
+	# Hand-made levels ship their rooms as children of RoomContainer. But
+	# many "static" levels (circle openers 1/11/21/…, milestones 75/99)
+	# don't have authored content yet — if RoomContainer is empty we must
+	# fall back to procedural generation or the player spawns into a void.
+	if _room_container.get_child_count() == 0:
+		_init_procedural_level(true)
+		return
 	_discover_souls()
 
-func _init_procedural_level() -> void:
-	var gen: Object = LevelGenerator.generate(level_id)
+func _init_procedural_level(force_procedural: bool = false) -> void:
+	var gen: Object
+	if force_procedural:
+		gen = LevelGenerator.generate_procedural(level_id)
+	else:
+		gen = LevelGenerator.generate(level_id)
 
 	if _level_type == "vertical":
 		_build_vertical_rooms(gen.room_scenes)

@@ -51,9 +51,14 @@ func _load_config() -> void:
 
 	var static_cfg: Dictionary = _cfg.get("static_levels", {})
 	_static_levels = []
-	_static_levels.append_array(static_cfg.get("boss_levels", []))
-	_static_levels.append_array(static_cfg.get("circle_openers", {}).get("levels", []))
-	_static_levels.append_array(static_cfg.get("milestone_levels", []))
+	# JSON numbers come back as floats — normalise to ints so `level_id in
+	# _static_levels` (int comparison) matches.
+	for raw in static_cfg.get("boss_levels", []):
+		_static_levels.append(int(raw))
+	for raw in static_cfg.get("circle_openers", {}).get("levels", []):
+		_static_levels.append(int(raw))
+	for raw in static_cfg.get("milestone_levels", []):
+		_static_levels.append(int(raw))
 
 func _load_souls() -> void:
 	var file := FileAccess.open(SOULS_PATH, FileAccess.READ)
@@ -118,6 +123,18 @@ func generate(level_id: int) -> GeneratedLevel:
 
 func is_static(level_id: int) -> bool:
 	return _is_static(level_id)
+
+## Fallback entry point — runs the procedural path even for static-flagged
+## levels. LevelBase calls this for circle-opener levels (1, 11, 21…) when
+## no hand-authored content is present in the scene tree.
+func generate_procedural(level_id: int) -> GeneratedLevel:
+	var was_static: bool = _is_static(level_id)
+	if was_static:
+		_static_levels.erase(level_id)
+	var result := generate(level_id)
+	if was_static:
+		_static_levels.append(level_id)
+	return result
 
 ## Returns true if level_id is a branch level (id > 100, branches of circles 1-9).
 func is_branch(level_id: int) -> bool:
