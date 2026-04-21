@@ -43,14 +43,19 @@ offset_top = 520.0
 offset_right = 690.0
 offset_bottom = 720.0
 
-[node name="Speaker" type="Label" parent="MessageBox"]
+[node name="VBox" type="VBoxContainer" parent="MessageBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Speaker" type="Label" parent="MessageBox/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.7, 0.7, 0.5, 1.0)
 text = ""
 
-[node name="Label" type="Label" parent="MessageBox"]
+[node name="Label" type="Label" parent="MessageBox/VBox"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(0.95, 0.95, 0.86, 1.0)
 autowrap_mode = 3
