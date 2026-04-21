@@ -9,10 +9,10 @@ extends Area2D
 
 signal soul_collected(soul: Area2D)
 
-const _TEXTURES := {
-	"innocent": preload("res://Assets/OurAssets/base_soul.png"),
-	"sleeping":  preload("res://Assets/OurAssets/sleeping_soul.png"),
-	"mimic":     preload("res://Assets/OurAssets/mimic.png"),
+const _TEXTURE_PATHS := {
+	"innocent": "res://Assets/OurAssets/base_soul.png",
+	"sleeping": "res://Assets/OurAssets/sleeping_soul.png",
+	"mimic":    "res://Assets/OurAssets/mimic.png",
 }
 
 var _base_y:     float      = 0.0
@@ -32,7 +32,9 @@ func _ready() -> void:
 ## Sets the soul type ("innocent" / "sleeping" / "mimic") and updates texture + pulse.
 func set_soul_type(type: String) -> void:
 	_soul_type = type
-	$Sprite2D.texture = _TEXTURES.get(type, _TEXTURES["innocent"])
+	var path: String = _TEXTURE_PATHS.get(type, _TEXTURE_PATHS["innocent"])
+	if ResourceLoader.exists(path):
+		$Sprite2D.texture = load(path)
 	_start_pulse()
 
 func _start_pulse() -> void:

@@ -139,6 +139,7 @@ func _init_procedural_level(force_procedural: bool = false) -> void:
 	else:
 		_build_horizontal_rooms(gen.room_scenes)
 
+	_spawn_soul_node(gen)
 	_discover_souls()
 
 	if gen.soul_id > 0:
@@ -237,6 +238,35 @@ func _discover_souls() -> void:
 	var cfg_count: int = LevelConfig.get_souls_count(level_id) if LevelConfig else _souls_in_level.size()
 	_souls_required = mini(_souls_in_level.size(), maxi(cfg_count, 1))
 	_assign_soul_types()
+
+func _spawn_soul_node(gen: Object) -> void:
+	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
+	if not soul_scene:
+		_report_warn("LevelBase: Soul.tscn not found — no soul spawned")
+		return
+	var soul: Node = soul_scene.instantiate()
+
+	# Place soul at roughly 65% of level height (vertical) or 50% width (horizontal).
+	var rooms: Array = _room_container.get_children()
+	if rooms.is_empty():
+		soul.position = Vector2(360.0, 400.0)
+	elif _level_type == "vertical":
+		var total_h: float = 0.0
+		for r: Node in rooms:
+			total_h += _room_height(r)
+		soul.position = Vector2(360.0, total_h * 0.65)
+	else:
+		var total_w: float = 0.0
+		for r: Node in rooms:
+			total_w += _room_width(r)
+		soul.position = Vector2(total_w * 0.5, 300.0)
+
+	# Apply soul type from level config before _discover_souls() runs.
+	var types: Array = LevelConfig.get_soul_types(level_id) if LevelConfig else []
+	if soul.has_method("set_soul_type"):
+		soul.set_soul_type(types[0] if not types.is_empty() else "innocent")
+
+	_room_container.add_child(soul)
 
 func _assign_soul_types() -> void:
 	var types: Array = LevelConfig.get_soul_types(level_id) if LevelConfig else []
