@@ -61,8 +61,53 @@ func _ready() -> void:
 	if LevelConfig and LevelConfig.has_mechanic(level_id, "tutorial_trigger"):
 		_fire_tutorial_hints()
 
+	_report_level_diagnostics()
+
 	await get_tree().process_frame
 	_ready_late()
+
+# ── Diagnostics ───────────────────────────────────────────────────────────────
+## Emit a single on-screen info card summarising the level state, and warn
+## loudly when something obvious is broken (no rooms, no souls required,
+## player spawn outside every room). The user sees this instantly instead
+## of having to decode a silent black screen.
+func _report_level_diagnostics() -> void:
+	var room_count: int = _room_container.get_child_count()
+	var spawn_pos: Vector2 = _spawn_point.global_position if _spawn_point else Vector2.ZERO
+	var msg: String = "Level %d (%s): rooms=%d, souls=%d, spawn=(%d,%d)" % [
+		level_id, _level_type, room_count, _souls_required,
+		int(spawn_pos.x), int(spawn_pos.y)]
+
+	if room_count == 0:
+		_report_error(msg + " — RoomContainer EMPTY. Static level без hand-made " +
+			"сцен і без fallback? Гравець буде падати у порожнечу.")
+	elif not _spawn_inside_any_room(spawn_pos):
+		_report_warn(msg + " — spawn point is outside every room bounds. Check " +
+			"_reposition_spawn_and_exit_* math for this level type.")
+	else:
+		_report_info(msg)
+
+func _spawn_inside_any_room(pos: Vector2) -> bool:
+	for child in _room_container.get_children():
+		if not child is Node2D:
+			continue
+		var room_node: Node2D = child
+		var w: float = float(room_node.get_meta("room_width", 720.0))
+		var h: float = float(room_node.get_meta("room_height", 540.0))
+		var top_left:     Vector2 = room_node.global_position
+		var bottom_right: Vector2 = top_left + Vector2(w, h)
+		if pos.x >= top_left.x and pos.x <= bottom_right.x \
+				and pos.y >= top_left.y and pos.y <= bottom_right.y:
+			return true
+	return false
+
+func _report_info(msg: String) -> void:
+	if is_inside_tree():
+		var d: Node = get_node_or_null("/root/DebugOverlay")
+		if d and d.has_method("info"):
+			d.info(msg)
+			return
+	print(msg)
 
 # ── Static vs procedural ──────────────────────────────────────────────────────
 
