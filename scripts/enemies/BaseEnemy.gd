@@ -324,11 +324,11 @@ func _collect_frames_in_dir(path: String) -> Array:
 		return frames
 	var files: Array = []
 	dir.list_dir_begin()
-	var name: String = dir.get_next()
-	while name != "":
-		if not dir.current_is_dir() and name.ends_with(".png") and not name.begins_with("."):
-			files.append(name)
-		name = dir.get_next()
+	var fname: String = dir.get_next()
+	while fname != "":
+		if not dir.current_is_dir() and fname.ends_with(".png") and not fname.begins_with("."):
+			files.append(fname)
+		fname = dir.get_next()
 	dir.list_dir_end()
 	files.sort()
 	for f in files:

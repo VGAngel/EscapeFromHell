@@ -185,7 +185,9 @@ func _add_wind_zone() -> void:
 	zone.position = Vector2(room_width * 0.5, room_height * 0.45)
 	zone.set("zone_size", Vector2(room_width - WALL_T * 2.0, 160.0))
 	# Alternate direction across rooms so the player has to read each one.
-	var dir := Vector2.RIGHT if (room_index / 2) % 2 == 0 else Vector2.LEFT
+	@warning_ignore("integer_division")
+	var group: int = room_index / 2
+	var dir := Vector2.RIGHT if group % 2 == 0 else Vector2.LEFT
 	zone.set("wind_direction", dir)
 	zone.set("wind_force", 280.0)
 	add_child(zone)
