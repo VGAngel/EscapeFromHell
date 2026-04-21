@@ -148,11 +148,53 @@ func test_open_hides_confirm_panel() -> void:
 	ps.open()
 	assert_false(ps._confirm_panel.visible)
 
-# ── TODO ──────────────────────────────────────────────────────────────────────
+# ── ESC key input ─────────────────────────────────────────────────────────────
+
+func test_escape_key_closes_screen_when_open() -> void:
+	ps.open()
+	var ev := InputEventAction.new()
+	ev.action  = "ui_cancel"
+	ev.pressed = true
+	ps._unhandled_input(ev)
+	assert_false(ps._visible_flag)
+
+func test_escape_key_closes_confirm_panel_first() -> void:
+	ps.open()
+	ps._btn_menu.pressed.emit()   # opens confirm panel
+	var ev := InputEventAction.new()
+	ev.action  = "ui_cancel"
+	ev.pressed = true
+	ps._unhandled_input(ev)
+	# First ESC should close confirm panel, NOT the main pause screen
+	assert_false(ps._confirm_panel.visible)
+	assert_true(ps._visible_flag)
+
+func test_escape_key_ignored_when_screen_closed() -> void:
+	var ev := InputEventAction.new()
+	ev.action  = "ui_cancel"
+	ev.pressed = true
+	ps._unhandled_input(ev)   # must not crash, must not open screen
+	assert_false(ps._visible_flag)
+
+func test_escape_key_second_press_closes_main_screen() -> void:
+	ps.open()
+	ps._btn_menu.pressed.emit()
+	var ev := InputEventAction.new()
+	ev.action  = "ui_cancel"
+	ev.pressed = true
+	ps._unhandled_input(ev)   # closes confirm panel
+	ps._unhandled_input(ev)   # now closes main screen
+	assert_false(ps._visible_flag)
+
+# ── process_mode = ALWAYS ─────────────────────────────────────────────────────
+
+func test_process_mode_is_always() -> void:
+	assert_eq(ps.process_mode, Node.PROCESS_MODE_ALWAYS)
+
+# ── Stubs for impossible tests ────────────────────────────────────────────────
 
 func test_hp_displayed_on_open() -> void:
 	# PauseScreen shows circle/level + souls + sin — no HP display.
-	# Stub was based on incorrect assumption; nothing to test here.
 	pass
 
 func test_restart_button_calls_game_manager() -> void:
@@ -160,9 +202,6 @@ func test_restart_button_calls_game_manager() -> void:
 	pass
 
 func test_main_menu_button_loads_menu() -> void:
-	# TODO: _on_exit_yes_pressed calls GameManager.load_main_menu() → scene change
-	pass
-
-func test_escape_key_closes_screen() -> void:
-	# TODO: requires creating and injecting a real InputEventAction for "ui_cancel"
+	# _on_exit_yes_pressed calls GameManager.load_main_menu() → scene change.
+	# Cannot test without a full scene tree; covered by manual QA.
 	pass
