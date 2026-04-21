@@ -123,7 +123,18 @@ func _load_room(scene_path: String) -> Node2D:
 		push_warning("Level: room scene not found: %s" % scene_path)
 		return null
 	var packed := load(scene_path) as PackedScene
-	return packed.instantiate() as Node2D if packed else null
+	if not packed:
+		return null
+	var room: Node2D = packed.instantiate() as Node2D
+	if not room:
+		return null
+	# Patch `circle` BEFORE the room is added to the tree so PlaceholderRoom._ready
+	# picks the right background colour and enemy pool even when we fell back to a
+	# circle_1 scene for a later circle.
+	var target_circle: int = ceili(float(level_id) / 10.0)
+	if "circle" in room and room.circle != target_circle:
+		room.circle = target_circle
+	return room
 
 # ── Dimension helpers ─────────────────────────────────────────────────────────
 

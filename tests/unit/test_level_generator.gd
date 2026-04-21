@@ -186,8 +186,12 @@ func test_pick_rooms_middle_are_main() -> void:
 func test_pick_rooms_uses_correct_circle_in_paths() -> void:
 	seed(1)
 	var rooms: Array = lg._pick_rooms(3, 3)
+	# Per-circle scenes fall back to circle_1 when circle_3 isn't authored yet
+	# (LevelBase overwrites `circle` on the instance so theme/enemies still
+	# match the target circle). Accept either path.
 	for path in rooms:
-		assert_true(path.contains("circle_3"))
+		assert_true(path.contains("circle_3") or path.contains("circle_1"),
+			"path should be from circle_3 or its circle_1 fallback: %s" % path)
 
 func test_pick_rooms_main_rooms_no_repeats() -> void:
 	seed(1)

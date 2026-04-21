@@ -141,20 +141,35 @@ func _pick_rooms(circle: int, count: int) -> Array:
 	var rooms: Array = []
 
 	# Entrance (always room index 1)
-	rooms.append(ROOM_SCENE_PATTERN % [circle, "entrance", 1])
+	rooms.append(_resolve_room_path(circle, "entrance", 1))
 
 	# Main rooms (random, no repeats within one level)
 	var main_count: int = count - 2  # minus entrance and exit
 	var used: Array = []
 	for _i in main_count:
 		var idx: int = _pick_unique_room_index(used, pool_size)
-		rooms.append(ROOM_SCENE_PATTERN % [circle, "main", idx])
+		rooms.append(_resolve_room_path(circle, "main", idx))
 		used.append(idx)
 
 	# Exit (always room index 1)
-	rooms.append(ROOM_SCENE_PATTERN % [circle, "exit", 1])
+	rooms.append(_resolve_room_path(circle, "exit", 1))
 
 	return rooms
+
+## Resolve room scene path with fallback to circle_1 when per-circle art
+## is not yet authored. LevelBase overwrites `circle` on the loaded room
+## so PlaceholderRoom uses the correct theme + enemy pool regardless.
+func _resolve_room_path(circle: int, type: String, idx: int) -> String:
+	var path := ROOM_SCENE_PATTERN % [circle, type, idx]
+	if ResourceLoader.exists(path):
+		return path
+	# Fallback — circle_1 scenes work for any circle since PlaceholderRoom
+	# drives visuals and enemy spawning off its `circle` property.
+	var fallback_idx: int = idx
+	if type == "main":
+		# Clamp main index to what circle_1 ships with (24 variants).
+		fallback_idx = ((idx - 1) % 24) + 1
+	return ROOM_SCENE_PATTERN % [1, type, fallback_idx]
 
 func _pick_unique_room_index(used: Array, pool_size: int) -> int:
 	if used.size() >= pool_size:

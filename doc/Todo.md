@@ -139,14 +139,14 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 3.1 | Кімнати circle_2 (wind_corridors, 22–30 шт.) | `scenes/rooms/circle_2/` | ⬜ |
-| 3.2 | Кімнати circle_3 (fire_caverns) | `scenes/rooms/circle_3/` | ⬜ |
-| 3.3 | Кімнати circle_4 (dark_swamps) | `scenes/rooms/circle_4/` | ⬜ |
-| 3.4 | Кімнати circle_5 (rage_ruins) | `scenes/rooms/circle_5/` | ⬜ |
-| 3.5 | Вороги circle_2: WindShade, PaleWanderer | `scripts/enemies/` | ⬜ |
-| 3.6 | Вороги circle_3: FlameImp, FireHound | `scripts/enemies/` | ⬜ |
-| 3.7 | Вороги circle_4: SwampCrawler, BogPhantom | `scripts/enemies/` | ⬜ |
-| 3.8 | Вороги circle_5: RageShade, FrostKnight | `scripts/enemies/` | ⬜ |
+| 3.1 | Кімнати circle_2 (wind_corridors, 22–30 шт.) | `scenes/rooms/circle_2/` | 🟡 fallback на circle_1 |
+| 3.2 | Кімнати circle_3 (fire_caverns) | `scenes/rooms/circle_3/` | 🟡 fallback на circle_1 |
+| 3.3 | Кімнати circle_4 (dark_swamps) | `scenes/rooms/circle_4/` | 🟡 fallback на circle_1 |
+| 3.4 | Кімнати circle_5 (rage_ruins) | `scenes/rooms/circle_5/` | 🟡 fallback на circle_1 |
+| 3.5 | Вороги circle_2: WindShade, PaleWanderer | `scenes/enemies/` | ✅ |
+| 3.6 | Вороги circle_3: FlameImp, FireHound | `scenes/enemies/` | ✅ |
+| 3.7 | Вороги circle_4: SwampCrawler, BogPhantom | `scenes/enemies/` | ✅ |
+| 3.8 | Вороги circle_5: RageShade, FrostKnight | `scenes/enemies/` | ✅ |
 | 3.9 | Середовищні ефекти: вітер (circle_2) | `scripts/environments/WindZone.gd` | ⬜ |
 | 3.10 | Середовищні ефекти: лава, вогняні джети (circle_3) | `scripts/environments/LavaZone.gd` | ⬜ |
 | 3.11 | Середовищні ефекти: болото, отрута (circle_4) | `scripts/environments/SwampZone.gd` | ⬜ |
