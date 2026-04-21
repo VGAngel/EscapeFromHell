@@ -69,9 +69,9 @@ func has_name() -> bool:
 
 ## Mark this soul as a hidden-placement pickup. Soul stays nearly invisible
 ## unless the player bought the `soul_sense` upgrade.
-func set_hidden(hidden: bool) -> void:
-	_is_hidden = hidden
-	if hidden:
+func set_hidden(is_hidden_soul: bool) -> void:
+	_is_hidden = is_hidden_soul
+	if is_hidden_soul:
 		# Start dim right away so level-open is consistent regardless of _process timing.
 		modulate.a = 0.12
 
