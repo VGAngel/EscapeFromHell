@@ -30,6 +30,7 @@ const FADE_DURATION := 0.5
 @onready var _btn_exit:    Button        = get_node_or_null("ButtonsContainer/BtnExit")
 @onready var _btn_profile: Button        = get_node_or_null("ButtonsContainer/BtnProfile")
 @onready var _btn_seed:    Button        = get_node_or_null("ButtonsContainer/BtnSeed")
+@onready var _seed_lbl:    Label         = get_node_or_null("SeedLabel")
 @onready var _version_lbl: Label         = $VersionLabel
 @onready var _collection:  CanvasLayer   = $CollectionScreen
 @onready var _settings:    CanvasLayer   = $SettingsScreen
@@ -60,6 +61,7 @@ func _ready() -> void:
 	if _seed_dlg:
 		_seed_dlg.closed.connect(_on_overlay_closed)
 
+	_ensure_seed()
 	_refresh_buttons()
 	_refresh_souls_counter()
 	_refresh_seed_label()
@@ -109,11 +111,21 @@ func _refresh_souls_counter() -> void:
 	var saved: int = SaveManager.get_total_souls() if SaveManager else 0
 	_btn_collect.text = "Врятовані Душі  %d/100" % saved
 
-func _refresh_seed_label() -> void:
-	if not _btn_seed:
+func _ensure_seed() -> void:
+	if not SaveManager or not SaveManager.get_world_seed_str().is_empty():
 		return
+	var chars := "abcdefghijklmnopqrstuvwxyz0123456789"
+	var result := ""
+	for _i in 8:
+		result += chars[randi() % chars.length()]
+	SaveManager.set_world_seed_str(result)
+
+func _refresh_seed_label() -> void:
 	var s: String = SaveManager.get_world_seed_str() if SaveManager else ""
-	_btn_seed.text = ("🌱  Seed: %s" % s) if not s.is_empty() else "🌱  Seed"
+	if _seed_lbl:
+		_seed_lbl.text = "🌱 %s" % s if not s.is_empty() else ""
+	if _btn_seed:
+		_btn_seed.text = ("🌱  Seed: %s" % s) if not s.is_empty() else "🌱  Seed"
 
 # ── Navigation ────────────────────────────────────────────────────────────────
 
@@ -206,6 +218,17 @@ func _build_fallback_ui() -> void:
 	title.position = Vector2(0, 160)
 	title.size     = Vector2(720, 140)
 	add_child(title)
+
+	# Seed label — always visible below title
+	var seed_lbl := Label.new()
+	seed_lbl.name = "SeedLabel"
+	seed_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	seed_lbl.add_theme_font_size_override("font_size", 13)
+	seed_lbl.add_theme_color_override("font_color", Color(0.50, 0.72, 0.42))
+	seed_lbl.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	seed_lbl.position = Vector2(0, 310)
+	seed_lbl.size     = Vector2(720, 28)
+	add_child(seed_lbl)
 
 	# Buttons container
 	var vbox := VBoxContainer.new()
