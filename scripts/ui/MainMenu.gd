@@ -53,10 +53,31 @@ func _ready() -> void:
 	_refresh_souls_counter()
 	_version_lbl.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0.1")
 
+	_apply_banner_space()
+	if AdsManager and AdsManager.has_signal("no_ads_purchased"):
+		AdsManager.no_ads_purchased.connect(_apply_banner_space)
+
 	# Fade in
 	modulate.a = 0.0
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
+
+## Shift ButtonsContainer and VersionLabel up by the reserved ad-banner
+## height so the bottom banner never overlaps menu content. Re-invoked
+## when the player buys "no ads" so the layout expands to full height.
+func _apply_banner_space() -> void:
+	var banner_h: int = get_banner_height()
+	_version_lbl.offset_top    = 1210.0 - banner_h
+	_version_lbl.offset_bottom = 1240.0 - banner_h
+	if has_node("ButtonsContainer"):
+		var buttons: Control = $ButtonsContainer
+		buttons.offset_bottom = 900.0 - banner_h
+
+## Separate helper so tests can stub without needing AdsManager fully up.
+func get_banner_height() -> int:
+	if AdsManager and AdsManager.has_method("get_banner_height"):
+		return int(AdsManager.get_banner_height())
+	return 0
 
 # ── Button state ──────────────────────────────────────────────────────────────
 
