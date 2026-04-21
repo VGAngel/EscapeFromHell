@@ -60,7 +60,7 @@ func _apply_safe_area() -> void:
 	btn_jump.position  = Vector2(rx, floor_y - SIZE_LARGE.y)
 	btn_staff.position = Vector2(rx - SIZE_MEDIUM.x - GAP, floor_y - SIZE_MEDIUM.y)
 	btn_pray.position  = Vector2(rx - SIZE_MEDIUM.x - GAP - SIZE_SMALL.x - GAP,
-	                             floor_y - SIZE_SMALL.y)
+								 floor_y - SIZE_SMALL.y)
 
 # ── Public API ────────────────────────────────────────────────────────────────
 func show_pray_button(value: bool) -> void:
