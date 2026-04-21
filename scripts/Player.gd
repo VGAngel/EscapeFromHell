@@ -88,6 +88,7 @@ var _sin_modulate: Color = Color.WHITE
 @onready var _sprite: Sprite2D         = $Sprite2D
 
 func _ready() -> void:
+	add_to_group("player")
 	_apply_upgrades()
 	_soul_visual.visible = false
 	_staff_area.monitoring = false
