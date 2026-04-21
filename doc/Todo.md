@@ -214,15 +214,15 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 7.1 | Підключити SoundManager або AudioStreamPlayer | `scripts/SoundManager.gd` | ⬜ |
-| 7.2 | Sound effects: jump, attack, soul pickup, death | `assets/sfx/` | ⬜ |
-| 7.3 | Музика: ambient per circle (9 треків + hub) | `assets/music/` | ⬜ |
+| 7.1 | SoundManager autoload + SFX pool + music crossfade | `scripts/managers/SoundManager.gd` | ✅ (очікує audio файли) |
+| 7.2 | Sound effects: jump, attack, soul pickup, death | `audio/sfx/` | ⬜ (audio assets) |
+| 7.3 | Музика: ambient per circle (9 треків + hub) | `audio/music/` | ⬜ (audio assets) |
 | 7.4 | Particle effects: soul glow, death, staff swing | — | ⬜ |
-| 7.5 | Screen shake при ударі, смерті | `scripts/CameraShake.gd` | ⬜ |
+| 7.5 | Screen shake при ударі, смерті | `scripts/managers/CameraShake.gd` | ✅ |
 | 7.6 | Transition ефект між рівнями (fade to black) | `scripts/managers/SceneTransition.gd` | ✅ |
-| 7.7 | Спрайти гравця (idle/walk/jump/attack/carry) | `assets/sprites/player/` | ⬜ |
-| 7.8 | Спрайти ворогів (всі 18 типів) | `assets/sprites/enemies/` | ⬜ |
-| 7.9 | Тайлсети по колах (10 стилів) | `assets/tilesets/` | ⬜ |
+| 7.7 | Спрайти гравця (idle/walk/jump/attack/carry) | `Assets/OurAssets/` | ⬜ (art) |
+| 7.8 | Спрайти ворогів (всі 19 типів + 6 босів) | `Assets/enemies/` | ✅ (19 ворогів через enemy_sprite_map) |
+| 7.9 | Тайлсети по колах (10 стилів) | `Assets/tilesets/` | ⬜ (art) |
 
 ---
 

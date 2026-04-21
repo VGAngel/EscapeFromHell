@@ -438,15 +438,9 @@ func _update_sin_shader(delta: float) -> void:
 func _shake_camera(duration: float, intensity: float) -> void:
 	if not is_inside_tree():
 		return
-	var camera := get_viewport().get_camera_2d()
-	if not camera:
-		return
-	var tw := create_tween()
-	var steps := int(duration / 0.05)
-	for _i in steps:
-		tw.tween_property(camera, "offset",
-			Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity)), 0.05)
-	tw.tween_property(camera, "offset", Vector2.ZERO, 0.05)
+	var shaker: Node = get_node_or_null("/root/CameraShake")
+	if shaker and shaker.has_method("shake"):
+		shaker.shake(duration, intensity)
 
 func get_staff_cooldown_ratio() -> float:
 	return 1.0 - (_staff_timer / staff_cooldown)

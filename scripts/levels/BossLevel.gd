@@ -544,14 +544,9 @@ func _build_notify_layer() -> void:
 	_notify_layer.add_child(_notify_label)
 
 func _shake_camera(duration: float, intensity: float) -> void:
-	var camera := get_viewport().get_camera_2d()
-	if not camera:
-		return
-	var tw := create_tween()
-	for _i in int(duration / 0.05):
-		tw.tween_property(camera, "offset",
-			Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity)), 0.05)
-	tw.tween_property(camera, "offset", Vector2.ZERO, 0.05)
+	var shaker: Node = get_node_or_null("/root/CameraShake")
+	if shaker and shaker.has_method("shake"):
+		shaker.shake(duration, intensity)
 
 func _flash_notify(text: String, duration: float = 2.0,
 		color: Color = Color(0.90, 0.88, 0.96)) -> void:
