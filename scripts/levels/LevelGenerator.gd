@@ -103,8 +103,10 @@ func generate(level_id: int) -> GeneratedLevel:
 		result.soul_id   = result.soul_data.get("id", 0)
 		return result
 
-	# Seed: same level always produces the same layout
-	seed(level_id)
+	# Seed: deterministic per level; XOR with profile's world seed so players
+	# can share/reproduce a run by sharing their seed string.
+	var seed_str: String = SaveManager.get_world_seed_str() if SaveManager else ""
+	seed(level_id ^ (hash(seed_str) if not seed_str.is_empty() else 0))
 
 	var circle: int = result.circle
 	var idx:    int = _index_in_circle(effective_id)   # 1–10

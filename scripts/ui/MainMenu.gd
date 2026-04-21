@@ -28,10 +28,14 @@ const FADE_DURATION := 0.5
 @onready var _btn_no_ads:  Button        = $ButtonsContainer/BtnNoAds
 @onready var _btn_donate:  Button        = $ButtonsContainer/BtnDonate
 @onready var _btn_exit:    Button        = get_node_or_null("ButtonsContainer/BtnExit")
+@onready var _btn_profile: Button        = get_node_or_null("ButtonsContainer/BtnProfile")
+@onready var _btn_seed:    Button        = get_node_or_null("ButtonsContainer/BtnSeed")
 @onready var _version_lbl: Label         = $VersionLabel
 @onready var _collection:  CanvasLayer   = $CollectionScreen
 @onready var _settings:    CanvasLayer   = $SettingsScreen
 @onready var _donate:      CanvasLayer   = $DonatePanel
+@onready var _profiles:    CanvasLayer   = get_node_or_null("ProfileScreen")
+@onready var _seed_dlg:    CanvasLayer   = get_node_or_null("SeedDialog")
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -43,13 +47,22 @@ func _ready() -> void:
 	_btn_donate.pressed.connect(_on_donate)
 	if _btn_exit:
 		_btn_exit.pressed.connect(_on_exit)
+	if _btn_profile:
+		_btn_profile.pressed.connect(_on_profile)
+	if _btn_seed:
+		_btn_seed.pressed.connect(_on_seed)
 
 	_collection.closed.connect(_on_overlay_closed)
 	_settings.closed.connect(_on_overlay_closed)
 	_donate.closed.connect(_on_overlay_closed)
+	if _profiles:
+		_profiles.closed.connect(_on_overlay_closed)
+	if _seed_dlg:
+		_seed_dlg.closed.connect(_on_overlay_closed)
 
 	_refresh_buttons()
 	_refresh_souls_counter()
+	_refresh_seed_label()
 	_version_lbl.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0.1")
 
 	_apply_banner_space()
@@ -96,17 +109,17 @@ func _refresh_souls_counter() -> void:
 	var saved: int = SaveManager.get_total_souls() if SaveManager else 0
 	_btn_collect.text = "Врятовані Душі  %d/100" % saved
 
+func _refresh_seed_label() -> void:
+	if not _btn_seed:
+		return
+	var s: String = SaveManager.get_world_seed_str() if SaveManager else ""
+	_btn_seed.text = ("🌱  Seed: %s" % s) if not s.is_empty() else "🌱  Seed"
+
 # ── Navigation ────────────────────────────────────────────────────────────────
 
 func _on_play() -> void:
 	_set_interactive(false)
-	if SaveManager and SaveManager.has_save():
-		_fade_to(SCENE_HUB)
-	else:
-		# New game — reset and go to Hub (which will trigger prologue)
-		if SaveManager:
-			SaveManager.load_slot(0)
-		_fade_to(SCENE_HUB)
+	_fade_to(SCENE_HUB)
 
 func _fade_to(scene_path: String) -> void:
 	var tw := create_tween()
@@ -137,9 +150,20 @@ func _on_exit() -> void:
 	tw.tween_property(self, "modulate:a", 0.0, FADE_DURATION)
 	tw.tween_callback(func() -> void: get_tree().quit())
 
+func _on_profile() -> void:
+	if _profiles:
+		_profiles.open()
+		_set_interactive(false)
+
+func _on_seed() -> void:
+	if _seed_dlg:
+		_seed_dlg.open()
+		_set_interactive(false)
+
 func _on_overlay_closed() -> void:
 	_refresh_buttons()
 	_refresh_souls_counter()
+	_refresh_seed_label()
 	_set_interactive(true)
 
 func _set_interactive(enabled: bool) -> void:
@@ -194,8 +218,10 @@ func _build_fallback_ui() -> void:
 
 	var btn_defs := [
 		["BtnPlay",       "Грати"],
+		["BtnProfile",    "Профіль"],
 		["BtnCollection", "Врятовані Душі  0/100"],
 		["BtnSettings",   "Налаштування"],
+		["BtnSeed",       "🌱  Seed"],
 		["BtnNoAds",      "Без реклами"],
 		["BtnDonate",     "Пожертвувати"],
 		["BtnExit",       "Вихід"],
@@ -220,7 +246,7 @@ func _build_fallback_ui() -> void:
 	add_child(ver)
 
 	# Overlay screens (empty CanvasLayers — scripts assign themselves)
-	for screen_name in ["CollectionScreen", "SettingsScreen", "DonatePanel"]:
+	for screen_name in ["CollectionScreen", "SettingsScreen", "DonatePanel", "ProfileScreen", "SeedDialog"]:
 		var cl := CanvasLayer.new()
 		cl.name  = screen_name
 		cl.layer = 10

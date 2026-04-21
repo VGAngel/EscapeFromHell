@@ -50,6 +50,8 @@ func get_all_slots() -> Array:
 					"circle":      d.get("current_circle", 1),
 					"total_souls": d.get("total_souls", 0),
 					"sin":         d.get("sin", 0.0),
+					"world_seed_str": d.get("world_seed_str", ""),
+					"name":        d.get("profile_name", ""),
 				})
 				continue
 		result.append({"slot": i, "exists": false})
@@ -229,6 +231,24 @@ func unlock_ending(ending_id: String) -> void:
 		endings.append(ending_id)
 		data["unlocked_endings"] = endings
 
+# ── World seed ────────────────────────────────────────────────────────────────
+# Stored as the user-typed string; LevelGenerator hashes it to int.
+# Empty string = deterministic per level_id (default behaviour).
+
+func get_world_seed_str() -> String:
+	return data.get("world_seed_str", "")
+
+func set_world_seed_str(value: String) -> void:
+	data["world_seed_str"] = value
+
+# ── Profile name ──────────────────────────────────────────────────────────────
+
+func get_profile_name() -> String:
+	return data.get("profile_name", "")
+
+func set_profile_name(value: String) -> void:
+	data["profile_name"] = value
+
 # ── Internal: load ────────────────────────────────────────────────────────────
 
 func _load() -> bool:
@@ -305,6 +325,8 @@ func _reset() -> void:
 		"deals_refused":       0,
 		"secret_levels_found": 0,
 		"seen_tutorial_hints": [],
+		"world_seed_str":      "",
+		"profile_name":        "",
 	}
 
 # ── Internal: migration ───────────────────────────────────────────────────────

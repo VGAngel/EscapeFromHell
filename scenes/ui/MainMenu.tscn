@@ -5,6 +5,8 @@
 [ext_resource type="Script" path="res://scripts/ui/SettingsScreen.gd" id="3_settings"]
 [ext_resource type="Script" path="res://scripts/ui/DonatePanel.gd" id="4_donate"]
 [ext_resource type="Texture2D" path="res://Assets/hellAssets/Background/Background_01.png" id="5_bg"]
+[ext_resource type="Script" path="res://scripts/ui/ProfileScreen.gd" id="6_profile"]
+[ext_resource type="Script" path="res://scripts/ui/SeedDialog.gd" id="7_seed"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -50,6 +52,12 @@ custom_minimum_size = Vector2(0, 80)
 theme_override_font_sizes/font_size = 28
 text = "Грати"
 
+[node name="BtnProfile" type="Button" parent="ButtonsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+theme_override_font_sizes/font_size = 28
+text = "Профіль"
+
 [node name="BtnCollection" type="Button" parent="ButtonsContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 80)
@@ -61,6 +69,12 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 80)
 theme_override_font_sizes/font_size = 28
 text = "Налаштування"
+
+[node name="BtnSeed" type="Button" parent="ButtonsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+theme_override_font_sizes/font_size = 22
+text = "🌱  Seed"
 
 [node name="BtnNoAds" type="Button" parent="ButtonsContainer"]
 layout_mode = 2
@@ -105,3 +119,13 @@ script = ExtResource("3_settings")
 layer = 10
 visible = false
 script = ExtResource("4_donate")
+
+[node name="ProfileScreen" type="CanvasLayer" parent="."]
+layer = 10
+visible = false
+script = ExtResource("6_profile")
+
+[node name="SeedDialog" type="CanvasLayer" parent="."]
+layer = 10
+visible = false
+script = ExtResource("7_seed")
