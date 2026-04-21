@@ -281,7 +281,7 @@ func _on_exit_body_entered(body: Node2D) -> void:
 func _connect_souls() -> void:
 	for soul in _souls_in_level:
 		if soul.has_signal("soul_collected"):
-			soul.soul_collected.connect(_on_soul_collected.bind(soul))
+			soul.soul_collected.connect(_on_soul_collected)
 
 func _on_soul_collected(soul: Node) -> void:
 	var soul_id: int = soul.get_meta("soul_id", 0)
