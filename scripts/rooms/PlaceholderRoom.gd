@@ -74,6 +74,7 @@ func _ready() -> void:
 		_spawn_environment_hazard()
 		_spawn_soul()
 		_spawn_altar()
+		_spawn_bonus()
 
 	queue_redraw()
 
@@ -165,6 +166,44 @@ func _spawn_soul() -> void:
 	# Place the soul on the high platform so the player must platformer to reach it.
 	soul.position = Vector2(room_width * 0.5, ROW_HIGH - 24.0)
 	add_child(soul)
+
+# ── Bonus spawning ────────────────────────────────────────────────────────────
+
+const BONUS_SCENE := "res://scenes/BonusPickup.tscn"
+# Maps levels_config bonus strings → BonusPickup.BonusType int
+# (HOLY_WATER=0, PRAYER_STONE=1, ANGEL_FEATHER=2, MANNA=3, TORCH=4)
+const BONUS_ENUM := {
+	"holy_water":    0,
+	"prayer_stone":  1,
+	"angel_feather": 2,
+	"manna":         3,
+	"torch":         4,
+}
+
+func _spawn_bonus() -> void:
+	if room_type != "main":
+		return
+	# Only odd-indexed rooms get a bonus (even-indexed get a hazard).
+	if room_index % 2 == 0:
+		return
+	var bonuses: Array = []
+	if LevelConfig and level_id > 0:
+		bonuses = LevelConfig.get_bonuses(level_id)
+	if bonuses.is_empty():
+		return
+	if not ResourceLoader.exists(BONUS_SCENE):
+		return
+	var packed := load(BONUS_SCENE) as PackedScene
+	if not packed:
+		return
+	var bonus := packed.instantiate()
+	if not bonus:
+		return
+	var key: String = bonuses[room_index % bonuses.size()]
+	bonus.set("bonus_type", BONUS_ENUM.get(key, 3))
+	# Place on the mid-row platform so the player must navigate up to reach it.
+	bonus.position = Vector2(room_width * 0.5, ROW_MID - 40.0)
+	add_child(bonus)
 
 # ── Altar spawning ────────────────────────────────────────────────────────────
 

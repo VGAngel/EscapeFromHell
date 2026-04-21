@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://bonus_pickup_v1"]
+
+[ext_resource type="Script" path="res://scripts/BonusPickup.gd" id="1_bonus"]
+
+[sub_resource type="CircleShape2D" id="CircleShape_1"]
+radius = 32.0
+
+[node name="BonusPickup" type="Area2D"]
+script = ExtResource("1_bonus")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape_1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.2, 0.2)
+
+[node name="Label" type="Label" parent="."]
+position = Vector2(-50, -56)
+custom_minimum_size = Vector2(100, 0)
+theme_override_colors/font_color = Color(1, 1, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+text = ""
+horizontal_alignment = 1

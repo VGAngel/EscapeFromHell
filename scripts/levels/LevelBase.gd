@@ -54,6 +54,7 @@ func _ready() -> void:
 	_spawn_player()
 	_connect_exit()
 	_connect_souls()
+	_connect_bonuses()
 	_connect_altars()
 	_setup_escape_timer()
 
@@ -337,6 +338,43 @@ func _on_soul_collected(soul: Node) -> void:
 	var boss: Node = _get_boss()
 	if boss and boss.has_method("on_collectible_picked"):
 		boss.on_collectible_picked()
+
+# ── Bonuses ───────────────────────────────────────────────────────────────────
+
+func _connect_bonuses() -> void:
+	for bonus in get_tree().get_nodes_in_group("bonus"):
+		if bonus.has_signal("bonus_collected"):
+			bonus.bonus_collected.connect(_on_bonus_collected)
+
+func _on_bonus_collected(type: int, bonus_name: String) -> void:
+	match type:
+		0:  # HOLY_WATER — невразливість 5с
+			if _player and _player.has_method("apply_invincibility"):
+				_player.apply_invincibility(5.0)
+			if GameManager:
+				GameManager.activate_bonus("holy_water", "💧", 5.0)
+		1:  # PRAYER_STONE — заморожує ворогів 8с
+			for enemy in get_tree().get_nodes_in_group("enemy"):
+				if enemy.has_method("stun"):
+					enemy.stun(8.0)
+			if GameManager:
+				GameManager.activate_bonus("prayer_stone", "🪨", 8.0)
+		2:  # ANGEL_FEATHER — тимчасовий подвійний стрибок 30с
+			if _player and _player.has_method("apply_temp_double_jump"):
+				_player.apply_temp_double_jump(30.0)
+			if GameManager:
+				GameManager.activate_bonus("angel_feather", "🪶", 30.0)
+		3:  # MANNA — відновлює 1 серце
+			if _player and _player.has_method("heal"):
+				_player.heal(1)
+			elif _player:
+				_player.current_hp = mini(_player.current_hp + 1, _player.max_hp)
+				_player.hp_changed.emit(_player.current_hp, _player.max_hp)
+		4:  # TORCH — майбутній ефект освітлення
+			if GameManager:
+				GameManager.activate_bonus("torch", "🔦", 30.0)
+	if TutorialManager and TutorialManager.has_method("show_hint"):
+		TutorialManager.show_hint("bonus_" + bonus_name.to_lower())
 
 func _on_soul_delivered(_soul_id: String) -> void:
 	# Souls are counted on pickup in this design; delivery is visual only.
