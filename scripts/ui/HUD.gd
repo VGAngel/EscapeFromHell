@@ -26,6 +26,7 @@ var _root:         Control          = null
 var _hearts:       HBoxContainer    = null
 var _level_label:  Label            = null
 var _souls_total:  Label            = null
+var _timer_label:  Label            = null
 
 # Bottom row
 var _ability_row:  HBoxContainer    = null
@@ -48,6 +49,8 @@ var _souls_found:  int   = 0
 var _souls_total_int: int = 0
 var _level_info_timer: float = 0.0
 var _sin_pulse_timer:  float = 0.0
+var _play_time:        float = 0.0
+var _timer_running:    bool  = false
 var _escape_duration:  float = 0.0
 var _escape_elapsed:   float = 0.0
 var _escape_active:    bool  = false
@@ -81,6 +84,12 @@ func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
 	_level_label.text = "Коло %d • Рівень %d" % [circle, level]
 	_level_label.modulate.a = 1.0
 	_level_info_timer = LEVEL_INFO_TIME
+
+	_play_time = 0.0
+	_timer_running = true
+	if _timer_label:
+		_timer_label.text = "00:00"
+		_timer_label.modulate.a = 0.0
 
 	_refresh_ability_slots()
 
@@ -136,15 +145,30 @@ func stop_escape_timer() -> void:
 	_escape_bg.visible  = false
 	_escape_bar.visible = false
 
+func stop_play_timer() -> void:
+	_timer_running = false
+
+func get_play_time() -> float:
+	return _play_time
+
 # ── Process ───────────────────────────────────────────────────────────────────
 
 func _process(delta: float) -> void:
-	# Level info fade out
+	# Level info fade out, then fade in play timer
 	if _level_info_timer > 0.0:
 		_level_info_timer -= delta
 		if _level_info_timer <= 0.0:
 			var tw := create_tween()
 			tw.tween_property(_level_label, "modulate:a", 0.0, 0.5)
+			if _timer_label:
+				tw.parallel().tween_property(_timer_label, "modulate:a", 1.0, 0.5)
+
+	# Play timer (level stopwatch)
+	if _timer_running:
+		_play_time += delta
+		if _timer_label:
+			var total_s: int = int(_play_time)
+			_timer_label.text = "%02d:%02d" % [total_s / 60, total_s % 60]
 
 	# Sin pulse at >= 85%
 	if _sin >= 85.0:
@@ -381,6 +405,18 @@ func _build_top_row() -> void:
 	_souls_total.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_souls_total.add_theme_font_size_override("font_size", 14)
 	top.add_child(_souls_total)
+
+	# Play timer (centered under level label, fades in after level info fades out)
+	_timer_label = Label.new()
+	_timer_label.text = "00:00"
+	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_timer_label.add_theme_font_size_override("font_size", 14)
+	_timer_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75, 0.85))
+	_timer_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_timer_label.position = Vector2(0, 46)
+	_timer_label.size = Vector2(720, 20)
+	_timer_label.modulate.a = 0.0
+	_root.add_child(_timer_label)
 
 func _build_bottom_row() -> void:
 	var bottom_y: float = 1280 - AD_BANNER_H - 6 - 36 - 8  # above sin bar + ad banner

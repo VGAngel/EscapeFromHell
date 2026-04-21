@@ -232,6 +232,9 @@ func complete_level() -> void:
 	var sin_delta: float = sin_now - _sin_at_level_start
 	var light_earned: int = _calc_light(_souls_found_this_level, _souls_total_this_level, _deaths_this_level)
 
+	if _hud and _hud.has_method("stop_play_timer"):
+		_hud.stop_play_timer()
+
 	if SaveManager:
 		SaveManager.add_light(light_earned)
 		SaveManager.set_current_level(current_level_id + 1)

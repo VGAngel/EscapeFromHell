@@ -79,11 +79,11 @@
 
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
-| 1.4.1 | HP-серця (3 серця → 6 з апгрейдом) | `scripts/HUD.gd` | ⬜ |
-| 1.4.2 | Sin-bar (0–100%, кольори за порогами) | `scripts/HUD.gd` | ⬜ |
-| 1.4.3 | Лічильник душ `found/total` | `scripts/HUD.gd` | ⬜ |
-| 1.4.4 | Таймер рівня | `scripts/HUD.gd` | ⬜ |
-| 1.4.5 | Сцена HUD з усіма нодами | `scenes/HUD.tscn` | ⬜ |
+| 1.4.1 | HP-серця (3 серця → 6 з апгрейдом) | `scripts/ui/HUD.gd` | ✅ |
+| 1.4.2 | Sin-bar (0–100%, кольори за порогами) | `scripts/ui/HUD.gd` | ✅ |
+| 1.4.3 | Лічильник душ `found/total` | `scripts/ui/HUD.gd` | ✅ |
+| 1.4.4 | Таймер рівня (MM:SS stopwatch) | `scripts/ui/HUD.gd` | ✅ |
+| 1.4.5 | Сцена HUD з усіма нодами | `scenes/ui/HUD.tscn` | ✅ |
 
 ### 1.5 GameManager — рівневий цикл
 

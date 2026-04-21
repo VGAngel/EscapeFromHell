@@ -1,7 +1,7 @@
-[gd_scene format=3 uid="uid://level1tscn01"]
+[gd_scene load_steps=4 format=3 uid="uid://level1tscn01"]
 
 [ext_resource type="Script" path="res://scripts/levels/LevelBase.gd" id="1_levelbase"]
-[ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="2_hud"]
+[ext_resource type="PackedScene" uid="uid://hud1tscn0001" path="res://scenes/ui/HUD.tscn" id="2_hud"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_exit"]
 size = Vector2(80.0, 160.0)
@@ -9,9 +9,7 @@ size = Vector2(80.0, 160.0)
 [node name="Level" type="Node2D"]
 script = ExtResource("1_levelbase")
 
-[node name="HUD" type="CanvasLayer" parent="."]
-layer = 1
-script = ExtResource("2_hud")
+[node name="HUD" parent="." instance=ExtResource("2_hud")]
 
 [node name="RoomContainer" type="Node2D" parent="."]
 
