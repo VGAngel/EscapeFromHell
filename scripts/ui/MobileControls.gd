@@ -68,17 +68,17 @@ func show_pray_button(value: bool) -> void:
 		btn_pray.visible = value
 
 # ── Factory ───────────────────────────────────────────────────────────────────
-func _make_btn(label: String, action: String, size: Vector2) -> Button:
+func _make_btn(label: String, action: String, btn_size: Vector2) -> Button:
 	var btn := Button.new()
 	btn.text = label
-	btn.custom_minimum_size = size
-	btn.size = size
+	btn.custom_minimum_size = btn_size
+	btn.size = btn_size
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.add_theme_font_size_override("font_size", int(size.y * 0.38))
+	btn.add_theme_font_size_override("font_size", int(btn_size.y * 0.38))
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.1, 0.1, 0.1, BTN_ALPHA)
-	var r := int(size.x * 0.5)
+	var r := int(btn_size.x * 0.5)
 	style.corner_radius_top_left     = r
 	style.corner_radius_top_right    = r
 	style.corner_radius_bottom_left  = r
