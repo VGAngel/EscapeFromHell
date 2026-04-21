@@ -42,6 +42,9 @@ var _sin_bar_bg:   ColorRect        = null
 var _escape_bar:   ColorRect        = null
 var _escape_bg:    ColorRect        = null
 
+# Pause button (on-screen companion to the Esc key binding)
+var _pause_btn:    Button           = null
+
 # ── Runtime state ─────────────────────────────────────────────────────────────
 var _hp:           int   = 3
 var _max_hp:       int   = 3
@@ -367,6 +370,7 @@ func _build_ui() -> void:
 	_build_top_row()
 	_build_bottom_row()
 	_build_sin_bar()
+	_build_pause_button()
 
 func _build_escape_bar() -> void:
 	_escape_bg = ColorRect.new()
@@ -389,7 +393,8 @@ func _build_top_row() -> void:
 	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	top.add_theme_constant_override("separation", 0)
 	top.offset_left   =  8.0
-	top.offset_right  = -8.0
+	# Leave room on the right edge for the pause button built separately.
+	top.offset_right  = -56.0
 	top.offset_top    = 12.0
 	top.offset_bottom = 44.0
 	_root.add_child(top)
@@ -474,6 +479,23 @@ func _build_bottom_row() -> void:
 	_souls_level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_souls_level.add_theme_font_size_override("font_size", 14)
 	bottom.add_child(_souls_level)
+
+func _build_pause_button() -> void:
+	_pause_btn = Button.new()
+	_pause_btn.name = "PauseButton"
+	_pause_btn.text = "⏸"
+	_pause_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_pause_btn.offset_left   = -52.0
+	_pause_btn.offset_right  = -8.0
+	_pause_btn.offset_top    = 8.0
+	_pause_btn.offset_bottom = 52.0
+	_pause_btn.add_theme_font_size_override("font_size", 22)
+	_pause_btn.focus_mode = Control.FOCUS_NONE
+	_pause_btn.pressed.connect(_on_pause_btn_pressed)
+	_root.add_child(_pause_btn)
+
+func _on_pause_btn_pressed() -> void:
+	pause_requested.emit()
 
 func _build_sin_bar() -> void:
 	var bar_y: float = 1280 - AD_BANNER_H - 6
