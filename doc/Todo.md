@@ -147,9 +147,9 @@
 | 3.6 | Вороги circle_3: FlameImp, FireHound | `scenes/enemies/` | ✅ |
 | 3.7 | Вороги circle_4: SwampCrawler, BogPhantom | `scenes/enemies/` | ✅ |
 | 3.8 | Вороги circle_5: RageShade, FrostKnight | `scenes/enemies/` | ✅ |
-| 3.9 | Середовищні ефекти: вітер (circle_2) | `scripts/environments/WindZone.gd` | ⬜ |
-| 3.10 | Середовищні ефекти: лава, вогняні джети (circle_3) | `scripts/environments/LavaZone.gd` | ⬜ |
-| 3.11 | Середовищні ефекти: болото, отрута (circle_4) | `scripts/environments/SwampZone.gd` | ⬜ |
+| 3.9 | Середовищні ефекти: вітер (circle_2) | `scripts/environments/WindZone.gd` | ✅ |
+| 3.10 | Середовищні ефекти: лава (circle_3) | `scripts/environments/LavaZone.gd` | ✅ |
+| 3.11 | Середовищні ефекти: болото, отрута (circle_4) | `scripts/environments/SwampZone.gd` | ✅ |
 | 3.12 | Боси 20, 30, 50 | `scripts/enemies/Boss*.gd` | ⬜ |
 | 3.13 | Платформи circle_2–5 (moving, bounce, mud, ash) | `scripts/platforms/` | ⬜ |
 | 3.14 | Void / Labyrinth / Escape рівні (branch) — circle_1 | `scenes/rooms/circle_1_branch/` | ⬜ |

@@ -51,6 +51,7 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		_build_walls()
 		_spawn_enemies()
+		_spawn_environment_hazard()
 
 	queue_redraw()
 
@@ -148,6 +149,58 @@ const ONE_WAY_SCRIPT   := preload("res://scripts/platforms/OneWayPlatform.gd")
 const CRUMBLING_SCRIPT := preload("res://scripts/platforms/CrumblingPlatform.gd")
 const BOUNCE_SCRIPT    := preload("res://scripts/platforms/BouncePlatform.gd")
 const MOVING_SCRIPT    := preload("res://scripts/platforms/MovingPlatform.gd")
+
+const WIND_ZONE_SCRIPT  := preload("res://scripts/environments/WindZone.gd")
+const LAVA_ZONE_SCRIPT  := preload("res://scripts/environments/LavaZone.gd")
+const SWAMP_ZONE_SCRIPT := preload("res://scripts/environments/SwampZone.gd")
+
+# ── Environment hazards per circle ────────────────────────────────────────────
+
+func _spawn_environment_hazard() -> void:
+	if room_type != "main":
+		return
+	# Only half the main rooms get a hazard — keeps the challenge varied.
+	if room_index % 2 != 0:
+		return
+	match circle:
+		2:
+			_add_wind_zone()
+		3:
+			_add_lava_zone()
+		4:
+			_add_swamp_zone()
+		_:
+			pass
+
+func _add_wind_zone() -> void:
+	var zone := Area2D.new()
+	zone.set_script(WIND_ZONE_SCRIPT)
+	zone.position = Vector2(room_width * 0.5, room_height * 0.45)
+	zone.set("zone_size", Vector2(room_width - WALL_T * 2.0, 160.0))
+	# Alternate direction across rooms so the player has to read each one.
+	var dir := Vector2.RIGHT if (room_index / 2) % 2 == 0 else Vector2.LEFT
+	zone.set("wind_direction", dir)
+	zone.set("wind_force", 280.0)
+	add_child(zone)
+
+func _add_lava_zone() -> void:
+	var zone := Area2D.new()
+	zone.set_script(LAVA_ZONE_SCRIPT)
+	# Floor-hugging lava strip in the middle of the room, leaving walkable
+	# shoulders on both sides.
+	var lava_width: float = room_width * 0.4
+	zone.position = Vector2(room_width * 0.5, room_height - WALL_T - 12.0)
+	zone.set("zone_size", Vector2(lava_width, 24.0))
+	add_child(zone)
+
+func _add_swamp_zone() -> void:
+	var zone := Area2D.new()
+	zone.set_script(SWAMP_ZONE_SCRIPT)
+	# Swamp covers most of the floor except the edges where the player spawns.
+	var swamp_width: float = room_width - WALL_T * 2.0 - 120.0
+	zone.position = Vector2(room_width * 0.5, room_height - WALL_T - 24.0)
+	zone.set("zone_size", Vector2(swamp_width, 48.0))
+	add_child(zone)
 
 func _add_main_platforms() -> void:
 	# Five distinct layouts keyed by room_index % 5 so even large pools vary.
