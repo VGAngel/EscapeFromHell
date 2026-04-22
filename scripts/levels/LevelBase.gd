@@ -264,7 +264,7 @@ func _discover_souls() -> void:
 	_souls_required = mini(_souls_in_level.size(), maxi(cfg_count, 1))
 	_assign_soul_types()
 
-func _spawn_soul_node(gen: Object) -> void:
+func _spawn_soul_node(_gen: Object) -> void:
 	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
 	if not soul_scene:
 		_report_warn("LevelBase: Soul.tscn not found — no soul spawned")

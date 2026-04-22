@@ -613,5 +613,5 @@ func test_generate_extreme_zone_uses_moving_vertical() -> void:
 func test_generate_vertical_spacing_increases_with_difficulty() -> void:
 	var easy = lg.generate(2)
 	var hard = lg.generate(7)
-	assert_le(easy.vertical_spacing, hard.vertical_spacing,
+	assert_true(easy.vertical_spacing <= hard.vertical_spacing,
 		"harder zones should have equal or larger vertical spacing")
