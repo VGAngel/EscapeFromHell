@@ -643,10 +643,9 @@ func test_level1_and_level2_have_different_room_counts() -> void:
 
 func test_zone_tier_adjacent_levels_differ_in_circle1() -> void:
 	# Most adjacent pairs must differ in zone OR room_count.
-	# Pairs (2,3), (6,7), (8,9) are intentionally identical by design:
-	# they share the same zone band AND the room_count formula produces the same
-	# value, so per-level uniqueness comes from seeded RNG in PlaceholderRoom.
-	var known_same: Array = [2, 6, 8]
+	# Pairs (5,6), (6,7), (8,9) share both zone and room_count (all capped at 6)
+	# by design — uniqueness within these levels comes from seeded RNG in PlaceholderRoom.
+	var known_same: Array = [5, 6, 8]
 	for idx in range(1, 9):
 		if idx in known_same:
 			continue
