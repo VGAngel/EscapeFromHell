@@ -11,11 +11,17 @@ signal hp_changed(current: int, maximum: int)
 # ── State ─────────────────────────────────────────────────────────────────────
 enum State { IDLE, WALK, JUMP, FALL, STAFF_SWING, PICKUP, CARRYING, DEAD }
 
+# ── Dimensions ────────────────────────────────────────────────────────────────
+# Must match CollisionShape2D in Player.tscn. Used by LevelGenerator for
+# spacing rules and by systems that need to know the character's footprint.
+const PLAYER_WIDTH:  float = 80.0
+const PLAYER_HEIGHT: float = 100.0
+
 var state: State = State.IDLE
 
 # ── Stats (base values, modified by upgrades at runtime) ──────────────────────
 var walk_speed:       float = 180.0
-var jump_force:       float = 540.0
+var jump_force:       float = 600.0
 var min_jump_force:   float = 240.0
 var gravity:          float = 900.0
 var max_fall_speed:   float = 600.0

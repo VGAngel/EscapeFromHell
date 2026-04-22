@@ -3,12 +3,15 @@ extends StaticBody2D
 
 ## Базова платформа. Автоматично створює CollisonShape2D і PlaceholderVisual.
 
+## Standard platform height used by all generated rooms.
+const PLATFORM_HEIGHT: float = 30.0
+
 @export var platform_type: String = "stone" :
 	set(v):
 		platform_type = v
 		_rebuild()
 
-@export var size: Vector2 = Vector2(96, 16) :
+@export var size: Vector2 = Vector2(96, PLATFORM_HEIGHT) :
 	set(v):
 		size = v
 		_rebuild()

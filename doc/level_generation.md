@@ -138,9 +138,43 @@ get_parent_id(level_id)     — публічна обгортка
 ```
 
 **GeneratedLevel — поля результату:**
-`level_id`, `circle`, `is_static`, `is_branch`, `parent_id`, `room_scenes`, `soul_id`, `soul_data`, `enemy_count_mod`, `trap_density`, `room_count`, `circle_style`
+`level_id`, `circle`, `is_static`, `is_branch`, `parent_id`, `room_scenes`, `soul_id`, `soul_data`, `enemy_count_mod`, `trap_density`, `room_count`, `circle_style`, `difficulty_zone`, `vertical_spacing`, `platform_type_hint`, `platform_width`
+
+| Нове поле | Тип | Опис |
+|-----------|-----|------|
+| `difficulty_zone` | `String` | Тир зони: `"easy"` / `"medium"` / `"hard"` / `"extreme"` |
+| `vertical_spacing` | `float` | Відстань між рядами платформ (px) |
+| `platform_type_hint` | `String` | Тип платформи для zone-special рядів |
+| `platform_width` | `float` | Ширина zone-special платформи (px) |
 
 **Сцени кімнат:** `res://scenes/rooms/circle_{N}/room_{type}_{index}.tscn`
+
+---
+
+## Difficulty Zones (зони складності)
+
+Кожен рівень отримує тир складності через `LevelGenerator.get_zone(level_id)`.
+
+| Тир | Відстань | Тип платформи | Ширина |
+|-----|----------|---------------|--------|
+| `easy` | 100 px | `stone` | 220 px |
+| `medium` | 150 px | `stone` | 110 px |
+| `hard` | 200 px | `moving_horizontal` | 110 px |
+| `extreme` | 200 px | `moving_vertical` | 110 px |
+
+**Прогресія** (позиція в колі 0–9):
+
+| Позиції | Базовий тир |
+|---------|-------------|
+| 0–2 | `easy` |
+| 3–5 | `medium` |
+| 6–8 | `hard` |
+| 9 | `extreme` |
+
+Кола 4–7: +1 тир. Кола 8–10: +2 тири.
+
+**Валідація шляху:** `LevelGenerator.missing_bridge_ys()` — BFS перевіряє чи досяжний кожен ряд знизу вгору. Якщо проміжок > MAX\_JUMP\_HEIGHT (200 px) — вставляється bridge-платформа.  
+`moving_vertical` враховує подорож ±80 px → ефективна висота досягнення 280 px.
 
 ---
 

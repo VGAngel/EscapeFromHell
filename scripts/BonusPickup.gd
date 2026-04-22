@@ -1,5 +1,7 @@
 extends Area2D
 
+const SIZE: float = 40.0   # diameter px; collision radius = SIZE / 2 in BonusPickup.tscn
+
 enum BonusType {
 	HOLY_WATER,    # 0 — невразливість 5с
 	PRAYER_STONE,  # 1 — заморожує ворогів 8с
@@ -38,12 +40,18 @@ const ICONS: Array[String] = ["💧", "🪨", "🪶", "✨", "🔦"]
 signal bonus_collected(type: int, bonus_name: String)
 
 func _ready() -> void:
+	_apply_size()
 	_update_sprite()
 	if Engine.is_editor_hint():
 		return
 	add_to_group("bonus")
 	_label.text = NAMES[bonus_type]
 	body_entered.connect(_on_body_entered)
+
+func _apply_size() -> void:
+	var col := $CollisionShape2D
+	if col and col.shape is CircleShape2D:
+		(col.shape as CircleShape2D).radius = SIZE / 2.0
 
 func _update_sprite() -> void:
 	var path: String = TEXTURES[bonus_type]

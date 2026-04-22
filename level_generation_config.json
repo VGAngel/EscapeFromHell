@@ -163,6 +163,32 @@
     "level_10":    { "note": "Boss — статичний, не генерується" }
   },
 
+  "difficulty_zones": {
+    "note": "Розподіл складності по вертикалі та типи платформ. Читається LevelGenerator'ом: LevelGenerator.get_zone(level_id) повертає {tier, spacing, platform_type, platform_width}. Значення в коді (scripts/levels/LevelGenerator.gd) є джерелом правди; цей блок документує їх і дозволяє перевизначити тир для кола через override.",
+    "jump_physics": {
+      "max_jump_height_px": 200,
+      "note": "h = jump_force² / (2×gravity) = 600² / (2×900) = 200 px. Змінити MAX_JUMP_HEIGHT в LevelGenerator.gd при тюнінгу фізики.",
+      "part_jump": 100,
+      "step_jump": 50
+    },
+    "tiers": {
+      "easy":    { "spacing_px": 100, "formula": "part_jump",               "platform_type": "stone",             "platform_width": 220, "note": "Статичні, широкі" },
+      "medium":  { "spacing_px": 150, "formula": "part_jump + step_jump",   "platform_type": "stone",             "platform_width": 110, "note": "Статичні, вузькі" },
+      "hard":    { "spacing_px": 200, "formula": "part_jump + step_jump*2", "platform_type": "moving_horizontal", "platform_width": 110, "note": "Рухомі горизонтально — межа стрибка" },
+      "extreme": { "spacing_px": 200, "formula": "max_jump",                "platform_type": "moving_vertical",   "platform_width": 110, "note": "Рухомі вертикально — складність через рух, не висоту" }
+    },
+    "player_dimensions":    { "width": 80, "height": 100 },
+    "platform_height":      30,
+    "progression": {
+      "note": "Базовий тир обирається за індексом всередині кола (1-2=easy, 3-5=medium, 6-8=hard, 9=extreme). Круги 4-7 підіймають тир на 1, круги 8-10 — на 2.",
+      "base_by_index": { "1-2": "easy", "3-5": "medium", "6-8": "hard", "9": "extreme" },
+      "circle_bump":   { "1-3": 0, "4-7": 1, "8-10": 2 }
+    },
+    "override": {
+      "note": "Необов'язково. Ключ — номер кола як рядок ('1'...'10'); значення — 'easy'|'medium'|'hard'|'extreme'. Змушує всі рівні в цьому колі використовувати заданий тир, ігноруючи progression."
+    }
+  },
+
   "level_type_distribution": {
     "note": "Типи рівнів з levels_config.json розподіляються по слотах всередині кола",
     "pattern_per_circle": ["platformer", "platformer", "vertical", "platformer", "labyrinth", "platformer", "void", "platformer", "escape", "boss"],

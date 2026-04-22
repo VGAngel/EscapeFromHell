@@ -99,8 +99,8 @@ func _spawn_inside_any_room(pos: Vector2) -> bool:
 		if not child is Node2D:
 			continue
 		var room_node: Node2D = child
-		var w: float = float(room_node.get_meta("room_width", 720.0))
-		var h: float = float(room_node.get_meta("room_height", 540.0))
+		var w: float = float(room_node.get_meta("room_width", 1080.0))
+		var h: float = float(room_node.get_meta("room_height", 900.0))
 		var top_left:     Vector2 = room_node.global_position
 		var bottom_right: Vector2 = top_left + Vector2(w, h)
 		if pos.x >= top_left.x and pos.x <= bottom_right.x \
@@ -139,6 +139,11 @@ func _init_procedural_level(force_procedural: bool = false) -> void:
 		_build_vertical_rooms(gen.room_scenes)
 	else:
 		_build_horizontal_rooms(gen.room_scenes)
+
+	var dbg: Node = get_node_or_null("/root/DebugOverlay")
+	if dbg and dbg.has_method("show_zone"):
+		dbg.show_zone(level_id, gen.difficulty_zone, gen.vertical_spacing,
+			gen.platform_type_hint, gen.platform_width)
 
 	_spawn_soul_node(gen)
 	_discover_souls()
@@ -207,28 +212,47 @@ func _load_room(scene_path: String) -> Node2D:
 func _room_width(room: Node2D) -> float:
 	if room.has_meta("room_width"):
 		return float(room.get_meta("room_width"))
-	return 720.0  # default viewport width
+	return 1080.0
 
 func _room_height(room: Node2D) -> float:
 	if room.has_meta("room_height"):
 		return float(room.get_meta("room_height"))
-	return 540.0  # default viewport height
+	return 900.0
 
 # ── Spawn / exit placement ────────────────────────────────────────────────────
 
 func _reposition_spawn_and_exit_h(total_width: float) -> void:
+	var sa_top: int = SafeArea.top_reserved if SafeArea else 0
+	var rooms: Array = _room_container.get_children()
+	var rh: float = _room_height(rooms[0]) if not rooms.is_empty() else 900.0
+
 	if _spawn_point.position == Vector2.ZERO:
-		_spawn_point.position = Vector2(80.0, -64.0)
+		# Spawn near the left edge, at the floor level minus player height + buffer.
+		var spawn_y: float = rh - 32.0 - 100.0 - float(sa_top) - 20.0
+		_spawn_point.position = Vector2(80.0, spawn_y)
+
 	_exit_area.position = Vector2(total_width - 80.0, _spawn_point.position.y)
 
 func _reposition_spawn_and_exit_v(total_height: float) -> void:
-	# Entrance room is at the top → spawn on the safe shelf the entrance
-	# room builds at ROW_HIGH (y≈230). Dropping the player ~97 px above
-	# that shelf gives a short, visible landing and stays well under the
-	# fall-damage threshold.
-	_spawn_point.position = Vector2(360.0, 80.0)
-	# Exit / altar sits at the bottom of the exit room (last in the stack).
-	_exit_area.position   = Vector2(360.0, total_height - 80.0)
+	# Safe area insets — push spawn/exit away from notch and home bar.
+	var sa_top:    int = SafeArea.top_reserved    if SafeArea else 0
+	var sa_bottom: int = SafeArea.bottom_reserved if SafeArea else 0
+
+	# Room width from the first child (entrance room); fall back to viewport width.
+	var rooms: Array = _room_container.get_children()
+	var rw: float = _room_width(rooms[0]) if not rooms.is_empty() else 1080.0
+
+	# Spawn: centre X, just below the ceiling safe area so the player drops
+	# onto the entrance room's top platform (ceiling + WALL_T + buffer).
+	var spawn_x: float = rw * 0.5
+	var spawn_y: float = float(sa_top) + 32.0 + 60.0   # WALL_T=32 + drop buffer
+
+	# Exit: centre X, just above the floor safe area of the last room.
+	var exit_x: float = rw * 0.5
+	var exit_y: float = total_height - float(sa_bottom) - 32.0 - 60.0
+
+	_spawn_point.position = Vector2(spawn_x, spawn_y)
+	_exit_area.position   = Vector2(exit_x,  exit_y)
 
 # ── Soul discovery ────────────────────────────────────────────────────────────
 
@@ -255,12 +279,14 @@ func _spawn_soul_node(gen: Object) -> void:
 		var total_h: float = 0.0
 		for r: Node in rooms:
 			total_h += _room_height(r)
-		soul.position = Vector2(360.0, total_h * 0.65)
+		var cx: float = _room_width(rooms[0]) * 0.5 if not rooms.is_empty() else 540.0
+		soul.position = Vector2(cx, total_h * 0.65)
 	else:
 		var total_w: float = 0.0
 		for r: Node in rooms:
 			total_w += _room_width(r)
-		soul.position = Vector2(total_w * 0.5, 300.0)
+		var rh: float = _room_height(rooms[0]) if not rooms.is_empty() else 900.0
+		soul.position = Vector2(total_w * 0.5, rh * 0.35)
 
 	# Apply soul type from level config before _discover_souls() runs.
 	var types: Array = LevelConfig.get_soul_types(level_id) if LevelConfig else []
