@@ -227,7 +227,7 @@ func test_reposition_h_preserves_custom_spawn_position() -> void:
 
 func test_reposition_v_spawn_placed_near_top() -> void:
 	var lb: Node = _make_safe_lb()
-	lb._reposition_spawn_and_exit_v(1620.0)  # 3 rooms × 540 (legacy comment; total_h is the arg)
+	lb._reposition_spawn_and_exit_v(1620.0)
 	# spawn_y = sa_top(0) + WALL_T(32) + drop_buffer(60) = 92
 	assert_almost_eq(lb._spawn_point.position.y, 92.0, 0.001)
 
