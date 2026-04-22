@@ -341,8 +341,9 @@ func _open_sheet() -> void:
 	_sheet_tween = create_tween()
 	var sa: Node = get_node_or_null("/root/SafeArea")
 	var banner: float = float(sa.bottom_reserved) if sa else 60.0
+	var vp_h: float = get_viewport().get_visible_rect().size.y
 	_sheet_tween.tween_property(_sheet, "position:y",
-		1280.0 - _sheet.size.y - banner, 0.22).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUART)
+		vp_h - _sheet.size.y - banner, 0.22).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUART)
 
 func _close_sheet() -> void:
 	if not _sheet_open:
@@ -351,14 +352,16 @@ func _close_sheet() -> void:
 	if _sheet_tween:
 		_sheet_tween.kill()
 	_sheet_tween = create_tween()
-	_sheet_tween.tween_property(_sheet, "position:y", 1280.0, 0.18)
+	var vp_h: float = get_viewport().get_visible_rect().size.y
+	_sheet_tween.tween_property(_sheet, "position:y", vp_h + 100.0, 0.18)
 	_sheet_tween.tween_callback(func() -> void: _sheet.visible = false)
 
 func _close_sheet_instant() -> void:
 	_sheet_open = false
 	if not _sheet:
 		return
-	_sheet.position.y = 1280.0
+	var vp_h: float = get_viewport().get_visible_rect().size.y
+	_sheet.position.y = vp_h + 100.0
 	_sheet.visible = false
 
 # ── Filter callbacks ──────────────────────────────────────────────────────────
@@ -548,7 +551,7 @@ func _build_grid_area(parent: VBoxContainer) -> void:
 func _build_sheet() -> void:
 	# Slides up from bottom on cell tap
 	_sheet = PanelContainer.new()
-	_sheet.custom_minimum_size = Vector2(720, 0)
+	_sheet.custom_minimum_size = Vector2(0, 0)
 	_sheet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var style := StyleBoxFlat.new()
@@ -563,9 +566,8 @@ func _build_sheet() -> void:
 	style.content_margin_bottom = 20.0
 	_sheet.add_theme_stylebox_override("panel", style)
 
-	# Absolutely positioned — starts off-screen below
+	# Absolutely positioned — starts off-screen below (position set in _ready after layout settles)
 	_sheet.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	_sheet.position.y = 1280.0
 	_root.add_child(_sheet)
 
 	var vbox := VBoxContainer.new()
