@@ -29,15 +29,17 @@ class WiredLevel extends LevelBaseScript:
 			_hud.pause_requested.connect(_pause_screen.toggle)
 
 
-# Build a SafeLevel with the four stub children @onready expects,
+# Build a SafeLevel with all stub children @onready expects,
 # then add it to the scene.  Returns the node (already in tree).
 func _make_safe_lb() -> Node:
 	var lb: Node = SafeLevel.new()
-	var hud := Node.new();    hud.name = "HUD"
-	var rc  := Node2D.new();  rc.name  = "RoomContainer"
-	var sp  := Marker2D.new(); sp.name = "SpawnPoint"
-	var ex  := Area2D.new();  ex.name  = "Exit"
+	var hud := Node.new();     hud.name = "HUD"
+	var ps  := Node.new();     ps.name  = "PauseScreen"
+	var rc  := Node2D.new();   rc.name  = "RoomContainer"
+	var sp  := Marker2D.new(); sp.name  = "SpawnPoint"
+	var ex  := Area2D.new();   ex.name  = "Exit"
 	lb.add_child(hud)
+	lb.add_child(ps)
 	lb.add_child(rc)
 	lb.add_child(sp)
 	lb.add_child(ex)
@@ -147,7 +149,8 @@ func test_discover_souls_counts_nodes_in_group() -> void:
 	add_child_autofree(s2)
 
 	lb._discover_souls()
-	assert_eq(lb._souls_required, 2)
+	# _souls_in_level collects all soul nodes; _souls_required is capped by LevelConfig.
+	assert_eq(lb._souls_in_level.size(), 2)
 
 func test_discover_souls_empty_when_none_in_group() -> void:
 	var lb: Node = _make_safe_lb()
@@ -237,8 +240,10 @@ func test_reposition_v_spawn_x_is_centered() -> void:
 func test_reposition_v_exit_placed_near_bottom() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)
-	# exit_y = 1620 - sa_bottom(0) - WALL_T(32) - drop_buffer(60) = 1528
-	assert_almost_eq(lb._exit_area.position.y, 1528.0, 0.001)
+	# exit_y = 1620 - sa_bottom - WALL_T(32) - drop_buffer(60)
+	var sa_bottom: int = SafeArea.bottom_reserved if SafeArea else 0
+	var expected_y: float = 1620.0 - float(sa_bottom) - 32.0 - 60.0
+	assert_almost_eq(lb._exit_area.position.y, expected_y, 0.001)
 
 func test_reposition_v_exit_x_is_centered() -> void:
 	var lb: Node = _make_safe_lb()
