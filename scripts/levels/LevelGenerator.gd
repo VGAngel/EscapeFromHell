@@ -333,7 +333,7 @@ func _difficulty_for_index(idx_in_circle: int) -> Dictionary:
 ## Helper: compute v_range from MovingPlatform parameters.
 ## type:     platform type string ("moving_vertical", "moving_horizontal", etc.)
 ## distance: signed offset used by MovingPlatform (negative = upward for vertical)
-static func platform_v_range(type: String, distance: float) -> float:
+func platform_v_range(type: String, distance: float) -> float:
 	if type == "moving_vertical":
 		return absf(minf(distance, 0.0))
 	return 0.0
