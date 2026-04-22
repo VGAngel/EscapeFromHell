@@ -79,7 +79,7 @@ func test_difficulty_index_4_is_medium() -> void:
 	var d: Dictionary = lg._difficulty_for_index(4)
 	assert_eq(d.get("trap_density"), "medium")
 	assert_eq(d.get("enemy_count_mod"), 0)
-	assert_eq(d.get("room_count"), 4)
+	assert_eq(d.get("room_count"), 5)
 
 func test_difficulty_index_6_is_medium() -> void:
 	var d: Dictionary = lg._difficulty_for_index(6)
@@ -89,7 +89,7 @@ func test_difficulty_index_7_is_high() -> void:
 	var d: Dictionary = lg._difficulty_for_index(7)
 	assert_eq(d.get("trap_density"), "high")
 	assert_eq(d.get("enemy_count_mod"), 1)
-	assert_eq(d.get("room_count"), 5)
+	assert_eq(d.get("room_count"), 6)
 
 func test_difficulty_index_9_is_high() -> void:
 	var d: Dictionary = lg._difficulty_for_index(9)
@@ -253,19 +253,19 @@ func test_circle_style_returns_empty_when_not_in_config() -> void:
 # ── generate — result fields ──────────────────────────────────────────────────
 
 func test_generate_room_count_for_early_level() -> void:
-	# level 2 → index 2 → low → room_count 3
+	# level 2 → index 2 → mini(3 + 2/2, 6) = 4
 	var r = lg.generate(2)
-	assert_eq(r.room_count, 3)
-
-func test_generate_room_count_for_mid_level() -> void:
-	# level 5 → index 5 → medium → room_count 4
-	var r = lg.generate(5)
 	assert_eq(r.room_count, 4)
 
-func test_generate_room_count_for_late_level() -> void:
-	# level 8 → index 8 → high → room_count 5
-	var r = lg.generate(8)
+func test_generate_room_count_for_mid_level() -> void:
+	# level 5 → index 5 → mini(3 + 5/2, 6) = 5
+	var r = lg.generate(5)
 	assert_eq(r.room_count, 5)
+
+func test_generate_room_count_for_late_level() -> void:
+	# level 8 → index 8 → mini(3 + 8/2, 6) = 6
+	var r = lg.generate(8)
+	assert_eq(r.room_count, 6)
 
 func test_generate_trap_density_low_for_early_level() -> void:
 	var r = lg.generate(1)
@@ -553,17 +553,20 @@ func test_missing_bridges_deduplicates_same_row() -> void:
 
 func test_zone_tier_circle1_early_index_is_easy() -> void:
 	assert_eq(lg._zone_tier(1, 1), "easy")
-	assert_eq(lg._zone_tier(1, 2), "easy")
+
+func test_zone_tier_circle1_idx2_is_medium() -> void:
+	assert_eq(lg._zone_tier(1, 2), "medium")
 
 func test_zone_tier_circle1_mid_index_is_medium() -> void:
 	assert_eq(lg._zone_tier(1, 3), "medium")
-	assert_eq(lg._zone_tier(1, 5), "medium")
+	assert_eq(lg._zone_tier(1, 4), "medium")
 
 func test_zone_tier_circle1_late_index_is_hard() -> void:
-	assert_eq(lg._zone_tier(1, 6), "hard")
-	assert_eq(lg._zone_tier(1, 8), "hard")
+	assert_eq(lg._zone_tier(1, 5), "hard")
+	assert_eq(lg._zone_tier(1, 7), "hard")
 
 func test_zone_tier_circle1_last_index_is_extreme() -> void:
+	assert_eq(lg._zone_tier(1, 8), "extreme")
 	assert_eq(lg._zone_tier(1, 9), "extreme")
 
 func test_zone_tier_circle4_bumps_one_tier() -> void:
@@ -583,19 +586,23 @@ func test_zone_tier_clamped_at_extreme() -> void:
 # ── generate — difficulty zone fields ─────────────────────────────────────────
 
 func test_generate_sets_difficulty_zone() -> void:
-	var r = lg.generate(2)   # circle 1, idx 2 → easy
+	var r = lg.generate(1)   # circle 1, idx 1 → easy
 	assert_eq(r.difficulty_zone, "easy")
 
+func test_generate_level2_zone_is_medium() -> void:
+	var r = lg.generate(2)   # circle 1, idx 2 → medium
+	assert_eq(r.difficulty_zone, "medium")
+
 func test_generate_vertical_spacing_matches_zone() -> void:
-	var r = lg.generate(2)   # easy → PART_JUMP = 100
+	var r = lg.generate(1)   # easy → PART_JUMP = 100
 	assert_almost_eq(r.vertical_spacing, lg.PART_JUMP, 0.1)
 
 func test_generate_platform_type_hint_easy_is_stone() -> void:
-	var r = lg.generate(2)
+	var r = lg.generate(1)
 	assert_eq(r.platform_type_hint, "stone")
 
 func test_generate_platform_width_easy_is_wide() -> void:
-	var r = lg.generate(2)
+	var r = lg.generate(1)   # easy zone → wide platforms (220 px)
 	assert_gt(r.platform_width, 150.0, "easy zone should use wide platforms (>150 px)")
 
 func test_generate_hard_zone_uses_moving_platform() -> void:
@@ -615,3 +622,54 @@ func test_generate_vertical_spacing_increases_with_difficulty() -> void:
 	var hard = lg.generate(7)
 	assert_true(easy.vertical_spacing <= hard.vertical_spacing,
 		"harder zones should have equal or larger vertical spacing")
+
+# ── Per-level uniqueness ──────────────────────────────────────────────────────
+
+func test_room_count_increases_across_circle() -> void:
+	# Every level must have at least as many rooms as the previous one.
+	var prev_count: int = 0
+	for idx in range(1, 10):
+		var d: Dictionary = lg._difficulty_for_index(idx)
+		var rc: int = d.get("room_count", 0)
+		assert_true(rc >= prev_count,
+			"room_count should be non-decreasing; idx=%d got %d (prev=%d)" % [idx, rc, prev_count])
+		prev_count = rc
+
+func test_level1_and_level2_have_different_room_counts() -> void:
+	var d1: Dictionary = lg._difficulty_for_index(1)
+	var d2: Dictionary = lg._difficulty_for_index(2)
+	assert_true(d1.get("room_count") < d2.get("room_count"),
+		"level 2 must be longer than level 1 (more rooms)")
+
+func test_zone_tier_adjacent_levels_differ_in_circle1() -> void:
+	# Every adjacent pair of levels in circle 1 must differ in zone OR room_count so
+	# no two consecutive levels feel identical.
+	for idx in range(1, 9):
+		var zone_a: String = lg._zone_tier(1, idx)
+		var zone_b: String = lg._zone_tier(1, idx + 1)
+		var rc_a: int = lg._difficulty_for_index(idx).get("room_count", 0)
+		var rc_b: int = lg._difficulty_for_index(idx + 1).get("room_count", 0)
+		var unique: bool = (zone_a != zone_b) or (rc_a != rc_b)
+		assert_true(unique,
+			"levels %d and %d must differ in zone or room_count" % [idx, idx + 1])
+
+func test_room_count_max_is_capped_at_6() -> void:
+	for idx in range(1, 10):
+		var d: Dictionary = lg._difficulty_for_index(idx)
+		assert_true(d.get("room_count") <= 6,
+			"room_count must not exceed 6 (idx=%d)" % idx)
+
+func test_difficulty_index_2_room_count() -> void:
+	var d: Dictionary = lg._difficulty_for_index(2)
+	assert_eq(d.get("room_count"), 4)
+
+func test_difficulty_index_6_room_count() -> void:
+	var d: Dictionary = lg._difficulty_for_index(6)
+	assert_eq(d.get("room_count"), 6)
+
+func test_generate_different_levels_have_different_room_counts() -> void:
+	var r1 = lg.generate(1)
+	var r2 = lg.generate(2)
+	var r5 = lg.generate(5)
+	assert_true(r1.room_count < r2.room_count, "level 2 has more rooms than level 1")
+	assert_true(r2.room_count < r5.room_count, "level 5 has more rooms than level 2")

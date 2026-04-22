@@ -292,12 +292,23 @@ func _soul_for_level(level_id: int, circle: int) -> Dictionary:
 
 func _difficulty_for_index(idx_in_circle: int) -> Dictionary:
 	var inj: Dictionary = _cfg.get("difficulty_injection", {})
+	var base: Dictionary
 	if idx_in_circle <= 3:
-		return inj.get("levels_1_3", {"enemy_count_mod": -1, "trap_density": "low",    "room_count": 3})
+		base = inj.get("levels_1_3", {"enemy_count_mod": -1, "trap_density": "low",    "room_count": 3})
 	elif idx_in_circle <= 6:
-		return inj.get("levels_4_6", {"enemy_count_mod":  0, "trap_density": "medium", "room_count": 4})
+		base = inj.get("levels_4_6", {"enemy_count_mod":  0, "trap_density": "medium", "room_count": 4})
 	else:
-		return inj.get("levels_7_9", {"enemy_count_mod": +1, "trap_density": "high",   "room_count": 5})
+		base = inj.get("levels_7_9", {"enemy_count_mod": +1, "trap_density": "high",   "room_count": 5})
+	# Per-level room count grows as the player advances within a circle:
+	# idx 1→3, 2→4, 3→4, 4→5, 5→5, 6→6, 7→6, 8→6, 9→6.
+	# This gives each level a distinct length even when zone tier matches a neighbour.
+	@warning_ignore("integer_division")
+	var room_count: int = mini(3 + idx_in_circle / 2, 6)
+	return {
+		"enemy_count_mod": base.get("enemy_count_mod", 0),
+		"trap_density":    base.get("trap_density",    "medium"),
+		"room_count":      room_count,
+	}
 
 # ── Platform path validation ─────────────────────────────────────────────────
 #
@@ -427,12 +438,14 @@ func _zone_for_level(circle: int, idx_in_circle: int) -> Dictionary:
 
 func _zone_tier(circle: int, idx_in_circle: int) -> String:
 	# Base tier from index within circle.
+	# Finer breakpoints so adjacent levels land in different zones:
+	#   idx=1 → easy; idx=2-4 → medium; idx=5-7 → hard; idx=8-9 → extreme.
 	var base: String
-	if idx_in_circle <= 2:
+	if idx_in_circle <= 1:
 		base = "easy"
-	elif idx_in_circle <= 5:
+	elif idx_in_circle <= 4:
 		base = "medium"
-	elif idx_in_circle <= 8:
+	elif idx_in_circle <= 7:
 		base = "hard"
 	else:
 		base = "extreme"
