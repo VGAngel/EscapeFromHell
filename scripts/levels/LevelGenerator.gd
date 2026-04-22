@@ -7,6 +7,45 @@ const CONFIG_PATH         := "res://level_generation_config.json"
 const SOULS_PATH          := "res://souls_collection.json"
 const ROOM_SCENE_PATTERN  := "res://scenes/rooms/circle_%d/room_%s_%d.tscn"
 
+# ── Player / platform physical constants ──────────────────────────────────────
+# Mirrors Player.tscn collision and BasePlatform.PLATFORM_HEIGHT.
+# Kept here so generation code can reason about spacing without loading scenes.
+const PLAYER_WIDTH:    float = 80.0
+const PLAYER_HEIGHT:   float = 100.0
+const PLATFORM_HEIGHT: float = 30.0
+
+# ── Difficulty zone rules ─────────────────────────────────────────────────────
+# Maximum reachable jump height in pixels.
+# Derived from Player.gd: jump_force=600, gravity=900 → h = 600²/(2×900) = 200 px.
+# Adjust this value when tuning jump_force — zones recalculate automatically.
+const MAX_JUMP_HEIGHT: float = 200.0
+
+# Half of max jump. Used as base spacing unit.
+const PART_JUMP: float = MAX_JUMP_HEIGHT / 2.0       # 100 px
+
+# Quarter of max jump. Used as spacing step between tiers.
+const STEP_JUMP: float = PART_JUMP / 2.0             # 50 px
+
+# Vertical gap between platforms per difficulty tier (in pixels).
+const VERTICAL_SPACING := {
+	"easy":    PART_JUMP,                             # 100 px
+	"medium":  PART_JUMP + STEP_JUMP,                 # 150 px
+	"hard":    PART_JUMP + STEP_JUMP * 2.0,           # 200 px — max single jump
+	"extreme": MAX_JUMP_HEIGHT,                       # 200 px — moving platforms force timing
+}
+
+# Platform type preferences per difficulty tier.
+# easy    → wide static shelves (forgiving footing)
+# medium  → narrow static shelves (precision)
+# hard    → horizontally moving platforms (timing)
+# extreme → vertically moving platforms (timing + altitude)
+const ZONE_PLATFORMS := {
+	"easy":    { "type": "stone",             "width": 220.0 },
+	"medium":  { "type": "stone",             "width": 110.0 },
+	"hard":    { "type": "moving_horizontal", "width": 110.0 },
+	"extreme": { "type": "moving_vertical",   "width": 110.0 },
+}
+
 # ── Public result type ────────────────────────────────────────────────────────
 
 class GeneratedLevel:
@@ -22,6 +61,15 @@ class GeneratedLevel:
 	var trap_density:  String     = "medium"
 	var room_count:    int        = 4
 	var circle_style:  String     = ""
+	# ── Difficulty zone ──────────────────────────────────────────────────────
+	# Tier: "easy" | "medium" | "hard" | "extreme".
+	var difficulty_zone:    String  = "easy"
+	# Max vertical gap between platforms for this level, in pixels.
+	var vertical_spacing:   float   = 280.0
+	# Recommended platform type for procedural rooms in this level.
+	var platform_type_hint: String  = "stone"
+	# Recommended platform width in pixels (height always = PLATFORM_HEIGHT).
+	var platform_width:     float   = 220.0
 
 # ── Internal data ─────────────────────────────────────────────────────────────
 
@@ -116,6 +164,12 @@ func generate(level_id: int) -> GeneratedLevel:
 	result.trap_density    = diff.get("trap_density", "medium")
 	result.room_count      = diff.get("room_count", 4)
 	result.circle_style    = _circle_style(circle)
+
+	var zone: Dictionary = _zone_for_level(circle, idx)
+	result.difficulty_zone    = zone.get("tier", "easy")
+	result.vertical_spacing   = zone.get("spacing", VERTICAL_SPACING["easy"])
+	result.platform_type_hint = zone.get("platform_type", "stone")
+	result.platform_width     = zone.get("platform_width", 220.0)
 
 	result.room_scenes = _pick_rooms(circle, result.room_count)
 	result.soul_data   = _soul_for_level(level_id, circle)
@@ -244,6 +298,161 @@ func _difficulty_for_index(idx_in_circle: int) -> Dictionary:
 		return inj.get("levels_4_6", {"enemy_count_mod":  0, "trap_density": "medium", "room_count": 4})
 	else:
 		return inj.get("levels_7_9", {"enemy_count_mod": +1, "trap_density": "high",   "room_count": 5})
+
+# ── Platform path validation ─────────────────────────────────────────────────
+#
+# A valid room must have at least one continuous path:
+#   • bottom → top : every row reachable from the floor by chained jumps
+#   • top → bottom : always valid — player can drop freely at any time
+#
+# Moving platforms change the reachability math:
+#   • moving_horizontal : Y is fixed → same as static for vertical validation
+#   • moving_vertical   : platform travels upward by |distance| px.
+#                         Player can ride it to the top and jump from there,
+#                         so the effective launch Y = rest_y − v_range.
+#                         This extends the reachable height beyond MAX_JUMP_HEIGHT.
+#
+# Each entry in `platforms`:
+#   { "y":        float  ← rest-position Y (= max_y for moving_vertical,
+#                          since distance is negative → platform goes UP)
+#     "v_range":  float  ← upward travel in px:
+#                            static / moving_horizontal → 0
+#                            moving_vertical            → abs(min(0, distance))
+#                            e.g. distance=-80 → v_range=80
+#   }
+#
+# So for moving_vertical:
+#   land_y   = y                 (player can land when platform is at bottom)
+#   launch_y = y − v_range       (player jumps when platform is at its top)
+#   effective reach = y − v_range − MAX_JUMP_HEIGHT
+#
+# Usage:
+#   var ok = LevelGenerator.validate_vertical_path(platforms, floor_y)
+#   var bridges = LevelGenerator.missing_bridge_ys(platforms, floor_y)
+
+## Helper: compute v_range from MovingPlatform parameters.
+## type:     platform type string ("moving_vertical", "moving_horizontal", etc.)
+## distance: signed offset used by MovingPlatform (negative = upward for vertical)
+static func platform_v_range(type: String, distance: float) -> float:
+	if type == "moving_vertical":
+		return absf(minf(distance, 0.0))
+	return 0.0
+
+## Returns true when every platform row is reachable from `floor_y`.
+func validate_vertical_path(platforms: Array, floor_y: float) -> bool:
+	return missing_bridge_ys(platforms, floor_y).is_empty()
+
+## Returns Array[float] of Y positions where bridge platforms must be added.
+## Empty array means the layout is already fully connected.
+##
+## Algorithm:
+##   1. Build (land_y, launch_y) pairs for every row + floor.
+##      launch_y = land_y − v_range  (moving_vertical rises, giving a higher
+##      jump-off point; static/horizontal: launch_y = land_y).
+##   2. Sort floor-first (descending Y).
+##   3. Greedy upward pass: maintain a set of reachable launch Ys.
+##      A row is reachable if (best_launch_y − land_y) ≤ MAX_JUMP_HEIGHT.
+##      If not reachable, insert evenly-spaced bridges to close the gap.
+func missing_bridge_ys(platforms: Array, floor_y: float) -> Array:
+	# Build entries: { land_y, launch_y }
+	# Floor is always a reachable surface; it has no upward travel.
+	var entries: Array = [{ "land_y": floor_y, "launch_y": floor_y }]
+
+	for p in platforms:
+		var land_y:  float = float(p.get("y", 0.0))
+		var v_range: float = float(p.get("v_range", 0.0))
+		var launch_y: float = land_y - v_range   # highest point the player can jump from
+
+		var merged: bool = false
+		for e in entries:
+			if absf(float(e.land_y) - land_y) < 5.0:
+				# Keep the better (lower Y = higher on screen) launch point.
+				if launch_y < float(e.launch_y):
+					e.launch_y = launch_y
+				merged = true
+				break
+		if not merged:
+			entries.append({ "land_y": land_y, "launch_y": launch_y })
+
+	# Sort descending — floor (max Y) first, topmost row last.
+	entries.sort_custom(func(a, b): return float(a.land_y) > float(b.land_y))
+
+	# Greedy upward pass.
+	# available_launches tracks the lowest (= highest on screen) Y we can jump from.
+	var best_launch: float = floor_y   # initially only the floor
+	var bridges: Array = []
+
+	for i in range(1, entries.size()):
+		var land_y:   float = float(entries[i].land_y)
+		var launch_y: float = float(entries[i].launch_y)
+		var gap:      float = best_launch - land_y
+
+		if gap <= MAX_JUMP_HEIGHT:
+			# Row is reachable — update best launch if this platform goes higher.
+			if launch_y < best_launch:
+				best_launch = launch_y
+		else:
+			# Gap too large — fill with static bridges.
+			var steps:     int   = ceili(gap / MAX_JUMP_HEIGHT)
+			var step_size: float = gap / float(steps)
+			for s in range(1, steps):
+				var bridge_y: float = best_launch - step_size * float(s)
+				bridges.append(bridge_y)
+			# After bridges the row becomes reachable; update best_launch.
+			best_launch = minf(best_launch, launch_y)
+
+	return bridges
+
+# ── Difficulty zones (vertical spacing + platform type) ───────────────────────
+#
+# Two axes drive the zone:
+#   1. Circle number (1-10) — macro progression across the game
+#   2. Index within circle (1-9) — micro progression inside each circle
+#
+# Circles 1-3 cap at "hard"; circles 4-7 stretch to "extreme" in the back
+# third; circles 8-10 sit in "hard"/"extreme" for most of the run. Zones drive
+# what procedural rooms should look like, not hand-authored static levels.
+func _zone_for_level(circle: int, idx_in_circle: int) -> Dictionary:
+	var tier: String = _zone_tier(circle, idx_in_circle)
+	var override_tier: String = _cfg.get("difficulty_zones", {}).get("override", {}).get(str(circle), "")
+	if override_tier != "":
+		tier = override_tier
+	var platform: Dictionary = ZONE_PLATFORMS.get(tier, ZONE_PLATFORMS["easy"])
+	return {
+		"tier":           tier,
+		"spacing":        VERTICAL_SPACING.get(tier, VERTICAL_SPACING["easy"]),
+		"platform_type":  platform.get("type", "stone"),
+		"platform_width": platform.get("width", 220.0),
+	}
+
+func _zone_tier(circle: int, idx_in_circle: int) -> String:
+	# Base tier from index within circle.
+	var base: String
+	if idx_in_circle <= 2:
+		base = "easy"
+	elif idx_in_circle <= 5:
+		base = "medium"
+	elif idx_in_circle <= 8:
+		base = "hard"
+	else:
+		base = "extreme"
+	# Circle escalation — later circles bump the tier up.
+	var tiers: Array = ["easy", "medium", "hard", "extreme"]
+	var bump: int = 0
+	if circle >= 8:
+		bump = 2
+	elif circle >= 4:
+		bump = 1
+	var idx: int = clampi(tiers.find(base) + bump, 0, tiers.size() - 1)
+	return tiers[idx]
+
+# Public lookup — useful for room scripts / debug overlays that need to know
+# the spacing and platform preference for the level they were spawned into.
+func get_zone(level_id: int) -> Dictionary:
+	var effective_id: int = _parent_of(level_id) if _is_branch(level_id) else level_id
+	var circle: int = _circle_of(effective_id)
+	var idx: int = _index_in_circle(effective_id)
+	return _zone_for_level(circle, idx)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

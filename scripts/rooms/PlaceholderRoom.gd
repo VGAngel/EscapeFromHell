@@ -19,10 +19,10 @@ extends Node2D
 @export var circle: int = 1
 
 ## Width in pixels.
-@export var room_width: float = 720.0
+@export var room_width: float = 1080.0
 
 ## Height in pixels.
-@export var room_height: float = 540.0
+@export var room_height: float = 900.0
 
 ## Set by LevelBase for vertical levels. Removes floor/ceiling at room junctions
 ## so the player can pass freely between stacked rooms:
@@ -35,16 +35,34 @@ extends Node2D
 @export var level_id: int = 0
 
 const WALL_T: float = 32.0
-const PLATFORM_T: float = 16.0
+const PLATFORM_T: float = 30.0
 
-# Three-row platform layout (540-tall room).
-# Row heights assume jump_force=540 / gravity=900 → max rise 162 px and
-# walking-head clearance at y=418. ROW_LOW bottom (=y+8) sits at 398,
-# leaving a 20 px corridor. Each row is 80 px above the next so both
-# climbing up and dropping down stay within the jump budget.
-const ROW_LOW:  float = 390.0
-const ROW_MID:  float = 310.0
-const ROW_HIGH: float = 230.0
+# Viewport dimensions — must match project.godot display/window settings.
+const VIEWPORT_WIDTH:  float = 1080.0
+const VIEWPORT_HEIGHT: float = 1920.0
+
+# Vertical levels span this many screens so the player has room to traverse.
+const VERTICAL_ROOM_SCREENS: int = 2
+
+# Row Y positions — computed in _init_zone() from difficulty spacing.
+# Based on: floor_y - spacing * N.
+# Ensure _row_high leaves enough clearance for PLAYER_HEIGHT + WALL_T above.
+var _row_low:  float = 0.0
+var _row_mid:  float = 0.0
+var _row_high: float = 0.0
+
+# Zone data populated from LevelGenerator.get_zone(level_id) in _init_zone().
+var _zone_tier:          String = "medium"
+var _platform_width:     float  = 160.0
+var _platform_type_hint: String = "stone"
+
+# Bridge rows added by _init_zone() when the computed row spacing exceeds
+# MAX_JUMP_HEIGHT. Each entry is a Y position for a static stone platform.
+var _bridge_rows: Array = []
+
+# All platform row Y positions for vertical rooms (empty for horizontal).
+# Computed in _init_zone() when is_vertical=true; used by _add_main_platforms().
+var _all_rows: Array = []
 
 # Per-circle base colors (index 0 = unused, 1-10 = circles)
 const CIRCLE_COLORS: Array = [
@@ -64,9 +82,15 @@ const CIRCLE_COLORS: Array = [
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
-	# Expose dimensions as metadata so LevelBase._room_width/height() can read them.
+	# Vertical levels must be at least VERTICAL_ROOM_SCREENS tall so the
+	# player has enough space to traverse up and down.
+	if is_vertical:
+		room_height = VIEWPORT_HEIGHT * VERTICAL_ROOM_SCREENS
+
 	set_meta("room_width",  room_width)
 	set_meta("room_height", room_height)
+
+	_init_zone()
 
 	if not Engine.is_editor_hint():
 		_build_walls()
@@ -77,6 +101,69 @@ func _ready() -> void:
 		_spawn_bonus()
 
 	queue_redraw()
+
+func _init_zone() -> void:
+	var spacing: float = LevelGenerator.PART_JUMP + LevelGenerator.STEP_JUMP  # medium default
+
+	if level_id > 0:
+		var zone: Dictionary = LevelGenerator.get_zone(level_id)
+		_zone_tier          = zone.get("tier", "medium")
+		spacing             = zone.get("spacing", spacing)
+		_platform_width     = zone.get("platform_width", _platform_width)
+		_platform_type_hint = zone.get("platform_type", _platform_type_hint)
+
+	# Safe area: read OS insets (notch, home bar) from SafeArea autoload.
+	# Content must stay inside [ceiling_y .. floor_y] on every device.
+	var sa_bottom: int = SafeArea.bottom_reserved if SafeArea else 0
+	var sa_top:    int = SafeArea.top_reserved    if SafeArea else 0
+
+	var floor_y:   float = room_height - WALL_T - float(sa_bottom)
+	var ceiling_y: float = WALL_T + float(sa_top)
+
+	_row_low  = floor_y - spacing
+	_row_mid  = _row_low - spacing
+	# Clamp: top row must leave room for PLAYER_HEIGHT + buffer below ceiling.
+	_row_high = maxf(_row_mid - spacing, ceiling_y + 120.0)
+
+	var platform_data: Array = []
+
+	if is_vertical:
+		# Fill all rows from floor to ceiling with uniform spacing.
+		_all_rows = _compute_all_rows(floor_y, ceiling_y, spacing)
+		# Apply v_range to rows that will receive a zone-special platform
+		# (every 5th cycle, positions 2 and 4 → same pattern as _add_vertical_main_platforms).
+		var mv_vr: float = LevelGenerator.platform_v_range(_platform_type_hint, MOVING_V_DISTANCE)
+		for i in _all_rows.size():
+			var vr: float = mv_vr if (i % 5 in [2, 4]) else 0.0
+			platform_data.append({ "y": float(_all_rows[i]), "v_range": vr })
+	else:
+		# Horizontal room — three fixed rows with per-row v_range.
+		var vr_low:  float = 0.0
+		var vr_mid:  float = 0.0
+		var vr_high: float = 0.0
+		match room_index % 5:
+			1, 3:
+				vr_mid  = LevelGenerator.platform_v_range(_platform_type_hint, MOVING_V_DISTANCE)
+			4:
+				vr_high = LevelGenerator.platform_v_range(_platform_type_hint, MOVING_V_DISTANCE)
+		platform_data = [
+			{ "y": _row_low,  "v_range": vr_low  },
+			{ "y": _row_mid,  "v_range": vr_mid  },
+			{ "y": _row_high, "v_range": vr_high },
+		]
+
+	_bridge_rows = LevelGenerator.missing_bridge_ys(platform_data, floor_y)
+
+func _compute_all_rows(floor_y: float, ceiling_y: float, spacing: float) -> Array:
+	# Generate evenly-spaced row Y positions from the floor upward.
+	# Stops before ceiling_y + PLAYER_HEIGHT + buffer (120 px).
+	var rows: Array = []
+	var y: float = floor_y - spacing
+	var min_y: float = ceiling_y + 120.0
+	while y >= min_y:
+		rows.append(y)
+		y -= spacing
+	return rows
 
 # ── Enemy spawning ────────────────────────────────────────────────────────────
 
@@ -164,7 +251,7 @@ func _spawn_soul() -> void:
 		return
 	soul.add_to_group("soul")
 	# Place the soul on the high platform so the player must platformer to reach it.
-	soul.position = Vector2(room_width * 0.5, ROW_HIGH - 24.0)
+	soul.position = Vector2(room_width * 0.5, _row_high - 24.0)
 	add_child(soul)
 
 # ── Bonus spawning ────────────────────────────────────────────────────────────
@@ -202,7 +289,7 @@ func _spawn_bonus() -> void:
 	var key: String = bonuses[room_index % bonuses.size()]
 	bonus.set("bonus_type", BONUS_ENUM.get(key, 3))
 	# Place on the mid-row platform so the player must navigate up to reach it.
-	bonus.position = Vector2(room_width * 0.5, ROW_MID - 40.0)
+	bonus.position = Vector2(room_width * 0.5, _row_mid - 40.0)
 	add_child(bonus)
 
 # ── Altar spawning ────────────────────────────────────────────────────────────
@@ -210,14 +297,26 @@ func _spawn_bonus() -> void:
 const ALTAR_SCRIPT := preload("res://scripts/AltarNode.gd")
 
 func _spawn_altar() -> void:
-	if room_type != "exit":
+	var spawn_in_vertical_entrance := is_vertical and room_type == "entrance"
+	var spawn_in_horizontal_exit   := not is_vertical and room_type == "exit"
+	if not spawn_in_vertical_entrance and not spawn_in_horizontal_exit:
 		return
+
 	var altar := Node2D.new()
 	altar.set_script(ALTAR_SCRIPT)
 	altar.name = "AltarNode"
 	altar.add_to_group("altar")
-	# Altar sits on the high-platform shelf in the exit room.
-	altar.position = Vector2(room_width * 0.5, ROW_HIGH - 32.0)
+
+	if spawn_in_vertical_entrance:
+		# Top of vertical level — place just above the topmost platform row.
+		var sa_top_px: int = SafeArea.top_reserved if SafeArea else 0
+		var altar_y: float = WALL_T + float(sa_top_px) + 140.0
+		if not _all_rows.is_empty():
+			altar_y = float(_all_rows.back()) - 32.0
+		altar.position = Vector2(room_width * 0.5, altar_y)
+	else:
+		# Horizontal level — altar on the high-platform shelf in the exit room.
+		altar.position = Vector2(room_width * 0.5, _row_high - 32.0)
 
 	var area := Area2D.new()
 	area.name = "Area2D"
@@ -233,44 +332,49 @@ func _spawn_altar() -> void:
 # ── Physics walls ─────────────────────────────────────────────────────────────
 
 func _build_walls() -> void:
-	# In vertical levels the player descends through stacked rooms.
-	# Remove the floor on rooms that open downward and the ceiling on rooms
-	# that open upward, so there is no physics barrier between rooms.
 	var needs_floor:   bool = not is_vertical or room_type == "exit"
 	var needs_ceiling: bool = not is_vertical or room_type == "entrance"
 
+	# Safe area: floor/ceiling walls are pushed inward so physics content
+	# never appears under the OS notch or home-bar indicator.
+	var sa_bottom: int = SafeArea.bottom_reserved if SafeArea else 0
+	var sa_top:    int = SafeArea.top_reserved    if SafeArea else 0
+	var sa_left:   int = SafeArea.left_reserved   if SafeArea else 0
+	var sa_right:  int = SafeArea.right_reserved  if SafeArea else 0
+
+	var floor_y:   float = room_height - WALL_T / 2.0 - float(sa_bottom)
+	var ceiling_y: float = WALL_T / 2.0 + float(sa_top)
+	# Side walls span the safe-area-adjusted height.
+	var wall_h:    float = room_height - float(sa_top + sa_bottom)
+	var wall_mid_y: float = float(sa_top) + wall_h / 2.0
+	var wall_l_x:  float = WALL_T / 2.0 + float(sa_left)
+	var wall_r_x:  float = room_width - WALL_T / 2.0 - float(sa_right)
+
 	if needs_floor:
-		_add_wall("Floor", Vector2(room_width / 2.0, room_height - WALL_T / 2.0),
-						   Vector2(room_width, WALL_T))
+		_add_wall("Floor",   Vector2(room_width / 2.0, floor_y),   Vector2(room_width, WALL_T))
 	if needs_ceiling:
-		_add_wall("Ceiling", Vector2(room_width / 2.0, WALL_T / 2.0),
-							 Vector2(room_width, WALL_T))
-	_add_wall("WallL", Vector2(WALL_T / 2.0, room_height / 2.0),
-					   Vector2(WALL_T, room_height))
-	_add_wall("WallR", Vector2(room_width - WALL_T / 2.0, room_height / 2.0),
-					   Vector2(WALL_T, room_height))
+		_add_wall("Ceiling", Vector2(room_width / 2.0, ceiling_y), Vector2(room_width, WALL_T))
+	_add_wall("WallL", Vector2(wall_l_x, wall_mid_y), Vector2(WALL_T, wall_h))
+	_add_wall("WallR", Vector2(wall_r_x, wall_mid_y), Vector2(WALL_T, wall_h))
 
 	# Variant mid-platforms based on room_index so rooms differ visually
 	match room_type:
 		"main":
 			_add_main_platforms()
 		"entrance":
-			# Safe landing shelf near the top — LevelBase spawns the
-			# player ~97 px above this for a short, visible drop.
-			# Stepping stones descend toward the door at the floor.
-			_add_platform(Vector2(room_width / 2.0, ROW_HIGH),
-						  Vector2(240.0, PLATFORM_T))
-			_add_platform(Vector2(room_width / 2.0, ROW_MID),
-						  Vector2(160.0, PLATFORM_T))
-			_add_platform(Vector2(room_width / 2.0, ROW_LOW),
-						  Vector2(200.0, PLATFORM_T))
+			_add_platform(Vector2(room_width / 2.0, _row_high), Vector2(280.0, PLATFORM_T))
+			_add_platform(Vector2(room_width / 2.0, _row_mid),  Vector2(200.0, PLATFORM_T))
+			_add_platform(Vector2(room_width / 2.0, _row_low),  Vector2(240.0, PLATFORM_T))
 		"exit":
-			# Ladder of shelves up to the altar — each row reachable from
-			# the one below within the 162 px jump budget.
-			_add_platform(Vector2(room_width * 0.30, ROW_LOW),  Vector2(140.0, PLATFORM_T))
-			_add_platform(Vector2(room_width * 0.70, ROW_LOW),  Vector2(140.0, PLATFORM_T))
-			_add_platform(Vector2(room_width * 0.50, ROW_MID),  Vector2(180.0, PLATFORM_T))
-			_add_platform(Vector2(room_width * 0.50, ROW_HIGH), Vector2(240.0, PLATFORM_T))
+			_add_platform(Vector2(room_width * 0.30, _row_low),  Vector2(180.0, PLATFORM_T))
+			_add_platform(Vector2(room_width * 0.70, _row_low),  Vector2(180.0, PLATFORM_T))
+			_add_platform(Vector2(room_width * 0.50, _row_mid),  Vector2(220.0, PLATFORM_T))
+			_add_platform(Vector2(room_width * 0.50, _row_high), Vector2(280.0, PLATFORM_T))
+
+# Moving platform travel distances — single source of truth used by both
+# _add_typed_platform() (behaviour) and _init_zone() (path validation).
+const MOVING_V_DISTANCE: float = -80.0   # negative = upward; min_y = pos.y + MOVING_V_DISTANCE
+const MOVING_H_DISTANCE: float = 140.0   # positive = rightward; Y unchanged
 
 const ONE_WAY_SCRIPT     := preload("res://scripts/platforms/OneWayPlatform.gd")
 const CRUMBLING_SCRIPT   := preload("res://scripts/platforms/CrumblingPlatform.gd")
@@ -356,50 +460,78 @@ func _add_swamp_zone() -> void:
 	add_child(zone)
 
 func _add_main_platforms() -> void:
-	# Three-row platform layout so the player can drop from any shelf,
-	# fall to the floor, and climb back up. Rows live at ROW_LOW/MID/HIGH
-	# (80 px apart, all within the 162 px jump budget). Columns sit at
-	# ~22% / 50% / 78% of the room width so gaps between shelves stay
-	# inside the ~185 px horizontal jump range at an 80-px rise.
-	#
-	# Each variant keeps the same scaffolding and just swaps one shelf
-	# for a special type so players meet each mechanic in sequence.
 	var col_l: float = room_width * 0.22
 	var col_c: float = room_width * 0.50
 	var col_r: float = room_width * 0.78
-	var shelf: Vector2 = Vector2(110.0, PLATFORM_T)
-	var wide:  Vector2 = Vector2(200.0, PLATFORM_T)
+	var shelf: Vector2 = Vector2(_platform_width, PLATFORM_T)
+	var wide:  Vector2 = Vector2(_platform_width * 1.5, PLATFORM_T)
 
+	# Bridge shelves: fill any gap > MAX_JUMP_HEIGHT, alternate columns.
+	for i in _bridge_rows.size():
+		var by: float = float(_bridge_rows[i])
+		var offsets: Array = [0.22, 0.50, 0.78]
+		_add_platform(Vector2(room_width * offsets[i % 3], by), Vector2(100.0, PLATFORM_T))
+
+	if not _all_rows.is_empty():
+		_add_vertical_main_platforms(col_l, col_c, col_r, shelf, wide)
+		return
+
+	# ── Horizontal room — 3-row layout ───────────────────────────────────────
 	match room_index % 5:
-		0:  # zigzag — mid-center is one-way (drop through)
-			_add_platform(Vector2(col_l, ROW_LOW),  shelf)
-			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
-			_add_typed_platform(Vector2(col_c, ROW_MID), shelf, "one_way")
-			_add_platform(Vector2(col_l, ROW_HIGH), shelf)
-			_add_platform(Vector2(col_r, ROW_HIGH), shelf)
-		1:  # wide crumbling shelf in the middle row
-			_add_platform(Vector2(col_l, ROW_LOW),  shelf)
-			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
-			_add_typed_platform(Vector2(col_c, ROW_MID), wide, "crumbling")
-			_add_platform(Vector2(col_c, ROW_HIGH), shelf)
-		2:  # bounce pad bottom-left, static ladder on the right
-			_add_typed_platform(Vector2(col_l, ROW_LOW), shelf, "bounce")
-			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
-			_add_platform(Vector2(col_c, ROW_MID),  shelf)
-			_add_platform(Vector2(col_l, ROW_HIGH), shelf)
-			_add_platform(Vector2(col_r, ROW_HIGH), shelf)
-		3:  # horizontal mover bridges the mid row
-			_add_platform(Vector2(col_l, ROW_LOW),  shelf)
-			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
-			_add_typed_platform(Vector2(col_c, ROW_MID), shelf, "moving_horizontal")
-			_add_platform(Vector2(col_l, ROW_HIGH), shelf)
-			_add_platform(Vector2(col_r, ROW_HIGH), shelf)
-		4:  # vertical mover shuttles between mid and high rows
-			_add_platform(Vector2(col_l, ROW_LOW),  shelf)
-			_add_platform(Vector2(col_r, ROW_LOW),  shelf)
-			_add_typed_platform(Vector2(col_c, ROW_MID), shelf, "moving_vertical")
-			_add_platform(Vector2(col_l, ROW_HIGH), shelf)
-			_add_platform(Vector2(col_r, ROW_HIGH), shelf)
+		0:  # zigzag — mid-center one-way
+			_add_platform(Vector2(col_l, _row_low),  shelf)
+			_add_platform(Vector2(col_r, _row_low),  shelf)
+			_add_typed_platform(Vector2(col_c, _row_mid), shelf, "one_way")
+			_add_platform(Vector2(col_l, _row_high), shelf)
+			_add_platform(Vector2(col_r, _row_high), shelf)
+		1:  # zone-type special shelf mid row
+			_add_platform(Vector2(col_l, _row_low),  shelf)
+			_add_platform(Vector2(col_r, _row_low),  shelf)
+			_add_typed_platform(Vector2(col_c, _row_mid), wide, _platform_type_hint)
+			_add_platform(Vector2(col_c, _row_high), shelf)
+		2:  # bounce pad bottom-left, static ladder right
+			_add_typed_platform(Vector2(col_l, _row_low), shelf, "bounce")
+			_add_platform(Vector2(col_r, _row_low),  shelf)
+			_add_platform(Vector2(col_c, _row_mid),  shelf)
+			_add_platform(Vector2(col_l, _row_high), shelf)
+			_add_platform(Vector2(col_r, _row_high), shelf)
+		3:  # zone-type mover mid row
+			_add_platform(Vector2(col_l, _row_low),  shelf)
+			_add_platform(Vector2(col_r, _row_low),  shelf)
+			_add_typed_platform(Vector2(col_c, _row_mid), shelf, _platform_type_hint)
+			_add_platform(Vector2(col_l, _row_high), shelf)
+			_add_platform(Vector2(col_r, _row_high), shelf)
+		4:  # zone-type mover high row
+			_add_platform(Vector2(col_l, _row_low),  shelf)
+			_add_platform(Vector2(col_r, _row_low),  shelf)
+			_add_platform(Vector2(col_c, _row_mid),  shelf)
+			_add_typed_platform(Vector2(col_c, _row_high), shelf, _platform_type_hint)
+			_add_platform(Vector2(col_l, _row_high), shelf)
+			_add_platform(Vector2(col_r, _row_high), shelf)
+
+func _add_vertical_main_platforms(col_l: float, col_c: float, col_r: float,
+		shelf: Vector2, wide: Vector2) -> void:
+	# Vertical room (3840 px) — place one platform per row in a repeating 5-step
+	# zigzag pattern. Every cycle:
+	#   0 → col_l  stone      (wide)
+	#   1 → col_r  stone      (wide)
+	#   2 → col_c  zone-type  (wide — main challenge platform)
+	#   3 → col_l + col_r  stone  (two narrow — comfortable landing after challenge)
+	#   4 → col_c  zone-type  (shelf — second encounter with zone mechanic)
+	for i in _all_rows.size():
+		var ry: float = float(_all_rows[i])
+		match i % 5:
+			0:
+				_add_platform(Vector2(col_l, ry), wide)
+			1:
+				_add_platform(Vector2(col_r, ry), wide)
+			2:
+				_add_typed_platform(Vector2(col_c, ry), wide, _platform_type_hint)
+			3:
+				_add_platform(Vector2(col_l, ry), shelf)
+				_add_platform(Vector2(col_r, ry), shelf)
+			4:
+				_add_typed_platform(Vector2(col_c, ry), shelf, _platform_type_hint)
 
 func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 	# Circle-specific overrides — each circle reshapes the same procedural
@@ -457,15 +589,12 @@ func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 			body = AnimatableBody2D.new()
 			body.set_script(MOVING_SCRIPT)
 			body.set("move_axis", "horizontal")
-			body.set("distance",  140.0)
+			body.set("distance",  MOVING_H_DISTANCE)
 		"moving_vertical":
 			body = AnimatableBody2D.new()
 			body.set_script(MOVING_SCRIPT)
 			body.set("move_axis", "vertical")
-			# Negative distance → platform rises UP from its start position.
-			# If we moved down it would sweep through the walking corridor
-			# (player head ≈ y=418 standing on the floor).
-			body.set("distance",  -80.0)
+			body.set("distance",  MOVING_V_DISTANCE)
 		_:
 			_add_platform(pos, sz)
 			return
@@ -513,15 +642,19 @@ func _draw() -> void:
 	# Background fill
 	draw_rect(Rect2(0, 0, room_width, room_height), bg)
 
-	# Walls — match physics: omit floor/ceiling that are open in vertical levels
 	var needs_floor:   bool = not is_vertical or room_type == "exit"
 	var needs_ceiling: bool = not is_vertical or room_type == "entrance"
+	var sa_bottom: int = SafeArea.bottom_reserved if SafeArea else 0
+	var sa_top:    int = SafeArea.top_reserved    if SafeArea else 0
+	var sa_left:   int = SafeArea.left_reserved   if SafeArea else 0
+	var sa_right:  int = SafeArea.right_reserved  if SafeArea else 0
+
 	if needs_floor:
-		draw_rect(Rect2(0, room_height - WALL_T, room_width, WALL_T), wall_c)
+		draw_rect(Rect2(0, room_height - WALL_T - sa_bottom, room_width, WALL_T), wall_c)
 	if needs_ceiling:
-		draw_rect(Rect2(0, 0, room_width, WALL_T), wall_c)
-	draw_rect(Rect2(0, 0, WALL_T, room_height),                  wall_c)  # left
-	draw_rect(Rect2(room_width - WALL_T, 0, WALL_T, room_height), wall_c)  # right
+		draw_rect(Rect2(0, sa_top, room_width, WALL_T), wall_c)
+	draw_rect(Rect2(sa_left, 0, WALL_T, room_height), wall_c)
+	draw_rect(Rect2(room_width - WALL_T - sa_right, 0, WALL_T, room_height), wall_c)
 
 	# Type badge
 	var type_colors := {"entrance": Color(0.2, 0.8, 0.3), "main": Color(0.6, 0.6, 0.9), "exit": Color(1.0, 0.85, 0.2)}

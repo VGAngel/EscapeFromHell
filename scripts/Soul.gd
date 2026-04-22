@@ -1,5 +1,7 @@
 extends Area2D
 
+const SIZE: float = 70.0   # diameter px; collision radius = SIZE / 2 in Soul.tscn
+
 # Area2D pickup representing a soul in the level.
 #
 # LevelBase discovers souls via the "soul" group, connects to the
@@ -24,10 +26,17 @@ var _soul_type:  String     = "innocent"
 var _pulse_tween: Tween     = null
 
 func _ready() -> void:
+	_apply_size()
 	add_to_group("soul")
 	_base_y = global_position.y
 	body_entered.connect(_on_body_entered)
 	_start_pulse()
+
+func _apply_size() -> void:
+	var col := $CollisionShape2D
+	if col and col.shape is CircleShape2D:
+		(col.shape as CircleShape2D).radius = SIZE / 2.0
+	$Sprite2D.scale = Vector2.ONE * (SIZE / 1024.0)
 
 ## Sets the soul type ("innocent" / "sleeping" / "mimic") and updates texture + pulse.
 func set_soul_type(type: String) -> void:

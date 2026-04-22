@@ -1,6 +1,6 @@
 # Todo — Plan rozrobky «Escape from Hell»
 
-> Ostatnie onovlennya: 2026-04-21  
+> Ostatnie onovlennya: 2026-04-22  
 > Status: ✅ Arkhitektura hotova. Pochynaemo rozrobku.
 
 ---

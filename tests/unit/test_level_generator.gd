@@ -404,3 +404,214 @@ func test_generate_different_branch_ids_produce_different_seeds() -> void:
 	# At minimum, level_ids differ
 	assert_eq(r103.level_id, 103)
 	assert_eq(r104.level_id, 104)
+
+# ── platform_v_range ──────────────────────────────────────────────────────────
+
+func test_v_range_moving_vertical_negative_distance() -> void:
+	# distance=-80 → platform goes UP 80 px → v_range=80
+	assert_eq(lg.platform_v_range("moving_vertical", -80.0), 80.0)
+
+func test_v_range_moving_vertical_positive_distance() -> void:
+	# positive distance → platform goes DOWN → no upward travel → v_range=0
+	assert_eq(lg.platform_v_range("moving_vertical", 80.0), 0.0)
+
+func test_v_range_moving_horizontal() -> void:
+	assert_eq(lg.platform_v_range("moving_horizontal", 140.0), 0.0)
+
+func test_v_range_static_stone() -> void:
+	assert_eq(lg.platform_v_range("stone", 0.0), 0.0)
+
+func test_v_range_other_types_return_zero() -> void:
+	for t in ["crumbling", "bounce", "one_way", "ice", "faith"]:
+		assert_eq(lg.platform_v_range(t, -80.0), 0.0, "type %s should have v_range 0" % t)
+
+# ── validate_vertical_path ────────────────────────────────────────────────────
+
+func test_validate_empty_platforms_is_valid() -> void:
+	assert_true(lg.validate_vertical_path([], 800.0))
+
+func test_validate_single_row_within_max_jump() -> void:
+	# floor=800, row at 700 → gap=100 ≤ MAX_JUMP_HEIGHT(200)
+	var platforms := [{ "y": 700.0, "v_range": 0.0 }]
+	assert_true(lg.validate_vertical_path(platforms, 800.0))
+
+func test_validate_single_row_exactly_at_max_jump() -> void:
+	# gap == MAX_JUMP_HEIGHT → still reachable
+	var platforms := [{ "y": 600.0, "v_range": 0.0 }]
+	assert_true(lg.validate_vertical_path(platforms, 800.0))  # gap=200
+
+func test_validate_single_row_exceeds_max_jump() -> void:
+	# floor=800, row at 599 → gap=201 > MAX_JUMP_HEIGHT(200) → invalid
+	var platforms := [{ "y": 599.0, "v_range": 0.0 }]
+	assert_false(lg.validate_vertical_path(platforms, 800.0))
+
+func test_validate_three_rows_all_within_budget() -> void:
+	# Rows 200 px apart — each hop ≤ MAX_JUMP_HEIGHT
+	var platforms := [
+		{ "y": 600.0, "v_range": 0.0 },
+		{ "y": 400.0, "v_range": 0.0 },
+		{ "y": 200.0, "v_range": 0.0 },
+	]
+	assert_true(lg.validate_vertical_path(platforms, 800.0))
+
+func test_validate_gap_in_middle_is_invalid() -> void:
+	# First hop 200 px OK, second hop 250 px → invalid
+	var platforms := [
+		{ "y": 600.0, "v_range": 0.0 },
+		{ "y": 350.0, "v_range": 0.0 },  # gap from 600→350 = 250 > 200
+	]
+	assert_false(lg.validate_vertical_path(platforms, 800.0))
+
+func test_validate_moving_vertical_extends_reach() -> void:
+	# floor=800, static row at 600 (gap 200, OK).
+	# From 600, moving_vertical platform with v_range=80 → launch from 600-80=520.
+	# Next row at 380 → gap from launch 520 to 380 = 140 ≤ 200 → valid.
+	var platforms := [
+		{ "y": 600.0, "v_range": 0.0  },
+		{ "y": 520.0, "v_range": 80.0 },  # moving_vertical: launches from 440
+		{ "y": 380.0, "v_range": 0.0  },
+	]
+	assert_true(lg.validate_vertical_path(platforms, 800.0))
+
+func test_validate_moving_vertical_makes_otherwise_unreachable_row_reachable() -> void:
+	# Without moving platform, floor→row gap would be 280 > 200.
+	# With moving_vertical (v_range=80) at y=680: launch_y=600, gap to 480 = 120 ≤ 200 → valid.
+	var platforms_static := [{ "y": 480.0, "v_range": 0.0 }]
+	assert_false(lg.validate_vertical_path(platforms_static, 760.0),
+		"gap 280 > 200 should be invalid without moving platform")
+
+	var platforms_moving := [
+		{ "y": 680.0, "v_range": 80.0 },  # launch from 600
+		{ "y": 480.0, "v_range": 0.0  },
+	]
+	assert_true(lg.validate_vertical_path(platforms_moving, 760.0),
+		"moving platform extends reach making the gap bridgeable")
+
+func test_validate_moving_horizontal_counts_as_static_for_vertical() -> void:
+	# v_range=0 for horizontal movers → same as stone
+	var platforms := [{ "y": 599.0, "v_range": 0.0 }]
+	assert_false(lg.validate_vertical_path(platforms, 800.0))
+
+# ── missing_bridge_ys ─────────────────────────────────────────────────────────
+
+func test_missing_bridges_empty_when_valid() -> void:
+	var platforms := [
+		{ "y": 650.0, "v_range": 0.0 },
+		{ "y": 450.0, "v_range": 0.0 },
+	]
+	var bridges: Array = lg.missing_bridge_ys(platforms, 800.0)
+	assert_eq(bridges.size(), 0)
+
+func test_missing_bridges_one_bridge_for_single_oversized_gap() -> void:
+	# floor=800, row at 400 → gap=400; needs ceil(400/200)=2 steps → 1 bridge at y=600
+	var platforms := [{ "y": 400.0, "v_range": 0.0 }]
+	var bridges: Array = lg.missing_bridge_ys(platforms, 800.0)
+	assert_eq(bridges.size(), 1)
+	assert_almost_eq(float(bridges[0]), 600.0, 1.0)
+
+func test_missing_bridges_two_bridges_for_large_gap() -> void:
+	# floor=800, row at 200 → gap=600; ceil(600/200)=3 steps → 2 bridges
+	var platforms := [{ "y": 200.0, "v_range": 0.0 }]
+	var bridges: Array = lg.missing_bridge_ys(platforms, 800.0)
+	assert_eq(bridges.size(), 2)
+
+func test_missing_bridges_evenly_spaced() -> void:
+	# gap=400 → 2 steps of 200 → bridge at 600
+	var platforms := [{ "y": 400.0, "v_range": 0.0 }]
+	var bridges: Array = lg.missing_bridge_ys(platforms, 800.0)
+	assert_eq(bridges.size(), 1)
+	# Bridge should be exactly halfway
+	assert_almost_eq(float(bridges[0]), 600.0, 1.0)
+
+func test_missing_bridges_none_needed_when_moving_vertical_closes_gap() -> void:
+	# floor=800, moving_vertical at y=700 (v_range=80) → launch=620
+	# next row at 450 → gap from launch 620 to 450 = 170 ≤ 200 → no bridge
+	var platforms := [
+		{ "y": 700.0, "v_range": 80.0 },
+		{ "y": 450.0, "v_range": 0.0  },
+	]
+	var bridges: Array = lg.missing_bridge_ys(platforms, 800.0)
+	assert_eq(bridges.size(), 0)
+
+func test_missing_bridges_still_needed_when_moving_vertical_not_enough() -> void:
+	# floor=800, row at 300 → gap=500; v_range=80 not enough (launch=220, gap still 500 > 280)
+	var platforms := [{ "y": 300.0, "v_range": 80.0 }]
+	var bridges: Array = lg.missing_bridge_ys(platforms, 800.0)
+	assert_gt(bridges.size(), 0)
+
+func test_missing_bridges_deduplicates_same_row() -> void:
+	# Two platforms at nearly the same Y → treated as one row
+	var platforms := [
+		{ "y": 600.0, "v_range": 0.0 },
+		{ "y": 603.0, "v_range": 0.0 },
+	]
+	var bridges: Array = lg.missing_bridge_ys(platforms, 800.0)
+	# Gap 800→600 = 200 = MAX_JUMP_HEIGHT → valid, no bridges needed
+	assert_eq(bridges.size(), 0)
+
+# ── _zone_tier ────────────────────────────────────────────────────────────────
+
+func test_zone_tier_circle1_early_index_is_easy() -> void:
+	assert_eq(lg._zone_tier(1, 1), "easy")
+	assert_eq(lg._zone_tier(1, 2), "easy")
+
+func test_zone_tier_circle1_mid_index_is_medium() -> void:
+	assert_eq(lg._zone_tier(1, 3), "medium")
+	assert_eq(lg._zone_tier(1, 5), "medium")
+
+func test_zone_tier_circle1_late_index_is_hard() -> void:
+	assert_eq(lg._zone_tier(1, 6), "hard")
+	assert_eq(lg._zone_tier(1, 8), "hard")
+
+func test_zone_tier_circle1_last_index_is_extreme() -> void:
+	assert_eq(lg._zone_tier(1, 9), "extreme")
+
+func test_zone_tier_circle4_bumps_one_tier() -> void:
+	# idx=1 base=easy + bump1 → medium
+	assert_eq(lg._zone_tier(4, 1), "medium")
+	assert_eq(lg._zone_tier(5, 1), "medium")
+
+func test_zone_tier_circle8_bumps_two_tiers() -> void:
+	# idx=1 base=easy + bump2 → hard
+	assert_eq(lg._zone_tier(8, 1), "hard")
+	assert_eq(lg._zone_tier(10, 1), "hard")
+
+func test_zone_tier_clamped_at_extreme() -> void:
+	# idx=9 base=extreme + any bump → still extreme
+	assert_eq(lg._zone_tier(10, 9), "extreme")
+
+# ── generate — difficulty zone fields ─────────────────────────────────────────
+
+func test_generate_sets_difficulty_zone() -> void:
+	var r = lg.generate(2)   # circle 1, idx 2 → easy
+	assert_eq(r.difficulty_zone, "easy")
+
+func test_generate_vertical_spacing_matches_zone() -> void:
+	var r = lg.generate(2)   # easy → PART_JUMP = 100
+	assert_almost_eq(r.vertical_spacing, lg.PART_JUMP, 0.1)
+
+func test_generate_platform_type_hint_easy_is_stone() -> void:
+	var r = lg.generate(2)
+	assert_eq(r.platform_type_hint, "stone")
+
+func test_generate_platform_width_easy_is_wide() -> void:
+	var r = lg.generate(2)
+	assert_gt(r.platform_width, 150.0, "easy zone should use wide platforms (>150 px)")
+
+func test_generate_hard_zone_uses_moving_platform() -> void:
+	# level 7 in circle 1 → idx=7 → hard zone
+	var r = lg.generate(7)
+	assert_eq(r.difficulty_zone, "hard")
+	assert_eq(r.platform_type_hint, "moving_horizontal")
+
+func test_generate_extreme_zone_uses_moving_vertical() -> void:
+	# level 9 in circle 1 → idx=9 → extreme zone
+	var r = lg.generate(9)
+	assert_eq(r.difficulty_zone, "extreme")
+	assert_eq(r.platform_type_hint, "moving_vertical")
+
+func test_generate_vertical_spacing_increases_with_difficulty() -> void:
+	var easy = lg.generate(2)
+	var hard = lg.generate(7)
+	assert_le(easy.vertical_spacing, hard.vertical_spacing,
+		"harder zones should have equal or larger vertical spacing")

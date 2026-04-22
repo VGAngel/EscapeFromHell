@@ -37,11 +37,47 @@ signal changed
 
 var bottom_reserved: int = 0
 var top_reserved:    int = 0
+var left_reserved:   int = 0
+var right_reserved:  int = 0
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
+	_read_display_safe_area()
 	_poll_ads_manager()
+
+# ── Display safe area ─────────────────────────────────────────────────────────
+
+## Read OS-level safe area (notch, home bar, rounded corners) via
+## DisplayServer.get_display_safe_area() and merge with any manually
+## reserved insets (e.g. ad banner from AdsManager).
+## Must be called after the window is fully initialised (_ready is fine).
+func _read_display_safe_area() -> void:
+	var sa: Rect2i   = DisplayServer.get_display_safe_area()
+	var vp: Vector2i = DisplayServer.window_get_size()
+
+	# Insets = distance from each window edge to the safe rect edge.
+	var inset_top:    int = sa.position.y
+	var inset_left:   int = sa.position.x
+	var inset_bottom: int = vp.y - (sa.position.y + sa.size.y)
+	var inset_right:  int = vp.x - (sa.position.x + sa.size.x)
+
+	# Merge with existing reserved values — take the larger of the two so
+	# neither OS insets nor manual reservations are silently discarded.
+	if inset_top    > top_reserved:    top_reserved    = inset_top
+	if inset_bottom > bottom_reserved: bottom_reserved = inset_bottom
+	if inset_left   > left_reserved:   left_reserved   = inset_left
+	if inset_right  > right_reserved:  right_reserved  = inset_right
+
+## Returns all four insets as a Dictionary for easy destructuring.
+## Keys: top, bottom, left, right  (all int, px).
+func insets() -> Dictionary:
+	return {
+		"top":    top_reserved,
+		"bottom": bottom_reserved,
+		"left":   left_reserved,
+		"right":  right_reserved,
+	}
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
@@ -57,6 +93,20 @@ func set_top_reserved(px: int) -> void:
 	if v == top_reserved:
 		return
 	top_reserved = v
+	changed.emit()
+
+func set_left_reserved(px: int) -> void:
+	var v: int = maxi(px, 0)
+	if v == left_reserved:
+		return
+	left_reserved = v
+	changed.emit()
+
+func set_right_reserved(px: int) -> void:
+	var v: int = maxi(px, 0)
+	if v == right_reserved:
+		return
+	right_reserved = v
 	changed.emit()
 
 ## True viewport height minus any reserved top/bottom regions. Useful
