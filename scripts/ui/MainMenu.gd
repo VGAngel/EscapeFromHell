@@ -84,11 +84,11 @@ func _ready() -> void:
 ## when the player buys "no ads" so the layout expands to full height.
 func _apply_banner_space() -> void:
 	var banner_h: int = get_banner_height()
-	_version_lbl.offset_top    = 1210.0 - banner_h
-	_version_lbl.offset_bottom = 1240.0 - banner_h
+	_version_lbl.offset_top    = -50.0 - float(banner_h)
+	_version_lbl.offset_bottom = -20.0 - float(banner_h)
 	if has_node("ButtonsContainer"):
 		var buttons: Control = $ButtonsContainer
-		buttons.offset_bottom = 900.0 - banner_h
+		buttons.offset_bottom = 1600.0 - float(banner_h)
 
 ## Separate helper so tests can stub without needing SafeArea fully up.
 ## Prefers AdsManager (always the freshest value) and falls back to
@@ -215,8 +215,9 @@ func _build_fallback_ui() -> void:
 	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", Color("#CC3322"))
 	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	title.position = Vector2(0, 160)
-	title.size     = Vector2(720, 140)
+	var vp_size := get_viewport().get_visible_rect().size
+	title.position = Vector2(0, vp_size.y * 0.083)
+	title.size     = Vector2(vp_size.x, vp_size.y * 0.073)
 	add_child(title)
 
 	# Seed label — always visible below title
@@ -226,8 +227,8 @@ func _build_fallback_ui() -> void:
 	seed_lbl.add_theme_font_size_override("font_size", 13)
 	seed_lbl.add_theme_color_override("font_color", Color(0.50, 0.72, 0.42))
 	seed_lbl.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	seed_lbl.position = Vector2(0, 310)
-	seed_lbl.size     = Vector2(720, 28)
+	seed_lbl.position = Vector2(0, vp_size.y * 0.161)
+	seed_lbl.size     = Vector2(vp_size.x, 28)
 	add_child(seed_lbl)
 
 	# Buttons container
@@ -235,8 +236,8 @@ func _build_fallback_ui() -> void:
 	vbox.name = "ButtonsContainer"
 	vbox.add_theme_constant_override("separation", 14)
 	vbox.set_anchors_preset(Control.PRESET_CENTER)
-	vbox.position = Vector2(360 - 160, 520)
-	vbox.size     = Vector2(320, 0)
+	vbox.position = Vector2(vp_size.x * 0.15, vp_size.y * 0.27)
+	vbox.size     = Vector2(vp_size.x * 0.70, 0)
 	add_child(vbox)
 
 	var btn_defs := [

@@ -389,13 +389,14 @@ func _build_ui() -> void:
 func _apply_safe_area() -> void:
 	var sa: Node = get_node_or_null("/root/SafeArea")
 	var banner: int = int(sa.bottom_reserved) if sa else 0
-	var vp_h: float = get_viewport().get_visible_rect().size.y
+	var vp := get_viewport().get_visible_rect().size
 
 	if _sin_bar_bg:
-		_sin_bar_bg.position.y = vp_h - float(banner) - 6.0
+		_sin_bar_bg.position.y = vp.y - float(banner) - 6.0
+		_sin_bar_bg.size.x = vp.x
 	if _bottom_row:
-		# 8 px gap above sin bar + 36 px row height.
-		_bottom_row.position.y = vp_h - float(banner) - 6.0 - 36.0 - 8.0
+		_bottom_row.position.y = vp.y - float(banner) - 6.0 - 36.0 - 8.0
+		_bottom_row.size.x = vp.x - 16.0
 
 func _build_escape_bar() -> void:
 	_escape_bg = ColorRect.new()
@@ -408,7 +409,7 @@ func _build_escape_bar() -> void:
 
 	_escape_bar = ColorRect.new()
 	_escape_bar.position = Vector2.ZERO
-	_escape_bar.size = Vector2(720, 8)
+	_escape_bar.size = Vector2(0, 8)
 	_escape_bar.color = Color("#00FF88")
 	_escape_bar.visible = false
 	_escape_bg.add_child(_escape_bar)
@@ -479,7 +480,7 @@ func _build_bottom_row() -> void:
 	# Y position is applied in _apply_safe_area so banner toggles reflow.
 	_bottom_row = HBoxContainer.new()
 	_bottom_row.position = Vector2(8, 0)
-	_bottom_row.size = Vector2(704, 36)
+	_bottom_row.size = Vector2(get_viewport().get_visible_rect().size.x - 16.0, 36)
 	_bottom_row.add_theme_constant_override("separation", 6)
 	_root.add_child(_bottom_row)
 
@@ -534,7 +535,7 @@ func _build_sin_bar() -> void:
 	# Y position is applied in _apply_safe_area so banner toggles reflow.
 	_sin_bar_bg = ColorRect.new()
 	_sin_bar_bg.position = Vector2(0, 0)
-	_sin_bar_bg.size = Vector2(720, 6)
+	_sin_bar_bg.size = Vector2(0, 6)
 	_sin_bar_bg.color = Color(0.12, 0.12, 0.12)
 	_root.add_child(_sin_bar_bg)
 
