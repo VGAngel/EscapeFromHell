@@ -267,7 +267,7 @@ func _build_title_bar(parent: VBoxContainer) -> void:
 	var title := Label.new()
 	title.text = "Налаштування"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_font_size_override("font_size", 30)
 	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.95))
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(title)
@@ -275,7 +275,7 @@ func _build_title_bar(parent: VBoxContainer) -> void:
 	var btn_close := Button.new()
 	btn_close.text = "✕"
 	btn_close.custom_minimum_size = Vector2(44, 44)
-	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.add_theme_font_size_override("font_size", 27)
 	var empty := StyleBoxEmpty.new()
 	for state in ["normal","hover","pressed","focus"]:
 		btn_close.add_theme_stylebox_override(state, empty)
@@ -296,7 +296,7 @@ func _build_tab_bar(parent: VBoxContainer) -> void:
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.custom_minimum_size.y = 44
 		btn.focus_mode = Control.FOCUS_NONE
-		btn.add_theme_font_size_override("font_size", 13)
+		btn.add_theme_font_size_override("font_size", 20)
 
 		var n := StyleBoxFlat.new()
 		n.bg_color = Color(0.12, 0.11, 0.16)
@@ -367,7 +367,7 @@ func _add_slider_row(parent: VBoxContainer, label_text: String, default_val: int
 	var lbl := Label.new()
 	lbl.text = label_text
 	lbl.custom_minimum_size.x = 160
-	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_font_size_override("font_size", 21)
 	lbl.add_theme_color_override("font_color", Color(0.80, 0.78, 0.85))
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(lbl)
@@ -386,7 +386,7 @@ func _add_slider_row(parent: VBoxContainer, label_text: String, default_val: int
 	val_lbl.text = "%d%%" % default_val
 	val_lbl.custom_minimum_size.x = 38
 	val_lbl.horizontal_alignment  = HORIZONTAL_ALIGNMENT_RIGHT
-	val_lbl.add_theme_font_size_override("font_size", 13)
+	val_lbl.add_theme_font_size_override("font_size", 20)
 	val_lbl.add_theme_color_override("font_color", Color(0.65, 0.63, 0.72))
 	val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(val_lbl)
@@ -421,7 +421,7 @@ func _build_page_language() -> Control:
 
 	var lbl := Label.new()
 	lbl.text = "Мова гри"
-	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_font_size_override("font_size", 21)
 	lbl.add_theme_color_override("font_color", Color(0.70, 0.68, 0.76))
 	vbox.add_child(lbl)
 
@@ -457,7 +457,7 @@ func _add_toggle_row(parent: VBoxContainer, label_text: String, active: bool) ->
 	var lbl := Label.new()
 	lbl.text = label_text
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_font_size_override("font_size", 21)
 	lbl.add_theme_color_override("font_color", Color(0.80, 0.78, 0.85))
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(lbl)
@@ -493,7 +493,7 @@ func _style_toggle(btn: Button, active: bool) -> void:
 		btn.add_theme_stylebox_override(state, s)
 	btn.add_theme_color_override("font_color",
 		Color(0.88, 0.75, 1.00) if active else Color(0.48, 0.46, 0.55))
-	btn.add_theme_font_size_override("font_size", 11)
+	btn.add_theme_font_size_override("font_size", 16)
 
 # ── Choice button (language) ──────────────────────────────────────────────────
 
@@ -502,7 +502,7 @@ func _make_choice_btn(text: String, active: bool) -> Button:
 	btn.text = text
 	btn.custom_minimum_size = Vector2(0, 42)
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.add_theme_font_size_override("font_size", 15)
+	btn.add_theme_font_size_override("font_size", 22)
 
 	var n := StyleBoxFlat.new()
 	var h := StyleBoxFlat.new()

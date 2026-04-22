@@ -132,14 +132,14 @@ func _build_ui() -> void:
 	var title := Label.new()
 	title.text = "🌱 Seed рівня"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_font_size_override("font_size", 30)
 	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
 	hdr.add_child(title)
 
 	var btn_close := Button.new()
 	btn_close.text = "✕"
 	btn_close.custom_minimum_size = Vector2(36, 36)
-	btn_close.add_theme_font_size_override("font_size", 16)
+	btn_close.add_theme_font_size_override("font_size", 24)
 	var empty := StyleBoxEmpty.new()
 	for state in ["normal", "hover", "pressed", "focus"]:
 		btn_close.add_theme_stylebox_override(state, empty)
@@ -155,7 +155,7 @@ func _build_ui() -> void:
 	_edit = LineEdit.new()
 	_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_edit.placeholder_text = "Введіть seed або залиште порожнім…"
-	_edit.add_theme_font_size_override("font_size", 15)
+	_edit.add_theme_font_size_override("font_size", 22)
 	_edit.text_submitted.connect(func(_t: String) -> void: _apply())
 	row.add_child(_edit)
 
@@ -171,7 +171,7 @@ func _build_ui() -> void:
 
 	# Info label
 	_lbl_info = Label.new()
-	_lbl_info.add_theme_font_size_override("font_size", 12)
+	_lbl_info.add_theme_font_size_override("font_size", 18)
 	_lbl_info.add_theme_color_override("font_color", Color(0.55, 0.53, 0.62))
 	_lbl_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lbl_info.text = "Авторежим: кожен рівень має унікальне розміщення на основі його ID."
@@ -181,7 +181,7 @@ func _build_ui() -> void:
 	var btn_apply := Button.new()
 	btn_apply.text = "Застосувати"
 	btn_apply.custom_minimum_size = Vector2(0, 52)
-	btn_apply.add_theme_font_size_override("font_size", 16)
+	btn_apply.add_theme_font_size_override("font_size", 24)
 	btn_apply.add_theme_color_override("font_color", Color(0.90, 0.80, 1.00))
 	var apply_style := StyleBoxFlat.new()
 	apply_style.bg_color = Color(0.22, 0.16, 0.34)
@@ -199,7 +199,7 @@ func _action_btn(icon: String, bg: Color) -> Button:
 	var btn := Button.new()
 	btn.text = icon
 	btn.custom_minimum_size = Vector2(44, 44)
-	btn.add_theme_font_size_override("font_size", 16)
+	btn.add_theme_font_size_override("font_size", 24)
 	btn.focus_mode = Control.FOCUS_NONE
 	var s := StyleBoxFlat.new()
 	s.bg_color = bg

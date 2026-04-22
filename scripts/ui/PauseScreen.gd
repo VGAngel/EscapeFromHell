@@ -202,7 +202,7 @@ func _build_ui() -> void:
 	_lbl_title = Label.new()
 	_lbl_title.text = "ПАУЗА"
 	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_title.add_theme_font_size_override("font_size", 26)
+	_lbl_title.add_theme_font_size_override("font_size", 39)
 	_lbl_title.add_theme_color_override("font_color", Color("#FFD700"))
 	vbox.add_child(_lbl_title)
 
@@ -222,7 +222,7 @@ func _build_ui() -> void:
 
 	var sin_lbl := Label.new()
 	sin_lbl.text = "😈"
-	sin_lbl.add_theme_font_size_override("font_size", 14)
+	sin_lbl.add_theme_font_size_override("font_size", 21)
 	sin_row.add_child(sin_lbl)
 
 	_sin_bar_bg = ColorRect.new()
@@ -239,7 +239,7 @@ func _build_ui() -> void:
 
 	_lbl_sin_pct = Label.new()
 	_lbl_sin_pct.text = "0%"
-	_lbl_sin_pct.add_theme_font_size_override("font_size", 12)
+	_lbl_sin_pct.add_theme_font_size_override("font_size", 18)
 	_lbl_sin_pct.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	_lbl_sin_pct.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	sin_row.add_child(_lbl_sin_pct)
@@ -298,14 +298,14 @@ func _build_confirm_panel() -> void:
 	_lbl_exit_title = Label.new()
 	_lbl_exit_title.text = "Вийти з рівня?"
 	_lbl_exit_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_exit_title.add_theme_font_size_override("font_size", 18)
+	_lbl_exit_title.add_theme_font_size_override("font_size", 27)
 	_lbl_exit_title.add_theme_color_override("font_color", Color("#FF6644"))
 	vbox.add_child(_lbl_exit_title)
 
 	_lbl_exit_msg = Label.new()
 	_lbl_exit_msg.text = "Зібрані душі збережені.\nДуша в руках — буде втрачена."
 	_lbl_exit_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_exit_msg.add_theme_font_size_override("font_size", 13)
+	_lbl_exit_msg.add_theme_font_size_override("font_size", 20)
 	_lbl_exit_msg.add_theme_color_override("font_color", Color(0.75, 0.72, 0.70))
 	_lbl_exit_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_lbl_exit_msg)
@@ -331,7 +331,7 @@ func _make_button(text: String, primary: bool, danger: bool = false) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.custom_minimum_size = Vector2(252, 44)
-	btn.add_theme_font_size_override("font_size", 15)
+	btn.add_theme_font_size_override("font_size", 22)
 
 	var normal := StyleBoxFlat.new()
 	var hover  := StyleBoxFlat.new()
@@ -368,7 +368,7 @@ func _make_stat_label(text: String) -> Label:
 	var lbl := Label.new()
 	lbl.text = text
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_font_size_override("font_size", 21)
 	lbl.add_theme_color_override("font_color", Color(0.78, 0.76, 0.80))
 	return lbl
 
