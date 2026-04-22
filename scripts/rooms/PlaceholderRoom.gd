@@ -511,16 +511,25 @@ func _add_main_platforms() -> void:
 
 func _add_vertical_main_platforms(col_l: float, col_c: float, col_r: float,
 		shelf: Vector2, wide: Vector2) -> void:
-	# Vertical room (3840 px) — place one platform per row in a repeating 5-step
-	# zigzag pattern. Every cycle:
-	#   0 → col_l  stone      (wide)
-	#   1 → col_r  stone      (wide)
-	#   2 → col_c  zone-type  (wide — main challenge platform)
-	#   3 → col_l + col_r  stone  (two narrow — comfortable landing after challenge)
-	#   4 → col_c  zone-type  (shelf — second encounter with zone mechanic)
+	# Per-level-room local RNG: deterministic for replay (same level_id + room_index
+	# always produces the same layout) but unique across levels and room scenes.
+	# Editor preview (level_id=0) falls back to room_index only.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash((level_id if level_id > 0 else 0) * 1000 + room_index)
+
+	# Jitter column X positions within safe bands so jumps between columns always
+	# fit within MAX_JUMP_HEIGHT.  Every level/room gets a distinct horizontal layout.
+	col_l = room_width * clampf(0.22 + rng.randf_range(-0.07, 0.07), 0.12, 0.33)
+	col_c = room_width * clampf(0.50 + rng.randf_range(-0.05, 0.05), 0.38, 0.62)
+	col_r = room_width * clampf(0.78 + rng.randf_range(-0.07, 0.07), 0.67, 0.88)
+
+	# Phase-shift the 5-step zigzag per level so the pattern doesn't start the same
+	# way for every level.  Derived from the same RNG so it varies independently.
+	var step_offset: int = rng.randi() % 5
+
 	for i in _all_rows.size():
 		var ry: float = float(_all_rows[i])
-		match i % 5:
+		match (i + step_offset) % 5:
 			0:
 				_add_platform(Vector2(col_l, ry), wide)
 			1:
