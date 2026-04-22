@@ -70,10 +70,10 @@ func after_each() -> void:
 
 # ── _room_width ───────────────────────────────────────────────────────────────
 
-func test_room_width_returns_720_for_room_without_meta() -> void:
+func test_room_width_default_without_meta() -> void:
 	var lb: Node = autofree(LevelBaseScript.new())
 	var room: Node2D = autofree(Node2D.new())
-	assert_almost_eq(lb._room_width(room), 720.0, 0.001)
+	assert_almost_eq(lb._room_width(room), 1080.0, 0.001)
 
 func test_room_width_returns_meta_value_when_set() -> void:
 	var lb: Node = autofree(LevelBaseScript.new())
@@ -185,10 +185,10 @@ func test_on_soul_collected_increments_multiple_times() -> void:
 
 # ── _room_height ──────────────────────────────────────────────────────────────
 
-func test_room_height_returns_540_for_room_without_meta() -> void:
+func test_room_height_default_without_meta() -> void:
 	var lb: Node = autofree(LevelBaseScript.new())
 	var room: Node2D = autofree(Node2D.new())
-	assert_almost_eq(lb._room_height(room), 540.0, 0.001)
+	assert_almost_eq(lb._room_height(room), 900.0, 0.001)
 
 func test_room_height_returns_meta_value_when_set() -> void:
 	var lb: Node = autofree(LevelBaseScript.new())
@@ -224,23 +224,27 @@ func test_reposition_h_preserves_custom_spawn_position() -> void:
 
 func test_reposition_v_spawn_placed_near_top() -> void:
 	var lb: Node = _make_safe_lb()
-	lb._reposition_spawn_and_exit_v(1620.0)  # 3 rooms × 540
-	assert_almost_eq(lb._spawn_point.position.y, 80.0, 0.001)
+	lb._reposition_spawn_and_exit_v(1620.0)  # 3 rooms × 540 (legacy comment; total_h is the arg)
+	# spawn_y = sa_top(0) + WALL_T(32) + drop_buffer(60) = 92
+	assert_almost_eq(lb._spawn_point.position.y, 92.0, 0.001)
 
 func test_reposition_v_spawn_x_is_centered() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)
-	assert_almost_eq(lb._spawn_point.position.x, 360.0, 0.001)
+	# rw fallback = 1080 (empty RoomContainer), spawn_x = 1080/2 = 540
+	assert_almost_eq(lb._spawn_point.position.x, 540.0, 0.001)
 
 func test_reposition_v_exit_placed_near_bottom() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)
-	assert_almost_eq(lb._exit_area.position.y, 1540.0, 0.001)  # 1620 - 80
+	# exit_y = 1620 - sa_bottom(0) - WALL_T(32) - drop_buffer(60) = 1528
+	assert_almost_eq(lb._exit_area.position.y, 1528.0, 0.001)
 
 func test_reposition_v_exit_x_is_centered() -> void:
 	var lb: Node = _make_safe_lb()
 	lb._reposition_spawn_and_exit_v(1620.0)
-	assert_almost_eq(lb._exit_area.position.x, 360.0, 0.001)
+	# rw fallback = 1080 (empty RoomContainer), exit_x = 1080/2 = 540
+	assert_almost_eq(lb._exit_area.position.x, 540.0, 0.001)
 
 func test_reposition_v_spawn_above_exit() -> void:
 	var lb: Node = _make_safe_lb()

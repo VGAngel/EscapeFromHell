@@ -16,23 +16,23 @@ class MockButtonsContainer:
 var _version_lbl:   MockVersionLabel
 var _buttons:       MockButtonsContainer
 
-func _simulate_apply_banner_space(banner_h: int) -> void:
+func _simulate_apply_banner_space(vp_h: float, banner_h: int) -> void:
 	_version_lbl.offset_top    = -50.0 - float(banner_h)
 	_version_lbl.offset_bottom = -20.0 - float(banner_h)
-	_buttons.offset_bottom     = 1600.0 - float(banner_h)
+	_buttons.offset_bottom     = (vp_h - 320.0) - float(banner_h)
 
 func before_each() -> void:
 	_version_lbl = MockVersionLabel.new()
 	_buttons     = MockButtonsContainer.new()
 
 func test_banner_space_no_banner() -> void:
-	_simulate_apply_banner_space(0)
+	_simulate_apply_banner_space(1920.0, 0)
 	assert_eq(_version_lbl.offset_top,    -50.0,  "VersionLabel offset_top without banner")
 	assert_eq(_version_lbl.offset_bottom, -20.0,  "VersionLabel offset_bottom without banner")
-	assert_eq(_buttons.offset_bottom,    1600.0,  "ButtonsContainer offset_bottom without banner")
+	assert_eq(_buttons.offset_bottom,    1600.0,  "ButtonsContainer offset_bottom without banner at FHD")
 
 func test_banner_space_with_banner() -> void:
-	_simulate_apply_banner_space(100)
+	_simulate_apply_banner_space(1920.0, 100)
 	assert_eq(_version_lbl.offset_top,    -150.0, "VersionLabel offset_top with 100px banner")
 	assert_eq(_version_lbl.offset_bottom, -120.0, "VersionLabel offset_bottom with 100px banner")
 	assert_eq(_buttons.offset_bottom,    1500.0,  "ButtonsContainer pushed up by banner")
@@ -40,20 +40,28 @@ func test_banner_space_with_banner() -> void:
 func test_banner_space_version_label_stays_negative() -> void:
 	# VersionLabel anchor_top=1 means offset must be negative to stay on screen
 	for banner_h in [0, 50, 100, 200]:
-		_simulate_apply_banner_space(banner_h)
+		_simulate_apply_banner_space(1920.0, banner_h)
 		assert_true(
 			_version_lbl.offset_top < 0.0,
 			"VersionLabel offset_top must be negative for banner_h=%d" % banner_h
 		)
 
 func test_banner_space_buttons_container_decreases_with_banner() -> void:
-	_simulate_apply_banner_space(0)
+	_simulate_apply_banner_space(1920.0, 0)
 	var no_banner_bottom: float = _buttons.offset_bottom
-	_simulate_apply_banner_space(120)
+	_simulate_apply_banner_space(1920.0, 120)
 	assert_true(
 		_buttons.offset_bottom < no_banner_bottom,
 		"ButtonsContainer shrinks when ad banner is present"
 	)
+
+func test_banner_space_scales_with_viewport_height() -> void:
+	_simulate_apply_banner_space(1920.0, 0)
+	var fhd_bottom: float = _buttons.offset_bottom
+	_simulate_apply_banner_space(1280.0, 0)
+	var hd_bottom: float = _buttons.offset_bottom
+	assert_true(fhd_bottom > hd_bottom,
+		"FHD viewport must yield a larger offset_bottom than HD")
 
 # ── CollectionScreen sheet Y position helpers ─────────────────────────────────
 

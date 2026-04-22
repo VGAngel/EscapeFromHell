@@ -88,7 +88,8 @@ func _apply_banner_space() -> void:
 	_version_lbl.offset_bottom = -20.0 - float(banner_h)
 	if has_node("ButtonsContainer"):
 		var buttons: Control = $ButtonsContainer
-		buttons.offset_bottom = 1600.0 - float(banner_h)
+		var vp_h: float = get_viewport().get_visible_rect().size.y
+		buttons.offset_bottom = (vp_h - 320.0) - float(banner_h)
 
 ## Separate helper so tests can stub without needing SafeArea fully up.
 ## Prefers AdsManager (always the freshest value) and falls back to

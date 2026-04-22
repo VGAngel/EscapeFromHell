@@ -15,6 +15,12 @@ const BUS_MASTER := "Master"
 const BUS_MUSIC  := "Music"
 const BUS_SFX    := "SFX"
 
+# Resolution presets: logical (base) size used by the stretch viewport
+const RESOLUTIONS := {
+	"fhd": Vector2i(1080, 1920),
+	"hd":  Vector2i(720,  1280),
+}
+
 # ── Defaults ──────────────────────────────────────────────────────────────────
 const DEFAULTS := {
 	"volume_master":    80,
@@ -23,6 +29,7 @@ const DEFAULTS := {
 	"mute_all":         false,
 	"language":         "uk",
 	"vsync":            true,
+	"resolution":       "fhd",
 }
 
 # ── State ─────────────────────────────────────────────────────────────────────
@@ -50,7 +57,8 @@ var _toggle_mute:   Button         = null
 var _lang_btns:     Dictionary     = {}   # code → Button
 
 # Graphics tab widgets
-var _toggle_vsync:  Button         = null
+var _toggle_vsync:       Button         = null
+var _resolution_btns:    Dictionary     = {}   # preset → Button
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -118,6 +126,7 @@ func _apply_all() -> void:
 	_apply_volume(BUS_SFX,    _data.get("volume_sfx",    90))
 	_apply_mute(_data.get("mute_all", false))
 	_apply_vsync(_data.get("vsync", true))
+	_apply_resolution(_data.get("resolution", "fhd"))
 
 # ── Volume helpers ────────────────────────────────────────────────────────────
 
@@ -137,6 +146,10 @@ func _apply_vsync(enabled: bool) -> void:
 	DisplayServer.window_set_vsync_mode(
 		DisplayServer.VSYNC_ENABLED if enabled else DisplayServer.VSYNC_DISABLED
 	)
+
+func _apply_resolution(preset: String) -> void:
+	var size: Vector2i = RESOLUTIONS.get(preset, RESOLUTIONS["fhd"])
+	get_tree().get_root().content_scale_size = size
 
 # ── Widget callbacks ──────────────────────────────────────────────────────────
 
@@ -183,6 +196,13 @@ func _on_vsync_pressed() -> void:
 	_update_toggle(_toggle_vsync, enabled)
 	_save()
 
+func _on_resolution_pressed(preset: String) -> void:
+	_data["resolution"] = preset
+	_apply_resolution(preset)
+	for p in _resolution_btns:
+		_style_choice_btn(_resolution_btns[p], p == preset)
+	_save()
+
 # ── Refresh widgets from _data ────────────────────────────────────────────────
 
 func _refresh_widgets() -> void:
@@ -192,6 +212,7 @@ func _refresh_widgets() -> void:
 	var muted: bool = _data.get("mute_all", false)
 	var lang: String = _data.get("language", "uk")
 	var vsync: bool  = _data.get("vsync", true)
+	var res: String  = _data.get("resolution", "fhd")
 
 	_sl_master.value = vm;  _lbl_master.text = "%d%%" % vm
 	_sl_music.value  = vmu; _lbl_music.text  = "%d%%" % vmu
@@ -202,6 +223,9 @@ func _refresh_widgets() -> void:
 		_update_toggle(_lang_btns[code], code == lang)
 
 	_update_toggle(_toggle_vsync, vsync)
+
+	for preset in _resolution_btns:
+		_style_choice_btn(_resolution_btns[preset], preset == res)
 
 # ── Tab switching ─────────────────────────────────────────────────────────────
 
@@ -445,6 +469,22 @@ func _build_page_graphics() -> Control:
 	_toggle_vsync = _add_toggle_row(vbox, "Вертикальна синхронізація", _data.get("vsync", true))
 	_toggle_vsync.pressed.connect(_on_vsync_pressed)
 
+	var res_lbl := Label.new()
+	res_lbl.text = "Роздільна здатність"
+	res_lbl.add_theme_font_size_override("font_size", 21)
+	res_lbl.add_theme_color_override("font_color", Color(0.70, 0.68, 0.76))
+	vbox.add_child(res_lbl)
+
+	var current_res: String = _data.get("resolution", "fhd")
+	var presets := [["fhd", "FHD  1080×1920"], ["hd", "HD  720×1280"]]
+	for pair in presets:
+		var preset: String = pair[0]
+		var label: String  = pair[1]
+		var btn := _make_choice_btn(label, preset == current_res)
+		btn.pressed.connect(_on_resolution_pressed.bind(preset))
+		vbox.add_child(btn)
+		_resolution_btns[preset] = btn
+
 	return vbox
 
 # ── Toggle row ────────────────────────────────────────────────────────────────
@@ -495,7 +535,7 @@ func _style_toggle(btn: Button, active: bool) -> void:
 		Color(0.88, 0.75, 1.00) if active else Color(0.48, 0.46, 0.55))
 	btn.add_theme_font_size_override("font_size", 16)
 
-# ── Choice button (language) ──────────────────────────────────────────────────
+# ── Choice button (language / resolution) ─────────────────────────────────────
 
 func _make_choice_btn(text: String, active: bool) -> Button:
 	var btn := Button.new()
@@ -503,7 +543,10 @@ func _make_choice_btn(text: String, active: bool) -> Button:
 	btn.custom_minimum_size = Vector2(0, 42)
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.add_theme_font_size_override("font_size", 22)
+	_style_choice_btn(btn, active)
+	return btn
 
+func _style_choice_btn(btn: Button, active: bool) -> void:
 	var n := StyleBoxFlat.new()
 	var h := StyleBoxFlat.new()
 	n.bg_color = Color(0.22, 0.18, 0.32) if active else Color(0.12, 0.11, 0.16)
@@ -525,4 +568,3 @@ func _make_choice_btn(text: String, active: bool) -> Button:
 	btn.add_theme_stylebox_override("focus",   n)
 	btn.add_theme_color_override("font_color",
 		Color(0.92, 0.82, 1.00) if active else Color(0.72, 0.70, 0.78))
-	return btn

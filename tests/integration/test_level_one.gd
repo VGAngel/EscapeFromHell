@@ -98,19 +98,30 @@ func test_player_camera_becomes_current() -> void:
 # ── Spawn inside a room ───────────────────────────────────────────────────────
 
 func test_player_spawns_inside_total_room_stack_y_range() -> void:
-	# Level 1 is vertical — rooms stack from y=0 downward. Total stack
-	# height = room_count * 540 for the default room_height. Player must
-	# spawn somewhere inside [0, total_h], otherwise _spawn_point math
+	# Level 1 is vertical — rooms stack from y=0 downward. Player must
+	# spawn somewhere inside the total stack, otherwise _spawn_point math
 	# got inverted and they're outside every room.
 	level = _make_level()
 	var p: CharacterBody2D = _find_player(level)
 	var rc: Node = level.get_node("RoomContainer")
 	var room_count: int = rc.get_child_count()
 	assert_gt(room_count, 0)
-	var max_y: float = float(room_count) * 540.0
+
+	# Sum actual room heights from meta (or LevelBase default) instead of hardcoding.
+	var max_y: float = 0.0
+	var room_w: float = 1080.0  # LevelBase._room_width fallback
+	for i in room_count:
+		var room: Node2D = rc.get_child(i) as Node2D
+		if room.has_meta("room_height"):
+			max_y += float(room.get_meta("room_height"))
+		else:
+			max_y += 900.0  # LevelBase._room_height fallback
+		if i == 0:
+			room_w = float(room.get_meta("room_width")) if room.has_meta("room_width") else 1080.0
+
 	var pos: Vector2 = p.global_position
 	assert_true(pos.y >= 0.0 and pos.y <= max_y,
 		"Player spawn y=%.0f must be within [0, %.0f] for a %d-room vertical stack" % [
 			pos.y, max_y, room_count])
-	assert_true(pos.x >= 0.0 and pos.x <= 720.0,
-		"Player spawn x=%.0f must be within the room width [0, 720]" % pos.x)
+	assert_true(pos.x >= 0.0 and pos.x <= room_w,
+		"Player spawn x=%.0f must be within the room width [0, %.0f]" % [pos.x, room_w])
