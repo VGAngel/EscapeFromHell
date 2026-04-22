@@ -212,7 +212,7 @@ func _build_fallback_ui() -> void:
 	title.name = "TitleLabel"
 	title.text = "ESCAPE\nFROM HELL"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 42)
+	title.add_theme_font_size_override("font_size", 63)
 	title.add_theme_color_override("font_color", Color("#CC3322"))
 	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	var vp_size := get_viewport().get_visible_rect().size
@@ -224,7 +224,7 @@ func _build_fallback_ui() -> void:
 	var seed_lbl := Label.new()
 	seed_lbl.name = "SeedLabel"
 	seed_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	seed_lbl.add_theme_font_size_override("font_size", 13)
+	seed_lbl.add_theme_font_size_override("font_size", 20)
 	seed_lbl.add_theme_color_override("font_color", Color(0.50, 0.72, 0.42))
 	seed_lbl.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	seed_lbl.position = Vector2(0, vp_size.y * 0.161)
@@ -260,7 +260,7 @@ func _build_fallback_ui() -> void:
 	ver.name = "VersionLabel"
 	ver.text = "v0.1"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	ver.add_theme_font_size_override("font_size", 11)
+	ver.add_theme_font_size_override("font_size", 16)
 	ver.add_theme_color_override("font_color", Color(0.35, 0.33, 0.40))
 	ver.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	# Banner-aware position is applied in _apply_banner_space; default
@@ -280,7 +280,7 @@ func _make_menu_btn(text: String, primary: bool) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.custom_minimum_size = Vector2(320, 50)
-	btn.add_theme_font_size_override("font_size", 16)
+	btn.add_theme_font_size_override("font_size", 24)
 
 	var n := StyleBoxFlat.new()
 	var h := StyleBoxFlat.new()

@@ -199,7 +199,7 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 	lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 10)
+	lbl.add_theme_font_size_override("font_size", 15)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	if saved:
@@ -217,7 +217,7 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 	if is_hidden:
 		var badge := Label.new()
 		badge.text = "✦"
-		badge.add_theme_font_size_override("font_size", 8)
+		badge.add_theme_font_size_override("font_size", 12)
 		badge.add_theme_color_override("font_color",
 			Color("#FFD700") if saved else Color(0.45, 0.38, 0.12))
 		badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -429,21 +429,21 @@ func _build_header(parent: VBoxContainer) -> void:
 	var title := Label.new()
 	title.text = "Врятовані Душі"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_font_size_override("font_size", 30)
 	title.add_theme_color_override("font_color", Color("#FFD700"))
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(title)
 
 	_lbl_named = Label.new()
 	_lbl_named.text = "0 / 100"
-	_lbl_named.add_theme_font_size_override("font_size", 14)
+	_lbl_named.add_theme_font_size_override("font_size", 21)
 	_lbl_named.add_theme_color_override("font_color", Color(0.80, 0.78, 0.84))
 	_lbl_named.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(_lbl_named)
 
 	_lbl_hidden = Label.new()
 	_lbl_hidden.text = "✦ 0 / 20"
-	_lbl_hidden.add_theme_font_size_override("font_size", 13)
+	_lbl_hidden.add_theme_font_size_override("font_size", 20)
 	_lbl_hidden.add_theme_color_override("font_color", Color("#A07820"))
 	_lbl_hidden.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(_lbl_hidden)
@@ -451,7 +451,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	var btn_close := Button.new()
 	btn_close.text = "✕"
 	btn_close.custom_minimum_size = Vector2(44, 44)
-	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.add_theme_font_size_override("font_size", 27)
 	var cs := StyleBoxEmpty.new()
 	btn_close.add_theme_stylebox_override("normal", cs)
 	btn_close.add_theme_stylebox_override("hover",  cs)
@@ -582,18 +582,18 @@ func _build_sheet() -> void:
 	vbox.add_child(handle)
 
 	_sheet_name = Label.new()
-	_sheet_name.add_theme_font_size_override("font_size", 20)
+	_sheet_name.add_theme_font_size_override("font_size", 30)
 	_sheet_name.add_theme_color_override("font_color", Color(0.92, 0.90, 0.96))
 	_sheet_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_sheet_name)
 
 	_sheet_age = Label.new()
-	_sheet_age.add_theme_font_size_override("font_size", 13)
+	_sheet_age.add_theme_font_size_override("font_size", 20)
 	_sheet_age.add_theme_color_override("font_color", Color(0.58, 0.56, 0.64))
 	vbox.add_child(_sheet_age)
 
 	_sheet_loc = Label.new()
-	_sheet_loc.add_theme_font_size_override("font_size", 12)
+	_sheet_loc.add_theme_font_size_override("font_size", 18)
 	_sheet_loc.add_theme_color_override("font_color", Color(0.52, 0.50, 0.58))
 	vbox.add_child(_sheet_loc)
 
@@ -605,13 +605,13 @@ func _build_sheet() -> void:
 	vbox.add_child(_sheet_sep)
 
 	_sheet_text = Label.new()
-	_sheet_text.add_theme_font_size_override("font_size", 14)
+	_sheet_text.add_theme_font_size_override("font_size", 21)
 	_sheet_text.add_theme_color_override("font_color", Color(0.80, 0.78, 0.84))
 	_sheet_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_sheet_text)
 
 	_sheet_extra = Label.new()
-	_sheet_extra.add_theme_font_size_override("font_size", 13)
+	_sheet_extra.add_theme_font_size_override("font_size", 20)
 	_sheet_extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_sheet_extra)
 
@@ -629,7 +629,7 @@ func _build_completion_label() -> void:
 	_completion_lbl = Label.new()
 	_completion_lbl.text = "Всі 100 душ знайдені"
 	_completion_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_completion_lbl.add_theme_font_size_override("font_size", 18)
+	_completion_lbl.add_theme_font_size_override("font_size", 27)
 	_completion_lbl.add_theme_color_override("font_color", Color("#FFD700"))
 	_completion_lbl.set_anchors_preset(Control.PRESET_CENTER)
 	_completion_lbl.position.y = 200
@@ -642,7 +642,7 @@ func _filter_btn(text: String, active: bool) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.add_theme_font_size_override("font_size", 12)
+	btn.add_theme_font_size_override("font_size", 18)
 
 	var n := StyleBoxFlat.new()
 	n.bg_color = Color(0.14, 0.13, 0.18)

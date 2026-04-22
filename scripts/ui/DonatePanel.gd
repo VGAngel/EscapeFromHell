@@ -120,7 +120,7 @@ func _make_card(sku: String) -> Control:
 	# Icon
 	var lbl_icon := Label.new()
 	lbl_icon.text = icon
-	lbl_icon.add_theme_font_size_override("font_size", 28)
+	lbl_icon.add_theme_font_size_override("font_size", 42)
 	lbl_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl_icon.custom_minimum_size = Vector2(40, 0)
 	lbl_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -134,13 +134,13 @@ func _make_card(sku: String) -> Control:
 
 	var lbl_name := Label.new()
 	lbl_name.text = tier_name
-	lbl_name.add_theme_font_size_override("font_size", 16)
+	lbl_name.add_theme_font_size_override("font_size", 24)
 	lbl_name.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
 	vbox.add_child(lbl_name)
 
 	var lbl_desc := Label.new()
 	lbl_desc.text = desc
-	lbl_desc.add_theme_font_size_override("font_size", 12)
+	lbl_desc.add_theme_font_size_override("font_size", 18)
 	lbl_desc.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
 	vbox.add_child(lbl_desc)
 
@@ -155,7 +155,7 @@ func _make_buy_btn(sku: String) -> Button:
 	btn.text = "Підтримати"
 	btn.custom_minimum_size = Vector2(100, 48)
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_font_size_override("font_size", 20)
 
 	var s := StyleBoxFlat.new()
 	s.bg_color     = Color(0.18, 0.12, 0.28)
@@ -258,7 +258,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	var title := Label.new()
 	title.text = "Пожертвувати"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 21)
+	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(title)
@@ -267,7 +267,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	btn_close.text = "✕"
 	btn_close.custom_minimum_size = Vector2(44, 44)
 	btn_close.focus_mode = Control.FOCUS_NONE
-	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.add_theme_font_size_override("font_size", 27)
 	var empty := StyleBoxEmpty.new()
 	for state in ["normal","hover","pressed","focus"]:
 		btn_close.add_theme_stylebox_override(state, empty)
@@ -285,7 +285,7 @@ func _build_intro(parent: VBoxContainer) -> void:
 
 	var lbl := Label.new()
 	lbl.text = "Гра безкоштовна і завжди такою залишиться.\nЯкщо хочеш підтримати розробника — це тут."
-	lbl.add_theme_font_size_override("font_size", 13)
+	lbl.add_theme_font_size_override("font_size", 20)
 	lbl.add_theme_color_override("font_color", Color(0.58, 0.55, 0.66))
 	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	margin.add_child(lbl)
@@ -313,7 +313,7 @@ func _build_thanks_label(parent: VBoxContainer) -> void:
 	_lbl_thanks.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_thanks.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_lbl_thanks.size_flags_vertical  = Control.SIZE_EXPAND_FILL
-	_lbl_thanks.add_theme_font_size_override("font_size", 22)
+	_lbl_thanks.add_theme_font_size_override("font_size", 33)
 	_lbl_thanks.add_theme_color_override("font_color", Color("#FFD700"))
 	_lbl_thanks.modulate.a = 0.0
 	_lbl_thanks.visible    = false

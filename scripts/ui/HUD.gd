@@ -307,7 +307,7 @@ func _spawn_bonus_icon(bid: String, icon_char: String, duration: float) -> void:
 
 	var icon_lbl := Label.new()
 	icon_lbl.text = icon_char
-	icon_lbl.add_theme_font_size_override("font_size", 22)
+	icon_lbl.add_theme_font_size_override("font_size", 33)
 	icon_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	container.add_child(icon_lbl)
 
@@ -315,7 +315,7 @@ func _spawn_bonus_icon(bid: String, icon_char: String, duration: float) -> void:
 	if duration > 0.0:
 		timer_lbl = Label.new()
 		timer_lbl.text = "%.0f" % duration
-		timer_lbl.add_theme_font_size_override("font_size", 11)
+		timer_lbl.add_theme_font_size_override("font_size", 16)
 		timer_lbl.add_theme_color_override("font_color", Color.WHITE)
 		timer_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		container.add_child(timer_lbl)
@@ -356,7 +356,7 @@ func _refresh_ability_slots() -> void:
 
 		var lbl := Label.new()
 		lbl.text = icons[i]
-		lbl.add_theme_font_size_override("font_size", 22)
+		lbl.add_theme_font_size_override("font_size", 33)
 		lbl.set_anchors_preset(Control.PRESET_CENTER)
 		container.add_child(lbl)
 
@@ -432,7 +432,7 @@ func _build_top_row() -> void:
 	for _i in MAX_HEARTS:
 		var h := Label.new()
 		h.text = "♡"
-		h.add_theme_font_size_override("font_size", 18)
+		h.add_theme_font_size_override("font_size", 27)
 		h.add_theme_color_override("font_color", Color("#FF6666"))
 		_hearts.add_child(h)
 
@@ -441,7 +441,7 @@ func _build_top_row() -> void:
 	_level_label.text = ""
 	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_level_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_level_label.add_theme_font_size_override("font_size", 14)
+	_level_label.add_theme_font_size_override("font_size", 21)
 	_level_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 0.85))
 	top.add_child(_level_label)
 
@@ -454,13 +454,13 @@ func _build_top_row() -> void:
 	_souls_total = Label.new()
 	_souls_total.text = "👻 0 / 100"
 	_souls_total.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_souls_total.add_theme_font_size_override("font_size", 14)
+	_souls_total.add_theme_font_size_override("font_size", 21)
 	right_col.add_child(_souls_total)
 
 	_light_label = Label.new()
 	_light_label.text = "💡 0"
 	_light_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_light_label.add_theme_font_size_override("font_size", 13)
+	_light_label.add_theme_font_size_override("font_size", 20)
 	_light_label.add_theme_color_override("font_color", Color("#FFD060"))
 	right_col.add_child(_light_label)
 
@@ -468,7 +468,7 @@ func _build_top_row() -> void:
 	_timer_label = Label.new()
 	_timer_label.text = "00:00"
 	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_timer_label.add_theme_font_size_override("font_size", 14)
+	_timer_label.add_theme_font_size_override("font_size", 21)
 	_timer_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75, 0.85))
 	_timer_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_timer_label.offset_top    = 46.0
@@ -502,7 +502,7 @@ func _build_bottom_row() -> void:
 	_souls_level.text = "👻 0 / 0"
 	_souls_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_souls_level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_souls_level.add_theme_font_size_override("font_size", 14)
+	_souls_level.add_theme_font_size_override("font_size", 21)
 	_bottom_row.add_child(_souls_level)
 
 func _build_pause_button() -> void:
@@ -514,7 +514,7 @@ func _build_pause_button() -> void:
 	_pause_btn.offset_right  = -8.0
 	_pause_btn.offset_top    = 8.0
 	_pause_btn.offset_bottom = 52.0
-	_pause_btn.add_theme_font_size_override("font_size", 22)
+	_pause_btn.add_theme_font_size_override("font_size", 33)
 	_pause_btn.focus_mode = Control.FOCUS_NONE
 	_pause_btn.pressed.connect(_on_pause_btn_pressed)
 	_root.add_child(_pause_btn)
