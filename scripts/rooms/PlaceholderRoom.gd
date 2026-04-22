@@ -34,8 +34,9 @@ extends Node2D
 ## Level ID — set by LevelBase so config queries work.
 @export var level_id: int = 0
 
-const WALL_T: float = 32.0
-const PLATFORM_T: float = 30.0
+const WALL_T:      float = 32.0   # floor / ceiling + horizontal room side walls
+const SIDE_WALL_T: float = 60.0   # side walls in vertical rooms
+const PLATFORM_T:  float = 30.0
 
 # Viewport dimensions — must match project.godot display/window settings.
 const VIEWPORT_WIDTH:  float = 1080.0
@@ -63,6 +64,13 @@ var _bridge_rows: Array = []
 # All platform row Y positions for vertical rooms (empty for horizontal).
 # Computed in _init_zone() when is_vertical=true; used by _add_main_platforms().
 var _all_rows: Array = []
+
+# Column X positions and zigzag phase computed in _add_vertical_main_platforms().
+# Stored so spawn functions can place entities on the correct platform surface.
+var _vert_col_l:       float = 0.0
+var _vert_col_c:       float = 0.0
+var _vert_col_r:       float = 0.0
+var _vert_step_offset: int   = 0
 
 # Per-circle base colors (index 0 = unused, 1-10 = circles)
 const CIRCLE_COLORS: Array = [
@@ -218,8 +226,17 @@ func _spawn_enemies() -> void:
 	var enemy := packed.instantiate() as Node2D
 	if not enemy:
 		return
-	var x_offset: float = 140.0 + float((room_index * 73) % 320)
-	enemy.position = Vector2(x_offset, room_height - WALL_T - 40.0)
+	var x_pos: float
+	var y_pos: float
+	if is_vertical and not _all_rows.is_empty():
+		@warning_ignore("integer_division")
+		var row_idx: int = _all_rows.size() / 5
+		y_pos = float(_all_rows[row_idx]) - 40.0
+		x_pos = _vert_platform_x(row_idx)
+	else:
+		x_pos = 140.0 + float((room_index * 73) % 320)
+		y_pos = room_height - WALL_T - 40.0
+	enemy.position = Vector2(x_pos, y_pos)
 	add_child(enemy)
 
 func _pick_enemy_scene() -> String:
@@ -250,8 +267,12 @@ func _spawn_soul() -> void:
 	if not soul:
 		return
 	soul.add_to_group("soul")
-	# Place the soul on the high platform so the player must platformer to reach it.
-	soul.position = Vector2(room_width * 0.5, _row_high - 24.0)
+	if is_vertical and not _all_rows.is_empty():
+		@warning_ignore("integer_division")
+		var row_idx: int = _all_rows.size() * 7 / 10
+		soul.position = Vector2(_vert_platform_x(row_idx), float(_all_rows[row_idx]) - 24.0)
+	else:
+		soul.position = Vector2(room_width * 0.5, _row_high - 24.0)
 	add_child(soul)
 
 # ── Bonus spawning ────────────────────────────────────────────────────────────
@@ -288,8 +309,12 @@ func _spawn_bonus() -> void:
 		return
 	var key: String = bonuses[room_index % bonuses.size()]
 	bonus.set("bonus_type", BONUS_ENUM.get(key, 3))
-	# Place on the mid-row platform so the player must navigate up to reach it.
-	bonus.position = Vector2(room_width * 0.5, _row_mid - 40.0)
+	if is_vertical and not _all_rows.is_empty():
+		@warning_ignore("integer_division")
+		var row_idx: int = _all_rows.size() / 2
+		bonus.position = Vector2(_vert_platform_x(row_idx), float(_all_rows[row_idx]) - 40.0)
+	else:
+		bonus.position = Vector2(room_width * 0.5, _row_mid - 40.0)
 	add_child(bonus)
 
 # ── Altar spawning ────────────────────────────────────────────────────────────
@@ -347,15 +372,16 @@ func _build_walls() -> void:
 	# Side walls span the safe-area-adjusted height.
 	var wall_h:    float = room_height - float(sa_top + sa_bottom)
 	var wall_mid_y: float = float(sa_top) + wall_h / 2.0
-	var wall_l_x:  float = WALL_T / 2.0 + float(sa_left)
-	var wall_r_x:  float = room_width - WALL_T / 2.0 - float(sa_right)
+	var side_t:    float = SIDE_WALL_T if is_vertical else WALL_T
+	var wall_l_x:  float = side_t / 2.0 + float(sa_left)
+	var wall_r_x:  float = room_width - side_t / 2.0 - float(sa_right)
 
 	if needs_floor:
 		_add_wall("Floor",   Vector2(room_width / 2.0, floor_y),   Vector2(room_width, WALL_T))
 	if needs_ceiling:
 		_add_wall("Ceiling", Vector2(room_width / 2.0, ceiling_y), Vector2(room_width, WALL_T))
-	_add_wall("WallL", Vector2(wall_l_x, wall_mid_y), Vector2(WALL_T, wall_h))
-	_add_wall("WallR", Vector2(wall_r_x, wall_mid_y), Vector2(WALL_T, wall_h))
+	_add_wall("WallL", Vector2(wall_l_x, wall_mid_y), Vector2(side_t, wall_h))
+	_add_wall("WallR", Vector2(wall_r_x, wall_mid_y), Vector2(side_t, wall_h))
 
 	# Variant mid-platforms based on room_index so rooms differ visually
 	match room_type:
@@ -527,6 +553,12 @@ func _add_vertical_main_platforms(col_l: float, col_c: float, col_r: float,
 	# way for every level.  Derived from the same RNG so it varies independently.
 	var step_offset: int = rng.randi() % 5
 
+	# Persist so spawn helpers can place entities on the correct platform surface.
+	_vert_col_l       = col_l
+	_vert_col_c       = col_c
+	_vert_col_r       = col_r
+	_vert_step_offset = step_offset
+
 	for i in _all_rows.size():
 		var ry: float = float(_all_rows[i])
 		match (i + step_offset) % 5:
@@ -541,6 +573,15 @@ func _add_vertical_main_platforms(col_l: float, col_c: float, col_r: float,
 				_add_platform(Vector2(col_r, ry), shelf)
 			4:
 				_add_typed_platform(Vector2(col_c, ry), shelf, _platform_type_hint)
+
+func _vert_platform_x(row_idx: int) -> float:
+	match (row_idx + _vert_step_offset) % 5:
+		0: return _vert_col_l
+		1: return _vert_col_r
+		2: return _vert_col_c
+		3: return _vert_col_l  # double shelf row — use left column as anchor
+		4: return _vert_col_c
+	return room_width * 0.5
 
 func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 	# Circle-specific overrides — each circle reshapes the same procedural
@@ -662,8 +703,9 @@ func _draw() -> void:
 		draw_rect(Rect2(0, room_height - WALL_T - sa_bottom, room_width, WALL_T), wall_c)
 	if needs_ceiling:
 		draw_rect(Rect2(0, sa_top, room_width, WALL_T), wall_c)
-	draw_rect(Rect2(sa_left, 0, WALL_T, room_height), wall_c)
-	draw_rect(Rect2(room_width - WALL_T - sa_right, 0, WALL_T, room_height), wall_c)
+	var side_t: float = SIDE_WALL_T if is_vertical else WALL_T
+	draw_rect(Rect2(sa_left, 0, side_t, room_height), wall_c)
+	draw_rect(Rect2(room_width - side_t - sa_right, 0, side_t, room_height), wall_c)
 
 	# Type badge
 	var type_colors := {"entrance": Color(0.2, 0.8, 0.3), "main": Color(0.6, 0.6, 0.9), "exit": Color(1.0, 0.85, 0.2)}
