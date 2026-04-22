@@ -17,10 +17,12 @@ func _make_vl() -> SafeVoidLevel:
 	var vl: SafeVoidLevel = SafeVoidLevel.new()
 	# Provide the child nodes LevelBase @onready vars expect
 	var hud := Node.new();     hud.name = "HUD"
+	var ps  := Node.new();     ps.name  = "PauseScreen"
 	var rc  := Node2D.new();   rc.name  = "RoomContainer"
 	var sp  := Marker2D.new(); sp.name  = "SpawnPoint"
 	var ex  := Area2D.new();   ex.name  = "Exit"
 	vl.add_child(hud)
+	vl.add_child(ps)
 	vl.add_child(rc)
 	vl.add_child(sp)
 	vl.add_child(ex)

@@ -18,11 +18,13 @@ class SafeEscapeLevel extends EscapeLevelScript:
 
 func _make_safe_el() -> Node:
 	var el: Node = SafeEscapeLevel.new()
-	var hud := Node.new();    hud.name = "HUD"
-	var rc  := Node2D.new();  rc.name  = "RoomContainer"
-	var sp  := Marker2D.new(); sp.name = "SpawnPoint"
-	var ex  := Area2D.new();  ex.name  = "Exit"
+	var hud := Node.new();     hud.name = "HUD"
+	var ps  := Node.new();     ps.name  = "PauseScreen"
+	var rc  := Node2D.new();   rc.name  = "RoomContainer"
+	var sp  := Marker2D.new(); sp.name  = "SpawnPoint"
+	var ex  := Area2D.new();   ex.name  = "Exit"
 	el.add_child(hud)
+	el.add_child(ps)
 	el.add_child(rc)
 	el.add_child(sp)
 	el.add_child(ex)

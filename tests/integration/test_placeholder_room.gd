@@ -21,12 +21,12 @@ func _make_room(type: String, idx: int, circle: int = 1) -> Node2D:
 func test_metadata_room_width_set_after_ready() -> void:
 	var room := _make_room("main", 1)
 	assert_true(room.has_meta("room_width"))
-	assert_almost_eq(float(room.get_meta("room_width")), 720.0, 0.001)
+	assert_almost_eq(float(room.get_meta("room_width")), 1080.0, 0.001)
 
 func test_metadata_room_height_set_after_ready() -> void:
 	var room := _make_room("main", 1)
 	assert_true(room.has_meta("room_height"))
-	assert_almost_eq(float(room.get_meta("room_height")), 540.0, 0.001)
+	assert_almost_eq(float(room.get_meta("room_height")), 900.0, 0.001)
 
 func test_custom_room_width_reflected_in_metadata() -> void:
 	var room: Node2D = Node2D.new()

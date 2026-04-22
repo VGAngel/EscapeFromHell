@@ -4,13 +4,15 @@ extends GutTest
 # the bottom for the ad banner when ads are active, and reclaim that space
 # once "no_ads" is purchased.
 #
-# Constants mirror the MainMenu.tscn defaults (offset_top=1210, offset_
-# bottom=1240 for VersionLabel; ButtonsContainer.offset_bottom=900). If
-# those numbers change in the scene, update them here too.
+# Expected values are what _apply_banner_space() produces in a 1080×1920
+# viewport (content_scale_size) with no-ads baseline (banner_h = 0):
+#   VersionLabel: offset_top = -50, offset_bottom = -20 (anchored to bottom)
+#   ButtonsContainer: offset_bottom = vp_h - 320 = 1920 - 320 = 1600
+# If the _apply_banner_space formula changes, update here too.
 
-const VERSION_TOP_DEFAULT:    float = 1210.0
-const VERSION_BOTTOM_DEFAULT: float = 1240.0
-const BUTTONS_BOTTOM_DEFAULT: float = 900.0
+const VERSION_TOP_DEFAULT:    float = -50.0
+const VERSION_BOTTOM_DEFAULT: float = -20.0
+const BUTTONS_BOTTOM_DEFAULT: float = 1600.0
 const BANNER_PX:              int   = 60
 
 const MainMenuScene := preload("res://scenes/ui/MainMenu.tscn")

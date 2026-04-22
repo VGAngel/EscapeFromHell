@@ -96,7 +96,9 @@ func _make_btn(label: String, action: String, btn_size: Vector2) -> Button:
 	return btn
 
 func _fire_action(action: String, pressed: bool) -> void:
-	var ev := InputEventAction.new()
-	ev.action  = action
-	ev.pressed = pressed
-	Input.parse_input_event(ev)
+	if not InputMap.has_action(action):
+		return
+	if pressed:
+		Input.action_press(action)
+	else:
+		Input.action_release(action)

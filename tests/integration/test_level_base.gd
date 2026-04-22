@@ -338,8 +338,8 @@ func test_hp_changed_forwarded_to_game_manager() -> void:
 		return
 	lb._on_player_hp_changed(2, 3)
 	# GameManager stores last HP so HUD can sync; verify it accepted the call.
-	assert_eq(GameManager.current_hp,     2)
-	assert_eq(GameManager.current_max_hp, 3)
+	assert_eq(GameManager._hp,     2)
+	assert_eq(GameManager._max_hp, 3)
 
 # ── Player died chain ─────────────────────────────────────────────────────────
 
@@ -349,9 +349,9 @@ func test_player_died_calls_trigger_death() -> void:
 		pass_test("GameManager.trigger_death not available — skip")
 		return
 	lb._is_complete = false
-	var death_count_before: int = GameManager.death_count
+	var death_count_before: int = GameManager._deaths_this_level
 	lb._on_player_died()
-	assert_gt(GameManager.death_count, death_count_before)
+	assert_gt(GameManager._deaths_this_level, death_count_before)
 
 func test_player_died_ignored_when_level_complete() -> void:
 	var lb: Node = _make_safe_lb()
@@ -359,9 +359,9 @@ func test_player_died_ignored_when_level_complete() -> void:
 		pass_test("skip")
 		return
 	lb._is_complete = true
-	var death_count_before: int = GameManager.death_count
+	var death_count_before: int = GameManager._deaths_this_level
 	lb._on_player_died()
-	assert_eq(GameManager.death_count, death_count_before)
+	assert_eq(GameManager._deaths_this_level, death_count_before)
 
 # ── Soul collected → GameManager ──────────────────────────────────────────────
 

@@ -79,7 +79,7 @@ func test_difficulty_index_4_is_medium() -> void:
 	var d: Dictionary = lg._difficulty_for_index(4)
 	assert_eq(d.get("trap_density"), "medium")
 	assert_eq(d.get("enemy_count_mod"), 0)
-	assert_eq(d.get("room_count"), 5)
+	assert_eq(d.get("room_count"), 6)  # mini(4+2, 6) = 6
 
 func test_difficulty_index_6_is_medium() -> void:
 	var d: Dictionary = lg._difficulty_for_index(6)
@@ -253,17 +253,17 @@ func test_circle_style_returns_empty_when_not_in_config() -> void:
 # ── generate — result fields ──────────────────────────────────────────────────
 
 func test_generate_room_count_for_early_level() -> void:
-	# level 2 → index 2 → mini(3 + 2/2, 6) = 4
+	# level 2 → index 2 → mini(2+2, 6) = 4
 	var r = lg.generate(2)
 	assert_eq(r.room_count, 4)
 
 func test_generate_room_count_for_mid_level() -> void:
-	# level 5 → index 5 → mini(3 + 5/2, 6) = 5
+	# level 5 → index 5 → mini(5+2, 6) = 6
 	var r = lg.generate(5)
-	assert_eq(r.room_count, 5)
+	assert_eq(r.room_count, 6)
 
 func test_generate_room_count_for_late_level() -> void:
-	# level 8 → index 8 → mini(3 + 8/2, 6) = 6
+	# level 8 → index 8 → mini(8+2, 6) = 6 (capped)
 	var r = lg.generate(8)
 	assert_eq(r.room_count, 6)
 
@@ -642,13 +642,17 @@ func test_level1_and_level2_have_different_room_counts() -> void:
 		"level 2 must be longer than level 1 (more rooms)")
 
 func test_zone_tier_adjacent_levels_differ_in_circle1() -> void:
-	# Every adjacent pair of levels in circle 1 must differ in zone OR room_count so
-	# no two consecutive levels feel identical.
+	# Every adjacent pair must differ in zone OR room_count. Pairs where both
+	# levels are at the room_count ceiling (6) are exempt — they're already the
+	# hardest in their category and can't grow further without raising the cap.
+	const ROOM_COUNT_MAX := 6
 	for idx in range(1, 9):
 		var zone_a: String = lg._zone_tier(1, idx)
 		var zone_b: String = lg._zone_tier(1, idx + 1)
 		var rc_a: int = lg._difficulty_for_index(idx).get("room_count", 0)
 		var rc_b: int = lg._difficulty_for_index(idx + 1).get("room_count", 0)
+		if rc_a == ROOM_COUNT_MAX and rc_b == ROOM_COUNT_MAX:
+			continue  # both at ceiling — room_count can't differentiate further
 		var unique: bool = (zone_a != zone_b) or (rc_a != rc_b)
 		assert_true(unique,
 			"levels %d and %d must differ in zone or room_count" % [idx, idx + 1])

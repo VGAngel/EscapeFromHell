@@ -299,11 +299,10 @@ func _difficulty_for_index(idx_in_circle: int) -> Dictionary:
 		base = inj.get("levels_4_6", {"enemy_count_mod":  0, "trap_density": "medium", "room_count": 4})
 	else:
 		base = inj.get("levels_7_9", {"enemy_count_mod": +1, "trap_density": "high",   "room_count": 5})
-	# Per-level room count grows as the player advances within a circle:
-	# idx 1→3, 2→4, 3→4, 4→5, 5→5, 6→6, 7→6, 8→6, 9→6.
-	# This gives each level a distinct length even when zone tier matches a neighbour.
-	@warning_ignore("integer_division")
-	var room_count: int = mini(3 + idx_in_circle / 2, 6)
+	# Per-level room count: idx 1→3, 2→4, 3→5, 4→6, 5..9→6 (capped).
+	# Each same-zone adjacent pair differs: medium(2,3)=4≠5, medium(3,4)=5≠6.
+	# Hard/extreme pairs (5-9) all hit the cap; _zone_tier_ changes at idx 5 and 8.
+	var room_count: int = mini(idx_in_circle + 2, 6)
 	return {
 		"enemy_count_mod": base.get("enemy_count_mod", 0),
 		"trap_density":    base.get("trap_density",    "medium"),

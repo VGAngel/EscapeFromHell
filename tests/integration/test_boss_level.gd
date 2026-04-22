@@ -22,11 +22,13 @@ class SafeBossLevel extends BossLevelScript:
 func _make_safe_bl() -> Node:
 	var bl: Node = SafeBossLevel.new()
 	# @onready fires before _ready() in Godot 4, so add stubs beforehand.
-	var hud := Node.new();    hud.name = "HUD"
-	var rc  := Node2D.new();  rc.name  = "RoomContainer"
-	var sp  := Marker2D.new(); sp.name = "SpawnPoint"
-	var ex  := Area2D.new();  ex.name  = "Exit"
+	var hud := Node.new();     hud.name = "HUD"
+	var ps  := Node.new();     ps.name  = "PauseScreen"
+	var rc  := Node2D.new();   rc.name  = "RoomContainer"
+	var sp  := Marker2D.new(); sp.name  = "SpawnPoint"
+	var ex  := Area2D.new();   ex.name  = "Exit"
 	bl.add_child(hud)
+	bl.add_child(ps)
 	bl.add_child(rc)
 	bl.add_child(sp)
 	bl.add_child(ex)
