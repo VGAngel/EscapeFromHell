@@ -727,14 +727,14 @@ func _assign_sections(row_count: int, rng: RandomNumberGenerator) -> Array[Strin
 	var idx: int = 0
 	var step: int = 0
 	while idx < row_count:
-		var name: String = String(template[step % template.size()])
-		var profile: Dictionary = SECTION_PROFILES[name]
+		var section: String = String(template[step % template.size()])
+		var profile: Dictionary = SECTION_PROFILES[section]
 		var length: int = rng.randi_range(int(profile["length_min"]),
 				int(profile["length_max"]))
 		for _k in length:
 			if idx >= row_count:
 				break
-			assignment[idx] = name
+			assignment[idx] = section
 			idx += 1
 		step += 1
 	return assignment

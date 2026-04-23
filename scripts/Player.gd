@@ -405,13 +405,13 @@ func _check_fall_damage() -> void:
 
 	if is_on_floor() and _fall_start_y > 0.0:
 		var fallen: float = global_position.y - _fall_start_y
-		var scale: float = SOFT_LANDING_FACTOR if _upgrade_soft_landing else 1.0
+		var threshold_scale: float = SOFT_LANDING_FACTOR if _upgrade_soft_landing else 1.0
 		# Walk the tier table from highest to lowest so the worst applicable
 		# tier wins. Tiers are expressed in jump-heights (200 px each).
 		for j in range(FALL_DAMAGE_TIERS.size() - 1, -1, -1):
 			var tier: Dictionary = FALL_DAMAGE_TIERS[j]
 			var threshold: float = LevelGenerator.MAX_JUMP_HEIGHT \
-					* float(tier.min_jumps) * scale
+					* float(tier.min_jumps) * threshold_scale
 			if fallen > threshold:
 				_take_damage(int(tier.damage))
 				break
