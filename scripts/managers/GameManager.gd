@@ -200,10 +200,12 @@ func trigger_death(_cause: String = "enemy_hit") -> void:
 		var tw := create_tween()
 		tw.tween_property(overlay, "modulate:a", 0.6, 0.12)
 		tw.tween_property(overlay, "modulate:a", 0.0, 0.10)
-		tw.tween_callback(func() -> void: overlay.color = Color.BLACK)
+		tw.tween_callback(func() -> void:
+			if is_instance_valid(overlay): overlay.color = Color.BLACK
+		)
 		tw.tween_property(overlay, "modulate:a", 1.0, SCREEN_DARKEN_DURATION - 0.22)
 		tw.tween_callback(func() -> void:
-			_do_respawn(overlay)
+			if is_instance_valid(overlay): _do_respawn(overlay)
 		)
 
 func _do_respawn(overlay: ColorRect) -> void:
@@ -213,7 +215,9 @@ func _do_respawn(overlay: ColorRect) -> void:
 	# Fade back in
 	var tw := create_tween()
 	tw.tween_property(overlay, "modulate:a", 0.0, SCREEN_DARKEN_DURATION * 0.7)
-	tw.tween_callback(overlay.queue_free)
+	tw.tween_callback(func() -> void:
+		if is_instance_valid(overlay): overlay.queue_free()
+	)
 
 	_is_transitioning = false
 	player_respawned.emit()
