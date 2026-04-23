@@ -55,6 +55,13 @@ func _ready() -> void:
 		return
 	_build_ui()
 
+func _unhandled_input(event: InputEvent) -> void:
+	# F3 toggles the entire overlay (zone card + log stack).
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F3:
+			set_visible_overlay(not _overlay_visible)
+			get_viewport().set_input_as_handled()
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 func info(message: String) -> void:
@@ -137,13 +144,20 @@ func _build_card(level: int, message: String) -> Control:
 
 func _build_zone_card(level_id: int, tier: String, spacing: float,
 		platform_type: String, platform_width: float) -> Control:
-	const W: float = 260.0
+	const W: float = 280.0
+	# CenterContainer pins the panel to the top-middle of the viewport without
+	# the panel itself stretching to full screen width.
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	center.offset_top = 8
+	center.offset_left = 0
+	center.offset_right = 0
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	var panel := PanelContainer.new()
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.custom_minimum_size = Vector2(W, 0)
-	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	panel.offset_left = 12
-	panel.offset_top  = 12
+	panel.mouse_filter = Control.MOUSE_FILTER_PASS
+	center.add_child(panel)
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = ZONE_COLORS.get(tier, Color(0.2, 0.2, 0.2, 0.9))
@@ -172,7 +186,31 @@ func _build_zone_card(level_id: int, tier: String, spacing: float,
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		vbox.add_child(lbl)
 
-	return panel
+	# Seed row — clickable Button styled flat to look like a label. The seed
+	# value is the level_id (room layouts are deterministic per level_id +
+	# room_index, so knowing this reproduces every room).
+	var seed_btn := Button.new()
+	seed_btn.text = "seed  %d  📋" % level_id
+	seed_btn.flat = true
+	seed_btn.focus_mode = Control.FOCUS_NONE
+	seed_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	seed_btn.add_theme_font_size_override("font_size", 11)
+	seed_btn.add_theme_color_override("font_color",         Color(1, 1, 1, 0.95))
+	seed_btn.add_theme_color_override("font_hover_color",   Color(1, 1, 0.6, 1.0))
+	seed_btn.add_theme_color_override("font_pressed_color", Color(0.7, 1, 0.7, 1.0))
+	seed_btn.pressed.connect(_on_seed_pressed.bind(seed_btn, level_id))
+	vbox.add_child(seed_btn)
+
+	return center
+
+func _on_seed_pressed(btn: Button, seed_value: int) -> void:
+	DisplayServer.clipboard_set(str(seed_value))
+	var original: String = "seed  %d  📋" % seed_value
+	btn.text = "seed  %d  ✓ copied" % seed_value
+	# Restore label after a short beat so the user sees the confirmation.
+	get_tree().create_timer(1.2).timeout.connect(func() -> void:
+		if is_instance_valid(btn):
+			btn.text = original)
 
 func _build_ui() -> void:
 	_layer = CanvasLayer.new()
