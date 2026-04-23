@@ -53,8 +53,18 @@ var _facing_right:   bool   = true
 
 # ── Fall damage ───────────────────────────────────────────────────────────────
 var _fall_start_y: float = 0.0
-const FALL_SAFE_HEIGHT:   float = 320.0
-const FALL_DAMAGE_HEIGHT: float = 480.0
+# Tiered fall damage in multiples of MAX_JUMP_HEIGHT (200 px).
+#   < 1.5 jumps  (300 px) → no damage   (a missed jump shouldn't punish)
+#   1.5–2.5      (300–500) → 1 hp       (clearly overshot a row)
+#   2.5–4        (500–800) → 2 hp       (multi-row fall, hurts hard)
+#   > 4 jumps    (>800)    → death       (effectively jumped off the level)
+# soft_landing upgrade scales every threshold by SOFT_LANDING_FACTOR.
+const FALL_DAMAGE_TIERS := [
+	{ "min_jumps": 1.5, "damage": 1 },
+	{ "min_jumps": 2.5, "damage": 2 },
+	{ "min_jumps": 4.0, "damage": 99 },  # 99 = instant kill via _take_damage
+]
+const SOFT_LANDING_FACTOR: float = 1.5
 
 # ── Upgrade flags (populated in _ready) ───────────────────────────────────────
 var _upgrade_quick_pickup:     bool  = false
@@ -395,11 +405,16 @@ func _check_fall_damage() -> void:
 
 	if is_on_floor() and _fall_start_y > 0.0:
 		var fallen: float = global_position.y - _fall_start_y
-		var threshold: float = FALL_DAMAGE_HEIGHT
-		if _upgrade_soft_landing:
-			threshold *= 1.5
-		if fallen > threshold:
-			_take_damage(1)
+		var scale: float = SOFT_LANDING_FACTOR if _upgrade_soft_landing else 1.0
+		# Walk the tier table from highest to lowest so the worst applicable
+		# tier wins. Tiers are expressed in jump-heights (200 px each).
+		for j in range(FALL_DAMAGE_TIERS.size() - 1, -1, -1):
+			var tier: Dictionary = FALL_DAMAGE_TIERS[j]
+			var threshold: float = LevelGenerator.MAX_JUMP_HEIGHT \
+					* float(tier.min_jumps) * scale
+			if fallen > threshold:
+				_take_damage(int(tier.damage))
+				break
 		_fall_start_y = 0.0
 
 # ── Damage & death ────────────────────────────────────────────────────────────
