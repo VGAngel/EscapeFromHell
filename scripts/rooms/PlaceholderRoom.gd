@@ -9,8 +9,14 @@ extends Node2D
 # LevelBase reads room_width / room_height from node metadata; we write those
 # in _ready() so no manual metadata entry is needed in the .tscn.
 
-## "entrance" | "main" | "exit"
+## "entrance" | "main" | "exit" | "shaft"
+## "shaft" — one big vertical room replacing the old N stacked rooms.
 @export var room_type: String = "main"
+
+## For room_type == "shaft": how many old "two-screen" segments to span.
+## Total room_height becomes VIEWPORT_HEIGHT * VERTICAL_ROOM_SCREENS * room_count.
+## Drives the number of distributed enemy / soul / bonus spawns.
+@export var room_count: int = 1
 
 ## Room variant index (shown in the debug label).
 @export var room_index: int = 1
@@ -33,6 +39,11 @@ extends Node2D
 
 ## Level ID — set by LevelBase so config queries work.
 @export var level_id: int = 0
+
+## Tileset id for this circle — set by LevelBase from LevelConfig.get_circle_tileset().
+## Currently a string identifier; will drive actual tile rendering when the
+## tile assets ship (placeholder renders fall back to grey rectangles).
+@export var tileset: String = "tileset1"
 
 const WALL_T:      float = 32.0   # floor / ceiling + horizontal room side walls
 const SIDE_WALL_T: float = 60.0   # side walls in vertical rooms
@@ -137,10 +148,12 @@ const CIRCLE_COLORS: Array = [
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
-	# Vertical levels must be at least VERTICAL_ROOM_SCREENS tall so the
-	# player has enough space to traverse up and down.
+	# Vertical rooms set their own height. The legacy entrance/main/exit types
+	# use a single 2-screen block; "shaft" multiplies that by room_count to
+	# replace the whole stack of old rooms with one continuous level.
 	if is_vertical:
-		room_height = VIEWPORT_HEIGHT * VERTICAL_ROOM_SCREENS
+		var screens: int = VERTICAL_ROOM_SCREENS * (room_count if room_type == "shaft" else 1)
+		room_height = VIEWPORT_HEIGHT * float(screens)
 
 	set_meta("room_width",  room_width)
 	set_meta("room_height", room_height)
@@ -322,10 +335,44 @@ const ENEMY_FALLBACK_POOLS := {
 	10: ["res://scenes/enemies/VoidSentinel.tscn", "res://scenes/enemies/ThroneGuard.tscn"],
 }
 
+# Pick `count` row indices spread evenly across _all_rows, skipping the very
+# top and bottom (where altar / exit area sit), and call the spawner for each.
+# Used by shaft mode to distribute enemies / souls / bonuses along the full
+# height of the level instead of clumping at one row per old room.
+func _spawn_distributed(count: int, spawner: Callable) -> void:
+	if not is_vertical or _all_rows.is_empty() or count <= 0:
+		return
+	var n: int = _all_rows.size()
+	# Reserve a 2-row buffer at top (altar) and bottom (exit area).
+	var first: int = 2
+	var last:  int = n - 3
+	if last <= first:
+		return
+	var span: int = last - first
+	for i in count:
+		var t: float = (float(i) + 0.5) / float(count)   # 0.5/N, 1.5/N, …
+		var row_idx: int = first + int(round(t * float(span)))
+		spawner.call(clampi(row_idx, first, last))
+
 func _spawn_enemies() -> void:
+	# "shaft" rooms host the whole vertical level — spawn one enemy per
+	# would-be old room (room_count of them), spread across the platform rows.
+	if room_type == "shaft":
+		_spawn_distributed(room_count, _spawn_one_enemy_at_row)
+		return
 	if room_type != "main":
 		return
-	var scene_path: String = _pick_enemy_scene()
+	_spawn_one_enemy_at_row(_default_enemy_row())
+
+func _default_enemy_row() -> int:
+	# Legacy single-room placement: 1/5 of the way up from the bottom.
+	if _all_rows.is_empty():
+		return -1
+	@warning_ignore("integer_division")
+	return _all_rows.size() / 5
+
+func _spawn_one_enemy_at_row(row_idx: int) -> void:
+	var scene_path: String = _pick_enemy_scene_for(row_idx)
 	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
 		return
 	var packed := load(scene_path) as PackedScene
@@ -336,9 +383,7 @@ func _spawn_enemies() -> void:
 		return
 	var x_pos: float
 	var y_pos: float
-	if is_vertical and not _all_rows.is_empty():
-		@warning_ignore("integer_division")
-		var row_idx: int = _all_rows.size() / 5
+	if is_vertical and row_idx >= 0 and row_idx < _all_rows.size():
 		y_pos = float(_all_rows[row_idx]) - 60.0
 		x_pos = _vert_platform_x(row_idx)
 	else:
@@ -347,11 +392,14 @@ func _spawn_enemies() -> void:
 	enemy.position = Vector2(x_pos, y_pos)
 	add_child(enemy)
 
-func _pick_enemy_scene() -> String:
+# Picks an enemy scene path. The `slot_index` rotates through the configured
+# enemy list so a single shaft showcases the whole circle's bestiary.
+func _pick_enemy_scene_for(slot_index: int) -> String:
 	if LevelConfig and level_id > 0:
 		var types: Array = LevelConfig.get_enemies(level_id)
 		if not types.is_empty():
-			var type_key: String = types[room_index % types.size()]
+			var key_idx: int = slot_index if slot_index >= 0 else room_index
+			var type_key: String = types[key_idx % types.size()]
 			var path: String = ENEMY_SCENE_MAP.get(type_key, "")
 			if not path.is_empty():
 				return path
@@ -363,8 +411,23 @@ func _pick_enemy_scene() -> String:
 # ── Soul spawning ─────────────────────────────────────────────────────────────
 
 func _spawn_soul() -> void:
+	# Shaft hosts the whole vertical level: spawn one soul per (room_count - 2)
+	# slots — same density as the legacy "one soul per main room" rule.
+	if room_type == "shaft":
+		var soul_count: int = maxi(1, room_count - 2)
+		_spawn_distributed(soul_count, _spawn_one_soul_at_row)
+		return
 	if room_type != "main":
 		return
+	_spawn_one_soul_at_row(_default_soul_row())
+
+func _default_soul_row() -> int:
+	if _all_rows.is_empty():
+		return -1
+	@warning_ignore("integer_division")
+	return _all_rows.size() * 7 / 10
+
+func _spawn_one_soul_at_row(row_idx: int) -> void:
 	var soul_path := "res://scenes/Soul.tscn"
 	if not ResourceLoader.exists(soul_path):
 		return
@@ -375,9 +438,7 @@ func _spawn_soul() -> void:
 	if not soul:
 		return
 	soul.add_to_group("soul")
-	if is_vertical and not _all_rows.is_empty():
-		@warning_ignore("integer_division")
-		var row_idx: int = _all_rows.size() * 7 / 10
+	if is_vertical and row_idx >= 0 and row_idx < _all_rows.size():
 		soul.position = Vector2(_vert_platform_x(row_idx), float(_all_rows[row_idx]) - 24.0)
 	else:
 		soul.position = Vector2(room_width * 0.5, _row_high - 24.0)
@@ -397,11 +458,27 @@ const BONUS_ENUM := {
 }
 
 func _spawn_bonus() -> void:
+	# Shaft: ~half the would-be old rooms got a bonus (odd-indexed) — keep
+	# that density by spawning room_count/2 bonuses across the platform rows.
+	if room_type == "shaft":
+		@warning_ignore("integer_division")
+		var bonus_count: int = maxi(1, room_count / 2)
+		_spawn_distributed(bonus_count, _spawn_one_bonus_at_row)
+		return
 	if room_type != "main":
 		return
 	# Only odd-indexed rooms get a bonus (even-indexed get a hazard).
 	if room_index % 2 == 0:
 		return
+	_spawn_one_bonus_at_row(_default_bonus_row())
+
+func _default_bonus_row() -> int:
+	if _all_rows.is_empty():
+		return -1
+	@warning_ignore("integer_division")
+	return _all_rows.size() / 2
+
+func _spawn_one_bonus_at_row(row_idx: int) -> void:
 	var bonuses: Array = []
 	if LevelConfig and level_id > 0:
 		bonuses = LevelConfig.get_bonuses(level_id)
@@ -415,11 +492,10 @@ func _spawn_bonus() -> void:
 	var bonus := packed.instantiate()
 	if not bonus:
 		return
-	var key: String = bonuses[room_index % bonuses.size()]
+	var key_idx: int = row_idx if row_idx >= 0 else room_index
+	var key: String = bonuses[key_idx % bonuses.size()]
 	bonus.set("bonus_type", BONUS_ENUM.get(key, 3))
-	if is_vertical and not _all_rows.is_empty():
-		@warning_ignore("integer_division")
-		var row_idx: int = _all_rows.size() / 2
+	if is_vertical and row_idx >= 0 and row_idx < _all_rows.size():
 		bonus.position = Vector2(_vert_platform_x(row_idx), float(_all_rows[row_idx]) - 40.0)
 	else:
 		bonus.position = Vector2(room_width * 0.5, _row_mid - 40.0)
@@ -430,7 +506,7 @@ func _spawn_bonus() -> void:
 const ALTAR_SCRIPT := preload("res://scripts/AltarNode.gd")
 
 func _spawn_altar() -> void:
-	var spawn_in_vertical_entrance := is_vertical and room_type == "entrance"
+	var spawn_in_vertical_entrance := is_vertical and room_type in ["entrance", "shaft"]
 	var spawn_in_horizontal_exit   := not is_vertical and room_type == "exit"
 	if not spawn_in_vertical_entrance and not spawn_in_horizontal_exit:
 		return
@@ -465,8 +541,10 @@ func _spawn_altar() -> void:
 # ── Physics walls ─────────────────────────────────────────────────────────────
 
 func _build_walls() -> void:
-	var needs_floor:   bool = not is_vertical or room_type == "exit"
-	var needs_ceiling: bool = not is_vertical or room_type == "entrance"
+	# A "shaft" is the whole vertical level in one room — both ends are sealed.
+	# Legacy entrance/main/exit kept their split walls for the old stacked path.
+	var needs_floor:   bool = not is_vertical or room_type in ["exit", "shaft"]
+	var needs_ceiling: bool = not is_vertical or room_type in ["entrance", "shaft"]
 
 	# Safe area: floor/ceiling walls are pushed inward so physics content
 	# never appears under the OS notch or home-bar indicator.
@@ -978,8 +1056,10 @@ func _draw() -> void:
 	# Background fill
 	draw_rect(Rect2(0, 0, room_width, room_height), bg)
 
-	var needs_floor:   bool = not is_vertical or room_type == "exit"
-	var needs_ceiling: bool = not is_vertical or room_type == "entrance"
+	# A "shaft" is the whole vertical level in one room — both ends are sealed.
+	# Legacy entrance/main/exit kept their split walls for the old stacked path.
+	var needs_floor:   bool = not is_vertical or room_type in ["exit", "shaft"]
+	var needs_ceiling: bool = not is_vertical or room_type in ["entrance", "shaft"]
 	var sa_bottom: int = SafeArea.bottom_reserved if SafeArea else 0
 	var sa_top:    int = SafeArea.top_reserved    if SafeArea else 0
 	var sa_left:   int = SafeArea.left_reserved   if SafeArea else 0

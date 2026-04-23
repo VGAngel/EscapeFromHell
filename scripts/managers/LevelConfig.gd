@@ -128,6 +128,12 @@ func get_escape_time(id: int) -> float:
 func get_circle_theme(circle: int) -> String:
 	return _circle_defaults.get(str(circle), {}).get("theme", "grey_stone")
 
+## Returns the tileset id used by a circle's procedural rooms.
+## Mapping lives in levels_config.json → circle_defaults["<n>"]["tileset"].
+## Falls back to "tileset1" so an unconfigured circle still renders.
+func get_circle_tileset(circle: int) -> String:
+	return _circle_defaults.get(str(circle), {}).get("tileset", "tileset1")
+
 func get_levels_in_circle(circle: int) -> Array:
 	var result: Array = []
 	for level: Dictionary in _data.get("levels", []):

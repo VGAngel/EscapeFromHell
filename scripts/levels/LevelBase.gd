@@ -136,7 +136,7 @@ func _init_procedural_level(force_procedural: bool = false) -> void:
 		gen = LevelGenerator.generate(level_id)
 
 	if _level_type == "vertical":
-		_build_vertical_rooms(gen.room_scenes)
+		_build_vertical_shaft(gen)
 	else:
 		_build_horizontal_rooms(gen.room_scenes)
 
@@ -164,25 +164,45 @@ func _build_horizontal_rooms(room_scenes: Array) -> void:
 		cursor_x += _room_width(room)
 	_reposition_spawn_and_exit_h(cursor_x)
 
-# ── Room layout — vertical (vertical level type) ──────────────────────────────
+# ── Room layout — vertical (single shaft) ────────────────────────────────────
 
-## Vertical levels: player spawns at the TOP on a safe shelf and descends
-## to the altar at the bottom. Room scenes arrive as [entrance, main…, exit]
-## in play order — we keep that order so the entrance sits at y = 0 (top)
-## and the exit/altar lands at the bottom of the stack.
-func _build_vertical_rooms(room_scenes: Array) -> void:
-	var cursor_y: float = 0.0
-	for scene_path: String in room_scenes:
-		var room: Node2D = _load_room(scene_path)
-		if not room:
-			continue
-		if "is_vertical" in room:
-			room.is_vertical = true
-		room.position.y = cursor_y
-		_room_container.add_child(room)
-		cursor_y += _room_height(room)
+## Vertical levels are now ONE tall room (a "shaft") instead of N stacked
+## 2-screen rooms — eliminates cross-room platform gaps and lets the Markov
+## section pacing flow uninterrupted across the full descent.
+##
+## We still need an underlying scene to instantiate (PlaceholderRoom carries
+## the script + exported defaults), so we borrow the entrance scene of the
+## level's circle — overrides below replace the per-scene values that mattered
+## for the old multi-room path.
+func _build_vertical_shaft(gen: Object) -> void:
+	var circle: int = ceili(float(level_id) / 10.0)
+	var scene_path: String = ""
+	if not gen.room_scenes.is_empty():
+		scene_path = String(gen.room_scenes[0])
+	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
+		scene_path = "res://scenes/rooms/circle_%d/room_entrance_1.tscn" % circle
+	if not ResourceLoader.exists(scene_path):
+		scene_path = "res://scenes/rooms/circle_1/room_entrance_1.tscn"
+	var room: Node2D = _load_room(scene_path)
+	if not room:
+		_report_warn("LevelBase: failed to build vertical shaft for level %d" % level_id)
+		return
+	if "is_vertical" in room:
+		room.is_vertical = true
+	if "room_type" in room:
+		room.room_type = "shaft"
+	if "room_count" in room:
+		room.room_count = maxi(1, gen.room_count)
+	if "tileset" in room and LevelConfig:
+		room.tileset = LevelConfig.get_circle_tileset(circle)
+	# Force a sane width — entrance scenes ship with 720 px, but the shaft
+	# uses the full 1080 px viewport so Markov has room to spread platforms.
+	if "room_width" in room:
+		room.room_width = 1080.0
+	room.position = Vector2.ZERO
+	_room_container.add_child(room)
 
-	_reposition_spawn_and_exit_v(cursor_y)
+	_reposition_spawn_and_exit_v(_room_height(room))
 
 # ── Room loader helper ────────────────────────────────────────────────────────
 
