@@ -231,7 +231,7 @@ func _spawn_enemies() -> void:
 	if is_vertical and not _all_rows.is_empty():
 		@warning_ignore("integer_division")
 		var row_idx: int = _all_rows.size() / 5
-		y_pos = float(_all_rows[row_idx]) - 40.0
+		y_pos = float(_all_rows[row_idx]) - 60.0
 		x_pos = _vert_platform_x(row_idx)
 	else:
 		x_pos = 140.0 + float((room_index * 73) % 320)

@@ -27,6 +27,11 @@ func _rebuild() -> void:
 	_rebuild_visual()
 
 func _rebuild_collision() -> void:
+	# Skip rebuild when the node isn't in the tree yet — _ready() will call
+	# _rebuild() again once the node is properly added, avoiding a transient
+	# solid (non-one-way) CollisionShape2D that can interfere with physics.
+	if not is_inside_tree():
+		return
 	if _shape and is_instance_valid(_shape):
 		_shape.queue_free()
 	_shape = CollisionShape2D.new()
@@ -36,6 +41,8 @@ func _rebuild_collision() -> void:
 	add_child(_shape)
 
 func _rebuild_visual() -> void:
+	if not is_inside_tree():
+		return
 	if _visual and is_instance_valid(_visual):
 		_visual.queue_free()
 	var script := load("res://scripts/rooms/PlaceholderVisual.gd")
