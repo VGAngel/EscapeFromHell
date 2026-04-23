@@ -383,7 +383,13 @@ func _build_walls() -> void:
 	_add_wall("WallL", Vector2(wall_l_x, wall_mid_y), Vector2(side_t, wall_h))
 	_add_wall("WallR", Vector2(wall_r_x, wall_mid_y), Vector2(side_t, wall_h))
 
-	# Variant mid-platforms based on room_index so rooms differ visually
+	# Variant mid-platforms based on room_index so rooms differ visually.
+	# Vertical rooms always use the full _all_rows distribution so the player
+	# has platforms to land on across the whole 2-screen room height,
+	# including the entrance (top) and exit (bottom) rooms.
+	if is_vertical:
+		_add_main_platforms()
+		return
 	match room_type:
 		"main":
 			_add_main_platforms()
