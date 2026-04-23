@@ -519,15 +519,18 @@ func _spawn_altar() -> void:
 	altar.add_to_group("altar")
 
 	if spawn_in_vertical_entrance:
-		# Top of vertical level — place just above the topmost platform row.
+		# Top of vertical level — place on a dedicated center platform at the
+		# topmost row. Markov layout may stagger that row off-center, so we
+		# always add a wide stone shelf here to guarantee something to stand on.
 		var sa_top_px: int = SafeArea.top_reserved if SafeArea else 0
-		var altar_y: float = WALL_T + float(sa_top_px) + 140.0
+		var altar_row_y: float = WALL_T + float(sa_top_px) + 140.0
 		if not _all_rows.is_empty():
-			altar_y = float(_all_rows.back()) - 32.0
-		altar.position = Vector2(room_width * 0.5, altar_y)
+			altar_row_y = float(_all_rows.back())
+		_add_platform(Vector2(room_width * 0.5, altar_row_y), Vector2(320.0, PLATFORM_T))
+		altar.position = Vector2(room_width * 0.5, altar_row_y - PLATFORM_T * 0.5)
 	else:
 		# Horizontal level — altar on the high-platform shelf in the exit room.
-		altar.position = Vector2(room_width * 0.5, _row_high - 32.0)
+		altar.position = Vector2(room_width * 0.5, _row_high - PLATFORM_T * 0.5)
 
 	var sprite := Sprite2D.new()
 	sprite.name = "Sprite2D"
@@ -537,12 +540,9 @@ func _spawn_altar() -> void:
 	var s: float = ALTAR_TARGET_HEIGHT / tex_h
 	sprite.scale = Vector2(s, s)
 	sprite.centered = false
-	# Pivot at bottom-center so the altar's base sits on its Node2D origin.
+	# Pivot at bottom-center. altar.position is already on platform top surface,
+	# so offset only needs to shift left by half-width and up by full height.
 	sprite.offset = Vector2(-tex_w * 0.5, -tex_h)
-	# Altar is placed 32 px above the platform row's center Y, and the platform's
-	# top surface sits PLATFORM_T/2 above that center. Shift the sprite down so
-	# its base lands exactly on the platform's top surface.
-	sprite.position = Vector2(0, 32.0 - PLATFORM_T * 0.5)
 	altar.add_child(sprite)
 
 	var area := Area2D.new()
