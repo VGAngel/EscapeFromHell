@@ -52,8 +52,13 @@ const GRAVITY: float = 900.0
 @onready var _alert_icon:     Node2D              = get_node_or_null("AlertIcon")
 @onready var _breath_player:  AudioStreamPlayer2D = get_node_or_null("BreathPlayer")
 
+# Downward raycasts placed just ahead of each foot to detect platform edges.
+var _ray_left:  RayCast2D = null
+var _ray_right: RayCast2D = null
+
 func _ready() -> void:
 	_patrol_origin = global_position
+	_build_edge_rays()
 	if _alert_icon:
 		_alert_icon.visible = false
 	# Auto-apply config when enemy_id is set via the scene and a subclass
@@ -107,16 +112,50 @@ func _tick_timers(delta: float) -> void:
 	if _give_up_timer > 0.0 and state == State.GIVE_UP:
 		_give_up_timer -= delta
 
+# ── Edge detection setup ─────────────────────────────────────────────────────
+func _build_edge_rays() -> void:
+	var col: CollisionShape2D = get_node_or_null("CollisionShape2D")
+	var half_w: float = 8.0
+	var half_h: float = 16.0
+	if col and col.shape is RectangleShape2D:
+		half_w = (col.shape as RectangleShape2D).size.x / 2.0
+		half_h = (col.shape as RectangleShape2D).size.y / 2.0
+
+	for side in [-1, 1]:
+		var ray := RayCast2D.new()
+		ray.position = Vector2(side * (half_w + 2.0), half_h)
+		ray.target_position = Vector2(0.0, 12.0)  # short downward cast
+		ray.collision_mask = 1
+		ray.enabled = true
+		add_child(ray)
+		if side == -1:
+			_ray_left = ray
+		else:
+			_ray_right = ray
+
 # ── PATROL ────────────────────────────────────────────────────────────────────
 func _do_patrol(_delta: float) -> void:
-	velocity.x = move_speed * _patrol_dir
+	# Collect all reversal triggers; apply at most one flip per frame so
+	# simultaneous conditions (e.g. wall + boundary) don't cancel each other.
+	var should_reverse := false
 
 	var dist_from_origin: float = global_position.x - _patrol_origin.x
 	if absf(dist_from_origin) >= patrol_distance:
-		_patrol_dir *= -1.0
+		should_reverse = true
 
 	if is_on_wall():
+		should_reverse = true
+
+	# Edge detection: only meaningful while standing (not while falling).
+	if is_on_floor() and not should_reverse:
+		var leading_ray: RayCast2D = _ray_right if _patrol_dir > 0.0 else _ray_left
+		if leading_ray and not leading_ray.is_colliding():
+			should_reverse = true
+
+	if should_reverse:
 		_patrol_dir *= -1.0
+
+	velocity.x = move_speed * _patrol_dir
 
 	if _can_see_player():
 		_enter_alert()
