@@ -52,7 +52,10 @@ var carried_soul_id: String = ""
 var _facing_right:   bool   = true
 
 # ── Fall damage ───────────────────────────────────────────────────────────────
-var _fall_start_y: float = 0.0
+# Highest point (smallest Y in Godot 2D) reached during the current airtime.
+# Sentinel -INF means "not tracking yet" — set on the first off-floor frame
+# or on landing so the next walk-off-ledge starts from the right baseline.
+var _fall_start_y: float = -INF
 # Tiered fall damage in multiples of MAX_JUMP_HEIGHT (200 px).
 #   < 1.5 jumps  (300 px) → no damage   (a missed jump shouldn't punish)
 #   1.5–2.5      (300–500) → 1 hp       (clearly overshot a row)
@@ -400,22 +403,29 @@ func _apply_staff_hit() -> bool:
 
 # ── Fall damage ───────────────────────────────────────────────────────────────
 func _check_fall_damage() -> void:
-	if velocity.y < 0.0 and not is_on_floor():
+	if is_on_floor():
+		# Just landed — _fall_start_y holds the highest point of the airtime.
+		# Skip damage on the very first floor frame after spawn (sentinel).
+		if _fall_start_y != -INF:
+			var fallen: float = global_position.y - _fall_start_y
+			if fallen > 0.0:
+				var threshold_scale: float = SOFT_LANDING_FACTOR if _upgrade_soft_landing else 1.0
+				# Walk the tier table from highest to lowest so the worst
+				# applicable tier wins. Tiers are in jump-heights (200 px).
+				for j in range(FALL_DAMAGE_TIERS.size() - 1, -1, -1):
+					var tier: Dictionary = FALL_DAMAGE_TIERS[j]
+					var threshold: float = LevelGenerator.MAX_JUMP_HEIGHT \
+							* float(tier.min_jumps) * threshold_scale
+					if fallen > threshold:
+						_take_damage(int(tier.damage))
+						break
+		# Re-baseline at the current floor Y so a walk-off-ledge next frame
+		# correctly measures fall distance from this point.
 		_fall_start_y = global_position.y
-
-	if is_on_floor() and _fall_start_y > 0.0:
-		var fallen: float = global_position.y - _fall_start_y
-		var threshold_scale: float = SOFT_LANDING_FACTOR if _upgrade_soft_landing else 1.0
-		# Walk the tier table from highest to lowest so the worst applicable
-		# tier wins. Tiers are expressed in jump-heights (200 px each).
-		for j in range(FALL_DAMAGE_TIERS.size() - 1, -1, -1):
-			var tier: Dictionary = FALL_DAMAGE_TIERS[j]
-			var threshold: float = LevelGenerator.MAX_JUMP_HEIGHT \
-					* float(tier.min_jumps) * threshold_scale
-			if fallen > threshold:
-				_take_damage(int(tier.damage))
-				break
-		_fall_start_y = 0.0
+		return
+	# In air: track the highest point reached (smallest Y in Godot 2D).
+	if _fall_start_y == -INF or global_position.y < _fall_start_y:
+		_fall_start_y = global_position.y
 
 # ── Damage & death ────────────────────────────────────────────────────────────
 
