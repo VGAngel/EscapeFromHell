@@ -75,6 +75,8 @@ func _find_player() -> void:
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
+	if not _player:
+		_find_player()
 	_apply_gravity(delta)
 	_tick_timers(delta)
 	_update_spatial_audio()
