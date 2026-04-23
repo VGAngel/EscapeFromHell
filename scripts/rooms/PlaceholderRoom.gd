@@ -120,6 +120,12 @@ func _init_zone() -> void:
 		_platform_width     = zone.get("platform_width", _platform_width)
 		_platform_type_hint = zone.get("platform_type", _platform_type_hint)
 
+	# Vertical rooms: stretch row spacing toward the jump ceiling so the screen
+	# isn't wallpapered with platforms. Capped at 0.9 × MAX_JUMP_HEIGHT to keep
+	# every row reachable without bridge inserts.
+	if is_vertical:
+		spacing = maxf(spacing, LevelGenerator.MAX_JUMP_HEIGHT * 0.9)
+
 	# Safe area: read OS insets (notch, home bar) from SafeArea autoload.
 	# Content must stay inside [ceiling_y .. floor_y] on every device.
 	var sa_bottom: int = SafeArea.bottom_reserved if SafeArea else 0
@@ -589,6 +595,7 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 	var layout: Array[Dictionary] = []
 	var prev_zone: int = rng.randi() % ZONE_COUNT
 	var prev_prev: int = -1
+	var prev_kind: String = ""
 
 	for i in rows.size():
 		var zone: int = _markov_pick_zone(rng, prev_zone, prev_prev,
@@ -604,23 +611,34 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		var x: float = room_width * zone_center[zone]
 		x += rng.randf_range(-room_width * 0.03, room_width * 0.03)
 
+		# Layout kind weights: wide / shelf / bridge / typed.
+		# Bridges are the visually heaviest (two platforms per row), so keep
+		# them rare AND forbid two bridges back-to-back.
 		var roll: float = rng.randf()
 		var kind: String = "wide"
-		if roll < 0.55:
+		if roll < 0.62:
 			kind = "wide"
-		elif roll < 0.75:
+		elif roll < 0.85:
 			kind = "shelf"
-		elif roll < 0.90:
+		elif roll < 0.93:
 			kind = "bridge"
+		else:
+			kind = "typed"
+
+		if kind == "bridge" and prev_kind == "bridge":
+			# Demote to a single platform when the previous row was already a
+			# bridge — prevents the "wallpapered" stacked-bridge look.
+			kind = "wide"
+
+		if kind == "bridge":
 			# Anchor X = side closer to the chosen zone so spawn helpers
 			# stay near the path the player is likely to take.
 			x = (room_width * 0.20) if zone < ZONE_COUNT / 2 else (room_width * 0.80)
-		else:
-			kind = "typed"
 
 		layout.append({ "x": x, "y": ry, "kind": kind })
 		prev_prev = prev_zone
 		prev_zone = zone
+		prev_kind = kind
 
 	return layout
 
