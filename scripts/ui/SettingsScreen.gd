@@ -148,8 +148,11 @@ func _apply_vsync(enabled: bool) -> void:
 	)
 
 func _apply_resolution(preset: String) -> void:
-	var size: Vector2i = RESOLUTIONS.get(preset, RESOLUTIONS["fhd"])
-	get_tree().get_root().content_scale_size = size
+	if DisplaySettings:
+		DisplaySettings.set_preset(preset)
+	else:
+		var size: Vector2i = RESOLUTIONS.get(preset, RESOLUTIONS["fhd"])
+		get_tree().get_root().content_scale_size = size
 
 # ── Widget callbacks ──────────────────────────────────────────────────────────
 

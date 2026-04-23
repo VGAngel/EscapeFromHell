@@ -380,11 +380,10 @@ func _apply_safe_area() -> void:
 		_skip_indicator.offset_bottom = -30.0 - float(banner)
 		_skip_indicator.offset_top    = -80.0 - float(banner)
 
-	# BottomBar sits flush with the banner; lift it when the banner is
-	# present so the action buttons never slide under it.
+	# BottomBar is bottom-anchored; push it up when the ad banner is present.
 	if _bottom_bar:
-		_bottom_bar.offset_bottom = 1220.0 - float(banner)
-		_bottom_bar.offset_top    = 1150.0 - float(banner)
+		_bottom_bar.offset_bottom = -float(banner)
+		_bottom_bar.offset_top    = -70.0 - float(banner)
 
 # ── Button callbacks ──────────────────────────────────────────────────────────
 
