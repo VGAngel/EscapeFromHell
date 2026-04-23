@@ -519,15 +519,20 @@ func _spawn_altar() -> void:
 	altar.add_to_group("altar")
 
 	if spawn_in_vertical_entrance:
-		# Top of vertical level — place on a dedicated center platform at the
-		# topmost row. Markov layout may stagger that row off-center, so we
-		# always add a wide stone shelf here to guarantee something to stand on.
+		# Use the topmost Markov platform (smallest y) as the altar's base.
 		var sa_top_px: int = SafeArea.top_reserved if SafeArea else 0
+		var altar_x: float = room_width * 0.5
 		var altar_row_y: float = WALL_T + float(sa_top_px) + 140.0
-		if not _all_rows.is_empty():
+		if not _vert_layout.is_empty():
+			var top_entry: Dictionary = _vert_layout[0]
+			for entry in _vert_layout:
+				if float(entry.get("y", altar_row_y)) < float(top_entry.get("y", altar_row_y)):
+					top_entry = entry
+			altar_x     = float(top_entry.get("x",     altar_x))
+			altar_row_y = float(top_entry.get("y", altar_row_y))
+		elif not _all_rows.is_empty():
 			altar_row_y = float(_all_rows.back())
-		_add_platform(Vector2(room_width * 0.5, altar_row_y), Vector2(320.0, PLATFORM_T))
-		altar.position = Vector2(room_width * 0.5, altar_row_y - PLATFORM_T * 0.5)
+		altar.position = Vector2(altar_x, altar_row_y - PLATFORM_T * 0.5)
 	else:
 		# Horizontal level — altar on the high-platform shelf in the exit room.
 		altar.position = Vector2(room_width * 0.5, _row_high - PLATFORM_T * 0.5)
