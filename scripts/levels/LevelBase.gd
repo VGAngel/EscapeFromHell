@@ -504,8 +504,12 @@ func _on_respawn() -> void:
 	var pos: Vector2 = _respawn_position if _respawn_position != Vector2.ZERO \
 		else _spawn_point.global_position
 	_player.respawn(pos)
+	# Return all enemies to their patrol origins so none are clustered
+	# at the respawn point after chasing the player during death animation.
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		if enemy.has_method("reset_to_patrol"):
+			enemy.reset_to_patrol()
 	if _level_type == "escape":
-		# Restart escape timer
 		_setup_escape_timer()
 
 # ── Altars ────────────────────────────────────────────────────────────────────

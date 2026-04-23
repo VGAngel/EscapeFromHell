@@ -244,6 +244,14 @@ func _do_return(_delta: float) -> void:
 func _do_stunned() -> void:
 	velocity.x = move_toward(velocity.x, 0.0, 600.0 * get_physics_process_delta_time())
 
+## Teleport enemy back to patrol origin and resume patrol.
+## Called on player respawn so enemies don't cluster at the spawn point.
+func reset_to_patrol() -> void:
+	global_position = _patrol_origin
+	velocity        = Vector2.ZERO
+	state           = State.PATROL
+	_hit_cooldown   = 0.0
+
 func stun(duration: float) -> void:
 	state = State.STUNNED
 	_stun_timer = maxf(_stun_timer, duration)
