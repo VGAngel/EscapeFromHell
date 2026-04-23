@@ -35,6 +35,7 @@ var _is_complete:        bool            = false
 var _escape_timer_total: float           = 0.0
 var _level_type:         String          = "platformer"
 var _respawn_position:   Vector2         = Vector2.ZERO  # updated by mid-altar
+var _carried_soul_data:  Dictionary      = {}            # set on pickup, read on delivery
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -369,18 +370,16 @@ func _connect_souls() -> void:
 			soul.soul_collected.connect(_on_soul_collected)
 
 func _on_soul_collected(soul: Node) -> void:
-	var soul_id: int = soul.get_meta("soul_id", 0)
-	_souls_found += 1
-	GameManager.collect_soul(soul_id)
+	# Store soul data so delivery popup can show the name.
+	if soul.has_method("get_soul_data"):
+		_carried_soul_data = soul.get_soul_data()
 
-	# Named souls pop a short reveal panel with the epitaph.
+	# Named souls pop a short reveal panel with the epitaph on pickup.
 	if _soul_reveal and _soul_reveal.has_method("show_soul") \
-			and soul.has_method("get_soul_data"):
-		var data: Dictionary = soul.get_soul_data()
-		if data.has("name") and data.get("name", "") != "":
-			_soul_reveal.show_soul(data)
+			and _carried_soul_data.has("name") and _carried_soul_data.get("name", "") != "":
+		_soul_reveal.show_soul(_carried_soul_data)
 
-	# Boss mechanic hook — forward to boss if present
+	# Boss mechanic hook — forward to boss if present.
 	var boss: Node = _get_boss()
 	if boss and boss.has_method("on_collectible_picked"):
 		boss.on_collectible_picked()
@@ -422,9 +421,35 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 	if TutorialManager and TutorialManager.has_method("show_hint"):
 		TutorialManager.show_hint("bonus_" + bonus_name.to_lower())
 
-func _on_soul_delivered(_soul_id: String) -> void:
-	# Souls are counted on pickup in this design; delivery is visual only.
-	pass
+func _on_soul_delivered(soul_id: String) -> void:
+	# Count and save on delivery, not on pickup.
+	_souls_found += 1
+	GameManager.collect_soul(soul_id.to_int() if soul_id.is_valid_int() else 0)
+	_show_soul_delivered_popup()
+	_carried_soul_data = {}
+
+func _show_soul_delivered_popup() -> void:
+	if not is_instance_valid(_player):
+		return
+	var soul_name: String = _carried_soul_data.get("name", "")
+	var msg: String = ("✨ %s відправлена в рай" % soul_name) if soul_name != "" \
+		else "✨ Душа відправлена в рай"
+
+	var lbl := Label.new()
+	lbl.text = msg
+	lbl.add_theme_font_size_override("font_size", 28)
+	lbl.add_theme_color_override("font_color",        Color(1.0, 0.95, 0.55))
+	lbl.add_theme_color_override("font_outline_color", Color(0.1, 0.05, 0.0))
+	lbl.add_theme_constant_override("outline_size", 3)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.position = _player.global_position + Vector2(-120, -140)
+	add_child(lbl)
+
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(lbl, "position:y", lbl.position.y - 120, 2.2)
+	tw.tween_property(lbl, "modulate:a", 0.0, 2.2).set_delay(0.5)
+	await get_tree().create_timer(2.7).timeout
+	lbl.queue_free()
 
 # ── Player events ─────────────────────────────────────────────────────────────
 
