@@ -144,8 +144,8 @@ func _update_prompt() -> void:
 	if not is_instance_valid(_prompt):
 		return
 	var has_soul: bool = _player_is_carrying_soul()
-	var show: bool = _player_in_range and (has_soul or not _is_active)
-	_prompt.visible = show
+	var visible_now: bool = _player_in_range and (has_soul or not _is_active)
+	_prompt.visible = visible_now
 	if show:
 		var txt: String = TEXT_DELIVER if has_soul else TEXT_BIND
 		if _prompt.has_method("set_text"):
