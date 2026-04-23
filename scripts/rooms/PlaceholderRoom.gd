@@ -154,8 +154,60 @@ func _ready() -> void:
 		_spawn_soul()
 		_spawn_altar()
 		_spawn_bonus()
+		_install_debug_room_marker()
+		if is_vertical:
+			_log_vertical_layout()
 
 	queue_redraw()
+
+# Dev-only: install a room-spanning Area2D that pings DebugOverlay with the
+# current room_index whenever the player enters. Skipped in release builds.
+func _install_debug_room_marker() -> void:
+	if OS.has_feature("release"):
+		return
+	var area := Area2D.new()
+	area.name = "DebugRoomMarker"
+	area.collision_layer = 0
+	area.collision_mask  = 1  # player's body layer
+	area.monitoring = true
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(room_width, room_height)
+	col.shape = shape
+	col.position = Vector2(room_width * 0.5, room_height * 0.5)
+	area.add_child(col)
+	area.body_entered.connect(_on_debug_room_body_entered)
+	add_child(area)
+
+func _on_debug_room_body_entered(body: Node) -> void:
+	if not (body is CharacterBody2D) or not body.is_in_group("player"):
+		return
+	var dbg: Node = get_node_or_null("/root/DebugOverlay")
+	if dbg and dbg.has_method("set_active_room"):
+		dbg.set_active_room(room_index)
+
+# Dev-only diagnostic: print the generated row Y/X positions and the largest
+# gap so it's obvious which room produced an unreachable hole. Disabled in
+# release builds via OS.has_feature("release").
+func _log_vertical_layout() -> void:
+	if OS.has_feature("release") or _vert_layout.is_empty():
+		return
+	var max_y_gap: float = 0.0
+	for i in range(1, _vert_layout.size()):
+		var gap: float = absf(float(_vert_layout[i].y) - float(_vert_layout[i - 1].y))
+		if gap > max_y_gap:
+			max_y_gap = gap
+	print("[room %d#%d] tier=%s rows=%d max_y_gap=%dpx room_h=%dpx" % [
+		level_id, room_index, _zone_tier, _vert_layout.size(),
+		int(max_y_gap), int(room_height),
+	])
+	# One-line dump per row so you can grep / paste into a spreadsheet.
+	for i in _vert_layout.size():
+		var e: Dictionary = _vert_layout[i]
+		print("  row %2d  y=%4d x=%4d w=%3d kind=%s type=%s" % [
+			i, int(e.y), int(e.x), int(e.width),
+			e.kind, e.type,
+		])
 
 func _init_zone() -> void:
 	var spacing: float = LevelGenerator.PART_JUMP + LevelGenerator.STEP_JUMP  # medium default

@@ -45,7 +45,16 @@ const ZONE_COLORS := {
 var _overlay_visible: bool          = true
 var _layer:           CanvasLayer   = null
 var _stack:           VBoxContainer = null
-var _zone_card:       Control       = null   # persistent zone widget (top-left)
+var _zone_card:       Control       = null   # persistent zone widget (top-center)
+# Cached zone state so we can rebuild the card when room_index changes.
+var _zone_state := {
+	"level_id":       0,
+	"tier":           "",
+	"spacing":        0.0,
+	"platform_type":  "",
+	"platform_width": 0.0,
+	"room_index":     -1,
+}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -91,11 +100,37 @@ func set_visible_overlay(v: bool) -> void:
 ##   platform_width: preferred platform width in px
 func show_zone(level_id: int, tier: String, spacing: float,
 		platform_type: String, platform_width: float) -> void:
+	_zone_state.level_id       = level_id
+	_zone_state.tier           = tier
+	_zone_state.spacing        = spacing
+	_zone_state.platform_type  = platform_type
+	_zone_state.platform_width = platform_width
+	_zone_state.room_index     = -1
+	_rebuild_zone_card()
+
+## Update the room_index suffix on the seed line as the player crosses rooms.
+## Called from PlaceholderRoom whenever a room becomes the player's current one.
+func set_active_room(room_index: int) -> void:
+	if _zone_state.room_index == room_index:
+		return
+	_zone_state.room_index = room_index
+	_rebuild_zone_card()
+
+func _rebuild_zone_card() -> void:
 	if not _overlay_visible or not _layer:
+		return
+	if _zone_state.level_id <= 0:
 		return
 	if is_instance_valid(_zone_card):
 		_zone_card.queue_free()
-	_zone_card = _build_zone_card(level_id, tier, spacing, platform_type, platform_width)
+	_zone_card = _build_zone_card(
+		int(_zone_state.level_id),
+		String(_zone_state.tier),
+		float(_zone_state.spacing),
+		String(_zone_state.platform_type),
+		float(_zone_state.platform_width),
+		int(_zone_state.room_index),
+	)
 	_layer.add_child(_zone_card)
 
 # ── Internals ─────────────────────────────────────────────────────────────────
@@ -143,7 +178,7 @@ func _build_card(level: int, message: String) -> Control:
 	return panel
 
 func _build_zone_card(level_id: int, tier: String, spacing: float,
-		platform_type: String, platform_width: float) -> Control:
+		platform_type: String, platform_width: float, room_index: int = -1) -> Control:
 	const W: float = 280.0
 	# CenterContainer pins the panel to the top-middle of the viewport without
 	# the panel itself stretching to full screen width.
@@ -186,11 +221,16 @@ func _build_zone_card(level_id: int, tier: String, spacing: float,
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		vbox.add_child(lbl)
 
-	# Seed row — clickable Button styled flat to look like a label. The seed
-	# value is the level_id (room layouts are deterministic per level_id +
-	# room_index, so knowing this reproduces every room).
+	# Seed row — clickable Button styled flat to look like a label.
+	# Format: "seed  <level>#<room>  📋" — knowing both reproduces the exact
+	# room (Markov layout uses hash(level_id*1000 + room_index) as RNG seed).
+	var seed_str: String
+	if room_index >= 0:
+		seed_str = "%d#%d" % [level_id, room_index]
+	else:
+		seed_str = str(level_id)
 	var seed_btn := Button.new()
-	seed_btn.text = "seed  %d  📋" % level_id
+	seed_btn.text = "seed  %s  📋" % seed_str
 	seed_btn.flat = true
 	seed_btn.focus_mode = Control.FOCUS_NONE
 	seed_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -198,15 +238,15 @@ func _build_zone_card(level_id: int, tier: String, spacing: float,
 	seed_btn.add_theme_color_override("font_color",         Color(1, 1, 1, 0.95))
 	seed_btn.add_theme_color_override("font_hover_color",   Color(1, 1, 0.6, 1.0))
 	seed_btn.add_theme_color_override("font_pressed_color", Color(0.7, 1, 0.7, 1.0))
-	seed_btn.pressed.connect(_on_seed_pressed.bind(seed_btn, level_id))
+	seed_btn.pressed.connect(_on_seed_pressed.bind(seed_btn, seed_str))
 	vbox.add_child(seed_btn)
 
 	return center
 
-func _on_seed_pressed(btn: Button, seed_value: int) -> void:
-	DisplayServer.clipboard_set(str(seed_value))
-	var original: String = "seed  %d  📋" % seed_value
-	btn.text = "seed  %d  ✓ copied" % seed_value
+func _on_seed_pressed(btn: Button, seed_value: String) -> void:
+	DisplayServer.clipboard_set(seed_value)
+	var original: String = "seed  %s  📋" % seed_value
+	btn.text = "seed  %s  ✓ copied" % seed_value
 	# Restore label after a short beat so the user sees the confirmation.
 	get_tree().create_timer(1.2).timeout.connect(func() -> void:
 		if is_instance_valid(btn):
