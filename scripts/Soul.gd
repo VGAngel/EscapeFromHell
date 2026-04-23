@@ -28,7 +28,7 @@ var _pulse_tween: Tween     = null
 func _ready() -> void:
 	_apply_size()
 	add_to_group("soul")
-	_base_y = global_position.y
+	_base_y = position.y
 	body_entered.connect(_on_body_entered)
 	_start_pulse()
 
