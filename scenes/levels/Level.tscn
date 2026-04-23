@@ -1,15 +1,13 @@
 [gd_scene load_steps=9 format=3 uid="uid://level1tscn01"]
 
 [ext_resource type="Script" path="res://scripts/levels/LevelBase.gd" id="1_levelbase"]
+[ext_resource type="Script" path="res://scripts/levels/PortalExit.gd" id="8_portal"]
 [ext_resource type="PackedScene" uid="uid://hud1tscn0001" path="res://scenes/ui/HUD.tscn" id="2_hud"]
 [ext_resource type="PackedScene" uid="uid://levelcomplete01" path="res://scenes/ui/LevelComplete.tscn" id="3_lc"]
 [ext_resource type="PackedScene" uid="uid://soulreveal0001" path="res://scenes/ui/SoulRevealPanel.tscn" id="4_reveal"]
 [ext_resource type="PackedScene" uid="uid://oxiwvf4tyhy3" path="res://scenes/ui/PauseScreen.tscn" id="5_pause"]
 [ext_resource type="PackedScene" uid="uid://collection001" path="res://scenes/ui/CollectionScreen.tscn" id="6_col"]
 [ext_resource type="PackedScene" uid="uid://settings001" path="res://scenes/ui/SettingsScreen.tscn" id="7_set"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_exit"]
-size = Vector2(80.0, 160.0)
 
 [node name="Level" type="Node2D"]
 script = ExtResource("1_levelbase")
@@ -31,15 +29,9 @@ script = ExtResource("1_levelbase")
 [node name="SpawnPoint" type="Marker2D" parent="."]
 position = Vector2(80.0, -64.0)
 
-[node name="Exit" type="Area2D" parent="."]
+[node name="Exit" type="Node2D" parent="."]
 position = Vector2(640.0, -64.0)
-collision_layer = 0
-collision_mask = 1
-monitoring = true
-monitorable = false
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Exit"]
-shape = SubResource("RectangleShape2D_exit")
+script = ExtResource("8_portal")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(1.0, 1.0)

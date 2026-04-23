@@ -22,7 +22,7 @@ extends Node2D
 @onready var _settings_screen:   Node       = get_node_or_null("SettingsScreen")
 @onready var _room_container:  Node2D     = $RoomContainer
 @onready var _spawn_point:     Marker2D   = $SpawnPoint
-@onready var _exit_area:       Area2D     = $Exit
+@onready var _exit_area:       Node2D     = $Exit
 @onready var _level_complete:  Node       = get_node_or_null("LevelComplete")
 @onready var _soul_reveal:     Node       = get_node_or_null("SoulRevealPanel")
 
@@ -35,7 +35,7 @@ var _is_complete:        bool            = false
 var _escape_timer_total: float           = 0.0
 var _level_type:         String          = "platformer"
 var _respawn_position:   Vector2         = Vector2.ZERO  # updated by mid-altar
-var _carried_soul_data:  Dictionary      = {}            # set on pickup, read on delivery
+var _carried_soul_data:  Dictionary      = {}
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -137,7 +137,7 @@ func _init_procedural_level(force_procedural: bool = false) -> void:
 		gen = LevelGenerator.generate(level_id)
 
 	if _level_type == "vertical":
-		_build_vertical_shaft(gen)
+		_build_vertical_rooms(gen.room_scenes)
 	else:
 		_build_horizontal_rooms(gen.room_scenes)
 
@@ -165,45 +165,25 @@ func _build_horizontal_rooms(room_scenes: Array) -> void:
 		cursor_x += _room_width(room)
 	_reposition_spawn_and_exit_h(cursor_x)
 
-# ── Room layout — vertical (single shaft) ────────────────────────────────────
+# ── Room layout — vertical (vertical level type) ──────────────────────────────
 
-## Vertical levels are now ONE tall room (a "shaft") instead of N stacked
-## 2-screen rooms — eliminates cross-room platform gaps and lets the Markov
-## section pacing flow uninterrupted across the full descent.
-##
-## We still need an underlying scene to instantiate (PlaceholderRoom carries
-## the script + exported defaults), so we borrow the entrance scene of the
-## level's circle — overrides below replace the per-scene values that mattered
-## for the old multi-room path.
-func _build_vertical_shaft(gen: Object) -> void:
-	var circle: int = ceili(float(level_id) / 10.0)
-	var scene_path: String = ""
-	if not gen.room_scenes.is_empty():
-		scene_path = String(gen.room_scenes[0])
-	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
-		scene_path = "res://scenes/rooms/circle_%d/room_entrance_1.tscn" % circle
-	if not ResourceLoader.exists(scene_path):
-		scene_path = "res://scenes/rooms/circle_1/room_entrance_1.tscn"
-	var room: Node2D = _load_room(scene_path)
-	if not room:
-		_report_warn("LevelBase: failed to build vertical shaft for level %d" % level_id)
-		return
-	if "is_vertical" in room:
-		room.is_vertical = true
-	if "room_type" in room:
-		room.room_type = "shaft"
-	if "room_count" in room:
-		room.room_count = maxi(1, gen.room_count)
-	if "tileset" in room and LevelConfig:
-		room.tileset = LevelConfig.get_circle_tileset(circle)
-	# Force a sane width — entrance scenes ship with 720 px, but the shaft
-	# uses the full 1080 px viewport so Markov has room to spread platforms.
-	if "room_width" in room:
-		room.room_width = 1080.0
-	room.position = Vector2.ZERO
-	_room_container.add_child(room)
+## Vertical levels: player spawns at the TOP on a safe shelf and descends
+## to the altar at the bottom. Room scenes arrive as [entrance, main…, exit]
+## in play order — we keep that order so the entrance sits at y = 0 (top)
+## and the exit/altar lands at the bottom of the stack.
+func _build_vertical_rooms(room_scenes: Array) -> void:
+	var cursor_y: float = 0.0
+	for scene_path: String in room_scenes:
+		var room: Node2D = _load_room(scene_path)
+		if not room:
+			continue
+		if "is_vertical" in room:
+			room.is_vertical = true
+		room.position.y = cursor_y
+		_room_container.add_child(room)
+		cursor_y += _room_height(room)
 
-	_reposition_spawn_and_exit_v(_room_height(room))
+	_reposition_spawn_and_exit_v(cursor_y)
 
 # ── Room loader helper ────────────────────────────────────────────────────────
 
@@ -349,14 +329,26 @@ func _spawn_player() -> void:
 # ── Exit ──────────────────────────────────────────────────────────────────────
 
 func _connect_exit() -> void:
-	if _exit_area.body_entered.connect(_on_exit_body_entered) != OK:
-		push_warning("Level: failed to connect Exit.body_entered")
+	if _exit_area.has_signal("player_entered"):
+		_exit_area.player_entered.connect(_on_exit_entered)
+	elif _exit_area.has_signal("body_entered"):
+		_exit_area.body_entered.connect(_on_exit_body_entered)
+	else:
+		push_warning("Level: Exit node has no recognised entry signal")
+
+func _on_exit_entered() -> void:
+	if _is_complete:
+		return
+	if _souls_found < _souls_required:
+		if TutorialManager:
+			TutorialManager.show_hint("collect_souls_first")
+		return
+	_complete_level()
 
 func _on_exit_body_entered(body: Node2D) -> void:
 	if body != _player or _is_complete:
 		return
 	if _souls_found < _souls_required:
-		# Nudge player back — not all souls collected yet
 		if TutorialManager:
 			TutorialManager.show_hint("collect_souls_first")
 		return
@@ -370,16 +362,16 @@ func _connect_souls() -> void:
 			soul.soul_collected.connect(_on_soul_collected)
 
 func _on_soul_collected(soul: Node) -> void:
-	# Store soul data so delivery popup can show the name.
+	# Store soul data for delivery; counting happens in _on_soul_delivered.
+	var soul_id: int = soul.get_meta("soul_id", 0)
+	_carried_soul_data = {"soul_id": soul_id}
 	if soul.has_method("get_soul_data"):
-		_carried_soul_data = soul.get_soul_data()
+		_carried_soul_data.merge(soul.get_soul_data())
 
-	# Named souls pop a short reveal panel with the epitaph on pickup.
 	if _soul_reveal and _soul_reveal.has_method("show_soul") \
 			and _carried_soul_data.has("name") and _carried_soul_data.get("name", "") != "":
 		_soul_reveal.show_soul(_carried_soul_data)
 
-	# Boss mechanic hook — forward to boss if present.
 	var boss: Node = _get_boss()
 	if boss and boss.has_method("on_collectible_picked"):
 		boss.on_collectible_picked()
@@ -422,34 +414,29 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 		TutorialManager.show_hint("bonus_" + bonus_name.to_lower())
 
 func _on_soul_delivered(soul_id: String) -> void:
-	# Count and save on delivery, not on pickup.
 	_souls_found += 1
-	GameManager.collect_soul(soul_id.to_int() if soul_id.is_valid_int() else 0)
+	var id: int = soul_id.to_int() if soul_id.is_valid_int() else \
+		_carried_soul_data.get("soul_id", 0)
+	GameManager.collect_soul(id)
 	_show_soul_delivered_popup()
 	_carried_soul_data = {}
+	if _exit_area and _exit_area.has_method("activate"):
+		_exit_area.activate()
 
 func _show_soul_delivered_popup() -> void:
-	if not is_instance_valid(_player):
+	if not _player or not is_inside_tree():
 		return
-	var soul_name: String = _carried_soul_data.get("name", "")
-	var msg: String = ("✨ %s відправлена в рай" % soul_name) if soul_name != "" \
-		else "✨ Душа відправлена в рай"
-
 	var lbl := Label.new()
-	lbl.text = msg
-	lbl.add_theme_font_size_override("font_size", 28)
-	lbl.add_theme_color_override("font_color",        Color(1.0, 0.95, 0.55))
-	lbl.add_theme_color_override("font_outline_color", Color(0.1, 0.05, 0.0))
-	lbl.add_theme_constant_override("outline_size", 3)
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.position = _player.global_position + Vector2(-120, -140)
+	lbl.text = "Душа доставлена"
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
+	lbl.position = _player.global_position + Vector2(-60.0, -120.0)
 	add_child(lbl)
-
 	var tw := create_tween().set_parallel(true)
-	tw.tween_property(lbl, "position:y", lbl.position.y - 120, 2.2)
-	tw.tween_property(lbl, "modulate:a", 0.0, 2.2).set_delay(0.5)
-	await get_tree().create_timer(2.7).timeout
-	lbl.queue_free()
+	tw.tween_property(lbl, "position:y", lbl.position.y - 120.0, 2.2)
+	tw.tween_property(lbl, "modulate:a", 0.0, 2.2).set_delay(0.4)
+	await get_tree().create_timer(2.6).timeout
+	if is_instance_valid(lbl):
+		lbl.queue_free()
 
 # ── Player events ─────────────────────────────────────────────────────────────
 
@@ -504,8 +491,6 @@ func _on_respawn() -> void:
 	var pos: Vector2 = _respawn_position if _respawn_position != Vector2.ZERO \
 		else _spawn_point.global_position
 	_player.respawn(pos)
-	# Return all enemies to their patrol origins so none are clustered
-	# at the respawn point after chasing the player during death animation.
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		if enemy.has_method("reset_to_patrol"):
 			enemy.reset_to_patrol()
