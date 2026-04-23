@@ -68,9 +68,56 @@ var _all_rows: Array = []
 # Per-row layout for vertical rooms — built once in _init_zone() by the Markov
 # generator and consumed by both _add_vertical_main_platforms() (placement) and
 # _init_zone() itself (per-row v_range so missing_bridge_ys() sees the truth).
-# Each entry: { "x": float anchor X, "y": float (with jitter), "kind": String }
-# kind ∈ "wide" | "shelf" | "bridge" | "typed".
+# Each entry: { "x": float, "y": float, "kind": String, "width": float, "type": String }
+# kind ∈ "single" | "bridge".
 var _vert_layout: Array[Dictionary] = []
+
+# ── Section profiles (vertical level pacing) ──────────────────────────────────
+#
+# Each vertical room is divided into "sections" stacked from bottom to top, like
+# beats in a song: rest → challenge → spike → breath → … The Markov generator
+# samples width and platform type from the active section's bag, so the player
+# experiences a designed rhythm instead of uniform difficulty.
+#
+# Width multipliers are relative to the zone's _platform_width (110-220 px).
+# Type "_hint" is replaced at runtime by the zone's _platform_type_hint
+# (stone / moving_horizontal / moving_vertical depending on tier).
+const SECTION_PROFILES := {
+	"rest": {
+		"length_min": 2, "length_max": 3,
+		"widths": [[1.5, 0.5], [2.2, 0.5]],
+		"types":  [["stone", 1.0]],
+		"bridge_chance": 0.0,
+	},
+	"challenge": {
+		"length_min": 3, "length_max": 5,
+		"widths": [[0.7, 0.15], [1.0, 0.45], [1.5, 0.40]],
+		"types":  [["stone", 0.80], ["_hint", 0.20]],
+		"bridge_chance": 0.05,
+	},
+	"spike": {
+		"length_min": 3, "length_max": 4,
+		"widths": [[0.7, 0.45], [1.0, 0.45], [1.5, 0.10]],
+		"types":  [["stone", 0.30], ["crumbling", 0.25], ["bounce", 0.10],
+				["one_way", 0.10], ["_hint", 0.25]],
+		"bridge_chance": 0.0,
+	},
+	"breath": {
+		"length_min": 2, "length_max": 3,
+		"widths": [[1.5, 0.7], [2.2, 0.3]],
+		"types":  [["stone", 1.0]],
+		"bridge_chance": 0.20,
+	},
+}
+
+# Section sequence templates per tier. Keep the loop short; the generator
+# cycles through and clips/extends to fit the actual row count of the room.
+const TIER_SECTIONS := {
+	"easy":    ["rest", "challenge", "breath", "challenge", "rest"],
+	"medium":  ["rest", "challenge", "spike", "breath", "challenge", "rest"],
+	"hard":    ["challenge", "spike", "breath", "spike", "challenge", "spike"],
+	"extreme": ["spike", "challenge", "spike", "breath", "spike", "spike"],
+}
 
 # Per-circle base colors (index 0 = unused, 1-10 = circles)
 const CIRCLE_COLORS: Array = [
@@ -147,9 +194,11 @@ func _init_zone() -> void:
 		# moving/typed platforms.
 		_all_rows = _compute_all_rows(floor_y, ceiling_y, spacing)
 		_vert_layout = _build_vertical_layout(_all_rows)
-		var mv_vr: float = LevelGenerator.platform_v_range(_platform_type_hint, MOVING_V_DISTANCE)
+		# v_range comes from each row's resolved platform type, so moving_vertical
+		# rows give missing_bridge_ys() the extra reach they actually provide.
 		for entry in _vert_layout:
-			var vr: float = mv_vr if entry.get("kind", "") == "typed" else 0.0
+			var ptype: String = String(entry.get("type", "stone"))
+			var vr: float = LevelGenerator.platform_v_range(ptype, MOVING_V_DISTANCE)
 			platform_data.append({ "y": float(entry.get("y", 0.0)), "v_range": vr })
 	else:
 		# Horizontal room — three fixed rows with per-row v_range.
@@ -549,32 +598,36 @@ func _add_main_platforms() -> void:
 			_add_platform(Vector2(col_r, _row_high), shelf)
 
 func _add_vertical_main_platforms(_col_l: float, _col_c: float, _col_r: float,
-		shelf: Vector2, wide: Vector2) -> void:
-	# Place platforms from the layout precomputed in _init_zone(). Layout
-	# generation lives in _build_vertical_layout() so v_range stays in sync.
+		_shelf: Vector2, _wide: Vector2) -> void:
+	# Thin consumer: layout (with per-row width and type) is built in
+	# _build_vertical_layout() during _init_zone() so v_range stays in sync.
 	var bridge_left_x:  float = room_width * 0.20
 	var bridge_right_x: float = room_width * 0.80
 	for entry in _vert_layout:
 		var pos := Vector2(float(entry.get("x", room_width * 0.5)),
 				float(entry.get("y", 0.0)))
-		match String(entry.get("kind", "wide")):
-			"wide":
-				_add_platform(pos, wide)
-			"shelf":
-				_add_platform(pos, shelf)
+		var size := Vector2(float(entry.get("width", _platform_width)), PLATFORM_T)
+		var ptype: String = String(entry.get("type", "stone"))
+		match String(entry.get("kind", "single")):
+			"single":
+				if ptype == "stone":
+					_add_platform(pos, size)
+				else:
+					_add_typed_platform(pos, size, ptype)
 			"bridge":
-				_add_platform(Vector2(bridge_left_x,  pos.y), shelf)
-				_add_platform(Vector2(bridge_right_x, pos.y), shelf)
-			"typed":
-				_add_typed_platform(pos, wide, _platform_type_hint)
+				# Bridges are always safe stone footing — they exist to break the
+				# "stacked single platforms" look, not to add danger.
+				var bridge_size := Vector2(_platform_width, PLATFORM_T)
+				_add_platform(Vector2(bridge_left_x,  pos.y), bridge_size)
+				_add_platform(Vector2(bridge_right_x, pos.y), bridge_size)
 
-# Markov-chain layout generator for vertical rooms.
+# Section-based Markov layout generator for vertical rooms.
 #
-# The room is split horizontally into ZONE_COUNT bands. For each row we pick
-# a zone via a transition matrix biased toward adjacent zones (with a small
-# chance of staying or jumping far) and an anti-repeat rule that forbids
-# three rows landing in the same zone in a row. Layout kind per row
-# (single platform / bridge / typed) is also drawn from a weighted bag.
+# Phase 1: pick a section sequence for the tier and map each row to a section.
+#          Sections (rest / challenge / spike / breath) define width and type
+#          weights so difficulty has a designed rhythm.
+# Phase 2: per row, pick X via a Markov chain over horizontal zones (anti-3-
+#          in-a-row), pick width/type from the active section's profile.
 #
 # Deterministic per (level_id, room_index): replay-safe.
 func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
@@ -592,12 +645,17 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 	# Tuned so adjacent moves dominate but the path occasionally crosses the room.
 	var weight_by_delta: Array[float] = [0.08, 0.40, 0.12, 0.04]
 
+	var section_per_row: Array[String] = _assign_sections(rows.size(), rng)
+
 	var layout: Array[Dictionary] = []
 	var prev_zone: int = rng.randi() % ZONE_COUNT
 	var prev_prev: int = -1
 	var prev_kind: String = ""
 
 	for i in rows.size():
+		var section_name: String = section_per_row[i]
+		var profile: Dictionary = SECTION_PROFILES[section_name]
+
 		var zone: int = _markov_pick_zone(rng, prev_zone, prev_prev,
 				ZONE_COUNT, weight_by_delta)
 
@@ -611,36 +669,78 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		var x: float = room_width * zone_center[zone]
 		x += rng.randf_range(-room_width * 0.03, room_width * 0.03)
 
-		# Layout kind weights: wide / shelf / bridge / typed.
-		# Bridges are the visually heaviest (two platforms per row), so keep
-		# them rare AND forbid two bridges back-to-back.
-		var roll: float = rng.randf()
-		var kind: String = "wide"
-		if roll < 0.62:
-			kind = "wide"
-		elif roll < 0.85:
-			kind = "shelf"
-		elif roll < 0.93:
+		# Bridge or single? Probability comes from the section profile.
+		# Anti-repeat: never two bridges in a row (visually heavy).
+		var bridge_chance: float = float(profile.get("bridge_chance", 0.0))
+		var kind: String = "single"
+		if rng.randf() < bridge_chance and prev_kind != "bridge":
 			kind = "bridge"
-		else:
-			kind = "typed"
-
-		if kind == "bridge" and prev_kind == "bridge":
-			# Demote to a single platform when the previous row was already a
-			# bridge — prevents the "wallpapered" stacked-bridge look.
-			kind = "wide"
-
-		if kind == "bridge":
-			# Anchor X = side closer to the chosen zone so spawn helpers
-			# stay near the path the player is likely to take.
+			# Anchor X = side closer to the chosen zone (spawn helper hint).
 			x = (room_width * 0.20) if zone < ZONE_COUNT / 2 else (room_width * 0.80)
 
-		layout.append({ "x": x, "y": ry, "kind": kind })
+		var width_mult: float = _sample_weighted(profile["widths"], rng)
+		var width: float = _platform_width * width_mult
+		var ptype: String = _sample_weighted_str(profile["types"], rng)
+		if ptype == "_hint":
+			ptype = _platform_type_hint
+
+		layout.append({
+			"x": x, "y": ry, "kind": kind,
+			"width": width, "type": ptype,
+		})
 		prev_prev = prev_zone
 		prev_zone = zone
 		prev_kind = kind
 
 	return layout
+
+# Build a per-row section assignment for a vertical room. The tier's section
+# template is repeated/clipped to fill `row_count` rows, with each section's
+# concrete length sampled inside its [length_min, length_max] range.
+func _assign_sections(row_count: int, rng: RandomNumberGenerator) -> Array[String]:
+	var template: Array = TIER_SECTIONS.get(_zone_tier, TIER_SECTIONS["medium"])
+	var assignment: Array[String] = []
+	assignment.resize(row_count)
+	var idx: int = 0
+	var step: int = 0
+	while idx < row_count:
+		var name: String = String(template[step % template.size()])
+		var profile: Dictionary = SECTION_PROFILES[name]
+		var length: int = rng.randi_range(int(profile["length_min"]),
+				int(profile["length_max"]))
+		for _k in length:
+			if idx >= row_count:
+				break
+			assignment[idx] = name
+			idx += 1
+		step += 1
+	return assignment
+
+# Pick a numeric option from a [[value, weight], ...] table. Used for widths.
+func _sample_weighted(table: Array, rng: RandomNumberGenerator) -> float:
+	var total: float = 0.0
+	for row in table:
+		total += float(row[1])
+	var pick: float = rng.randf() * total
+	var acc: float = 0.0
+	for row in table:
+		acc += float(row[1])
+		if pick <= acc:
+			return float(row[0])
+	return float(table[table.size() - 1][0])
+
+# Pick a string option from a [[value, weight], ...] table. Used for types.
+func _sample_weighted_str(table: Array, rng: RandomNumberGenerator) -> String:
+	var total: float = 0.0
+	for row in table:
+		total += float(row[1])
+	var pick: float = rng.randf() * total
+	var acc: float = 0.0
+	for row in table:
+		acc += float(row[1])
+		if pick <= acc:
+			return String(row[0])
+	return String(table[table.size() - 1][0])
 
 func _markov_pick_zone(rng: RandomNumberGenerator, prev: int, prev_prev: int,
 		zone_count: int, weight_by_delta: Array[float]) -> int:
