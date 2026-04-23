@@ -19,7 +19,7 @@ var state: State = State.PATROL
 
 # ── Contact damage ────────────────────────────────────────────────────────────
 @export var contact_damage:    int   = 1
-@export var contact_range:     float = 28.0
+@export var contact_range:     float = 72.0
 @export var contact_knockback: float = 280.0
 const HIT_COOLDOWN_TIME: float = 1.0
 
