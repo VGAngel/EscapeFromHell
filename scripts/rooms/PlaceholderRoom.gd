@@ -65,12 +65,10 @@ var _bridge_rows: Array = []
 # Computed in _init_zone() when is_vertical=true; used by _add_main_platforms().
 var _all_rows: Array = []
 
-# Column X positions and zigzag phase computed in _add_vertical_main_platforms().
-# Stored so spawn functions can place entities on the correct platform surface.
-var _vert_col_l:       float = 0.0
-var _vert_col_c:       float = 0.0
-var _vert_col_r:       float = 0.0
-var _vert_step_offset: int   = 0
+# Per-row anchor X for vertical rooms — filled by _add_vertical_main_platforms()
+# (Markov-chain generator). Spawn helpers index this to place entities on the
+# correct platform surface for any row.
+var _vert_row_x: Array[float] = []
 
 # Per-circle base colors (index 0 = unused, 1-10 = circles)
 const CIRCLE_COLORS: Array = [
@@ -541,52 +539,104 @@ func _add_main_platforms() -> void:
 			_add_platform(Vector2(col_l, _row_high), shelf)
 			_add_platform(Vector2(col_r, _row_high), shelf)
 
-func _add_vertical_main_platforms(col_l: float, col_c: float, col_r: float,
+func _add_vertical_main_platforms(_col_l: float, _col_c: float, _col_r: float,
 		shelf: Vector2, wide: Vector2) -> void:
-	# Per-level-room local RNG: deterministic for replay (same level_id + room_index
-	# always produces the same layout) but unique across levels and room scenes.
-	# Editor preview (level_id=0) falls back to room_index only.
+	# Markov-chain layout generator.
+	#
+	# The room is split horizontally into ZONE_COUNT bands. For each row we pick
+	# a zone via a transition matrix biased toward adjacent zones (with a small
+	# chance of staying or jumping far) and an anti-repeat rule that forbids
+	# three rows landing in the same zone in a row. Layout type per row
+	# (single platform / bridge / typed) is also drawn from a weighted bag.
+	#
+	# Deterministic per (level_id, room_index): replay-safe.
+
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash((level_id if level_id > 0 else 0) * 1000 + room_index)
 
-	# Jitter column X positions within safe bands so jumps between columns always
-	# fit within MAX_JUMP_HEIGHT.  Every level/room gets a distinct horizontal layout.
-	col_l = room_width * clampf(0.22 + rng.randf_range(-0.07, 0.07), 0.12, 0.33)
-	col_c = room_width * clampf(0.50 + rng.randf_range(-0.05, 0.05), 0.38, 0.62)
-	col_r = room_width * clampf(0.78 + rng.randf_range(-0.07, 0.07), 0.67, 0.88)
+	const ZONE_COUNT: int = 4
+	# Zone center X relative to room_width — kept inside [0.18 .. 0.82] so even
+	# wide platforms don't clip walls. Equally spaced by design.
+	var zone_center: Array[float] = []
+	for z in ZONE_COUNT:
+		zone_center.append(0.18 + (0.82 - 0.18) * float(z) / float(ZONE_COUNT - 1))
 
-	# Phase-shift the 5-step zigzag per level so the pattern doesn't start the same
-	# way for every level.  Derived from the same RNG so it varies independently.
-	var step_offset: int = rng.randi() % 5
+	# Transition weights by |delta| between zones: stay, ±1, ±2, ±3.
+	# Tuned so adjacent moves dominate but the path occasionally crosses the room.
+	var weight_by_delta: Array[float] = [0.08, 0.40, 0.12, 0.04]
 
-	# Persist so spawn helpers can place entities on the correct platform surface.
-	_vert_col_l       = col_l
-	_vert_col_c       = col_c
-	_vert_col_r       = col_r
-	_vert_step_offset = step_offset
+	_vert_row_x.clear()
+	_vert_row_x.resize(_all_rows.size())
+
+	var prev_zone:  int = rng.randi() % ZONE_COUNT
+	var prev_prev:  int = -1
 
 	for i in _all_rows.size():
+		# Pick next zone via weighted sampling, vetoing 3-in-a-row in same zone.
+		var zone: int = _markov_pick_zone(rng, prev_zone, prev_prev,
+				ZONE_COUNT, weight_by_delta)
+
+		# Y jitter within ±15% of one row gap, but never enough to break reach.
 		var ry: float = float(_all_rows[i])
-		match (i + step_offset) % 5:
-			0:
-				_add_platform(Vector2(col_l, ry), wide)
-			1:
-				_add_platform(Vector2(col_r, ry), wide)
-			2:
-				_add_typed_platform(Vector2(col_c, ry), wide, _platform_type_hint)
-			3:
-				_add_platform(Vector2(col_l, ry), shelf)
-				_add_platform(Vector2(col_r, ry), shelf)
-			4:
-				_add_typed_platform(Vector2(col_c, ry), shelf, _platform_type_hint)
+		if i > 0 and i < _all_rows.size() - 1:
+			var gap: float = absf(float(_all_rows[i]) - float(_all_rows[i - 1]))
+			ry += rng.randf_range(-gap * 0.12, gap * 0.12)
+
+		var x: float = room_width * zone_center[zone]
+		# Small per-row X jitter so platforms don't sit on a perfect grid.
+		x += rng.randf_range(-room_width * 0.03, room_width * 0.03)
+
+		# Layout choice: single wide / single shelf / bridge / typed.
+		var roll: float = rng.randf()
+		if roll < 0.55:
+			_add_platform(Vector2(x, ry), wide)
+		elif roll < 0.75:
+			_add_platform(Vector2(x, ry), shelf)
+		elif roll < 0.90:
+			# Bridge: two short shelves on opposite sides. Anchor X = the side
+			# closer to the chosen zone so spawn helpers stay near the path.
+			var left_x:  float = room_width * 0.20
+			var right_x: float = room_width * 0.80
+			_add_platform(Vector2(left_x, ry),  shelf)
+			_add_platform(Vector2(right_x, ry), shelf)
+			x = left_x if zone < ZONE_COUNT / 2 else right_x
+		else:
+			_add_typed_platform(Vector2(x, ry), wide, _platform_type_hint)
+
+		_vert_row_x[i] = x
+		prev_prev = prev_zone
+		prev_zone = zone
+
+func _markov_pick_zone(rng: RandomNumberGenerator, prev: int, prev_prev: int,
+		zone_count: int, weight_by_delta: Array[float]) -> int:
+	# Build candidate weights for this step. Skip the candidate that would form
+	# three rows in a row in the same zone (prev == prev_prev == candidate).
+	var weights: Array[float] = []
+	weights.resize(zone_count)
+	var total: float = 0.0
+	for z in zone_count:
+		var d: int = absi(z - prev)
+		var w: float = 0.0
+		if d < weight_by_delta.size():
+			w = weight_by_delta[d]
+		if z == prev and prev == prev_prev:
+			w = 0.0  # anti-repeat veto
+		weights[z] = w
+		total += w
+	if total <= 0.0:
+		# All vetoed (unlikely): pick any neighbor.
+		return clampi(prev + (1 if rng.randf() < 0.5 else -1), 0, zone_count - 1)
+	var pick: float = rng.randf() * total
+	var acc: float = 0.0
+	for z in zone_count:
+		acc += weights[z]
+		if pick <= acc:
+			return z
+	return zone_count - 1
 
 func _vert_platform_x(row_idx: int) -> float:
-	match (row_idx + _vert_step_offset) % 5:
-		0: return _vert_col_l
-		1: return _vert_col_r
-		2: return _vert_col_c
-		3: return _vert_col_l  # double shelf row — use left column as anchor
-		4: return _vert_col_c
+	if row_idx >= 0 and row_idx < _vert_row_x.size():
+		return _vert_row_x[row_idx]
 	return room_width * 0.5
 
 func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
