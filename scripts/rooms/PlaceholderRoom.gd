@@ -651,6 +651,11 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 	var prev_zone: int = rng.randi() % ZONE_COUNT
 	var prev_prev: int = -1
 	var prev_kind: String = ""
+	# Reachability state: anchor X and full width of the previous platform the
+	# player would launch from (for bridges, the side closer to the next zone).
+	var prev_x: float = -INF
+	var prev_w: float = 0.0
+	var prev_y: float = 0.0
 
 	for i in rows.size():
 		var section_name: String = section_per_row[i]
@@ -684,10 +689,28 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		if ptype == "_hint":
 			ptype = _platform_type_hint
 
+		# Reachability: snap X toward the previous platform if the jump from
+		# its closest edge can't physically clear the gap. Without this, narrow
+		# platforms in distant zones become unreachable on uphill rows.
+		if prev_x != -INF and kind == "single":
+			var v_gap: float = prev_y - ry  # > 0 means new row is higher
+			var max_center_dx: float = _max_horizontal_jump(v_gap) \
+					+ (prev_w + width) * 0.5
+			var dx: float = x - prev_x
+			if absf(dx) > max_center_dx:
+				x = prev_x + signf(dx) * max_center_dx
+				# Keep inside playable band so the snapped X never clips a wall.
+				x = clampf(x, room_width * 0.10, room_width * 0.90)
+
 		layout.append({
 			"x": x, "y": ry, "kind": kind,
 			"width": width, "type": ptype,
 		})
+		# For bridges, the player launches from one of the two shelves; use the
+		# anchor side as the "previous" position.
+		prev_x = x
+		prev_w = width if kind == "single" else _platform_width
+		prev_y = ry
 		prev_prev = prev_zone
 		prev_zone = zone
 		prev_kind = kind
@@ -741,6 +764,26 @@ func _sample_weighted_str(table: Array, rng: RandomNumberGenerator) -> String:
 		if pick <= acc:
 			return String(row[0])
 	return String(table[table.size() - 1][0])
+
+# Max horizontal distance (in px) the player can travel mid-air while clearing
+# a vertical rise of `v_gap` px. Derived from Player.gd physics:
+#   jump_force=600, gravity=900, walk_speed=180.
+# Apex time t_apex = 0.667s, max_jump_height ≈ 200 px.
+# Same-level jump: full air ≈ 1.33s → ~240 px horizontal.
+# Max upward jump: only apex time → ~120 px.
+# Linear interp between the two with a 1.15× generosity factor (player can
+# walk to the platform's edge before launching, which we approximate via
+# +(prev_w + width)/2 in the caller).
+func _max_horizontal_jump(v_gap: float) -> float:
+	const SAME_LEVEL_REACH: float = 240.0
+	const MAX_UP_REACH:     float = 120.0
+	if v_gap <= 0.0:
+		# Falling/level — full hang time, plus a margin since the player can
+		# also delay-input the jump and pick up extra horizontal in the fall.
+		return SAME_LEVEL_REACH * 1.15
+	var max_up: float = LevelGenerator.MAX_JUMP_HEIGHT
+	var t: float = clampf(v_gap / max_up, 0.0, 1.0)
+	return lerpf(SAME_LEVEL_REACH, MAX_UP_REACH, t) * 1.15
 
 func _markov_pick_zone(rng: RandomNumberGenerator, prev: int, prev_prev: int,
 		zone_count: int, weight_by_delta: Array[float]) -> int:
