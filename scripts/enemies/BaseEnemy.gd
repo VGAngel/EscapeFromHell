@@ -321,6 +321,16 @@ func _load_sprite_frames_from_map(id: String) -> bool:
 	# Chibi sprites ship on a large (~900×900) canvas; scale down so the
 	# figure reads at roughly the player/enemy silhouette size.
 	_anim_sprite.scale = Vector2(0.15, 0.15)
+	# All chibi canvases place the character's feet ~300 px below the canvas
+	# center, which at scale 0.15 equals ~45 px below the node origin. The
+	# collision shape is only half_h px tall, so without correction the sprite
+	# visually sinks into platforms. Shift the sprite up so its feet align with
+	# the collision box bottom.
+	const SPRITE_FEET_PX: float = 45.0
+	var col: CollisionShape2D = get_node_or_null("CollisionShape2D")
+	if col and col.shape is RectangleShape2D:
+		var half_h: float = (col.shape as RectangleShape2D).size.y / 2.0
+		_anim_sprite.position.y = half_h - SPRITE_FEET_PX
 	return true
 
 func _collect_frames_in_dir(path: String) -> Array:
