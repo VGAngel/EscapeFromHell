@@ -681,7 +681,7 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		if rng.randf() < bridge_chance and prev_kind != "bridge":
 			kind = "bridge"
 			# Anchor X = side closer to the chosen zone (spawn helper hint).
-			x = (room_width * 0.20) if zone < ZONE_COUNT / 2 else (room_width * 0.80)
+			x = (room_width * 0.20) if zone * 2 < ZONE_COUNT else (room_width * 0.80)
 
 		var width_mult: float = _sample_weighted(profile["widths"], rng)
 		var width: float = _platform_width * width_mult
