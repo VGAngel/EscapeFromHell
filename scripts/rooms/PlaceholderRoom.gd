@@ -504,6 +504,8 @@ func _spawn_one_bonus_at_row(row_idx: int) -> void:
 # ── Altar spawning ────────────────────────────────────────────────────────────
 
 const ALTAR_SCRIPT := preload("res://scripts/AltarNode.gd")
+const ALTAR_MAIN_TEXTURE := preload("res://Assets/OurAssets/altar_main.png")
+const ALTAR_TARGET_HEIGHT := 220.0
 
 func _spawn_altar() -> void:
 	var spawn_in_vertical_entrance := is_vertical and room_type in ["entrance", "shaft"]
@@ -526,6 +528,22 @@ func _spawn_altar() -> void:
 	else:
 		# Horizontal level — altar on the high-platform shelf in the exit room.
 		altar.position = Vector2(room_width * 0.5, _row_high - 32.0)
+
+	var sprite := Sprite2D.new()
+	sprite.name = "Sprite2D"
+	sprite.texture = ALTAR_MAIN_TEXTURE
+	var tex_w: float = float(ALTAR_MAIN_TEXTURE.get_width())
+	var tex_h: float = float(ALTAR_MAIN_TEXTURE.get_height())
+	var s: float = ALTAR_TARGET_HEIGHT / tex_h
+	sprite.scale = Vector2(s, s)
+	sprite.centered = false
+	# Pivot at bottom-center so the altar's base sits on its Node2D origin.
+	sprite.offset = Vector2(-tex_w * 0.5, -tex_h)
+	# Altar is placed 32 px above the platform row's center Y, and the platform's
+	# top surface sits PLATFORM_T/2 above that center. Shift the sprite down so
+	# its base lands exactly on the platform's top surface.
+	sprite.position = Vector2(0, 32.0 - PLATFORM_T * 0.5)
+	altar.add_child(sprite)
 
 	var area := Area2D.new()
 	area.name = "Area2D"
