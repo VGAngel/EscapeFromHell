@@ -8,7 +8,7 @@ extends Node2D
 #   ├── HUD          (CanvasLayer, script: scripts/HUD.gd)
 #   ├── RoomContainer (Node2D)   ← rooms are added here at runtime
 #   ├── SpawnPoint   (Marker2D)  ← default player spawn
-#   ├── Exit         (Area2D)    ← player walks into this to complete level
+#   ├── Exit         (Node2D)    ← PortalExit script; activated after soul delivery
 #   └── Camera2D / PhantomCamera2D
 
 # ── Exports ───────────────────────────────────────────────────────────────────
@@ -440,7 +440,7 @@ func _on_soul_delivered(soul_id: String) -> void:
 	GameManager.collect_soul(id)
 	_show_soul_delivered_popup()
 	_carried_soul_data = {}
-	if _exit_area and _exit_area.has_method("activate"):
+	if _souls_found >= _souls_required and _exit_area and _exit_area.has_method("activate"):
 		_exit_area.activate()
 
 func _show_soul_delivered_popup() -> void:
