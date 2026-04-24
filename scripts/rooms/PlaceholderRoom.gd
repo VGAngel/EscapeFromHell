@@ -216,9 +216,9 @@ func _log_vertical_layout() -> void:
 		var gap: float = absf(float(_vert_layout[i].y) - float(_vert_layout[i - 1].y))
 		if gap > max_y_gap:
 			max_y_gap = gap
-	print("[room %d#%d] tier=%s rows=%d max_y_gap=%dpx room_h=%dpx" % [
+	print("[room %d#%d] tier=%s rows=%d safeties=%d max_y_gap=%dpx room_h=%dpx" % [
 		level_id, room_index, _zone_tier, _vert_layout.size(),
-		int(max_y_gap), int(room_height),
+		_vert_safeties.size(), int(max_y_gap), int(room_height),
 	])
 	# One-line dump per row so you can grep / paste into a spreadsheet.
 	for i in _vert_layout.size():
@@ -226,6 +226,13 @@ func _log_vertical_layout() -> void:
 		print("  row %2d  y=%4d x=%4d w=%3d kind=%s type=%s" % [
 			i, int(e.y), int(e.x), int(e.width),
 			e.kind, e.type,
+		])
+	# Safety platforms inserted by _compute_fall_safeties — listed separately
+	# so the row indexing above stays aligned with _all_rows / _vert_layout.
+	for j in _vert_safeties.size():
+		var s: Dictionary = _vert_safeties[j]
+		print("  saf %2d  y=%4d x=%4d w=%3d   ← inserted to break a > %dpx blind drop" % [
+			j, int(s.y), int(s.x), int(s.width), int(MAX_SAFE_FALL_PX),
 		])
 
 func _init_zone() -> void:
