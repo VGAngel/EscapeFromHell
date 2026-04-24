@@ -907,18 +907,25 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		#      the player has agency to walk to the safe edge.
 		if prev_x != -INF and kind == "single":
 			const OVERLAP_REQUIRED: float = 50.0
+			# Min lateral freedom needed before strict containment kicks in.
+			# When contain_slack is < this, equal-width rows would be forced
+			# into the same X column over and over (visually 4-in-a-row).
+			const CONTAIN_MIN_SLACK: float = 50.0
 			var v_gap: float = prev_y - ry  # > 0 means new row is higher
 			var max_jump_center: float = _max_horizontal_jump(v_gap) \
 					+ (prev_w + width) * 0.5
 			var max_center_dx: float = max_jump_center
 			var contain_slack: float = (prev_w - width) * 0.5
-			if contain_slack >= 0.0:
-				# Strict: current fits inside prev, both edges land on prev.
+			if contain_slack >= CONTAIN_MIN_SLACK:
+				# Strict: current fits inside prev with real lateral room.
+				# Walking off ANY edge of current lands on prev.
 				max_center_dx = minf(max_center_dx, contain_slack)
 			else:
-				# Loose: current is wider than prev — keep at least
-				# OVERLAP_REQUIRED shared so the player isn't completely
-				# stranded.
+				# Loose: prev isn't meaningfully wider than current. Force
+				# strict containment here would lock rows into one column;
+				# fall back to "≥ OVERLAP_REQUIRED of shared X". One edge
+				# of current may not be covered by prev — the player has
+				# agency to walk to the safe edge.
 				var max_overlap_center: float = (prev_w + width) * 0.5 - OVERLAP_REQUIRED
 				if max_overlap_center > 0.0:
 					max_center_dx = minf(max_center_dx, max_overlap_center)
