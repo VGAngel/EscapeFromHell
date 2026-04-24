@@ -890,32 +890,38 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 			ptype = _platform_type_hint
 
 		# Reachability + walk-off safety: snap X toward the previous platform
-		# under TWO constraints:
+		# under THREE constraints, tightest wins:
 		#
 		#   1. Jumping UP from prev to current must be physically possible:
 		#      |dx| ≤ _max_horizontal_jump(v_gap) + (prev_w + new_w)/2
 		#
-		#   2. Walking off CURRENT (the player descends, so current = upper)
-		#      must drop onto the prev platform — i.e. their X-ranges must
-		#      overlap. Otherwise the player falls past prev into whatever's
-		#      below, often hundreds of px down (= tier-2 / death damage).
-		#      |dx| ≤ (prev_w + new_w)/2 − OVERLAP_REQUIRED
+		#   2. (Strict) Walking off CURRENT must land on prev — BOTH edges
+		#      of current must sit inside prev's footprint, otherwise the
+		#      player walking off the un-covered edge falls past prev into
+		#      whatever's below. Possible only when prev_w ≥ width:
+		#      |dx| ≤ (prev_w − new_w)/2
 		#
-		# OVERLAP_REQUIRED stays small (50 px) so we don't force every row
-		# into the same column, but it kills the "row 16 sits 690..1020,
-		# row 15 sits 163..647 → 43 px gap → blind 1091 px drop" failure mode.
+		#   3. (Loose) When prev is narrower than current, strict containment
+		#      is impossible — fall back to "at least OVERLAP_REQUIRED of
+		#      shared X". One edge of current may still fall off prev, but
+		#      the player has agency to walk to the safe edge.
 		if prev_x != -INF and kind == "single":
 			const OVERLAP_REQUIRED: float = 50.0
 			var v_gap: float = prev_y - ry  # > 0 means new row is higher
 			var max_jump_center: float = _max_horizontal_jump(v_gap) \
 					+ (prev_w + width) * 0.5
-			var max_overlap_center: float = (prev_w + width) * 0.5 - OVERLAP_REQUIRED
-			# The tighter of the two wins. Negative max_overlap_center means
-			# the platforms can't physically overlap (combined width too
-			# small for the required overlap) — fall back to jump-only.
 			var max_center_dx: float = max_jump_center
-			if max_overlap_center > 0.0:
-				max_center_dx = minf(max_jump_center, max_overlap_center)
+			var contain_slack: float = (prev_w - width) * 0.5
+			if contain_slack >= 0.0:
+				# Strict: current fits inside prev, both edges land on prev.
+				max_center_dx = minf(max_center_dx, contain_slack)
+			else:
+				# Loose: current is wider than prev — keep at least
+				# OVERLAP_REQUIRED shared so the player isn't completely
+				# stranded.
+				var max_overlap_center: float = (prev_w + width) * 0.5 - OVERLAP_REQUIRED
+				if max_overlap_center > 0.0:
+					max_center_dx = minf(max_center_dx, max_overlap_center)
 			var dx: float = x - prev_x
 			if absf(dx) > max_center_dx:
 				x = prev_x + signf(dx) * max_center_dx
