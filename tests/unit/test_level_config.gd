@@ -102,6 +102,28 @@ func test_get_circle_fallback_level() -> void:
 	# Unknown level 55 → _make_fallback → ceili(55/10) = 6
 	assert_eq(lc.get_circle(55), 6)
 
+# ── get_circle_tileset ────────────────────────────────────────────────────────
+#
+# Regression guard: tileset config drives which art set the circle uses.
+# Mapping lives in levels_config.json → circle_defaults["<n>"]["tileset"].
+
+func test_get_circle_tileset_returns_configured_value() -> void:
+	lc._circle_defaults = {
+		"1": {"tileset": "tileset1"},
+		"3": {"tileset": "tileset2"},
+	}
+	assert_eq(lc.get_circle_tileset(1), "tileset1")
+	assert_eq(lc.get_circle_tileset(3), "tileset2")
+
+func test_get_circle_tileset_unknown_circle_falls_back_to_tileset1() -> void:
+	# Circle 99 isn't in defaults → fallback prevents crash on misconfig.
+	assert_eq(lc.get_circle_tileset(99), "tileset1")
+
+func test_get_circle_tileset_missing_key_falls_back_to_tileset1() -> void:
+	# Circle 1 exists but has no "tileset" key (legacy data) → fallback.
+	lc._circle_defaults = {"1": {"theme": "test_only"}}
+	assert_eq(lc.get_circle_tileset(1), "tileset1")
+
 # ── get_difficulty ────────────────────────────────────────────────────────────
 
 func test_get_difficulty_explicit() -> void:

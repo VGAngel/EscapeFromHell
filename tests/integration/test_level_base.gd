@@ -288,6 +288,75 @@ func test_build_vertical_rooms_stacks_rooms_top_to_bottom() -> void:
 	assert_lt(lb._spawn_point.position.y, lb._exit_area.position.y,
 		"spawn (top) must be above exit/altar (bottom) on vertical levels")
 
+# ── _build_vertical_shaft — single shaft per vertical level ───────────────────
+#
+# Regression guard: vertical levels MUST end up with exactly one PlaceholderRoom
+# (the "shaft"), not N stacked rooms. The legacy multi-room path created a
+# ~600 px gap between adjacent rooms which the shaft refactor (b6964f37)
+# eliminated. Tests here lock in the new contract so future merges can't
+# silently revert it again (as 7ff95b3d did).
+
+# Minimal stub for the GeneratedLevel object passed to _build_vertical_shaft.
+# Only the fields the shaft builder reads are populated.
+class FakeGen:
+	var room_scenes: Array = []
+	var room_count:  int   = 1
+
+func test_vertical_level_uses_single_shaft_room() -> void:
+	var lb: Node = _make_safe_lb()
+	lb.level_id = 1
+	var gen := FakeGen.new()
+	gen.room_count = 4
+
+	lb._build_vertical_shaft(gen)
+
+	assert_eq(lb._room_container.get_child_count(), 1,
+		"vertical level must build exactly ONE shaft room (not N stacked)")
+
+	var room: Node = lb._room_container.get_child(0)
+	assert_eq(room.room_type, "shaft",
+		"shaft room must have room_type='shaft' so walls/altar/spawn behave correctly")
+
+func test_shaft_room_count_scales_height() -> void:
+	# room_count is the multiplier for shaft height: VIEWPORT_HEIGHT (1920) ×
+	# VERTICAL_ROOM_SCREENS (2) × room_count. Verify the room actually picks it
+	# up so the shaft spans the full level instead of one 2-screen segment.
+	var lb: Node = _make_safe_lb()
+	lb.level_id = 1
+	var gen := FakeGen.new()
+	gen.room_count = 5
+
+	lb._build_vertical_shaft(gen)
+
+	var room: Node = lb._room_container.get_child(0)
+	assert_eq(room.room_count, 5,
+		"shaft room must inherit room_count from gen so its height scales")
+	# Sanity: with room_count=5 and 1920×2 segments, shaft is ~19200 px tall.
+	assert_gt(float(room.room_height), 1920.0 * 2.0 * 5.0 * 0.99,
+		"shaft total height must be VIEWPORT_HEIGHT × VERTICAL_ROOM_SCREENS × room_count")
+
+func test_shaft_room_gets_circle_tileset() -> void:
+	# tileset is plumbed from LevelConfig.get_circle_tileset(circle) so the
+	# correct art set renders. Level 1 → circle 1 → tileset1.
+	var lb: Node = _make_safe_lb()
+	lb.level_id = 1
+	var gen := FakeGen.new()
+	gen.room_count = 4
+
+	lb._build_vertical_shaft(gen)
+
+	var room: Node = lb._room_container.get_child(0)
+	if LevelConfig:
+		var expected: String = LevelConfig.get_circle_tileset(1)
+		assert_eq(room.tileset, expected,
+			"shaft must inherit tileset from circle's config")
+	else:
+		# Without the LevelConfig autoload the shaft falls back to the .tscn
+		# default. We still assert it's a non-empty string so the field was
+		# initialised.
+		assert_ne(String(room.tileset), "",
+			"tileset field must be populated even without LevelConfig")
+
 # ── Altar respawn position ────────────────────────────────────────────────────
 
 func test_altar_bound_updates_respawn_position() -> void:
