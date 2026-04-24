@@ -889,8 +889,15 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 			var dx: float = x - prev_x
 			if absf(dx) > max_center_dx:
 				x = prev_x + signf(dx) * max_center_dx
-				# Keep inside playable band so the snapped X never clips a wall.
-				x = clampf(x, room_width * 0.10, room_width * 0.90)
+
+		# Final clamp: keep the FULL platform inside the playable interior so
+		# wide widths in edge zones don't sink half their footprint into the
+		# side wall. Both single platforms and per-row anchors of bridges are
+		# constrained by their actual width.
+		if kind == "single":
+			var min_x: float = SIDE_WALL_T + width * 0.5
+			var max_x: float = room_width - SIDE_WALL_T - width * 0.5
+			x = clampf(x, min_x, max_x)
 
 		layout.append({
 			"x": x, "y": ry, "kind": kind,
@@ -1049,8 +1056,12 @@ func _compute_fall_safeties(layout: Array[Dictionary]) -> Array[Dictionary]:
 				var dist_b: float = _nearest_safety_distance(safeties, unsafe_xs[1], insert_y)
 				if dist_b > dist_a:
 					unsafe_x = unsafe_xs[1]
+			# Clamp safety center so its full footprint stays inside the
+			# playable interior (otherwise wide safeties at edge zones sink
+			# into the side wall the same way Markov platforms used to).
 			var safety_x: float = clampf(unsafe_x,
-					room_width * 0.10, room_width * 0.90)
+					SIDE_WALL_T + safety_w * 0.5,
+					room_width - SIDE_WALL_T - safety_w * 0.5)
 			# Dedupe: skip if there's already a safety covering this spot.
 			if _is_duplicate_safety(safeties, safety_x, insert_y):
 				continue
