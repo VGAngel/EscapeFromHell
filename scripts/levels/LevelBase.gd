@@ -378,19 +378,16 @@ func _on_exit_body_entered(body: Node2D) -> void:
 
 func _connect_souls() -> void:
 	for soul in _souls_in_level:
-		if soul.has_signal("soul_collected"):
-			soul.soul_collected.connect(_on_soul_collected)
+		if soul.has_signal("soul_pickup_started"):
+			soul.soul_pickup_started.connect(_on_soul_pickup_started)
 
-func _on_soul_collected(soul: Node) -> void:
-	# Store soul data for delivery; counting happens in _on_soul_delivered.
+## Called when the player manually picks up a soul from the ground.
+## Stores soul data so it can be shown on altar delivery.
+func _on_soul_pickup_started(soul: Node) -> void:
 	var soul_id: int = soul.get_meta("soul_id", 0)
 	_carried_soul_data = {"soul_id": soul_id}
 	if soul.has_method("get_soul_data"):
 		_carried_soul_data.merge(soul.get_soul_data())
-
-	if _soul_reveal and _soul_reveal.has_method("show_soul") \
-			and _carried_soul_data.has("name") and _carried_soul_data.get("name", "") != "":
-		_soul_reveal.show_soul(_carried_soul_data)
 
 	var boss: Node = _get_boss()
 	if boss and boss.has_method("on_collectible_picked"):
@@ -438,6 +435,10 @@ func _on_soul_delivered(soul_id: String) -> void:
 	var id: int = soul_id.to_int() if soul_id.is_valid_int() else \
 		_carried_soul_data.get("soul_id", 0)
 	GameManager.collect_soul(id)
+	# Show soul name reveal panel here — at delivery, not at pickup.
+	if _soul_reveal and _soul_reveal.has_method("show_soul") \
+			and _carried_soul_data.has("name") and _carried_soul_data.get("name", "") != "":
+		_soul_reveal.show_soul(_carried_soul_data)
 	_show_soul_delivered_popup()
 	_carried_soul_data = {}
 	if _souls_found >= _souls_required and _exit_area and _exit_area.has_method("activate"):

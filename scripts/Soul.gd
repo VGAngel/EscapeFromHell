@@ -4,12 +4,13 @@ const SIZE: float = 70.0   # diameter px; collision radius = SIZE / 2 in Soul.ts
 
 # Area2D pickup representing a soul in the level.
 #
-# LevelBase discovers souls via the "soul" group, connects to the
-# soul_collected signal, increments its counters, forwards to
-# GameManager.collect_soul(), and — for named souls — pops a
-# SoulRevealPanel with the epitaph.
+# Pickup is MANUAL — the player must press [E] while in range.
+# soul_pickup_started  → emitted when player picks up from the ground;
+#                        LevelBase stores soul data for later.
+# soul_collected       → kept for compatibility but no longer emitted here;
+#                        counting/reveal now happen on altar delivery.
 
-signal soul_collected(soul: Area2D)
+signal soul_pickup_started(soul: Area2D)
 
 const _TEXTURE_PATHS := {
 	"innocent": "res://Assets/OurAssets/base_soul.png",
@@ -17,20 +18,24 @@ const _TEXTURE_PATHS := {
 	"mimic":    "res://Assets/OurAssets/mimic.png",
 }
 
-var _base_y:     float      = 0.0
-var _time:       float      = 0.0
-var _soul_id:    int        = 0
-var _soul_data:  Dictionary = {}
-var _is_hidden:  bool       = false
-var _soul_type:  String     = "innocent"
-var _pulse_tween: Tween     = null
+var _base_y:       float               = 0.0
+var _time:         float               = 0.0
+var _soul_id:      int                 = 0
+var _soul_data:    Dictionary          = {}
+var _is_hidden:    bool                = false
+var _soul_type:    String              = "innocent"
+var _pulse_tween:  Tween              = null
+var _player_nearby: CharacterBody2D   = null
+var _prompt_label: Label              = null
 
 func _ready() -> void:
 	_apply_size()
 	add_to_group("soul")
 	_base_y = position.y
 	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 	_start_pulse()
+	_build_prompt()
 
 func _apply_size() -> void:
 	var col := $CollisionShape2D
@@ -63,6 +68,19 @@ func _start_pulse() -> void:
 			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.85, 0.60)
 			_pulse_tween.tween_property($Sprite2D, "modulate:a", 1.0, 0.20)
 
+func _build_prompt() -> void:
+	_prompt_label = Label.new()
+	_prompt_label.text = "[E] Підібрати"
+	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_prompt_label.add_theme_font_size_override("font_size", 14)
+	_prompt_label.add_theme_color_override("font_color", Color("#FFE7A3"))
+	_prompt_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	_prompt_label.add_theme_constant_override("outline_size", 3)
+	_prompt_label.custom_minimum_size = Vector2(120, 24)
+	_prompt_label.position = Vector2(-60, -52)
+	_prompt_label.visible = false
+	add_child(_prompt_label)
+
 func _process(delta: float) -> void:
 	_time += delta
 	position.y = _base_y + sin(_time * 2.5) * 10.0
@@ -70,6 +88,34 @@ func _process(delta: float) -> void:
 		_update_hidden_visibility()
 	if _soul_type == "mimic":
 		_update_mimic_highlight()
+	# Manual pickup — player must press [E] while in range.
+	if _player_nearby and Input.is_action_just_pressed("interact"):
+		_do_pickup()
+
+func _do_pickup() -> void:
+	if not is_instance_valid(_player_nearby):
+		return
+	# Pass a string soul_id so Player.pick_up_soul() can store it.
+	var soul_id_str: String = str(_soul_id) if _soul_id != 0 else str(get_instance_id())
+	_player_nearby.pick_up_soul(soul_id_str)
+	# Notify LevelBase so it can store soul data for the altar delivery reveal.
+	soul_pickup_started.emit(self)
+	# Visual FX.
+	var fx: Node = get_node_or_null("/root/ParticleEffects")
+	if fx and fx.has_method("spawn"):
+		fx.spawn("soul_pickup", global_position)
+	# Stop further interaction.
+	_player_nearby = null
+	if _prompt_label:
+		_prompt_label.visible = false
+	set_deferred("monitoring", false)
+	# Fade + scale out then free.
+	if _pulse_tween:
+		_pulse_tween.kill()
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(self, "scale", Vector2(1.6, 1.6), 0.2)
+	tw.tween_property(self, "modulate:a", 0.0, 0.25)
+	tw.chain().tween_callback(queue_free)
 
 func _update_mimic_highlight() -> void:
 	var has_recognition := SaveManager and SaveManager.has_upgrade("recognition")
@@ -87,20 +133,19 @@ func _update_hidden_visibility() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
-	_spawn_name_label()
-	var fx: Node = get_node_or_null("/root/ParticleEffects")
-	if fx and fx.has_method("spawn"):
-		fx.spawn("soul_pickup", global_position)
+	_player_nearby = body as CharacterBody2D
+	if _prompt_label:
+		_prompt_label.visible = true
 	var tm: Node = get_node_or_null("/root/TutorialManager")
 	if tm and tm.has_method("show_hint"):
 		tm.show_hint("soul_pickup")
-	soul_collected.emit(self)
-	# Fade out then free — the signal handler already has what it needs.
-	var tw := create_tween()
-	tw.parallel().tween_property(self, "scale", Vector2(1.6, 1.6), 0.2)
-	tw.parallel().tween_property(self, "modulate:a", 0.0, 0.25)
-	tw.tween_callback(queue_free)
-	set_deferred("monitoring", false)
+
+func _on_body_exited(body: Node2D) -> void:
+	if not body.is_in_group("player"):
+		return
+	_player_nearby = null
+	if _prompt_label:
+		_prompt_label.visible = false
 
 # ── Named-soul data ───────────────────────────────────────────────────────────
 
@@ -116,12 +161,10 @@ func get_soul_data() -> Dictionary:
 func has_name() -> bool:
 	return _soul_data.has("name") and _soul_data["name"] != ""
 
-## Mark this soul as a hidden-placement pickup. Soul stays nearly invisible
-## unless the player bought the `soul_sense` upgrade.
+## Mark this soul as a hidden-placement pickup.
 func set_hidden(is_hidden_soul: bool) -> void:
 	_is_hidden = is_hidden_soul
 	if is_hidden_soul:
-		# Start dim right away so level-open is consistent regardless of _process timing.
 		modulate.a = 0.12
 
 # ── Floating name label ───────────────────────────────────────────────────────
@@ -136,8 +179,6 @@ func _spawn_name_label() -> void:
 	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	lbl.add_theme_constant_override("outline_size", 3)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# Anchor the label around this soul's world position via a separate node
-	# so it doesn't get freed when the Soul itself queue_free's.
 	var parent := get_parent()
 	if not parent:
 		return
