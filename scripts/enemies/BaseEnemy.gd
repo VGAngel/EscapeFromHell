@@ -221,16 +221,14 @@ func _do_chase(_delta: float) -> void:
 	var dir: float = sign(_player.global_position.x - global_position.x)
 	velocity.x = move_speed * chase_speed_mult * dir
 
-	# Jump toward player only when they are stably on a higher platform.
-	# We check _player.velocity.y instead of is_on_floor() to avoid a
-	# frame-ordering race: is_on_floor() can still read true for one frame
-	# after the player has already pressed jump. A near-zero vertical speed
-	# reliably means the player is standing still on a surface.
+	# Jump toward player only when they are stably on a higher platform AND
+	# there is actually a solid surface above us to land on.
 	if is_on_floor() and _jump_cooldown <= 0.0:
 		var player_stable: bool = absf(_player.velocity.y) < 50.0
 		if player_stable and _player.global_position.y < global_position.y - 60.0:
-			velocity.y = JUMP_VELOCITY
-			_jump_cooldown = 1.5
+			if _platform_exists_above(_player.global_position.y):
+				velocity.y = JUMP_VELOCITY
+				_jump_cooldown = 1.5
 
 	# Stop horizontal movement when hitting a wall — but only while grounded
 	# (velocity.y >= 0). During a jump (velocity.y < 0) keep momentum so the
@@ -261,6 +259,23 @@ func _do_give_up(_delta: float) -> void:
 # Залишено у enum для сумісності; одразу переходимо в PATROL.
 func _do_return(_delta: float) -> void:
 	_enter_patrol()
+
+# ── Jump helpers ──────────────────────────────────────────────────────────────
+
+## Returns true if there is a solid platform between the enemy and target_y.
+## Casts a ray straight up from the enemy's position to just above target_y.
+## Without this check the enemy would jump into empty air when the player is
+## on a platform that is off to the side but at a higher Y level.
+func _platform_exists_above(target_y: float) -> bool:
+	var space := get_world_2d().direct_space_state
+	var params := PhysicsRayQueryParameters2D.create(
+		global_position,
+		Vector2(global_position.x, target_y - 4.0),
+		collision_mask
+	)
+	params.exclude = [self]
+	var result := space.intersect_ray(params)
+	return not result.is_empty()
 
 # ── PATROL entry ──────────────────────────────────────────────────────────────
 func _enter_patrol() -> void:
