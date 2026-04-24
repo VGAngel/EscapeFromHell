@@ -785,7 +785,14 @@ func _add_vertical_main_platforms(_col_l: float, _col_c: float, _col_r: float,
 # Deterministic per (level_id, room_index): replay-safe.
 func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash((level_id if level_id > 0 else 0) * 1000 + room_index)
+	# World seed (set on the main menu) folds into the Markov RNG so two
+	# players with different seeds get different platform layouts for the
+	# same level. Empty world seed keeps backwards-compatible determinism.
+	var world_seed_str: String = ""
+	if SaveManager:
+		world_seed_str = SaveManager.get_world_seed_str()
+	var world_h: int = hash(world_seed_str) if not world_seed_str.is_empty() else 0
+	rng.seed = hash((level_id if level_id > 0 else 0) * 1000 + room_index) ^ world_h
 
 	const ZONE_COUNT: int = 4
 	# Zone center X relative to room_width — kept inside [0.18 .. 0.82] so even

@@ -220,6 +220,39 @@ func test_markov_different_seeds_produce_different_layouts() -> void:
 			break
 	assert_true(any_differ, "different room_index must produce at least one different X")
 
+func test_markov_world_seed_affects_layout() -> void:
+	# Two players with different world seeds (set from the main-menu seed
+	# button) MUST get different layouts for the same level/room — otherwise
+	# the seed control is cosmetic and replays diverge silently.
+	if not SaveManager:
+		pending("SaveManager autoload unavailable — skipped")
+		return
+	var rows := _make_rows(15)
+	var original_seed: String = SaveManager.get_world_seed_str()
+
+	SaveManager.set_world_seed_str("seed_a_xyz")
+	var room_a := _make_layout_room()
+	room_a.level_id = 1
+	room_a.room_index = 1
+	var layout_a: Array = room_a._build_vertical_layout(rows)
+
+	SaveManager.set_world_seed_str("seed_b_qwe")
+	var room_b := _make_layout_room()
+	room_b.level_id = 1
+	room_b.room_index = 1
+	var layout_b: Array = room_b._build_vertical_layout(rows)
+
+	# Restore original world seed so other tests aren't polluted.
+	SaveManager.set_world_seed_str(original_seed)
+
+	var any_differ: bool = false
+	for i in layout_a.size():
+		if absf(float(layout_a[i].x) - float(layout_b[i].x)) > 1.0:
+			any_differ = true
+			break
+	assert_true(any_differ,
+		"world seed change must alter Markov layout for the same (level_id, room_index)")
+
 # ── Test 9: section profile / tier templates schema ───────────────────────────
 
 func test_tier_sections_covers_all_difficulty_tiers() -> void:
