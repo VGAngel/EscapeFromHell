@@ -1,0 +1,44 @@
+[gd_scene load_steps=5 format=3 uid="uid://platformtest0001"]
+
+[ext_resource type="PackedScene" uid="uid://player1tscn01" path="res://scenes/Player.tscn" id="1_player"]
+[ext_resource type="Script" uid="uid://b2eg0ttb0k1p2" path="res://scripts/platforms/BasePlatform.gd" id="2_platform"]
+[ext_resource type="Script" path="res://scripts/PlatformTest.gd" id="3_harness"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(1200.0, 40.0)
+
+[node name="PlatformTest" type="Node2D"]
+script = ExtResource("3_harness")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = -600.0
+offset_top = -400.0
+offset_right = 600.0
+offset_bottom = 400.0
+color = Color(0.12, 0.12, 0.16, 1.0)
+
+[node name="Platform" type="StaticBody2D" parent="."]
+position = Vector2(540.0, 450.0)
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("2_platform")
+platform_type = "stone"
+size = Vector2(300.0, 30.0)
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(540.0, 700.0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="FloorVisual" type="ColorRect" parent="Floor"]
+offset_left = -600.0
+offset_top = -20.0
+offset_right = 600.0
+offset_bottom = 20.0
+color = Color(0.35, 0.25, 0.18, 1.0)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(540.0, 385.0)
