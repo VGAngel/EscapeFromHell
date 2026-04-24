@@ -1011,27 +1011,25 @@ func _compute_fall_safeties(layout: Array[Dictionary]) -> Array[Dictionary]:
 			var top_y: float = float(entry.y)
 			var top_x: float = float(entry.x)
 			var top_w: float = float(entry.width)
-			# Player can't physically walk past the side walls, so clamp the
-			# nominal platform edges to the playable interior before checking.
-			# Otherwise we generate safeties for edges the player can never
-			# actually fall from (e.g. a platform at x=872 w=330 has a
-			# nominal right edge at 1037, but the wall stops the player at
-			# room_width - SIDE_WALL_T - PLAYER_WIDTH/2).
+			var nominal_left:  float = top_x - top_w * 0.5
+			var nominal_right: float = top_x + top_w * 0.5
+			# A platform edge that sits past a side wall is NOT a walk-off
+			# hazard — the wall stops the player before they reach the
+			# nominal edge, so they can't actually fall there. Skip those
+			# edges instead of clamping (the old clamp logic generated
+			# safeties for unreachable wall-corner edges, which is exactly
+			# the "safety where not needed" complaint).
 			var play_min: float = SIDE_WALL_T + SAFETY_PLAYER_WIDTH * 0.5
 			var play_max: float = room_width - SIDE_WALL_T - SAFETY_PLAYER_WIDTH * 0.5
-			var left_edge:  float = clampf(top_x - top_w * 0.5, play_min, play_max)
-			var right_edge: float = clampf(top_x + top_w * 0.5, play_min, play_max)
 			var max_y: float = top_y + MAX_SAFE_FALL_PX
 
 			var unsafe_xs: Array[float] = []
-			if not _has_landing_below(combined, left_edge, top_y, max_y):
-				unsafe_xs.append(left_edge)
-			# Skip the right-edge check when both edges clamp to the same
-			# playable X (platform sits entirely past one wall) — left edge
-			# already covers it.
-			if absf(right_edge - left_edge) > 1.0 \
-					and not _has_landing_below(combined, right_edge, top_y, max_y):
-				unsafe_xs.append(right_edge)
+			if nominal_left >= play_min \
+					and not _has_landing_below(combined, nominal_left, top_y, max_y):
+				unsafe_xs.append(nominal_left)
+			if nominal_right <= play_max \
+					and not _has_landing_below(combined, nominal_right, top_y, max_y):
+				unsafe_xs.append(nominal_right)
 			if unsafe_xs.is_empty():
 				continue
 

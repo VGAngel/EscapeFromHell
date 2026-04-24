@@ -359,6 +359,11 @@ func test_full_markov_layout_has_few_unsafe_blind_drops_after_safeties() -> void
 	# tests intentionally accept tier-1 (1 HP) falls as part of the gameplay
 	# rather than spamming safety platforms over every edge.
 	const MAX_SAFE: float = 700.0
+	# Mirror the side-wall geometry from PlaceholderRoom — edges past these
+	# Xs aren't reachable (wall stops the player first), so they aren't real
+	# hazards even if no platform sits beneath them.
+	var play_min: float = 60.0 + 80.0 * 0.5         # SIDE_WALL_T + PLAYER_WIDTH/2
+	var play_max: float = float(room.room_width) - 60.0 - 80.0 * 0.5
 	var total_edges: int  = 0
 	var unsafe_edges: int = 0
 	for i in range(layout.size() - 1, 0, -1):
@@ -367,7 +372,12 @@ func test_full_markov_layout_has_few_unsafe_blind_drops_after_safeties() -> void
 			continue
 		var top_x: float = float(entry.x)
 		var top_w: float = float(entry.width)
-		for edge_x in [top_x - top_w * 0.5, top_x + top_w * 0.5]:
+		var nominal_left:  float = top_x - top_w * 0.5
+		var nominal_right: float = top_x + top_w * 0.5
+		for edge_x in [nominal_left, nominal_right]:
+			# Wall-side edges aren't walk-off hazards.
+			if edge_x < play_min or edge_x > play_max:
+				continue
 			total_edges += 1
 			var ok: bool = room._has_landing_below(combined, edge_x,
 					float(entry.y), float(entry.y) + MAX_SAFE)
