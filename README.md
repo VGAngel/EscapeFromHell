@@ -21,6 +21,28 @@ python3 doc/convert_gdd.py
 
 ---
 
+## Тести
+
+Проект використовує [GUT](https://github.com/bitwes/Gut) для unit + integration тестів.
+Два готові скрипти запускають увесь набір у headless-режимі та зберігають
+повний лог із timestamp:
+
+```bash
+./tests/run_unit.sh           # ~1 хв,  263 unit тести (tests/unit/)
+./tests/run_integration.sh    # ~3-5 хв, integration тести (tests/integration/)
+```
+
+**Логи:** `tests/logs/{unit,integration}_<timestamp>.log` (gitignored).
+На stdout виводиться останні 30 рядків (саммарі + які впали).
+Exit code: `0` якщо все зелене, не нуль — є fails.
+
+**Опціонально:** якщо Godot встановлено в нестандартному місці —
+```bash
+GODOT_BIN=/path/to/godot ./tests/run_unit.sh
+```
+
+---
+
 ## Збірка APK для Android
 
 Preset `Android` уже налаштований в `export_presets.cfg` (arm64-v8a, debug).

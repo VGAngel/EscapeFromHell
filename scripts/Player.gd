@@ -403,29 +403,44 @@ func _apply_staff_hit() -> bool:
 
 # ── Fall damage ───────────────────────────────────────────────────────────────
 func _check_fall_damage() -> void:
-	if is_on_floor():
-		# Just landed — _fall_start_y holds the highest point of the airtime.
-		# Skip damage on the very first floor frame after spawn (sentinel).
+	# Per-frame entry point: dispatches to a pure helper using current physics
+	# state. The helper is split out so unit tests can drive it directly
+	# without faking CharacterBody2D's native is_on_floor().
+	_update_fall_tracking(is_on_floor(), global_position.y)
+
+# Pure, testable: updates _fall_start_y and applies tiered damage on landing.
+#   on_floor   — physics floor state for this frame
+#   current_y  — global Y (Godot 2D: smaller = higher on screen)
+# Sentinel _fall_start_y == -INF means "not tracking yet" (set on the very
+# first off-floor frame or right after a landing).
+func _update_fall_tracking(on_floor: bool, current_y: float) -> void:
+	if on_floor:
 		if _fall_start_y != -INF:
-			var fallen: float = global_position.y - _fall_start_y
-			if fallen > 0.0:
-				var threshold_scale: float = SOFT_LANDING_FACTOR if _upgrade_soft_landing else 1.0
-				# Walk the tier table from highest to lowest so the worst
-				# applicable tier wins. Tiers are in jump-heights (200 px).
-				for j in range(FALL_DAMAGE_TIERS.size() - 1, -1, -1):
-					var tier: Dictionary = FALL_DAMAGE_TIERS[j]
-					var threshold: float = LevelGenerator.MAX_JUMP_HEIGHT \
-							* float(tier.min_jumps) * threshold_scale
-					if fallen > threshold:
-						_take_damage(int(tier.damage))
-						break
+			var fallen: float = current_y - _fall_start_y
+			_apply_fall_damage_for(fallen)
 		# Re-baseline at the current floor Y so a walk-off-ledge next frame
 		# correctly measures fall distance from this point.
-		_fall_start_y = global_position.y
+		_fall_start_y = current_y
 		return
-	# In air: track the highest point reached (smallest Y in Godot 2D).
-	if _fall_start_y == -INF or global_position.y < _fall_start_y:
-		_fall_start_y = global_position.y
+	# In air: track the highest point reached (smallest Y).
+	if _fall_start_y == -INF or current_y < _fall_start_y:
+		_fall_start_y = current_y
+
+# Pure, testable: maps a fallen distance to the worst applicable tier and
+# calls _take_damage. Skips when fallen ≤ 0 (no real fall).
+func _apply_fall_damage_for(fallen: float) -> void:
+	if fallen <= 0.0:
+		return
+	var threshold_scale: float = SOFT_LANDING_FACTOR if _upgrade_soft_landing else 1.0
+	# Walk the tier table from highest to lowest so the worst applicable
+	# tier wins. Tiers are in jump-heights (200 px each).
+	for j in range(FALL_DAMAGE_TIERS.size() - 1, -1, -1):
+		var tier: Dictionary = FALL_DAMAGE_TIERS[j]
+		var threshold: float = LevelGenerator.MAX_JUMP_HEIGHT \
+				* float(tier.min_jumps) * threshold_scale
+		if fallen > threshold:
+			_take_damage(int(tier.damage))
+			return
 
 # ── Damage & death ────────────────────────────────────────────────────────────
 
