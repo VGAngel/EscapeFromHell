@@ -58,6 +58,22 @@ const VIEWPORT_HEIGHT: float = 1920.0
 # want to re-introduce a per-segment multiplier later.
 const VERTICAL_ROOM_SCREENS: int = 1
 
+# Wall textures per tileset. Each variant is a seam-blended vertical tile
+# (see tools/seam_blend.py); the drawer cycles through them per screen-height
+# section using seeded RNG so the shaft doesn't show an obvious repeat.
+# When a tileset has no entries here, walls fall back to flat colored rects.
+const WALL_TEXTURES_BY_TILESET := {
+	"tileset1": [
+		"res://Assets/OurAssets/walls/circle1/base_a.png",
+		"res://Assets/OurAssets/walls/circle1/base_b.png",
+		"res://Assets/OurAssets/walls/circle1/base_c.png",
+	],
+}
+
+# Height of one wall-texture section in pixels — one screen tall, so a shaft
+# of room_count=N screens draws N textured blocks per side.
+const WALL_SECTION_HEIGHT: float = 1920.0
+
 # Row Y positions — computed in _init_zone() from difficulty spacing.
 # Based on: floor_y - spacing * N.
 # Ensure _row_high leaves enough clearance for PLAYER_HEIGHT + WALL_T above.
@@ -1149,7 +1165,40 @@ func _add_platform(pos: Vector2, size: Vector2) -> void:
 
 # ── Visuals ───────────────────────────────────────────────────────────────────
 
+# Cached texture list for the current tileset. Lazy-loaded on first _draw().
+var _wall_textures_cache: Array = []
+var _wall_textures_loaded: bool = false
+
+func _ensure_wall_textures_loaded() -> void:
+	if _wall_textures_loaded:
+		return
+	_wall_textures_loaded = true
+	var paths: Array = WALL_TEXTURES_BY_TILESET.get(tileset, [])
+	for p in paths:
+		if ResourceLoader.exists(p):
+			var tex: Texture2D = load(p)
+			if tex:
+				_wall_textures_cache.append(tex)
+
+## Draws one side wall as a stack of textured sections, one texture per
+## WALL_SECTION_HEIGHT. Texture pick per section is seeded by level_id so
+## the same level re-renders identically but adjacent levels differ.
+func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
+	if _wall_textures_cache.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("wall_%d_%s" % [level_id, seed_tag])
+	var n: int = _wall_textures_cache.size()
+	var y: float = 0.0
+	while y < room_height:
+		var tex: Texture2D = _wall_textures_cache[rng.randi() % n]
+		var h: float = min(WALL_SECTION_HEIGHT, room_height - y)
+		draw_texture_rect(tex, Rect2(x, y, width, h), false)
+		y += WALL_SECTION_HEIGHT
+
 func _draw() -> void:
+	_ensure_wall_textures_loaded()
+
 	var bg: Color = CIRCLE_COLORS[clampi(circle, 0, CIRCLE_COLORS.size() - 1)]
 	var wall_c: Color = bg.darkened(0.35)
 
@@ -1170,8 +1219,14 @@ func _draw() -> void:
 	if needs_ceiling:
 		draw_rect(Rect2(0, sa_top, room_width, WALL_T), wall_c)
 	var side_t: float = SIDE_WALL_T if is_vertical else WALL_T
-	draw_rect(Rect2(sa_left, 0, side_t, room_height), wall_c)
-	draw_rect(Rect2(room_width - side_t - sa_right, 0, side_t, room_height), wall_c)
+	var left_x:  float = float(sa_left)
+	var right_x: float = room_width - side_t - float(sa_right)
+	if is_vertical and not _wall_textures_cache.is_empty():
+		_draw_textured_side_wall(left_x,  side_t, "L")
+		_draw_textured_side_wall(right_x, side_t, "R")
+	else:
+		draw_rect(Rect2(left_x,  0, side_t, room_height), wall_c)
+		draw_rect(Rect2(right_x, 0, side_t, room_height), wall_c)
 
 	# Type badge
 	var type_colors := {"entrance": Color(0.2, 0.8, 0.3), "main": Color(0.6, 0.6, 0.9), "exit": Color(1.0, 0.85, 0.2)}
