@@ -221,9 +221,12 @@ func _log_vertical_layout() -> void:
 		var gap: float = absf(float(_vert_layout[i].y) - float(_vert_layout[i - 1].y))
 		if gap > max_y_gap:
 			max_y_gap = gap
-	print("[room %d#%d] tier=%s rows=%d safeties=%d max_y_gap=%dpx room_h=%dpx" % [
+	var sa_l: int = SafeArea.left_reserved   if SafeArea else 0
+	var sa_r: int = SafeArea.right_reserved  if SafeArea else 0
+	print("[room %d#%d] tier=%s rows=%d safeties=%d max_y_gap=%dpx room_w=%dpx room_h=%dpx side_wall=%dpx safe_l/r=%d/%d" % [
 		level_id, room_index, _zone_tier, _vert_layout.size(),
-		_vert_safeties.size(), int(max_y_gap), int(room_height),
+		_vert_safeties.size(), int(max_y_gap), int(room_width), int(room_height),
+		int(SIDE_WALL_T), sa_l, sa_r,
 	])
 	# One-line dump per row so you can grep / paste into a spreadsheet.
 	for i in _vert_layout.size():
