@@ -1182,7 +1182,10 @@ func _ensure_wall_textures_loaded() -> void:
 
 ## Draws one side wall as a stack of textured sections, one texture per
 ## WALL_SECTION_HEIGHT. Texture pick per section is seeded by level_id so
-## the same level re-renders identically but adjacent levels differ.
+## the same level re-renders identically but adjacent levels differ. Uses a
+## native-width vertical slice from each source texture (random x-offset)
+## rather than squashing the full image into the narrow wall — otherwise a
+## 768-px source squeezed to a 60-px wall turns each stone into a thin streak.
 func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
 	if _wall_textures_cache.is_empty():
 		return
@@ -1192,8 +1195,16 @@ func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
 	var y: float = 0.0
 	while y < room_height:
 		var tex: Texture2D = _wall_textures_cache[rng.randi() % n]
-		var h: float = min(WALL_SECTION_HEIGHT, room_height - y)
-		draw_texture_rect(tex, Rect2(x, y, width, h), false)
+		var tex_w: float = float(tex.get_width())
+		var tex_h: float = float(tex.get_height())
+		var slice_w: float = minf(width, tex_w)
+		var x_off: float = rng.randf() * maxf(0.0, tex_w - slice_w)
+		var h: float = minf(WALL_SECTION_HEIGHT, room_height - y)
+		draw_texture_rect_region(
+			tex,
+			Rect2(x, y, width, h),
+			Rect2(x_off, 0.0, slice_w, tex_h)
+		)
 		y += WALL_SECTION_HEIGHT
 
 func _draw() -> void:
