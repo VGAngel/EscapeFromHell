@@ -158,6 +158,9 @@ func set_soul_data(soul_id: int, data: Dictionary) -> void:
 func get_soul_data() -> Dictionary:
 	return _soul_data
 
+func get_soul_type() -> String:
+	return _soul_type
+
 func has_name() -> bool:
 	return _soul_data.has("name") and _soul_data["name"] != ""
 

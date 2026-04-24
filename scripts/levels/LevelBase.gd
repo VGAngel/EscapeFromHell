@@ -352,6 +352,7 @@ func _spawn_player() -> void:
 
 	_player.player_died.connect(_on_player_died)
 	_player.soul_delivered.connect(_on_soul_delivered)
+	_player.soul_dropped.connect(_on_soul_dropped)
 	_player.hp_changed.connect(_on_player_hp_changed)
 
 # ── Exit ──────────────────────────────────────────────────────────────────────
@@ -396,6 +397,8 @@ func _on_soul_pickup_started(soul: Node) -> void:
 	_carried_soul_data = {"soul_id": soul_id}
 	if soul.has_method("get_soul_data"):
 		_carried_soul_data.merge(soul.get_soul_data())
+	if soul.has_method("get_soul_type"):
+		_carried_soul_data["soul_type"] = soul.get_soul_type()
 
 	var boss: Node = _get_boss()
 	if boss and boss.has_method("on_collectible_picked"):
@@ -437,6 +440,33 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 				GameManager.activate_bonus("torch", "🔦", 30.0)
 	if TutorialManager and TutorialManager.has_method("show_hint"):
 		TutorialManager.show_hint("bonus_" + bonus_name.to_lower())
+
+## Called when the player dies while carrying a soul.
+## Re-spawns a Soul node at the death position so the player can retrieve it.
+func _on_soul_dropped(_soul_id: String, drop_position: Vector2) -> void:
+	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
+	if not soul_scene or not _room_container:
+		_carried_soul_data = {}
+		return
+	var soul: Node2D = soul_scene.instantiate()
+	# Convert world drop position to _room_container local space before _ready()
+	# captures _base_y for the bobbing animation.
+	soul.position = drop_position - _room_container.global_position
+	_room_container.add_child(soul)
+	var soul_type: String = _carried_soul_data.get("soul_type", "innocent")
+	if soul.has_method("set_soul_type"):
+		soul.set_soul_type(soul_type)
+	var stored_id: int = int(_carried_soul_data.get("soul_id", 0))
+	if stored_id != 0 and soul.has_method("set_soul_data"):
+		var data: Dictionary = _carried_soul_data.duplicate()
+		data.erase("soul_type")
+		soul.set_soul_data(stored_id, data)
+		soul.set_meta("soul_id", stored_id)
+	if soul.has_signal("soul_pickup_started"):
+		soul.soul_pickup_started.connect(_on_soul_pickup_started)
+	if not _souls_in_level.has(soul):
+		_souls_in_level.append(soul)
+	_carried_soul_data = {}
 
 func _on_soul_delivered(soul_id: String) -> void:
 	_souls_found += 1
