@@ -1,7 +1,7 @@
 extends Control
 
 # Scene: res://scenes/Hub.tscn
-# Shown before every level. Skippable via "Пропустити".
+# Shown before every level. Tap to advance prologue; hold 1 s to skip it.
 # On first run (level_id == 1) plays the full prologue before the regular hub.
 #
 # Expected scene tree:
@@ -14,14 +14,14 @@ extends Control
 #   │   ├── BtnUpgrades  (Button)
 #   │   ├── BtnSouls     (Button)
 #   │   └── BtnContinue  (Button)
-#   ├── BtnSkip          (Button)
+
 #   ├── UpgradesScreen   (CanvasLayer) ← scripts/ui/UpgradesScreen.gd
 #   └── CollectionScreen (CanvasLayer) ← scripts/ui/CollectionScreen.gd
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 const MSG_AUTO_HIDE       := 8.0
 const FADE_DURATION       := 0.4
-const SKIP_HOLD_DURATION  := 2.0
+const SKIP_HOLD_DURATION  := 1.0
 const SKIP_HINT_DELAY     := 0.25
 
 const MSG_COLORS := {
@@ -67,7 +67,7 @@ const PROLOGUE := [
 @onready var _btn_upgrades:   Button        = $BottomBar/BtnUpgrades
 @onready var _btn_souls:      Button        = $BottomBar/BtnSouls
 @onready var _btn_continue:   Button        = $BottomBar/BtnContinue
-@onready var _btn_skip:       Button        = $BtnSkip
+
 @onready var _btn_menu:       Button        = get_node_or_null("BtnMenu")
 @onready var _upgrades:       CanvasLayer   = $UpgradesScreen
 @onready var _collection:     CanvasLayer   = $CollectionScreen
@@ -94,7 +94,7 @@ func _ready() -> void:
 	_btn_upgrades.pressed.connect(_on_upgrades)
 	_btn_souls.pressed.connect(_on_souls)
 	_btn_continue.pressed.connect(_on_continue)
-	_btn_skip.pressed.connect(_on_skip)
+
 	if _btn_menu:
 		_btn_menu.pressed.connect(_on_menu)
 
@@ -170,7 +170,7 @@ func _reset_skip_state() -> void:
 
 func _show_hub() -> void:
 	_bottom_bar.visible = true
-	_btn_skip.visible   = true
+
 	if _btn_menu:
 		_btn_menu.visible = true
 	_god_portrait.visible    = true
@@ -281,7 +281,7 @@ func _speaker_label(speaker: String) -> String:
 func _start_prologue() -> void:
 	_in_prologue = true
 	_bottom_bar.visible   = false
-	_btn_skip.visible     = false
+
 	if _btn_menu:
 		_btn_menu.visible = false
 	_prologue_step        = 0
@@ -410,13 +410,11 @@ func _set_hub_interactive(enabled: bool) -> void:
 	_btn_upgrades.disabled  = not enabled
 	_btn_souls.disabled     = not enabled
 	_btn_continue.disabled  = not enabled
-	_btn_skip.disabled      = not enabled
+
 
 func _on_continue() -> void:
 	_fade_out_and_load()
 
-func _on_skip() -> void:
-	_fade_out_and_load()
 
 func _on_menu() -> void:
 	var tw := create_tween()
