@@ -83,6 +83,12 @@ var _all_rows: Array = []
 # kind ∈ "single" | "bridge".
 var _vert_layout: Array[Dictionary] = []
 
+# Extra "safety" platforms inserted between rows where walking off an edge
+# would otherwise drop the player > MAX_SAFE_FALL_PX without anything to land
+# on. Kept separate from _vert_layout so spawn helpers' index-into-_all_rows
+# arithmetic stays untouched.
+var _vert_safeties: Array[Dictionary] = []
+
 # ── Section profiles (vertical level pacing) ──────────────────────────────────
 #
 # Each vertical room is divided into "sections" stacked from bottom to top, like
@@ -259,6 +265,7 @@ func _init_zone() -> void:
 		# moving/typed platforms.
 		_all_rows = _compute_all_rows(floor_y, ceiling_y, spacing)
 		_vert_layout = _build_vertical_layout(_all_rows)
+		_vert_safeties = _compute_fall_safeties(_vert_layout)
 		# v_range comes from each row's resolved platform type, so moving_vertical
 		# rows give missing_bridge_ys() the extra reach they actually provide.
 		for entry in _vert_layout:
@@ -773,6 +780,12 @@ func _add_vertical_main_platforms(_col_l: float, _col_c: float, _col_r: float,
 				var bridge_size := Vector2(_platform_width, PLATFORM_T)
 				_add_platform(Vector2(bridge_left_x,  pos.y), bridge_size)
 				_add_platform(Vector2(bridge_right_x, pos.y), bridge_size)
+	# Stone safety platforms inserted by _compute_fall_safeties() to cap any
+	# walk-off-edge fall at MAX_SAFE_FALL_PX (~tier-1 damage band).
+	for safety in _vert_safeties:
+		_add_platform(
+			Vector2(float(safety.x), float(safety.y)),
+			Vector2(float(safety.width), PLATFORM_T))
 
 # Section-based Markov layout generator for vertical rooms.
 #
@@ -934,6 +947,104 @@ func _sample_weighted_str(table: Array, rng: RandomNumberGenerator) -> String:
 # Linear interp between the two with a 1.15× generosity factor (player can
 # walk to the platform's edge before launching, which we approximate via
 # +(prev_w + width)/2 in the caller).
+# Cap on a "blind" walk-off-edge fall (in px). Picked at the boundary of the
+# tier-1 / tier-2 fall-damage band (500 px = -1 HP max). Anything riskier
+# gets a stone safety platform inserted by _compute_fall_safeties().
+const MAX_SAFE_FALL_PX: float = 500.0
+
+# Post-process the Markov layout: for every row, check whether walking off
+# either edge lands somewhere within MAX_SAFE_FALL_PX. If not, schedule a
+# stone safety platform halfway down at the unsafe X. Returned safeties
+# are added during placement only — they don't enter _vert_layout, so the
+# spawn helpers' index-into-_all_rows arithmetic stays untouched.
+func _compute_fall_safeties(layout: Array[Dictionary]) -> Array[Dictionary]:
+	var safeties: Array[Dictionary] = []
+	if layout.size() < 2:
+		return safeties
+	# Bottom of the layout (largest Y in the original rows). Safety platforms
+	# below this point are pointless — no platform will catch them either.
+	var floor_y: float = -INF
+	for entry: Dictionary in layout:
+		floor_y = maxf(floor_y, float(entry.y))
+	# Build a working copy that grows as we insert safeties — that way each
+	# new safety is itself considered as a landing for higher rows AND for
+	# subsequent safety checks (a safety might still need its own safety).
+	var combined: Array[Dictionary] = layout.duplicate()
+	# Repeat top-to-bottom passes until a full sweep produces no new safeties.
+	for _pass in 6:                       # cap depth to keep generation fast
+		var inserted_this_pass: bool = false
+		for i in range(combined.size() - 1, 0, -1):
+			var entry: Dictionary = combined[i]
+			# Skip bridges — their actual shelves are placed by
+			# _add_vertical_main_platforms, not the entry's anchor X.
+			if String(entry.get("kind", "single")) == "bridge":
+				continue
+			var top_y: float = float(entry.y)
+			var top_x: float = float(entry.x)
+			var top_w: float = float(entry.width)
+			var left_edge:  float = top_x - top_w * 0.5
+			var right_edge: float = top_x + top_w * 0.5
+			var max_y: float = top_y + MAX_SAFE_FALL_PX
+
+			var unsafe_xs: Array[float] = []
+			if not _has_landing_below(combined, left_edge, top_y, max_y):
+				unsafe_xs.append(left_edge)
+			if not _has_landing_below(combined, right_edge, top_y, max_y):
+				unsafe_xs.append(right_edge)
+			if unsafe_xs.is_empty():
+				continue
+
+			var insert_y: float = top_y + MAX_SAFE_FALL_PX * 0.55
+			# If the safety would land at or below the layout's floor, the
+			# unsafe X is genuinely unreachable — bail instead of stacking
+			# safeties past the bottom.
+			if insert_y >= floor_y - 30.0:
+				continue
+			# One safety per unsafe edge — placing a single platform at the
+			# average X often misses one of the edges when they're far apart.
+			var safety_w: float = _platform_width * 1.5
+			for unsafe_x in unsafe_xs:
+				var safety_x: float = clampf(unsafe_x,
+						room_width * 0.10, room_width * 0.90)
+				var safety: Dictionary = {
+					"x": safety_x,
+					"y": insert_y,
+					"kind": "single",
+					"width": safety_w,
+					"type": "stone",
+				}
+				safeties.append(safety)
+				combined.append(safety)
+				inserted_this_pass = true
+		if not inserted_this_pass:
+			break
+	return safeties
+
+# True if `layout` contains a platform whose X-range covers `x` and whose
+# Y is strictly below `top_y` (= larger Y in Godot 2D) but no further than
+# `max_y`. Used to detect blind walk-off-edge fall hazards.
+func _has_landing_below(layout: Array[Dictionary], x: float,
+		top_y: float, max_y: float) -> bool:
+	# Bridges place real platforms at fixed left/right shelves regardless of
+	# the layout entry's anchor, so account for both shelves.
+	var bridge_l: float = room_width * 0.20
+	var bridge_r: float = room_width * 0.80
+	var shelf_w:  float = _platform_width
+	for entry: Dictionary in layout:
+		var ey: float = float(entry.y)
+		if ey <= top_y or ey > max_y:
+			continue
+		var ew: float = float(entry.width)
+		if String(entry.get("kind", "single")) == "bridge":
+			if absf(x - bridge_l) <= shelf_w * 0.5 \
+					or absf(x - bridge_r) <= shelf_w * 0.5:
+				return true
+		else:
+			var ex: float = float(entry.x)
+			if absf(x - ex) <= ew * 0.5:
+				return true
+	return false
+
 func _max_horizontal_jump(v_gap: float) -> float:
 	const SAME_LEVEL_REACH: float = 240.0
 	const MAX_UP_REACH:     float = 120.0
