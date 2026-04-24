@@ -971,6 +971,9 @@ const MAX_SAFE_FALL_PX: float = 700.0
 # rows happen to clamp to the same wall-edge.
 const SAFETY_DEDUPE_X_PX: float = 80.0
 const SAFETY_DEDUPE_Y_PX: float = 50.0
+# Player footprint — must mirror Player.PLAYER_WIDTH. Used to cap the
+# walk-off-edge X check at the wall the player can physically reach.
+const SAFETY_PLAYER_WIDTH: float = 80.0
 
 # Post-process the Markov layout: for every row, check whether walking off
 # either edge lands somewhere within MAX_SAFE_FALL_PX. If not, schedule a
@@ -1003,14 +1006,26 @@ func _compute_fall_safeties(layout: Array[Dictionary]) -> Array[Dictionary]:
 			var top_y: float = float(entry.y)
 			var top_x: float = float(entry.x)
 			var top_w: float = float(entry.width)
-			var left_edge:  float = top_x - top_w * 0.5
-			var right_edge: float = top_x + top_w * 0.5
+			# Player can't physically walk past the side walls, so clamp the
+			# nominal platform edges to the playable interior before checking.
+			# Otherwise we generate safeties for edges the player can never
+			# actually fall from (e.g. a platform at x=872 w=330 has a
+			# nominal right edge at 1037, but the wall stops the player at
+			# room_width - SIDE_WALL_T - PLAYER_WIDTH/2).
+			var play_min: float = SIDE_WALL_T + SAFETY_PLAYER_WIDTH * 0.5
+			var play_max: float = room_width - SIDE_WALL_T - SAFETY_PLAYER_WIDTH * 0.5
+			var left_edge:  float = clampf(top_x - top_w * 0.5, play_min, play_max)
+			var right_edge: float = clampf(top_x + top_w * 0.5, play_min, play_max)
 			var max_y: float = top_y + MAX_SAFE_FALL_PX
 
 			var unsafe_xs: Array[float] = []
 			if not _has_landing_below(combined, left_edge, top_y, max_y):
 				unsafe_xs.append(left_edge)
-			if not _has_landing_below(combined, right_edge, top_y, max_y):
+			# Skip the right-edge check when both edges clamp to the same
+			# playable X (platform sits entirely past one wall) — left edge
+			# already covers it.
+			if absf(right_edge - left_edge) > 1.0 \
+					and not _has_landing_below(combined, right_edge, top_y, max_y):
 				unsafe_xs.append(right_edge)
 			if unsafe_xs.is_empty():
 				continue
