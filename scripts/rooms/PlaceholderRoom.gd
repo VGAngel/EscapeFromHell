@@ -853,9 +853,14 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 
 		# Bridge or single? Probability comes from the section profile.
 		# Anti-repeat: never two bridges in a row (visually heavy).
+		# Bridges sit at FIXED L/R shelves (room_width × 0.20 / 0.80) so the
+		# snap-back can't reposition them. Skip bridges when neither shelf
+		# would overlap with the previous row's footprint by ≥ 50 px —
+		# otherwise the player drops past the bridge into a multi-row fall.
 		var bridge_chance: float = float(profile.get("bridge_chance", 0.0))
 		var kind: String = "single"
-		if rng.randf() < bridge_chance and prev_kind != "bridge":
+		if rng.randf() < bridge_chance and prev_kind != "bridge" \
+				and _bridge_can_catch_prev(prev_x, prev_w):
 			kind = "bridge"
 			# Anchor X = side closer to the chosen zone (spawn helper hint).
 			x = (room_width * 0.20) if zone * 2 < ZONE_COUNT else (room_width * 0.80)
@@ -978,6 +983,25 @@ func _sample_weighted_str(table: Array, rng: RandomNumberGenerator) -> String:
 # Linear interp between the two with a 1.15× generosity factor (player can
 # walk to the platform's edge before launching, which we approximate via
 # +(prev_w + width)/2 in the caller).
+# True if at least one of the bridge's two shelves (L at room_width × 0.20,
+# R at × 0.80, both _platform_width wide) overlaps with the previous row's
+# footprint by ≥ OVERLAP_REQUIRED. Used to veto bridge placement when the
+# bridge wouldn't actually catch the player descending from the prev row.
+func _bridge_can_catch_prev(prev_x: float, prev_w: float) -> bool:
+	if prev_x == -INF:
+		return true                       # first row — nothing to catch
+	const OVERLAP_REQUIRED: float = 50.0
+	var prev_left:  float = prev_x - prev_w * 0.5
+	var prev_right: float = prev_x + prev_w * 0.5
+	var shelf_w:    float = _platform_width
+	for shelf_center in [room_width * 0.20, room_width * 0.80]:
+		var shelf_left:  float = shelf_center - shelf_w * 0.5
+		var shelf_right: float = shelf_center + shelf_w * 0.5
+		var overlap: float = minf(prev_right, shelf_right) - maxf(prev_left, shelf_left)
+		if overlap >= OVERLAP_REQUIRED:
+			return true
+	return false
+
 func _max_horizontal_jump(v_gap: float) -> float:
 	const SAME_LEVEL_REACH: float = 240.0
 	const MAX_UP_REACH:     float = 120.0
