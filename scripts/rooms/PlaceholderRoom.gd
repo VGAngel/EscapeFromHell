@@ -822,8 +822,13 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		zone_center.append(0.18 + (0.82 - 0.18) * float(z) / float(ZONE_COUNT - 1))
 
 	# Transition weights by |delta| between zones: stay, ±1, ±2, ±3.
-	# Tuned so adjacent moves dominate but the path occasionally crosses the room.
-	var weight_by_delta: Array[float] = [0.08, 0.40, 0.12, 0.04]
+	# Adjacent zones dominate; cross-room jumps (±3) are forbidden because
+	# even a wide-on-wide pair (484+484 = 968 px combined) can't overlap a
+	# 678 px center-to-center gap, leaving the player to fall through into
+	# the wall. ±2 also de-weighted for the same reason at narrow widths.
+	# Anti-3-in-a-row stay-veto in _markov_pick_zone keeps the path moving
+	# even when "stay" gets the highest base weight.
+	var weight_by_delta: Array[float] = [0.20, 0.62, 0.08, 0.0]
 
 	var section_per_row: Array[String] = _assign_sections(rows.size(), rng)
 
