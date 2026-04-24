@@ -2,8 +2,9 @@
 
 [ext_resource type="Script" uid="uid://bml4i5up7waaq" path="res://scripts/Player.gd" id="1_player"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(80.0, 100.0)
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
+radius = 40.0
+height = 100.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_staff"]
 size = Vector2(80.0, 60.0)
@@ -90,7 +91,7 @@ collision_mask = 3
 script = ExtResource("1_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("RectangleShape2D_body")
+shape = SubResource("CapsuleShape2D_body")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 visible = false
