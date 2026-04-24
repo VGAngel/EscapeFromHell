@@ -96,7 +96,7 @@ def process_image(
     src_alpha = np.array(img)[:, :, 3]
     alpha = np.minimum(alpha, src_alpha)
 
-    alpha_img = Image.fromarray(alpha, mode="L")
+    alpha_img = Image.fromarray(alpha)
     if feather > 0:
         alpha_img = alpha_img.filter(ImageFilter.GaussianBlur(radius=feather))
 
@@ -134,6 +134,10 @@ def main() -> int:
     if not colors and not args.auto:
         print("error: provide --colors or --auto", file=sys.stderr)
         return 2
+
+    if not args.input.exists():
+        print(f"error: input not found: {args.input}", file=sys.stderr)
+        return 1
 
     pairs = iter_targets(args.input, args.output)
     if not pairs:

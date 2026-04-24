@@ -67,7 +67,7 @@ def main() -> int:
         arr = blend_horizontal(arr, args.band)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(arr, mode="RGBA").save(args.output, "PNG")
+    Image.fromarray(arr).save(args.output, "PNG")
     print(f"{args.input} -> {args.output}  (band={args.band}, axis={args.axis})")
     return 0
 
