@@ -263,10 +263,18 @@ func _reposition_spawn_and_exit_v(total_height: float) -> void:
 	var rooms: Array = _room_container.get_children()
 	var rw: float = _room_width(rooms[0]) if not rooms.is_empty() else 1080.0
 
-	# Spawn: centre X, just below the ceiling safe area so the player drops
-	# onto the entrance room's top platform (ceiling + WALL_T + buffer).
+	# Default spawn: centre X, just below the ceiling.
 	var spawn_x: float = rw * 0.5
 	var spawn_y: float = float(sa_top) + 32.0 + 60.0   # WALL_T=32 + drop buffer
+
+	# Prefer spawning on the same top platform as the altar so the player
+	# lands exactly where the altar stands. PlaceholderRoom adds the altar
+	# before _ready() returns, so it is already in the tree here.
+	var altar_node: Node = get_tree().get_first_node_in_group("altar")
+	if altar_node and is_instance_valid(altar_node):
+		var local: Vector2 = to_local(altar_node.global_position)
+		spawn_x = local.x
+		spawn_y = local.y - 60.0   # drop buffer so player falls onto the platform
 
 	# Exit: centre X, just above the floor safe area of the last room.
 	var exit_x: float = rw * 0.5
