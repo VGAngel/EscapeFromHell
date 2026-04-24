@@ -108,13 +108,18 @@ const SECTION_PROFILES := {
 	},
 	"challenge": {
 		"length_min": 3, "length_max": 5,
-		"widths": [[0.7, 0.15], [1.0, 0.45], [1.5, 0.40]],
+		# Drop narrow (×0.7=154 px) — adjacent zones are 226 px apart, so
+		# narrow+narrow leaves a 144 px hole the post-process has to plug
+		# with a stone safety. Shelf (220) + wide (330) overlap by design.
+		"widths": [[1.0, 0.45], [1.5, 0.45], [2.2, 0.10]],
 		"types":  [["stone", 0.80], ["_hint", 0.20]],
 		"bridge_chance": 0.05,
 	},
 	"spike": {
 		"length_min": 3, "length_max": 4,
-		"widths": [[0.7, 0.45], [1.0, 0.45], [1.5, 0.10]],
+		# Same — narrow widths read as "challenge" through danger but cause
+		# unsafe walk-off-edge spam in practice. Lean wide here too.
+		"widths": [[1.0, 0.55], [1.5, 0.35], [2.2, 0.10]],
 		"types":  [["stone", 0.30], ["crumbling", 0.25], ["bounce", 0.10],
 				["one_way", 0.10], ["_hint", 0.25]],
 		"bridge_chance": 0.0,
