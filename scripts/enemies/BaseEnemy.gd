@@ -106,7 +106,7 @@ func _tick_timers(delta: float) -> void:
 	if _stun_timer > 0.0:
 		_stun_timer -= delta
 		if _stun_timer <= 0.0 and state == State.STUNNED:
-			state = State.RETURN
+			_enter_patrol()
 	if _chase_timer > 0.0:
 		_chase_timer -= delta
 	if _alert_timer > 0.0:
@@ -228,17 +228,18 @@ func _do_give_up(_delta: float) -> void:
 	var reached: bool = absf(global_position.x - _last_known_pos.x) < 16.0
 	if reached or _give_up_timer <= 0.0:
 		_hide_question_mark()
-		state = State.RETURN
+		_enter_patrol()
 
 # ── RETURN ────────────────────────────────────────────────────────────────────
+# RETURN більше не потрібен — ворог патрулює ту платформу де зупинився.
+# Залишено у enum для сумісності; одразу переходимо в PATROL.
 func _do_return(_delta: float) -> void:
-	var dir: float = sign(_patrol_origin.x - global_position.x)
-	velocity.x = move_speed * 0.7 * dir
+	_enter_patrol()
 
-	if absf(global_position.x - _patrol_origin.x) < 12.0:
-		global_position.x = _patrol_origin.x
-		velocity.x = 0.0
-		state = State.PATROL
+# ── PATROL entry ──────────────────────────────────────────────────────────────
+func _enter_patrol() -> void:
+	state = State.PATROL
+	_patrol_origin = global_position  # anchor to wherever the enemy currently stands
 
 # ── STUNNED ───────────────────────────────────────────────────────────────────
 func _do_stunned() -> void:
