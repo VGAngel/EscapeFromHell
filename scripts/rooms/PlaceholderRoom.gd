@@ -83,12 +83,6 @@ var _all_rows: Array = []
 # kind ∈ "single" | "bridge".
 var _vert_layout: Array[Dictionary] = []
 
-# Extra "safety" platforms inserted between rows where walking off an edge
-# would otherwise drop the player > MAX_SAFE_FALL_PX without anything to land
-# on. Kept separate from _vert_layout so spawn helpers' index-into-_all_rows
-# arithmetic stays untouched.
-var _vert_safeties: Array[Dictionary] = []
-
 # ── Section profiles (vertical level pacing) ──────────────────────────────────
 #
 # Each vertical room is divided into "sections" stacked from bottom to top, like
@@ -223,9 +217,9 @@ func _log_vertical_layout() -> void:
 			max_y_gap = gap
 	var sa_l: int = SafeArea.left_reserved   if SafeArea else 0
 	var sa_r: int = SafeArea.right_reserved  if SafeArea else 0
-	print("[room %d#%d] tier=%s rows=%d safeties=%d max_y_gap=%dpx room_w=%dpx room_h=%dpx side_wall=%dpx safe_l/r=%d/%d" % [
+	print("[room %d#%d] tier=%s rows=%d max_y_gap=%dpx room_w=%dpx room_h=%dpx side_wall=%dpx safe_l/r=%d/%d" % [
 		level_id, room_index, _zone_tier, _vert_layout.size(),
-		_vert_safeties.size(), int(max_y_gap), int(room_width), int(room_height),
+		int(max_y_gap), int(room_width), int(room_height),
 		int(SIDE_WALL_T), sa_l, sa_r,
 	])
 	# One-line dump per row so you can grep / paste into a spreadsheet.
@@ -234,13 +228,6 @@ func _log_vertical_layout() -> void:
 		print("  row %2d  y=%4d x=%4d w=%3d kind=%s type=%s" % [
 			i, int(e.y), int(e.x), int(e.width),
 			e.kind, e.type,
-		])
-	# Safety platforms inserted by _compute_fall_safeties — listed separately
-	# so the row indexing above stays aligned with _all_rows / _vert_layout.
-	for j in _vert_safeties.size():
-		var s: Dictionary = _vert_safeties[j]
-		print("  saf %2d  y=%4d x=%4d w=%3d   ← inserted to break a > %dpx blind drop" % [
-			j, int(s.y), int(s.x), int(s.width), int(MAX_SAFE_FALL_PX),
 		])
 
 func _init_zone() -> void:
@@ -280,7 +267,6 @@ func _init_zone() -> void:
 		# moving/typed platforms.
 		_all_rows = _compute_all_rows(floor_y, ceiling_y, spacing)
 		_vert_layout = _build_vertical_layout(_all_rows)
-		_vert_safeties = _compute_fall_safeties(_vert_layout)
 		# v_range comes from each row's resolved platform type, so moving_vertical
 		# rows give missing_bridge_ys() the extra reach they actually provide.
 		for entry in _vert_layout:
@@ -795,12 +781,6 @@ func _add_vertical_main_platforms(_col_l: float, _col_c: float, _col_r: float,
 				var bridge_size := Vector2(_platform_width, PLATFORM_T)
 				_add_platform(Vector2(bridge_left_x,  pos.y), bridge_size)
 				_add_platform(Vector2(bridge_right_x, pos.y), bridge_size)
-	# Stone safety platforms inserted by _compute_fall_safeties() to cap any
-	# walk-off-edge fall at MAX_SAFE_FALL_PX (~tier-1 damage band).
-	for safety in _vert_safeties:
-		_add_platform(
-			Vector2(float(safety.x), float(safety.y)),
-			Vector2(float(safety.width), PLATFORM_T))
 
 # Section-based Markov layout generator for vertical rooms.
 #
@@ -974,156 +954,6 @@ func _sample_weighted_str(table: Array, rng: RandomNumberGenerator) -> String:
 # Linear interp between the two with a 1.15× generosity factor (player can
 # walk to the platform's edge before launching, which we approximate via
 # +(prev_w + width)/2 in the caller).
-# Cap on a "blind" walk-off-edge fall (in px). Picked just above the tier-2
-# fall-damage band so we only intervene when a fall would deal ≥ 2 HP — a
-# single-HP slip stays as part of the gameplay rather than spamming the
-# room with safety platforms. Tier-2 starts at 500 px → MAX of 700 px gives
-# the player ~200 px of "you should have looked first" before the post-process
-# steps in.
-const MAX_SAFE_FALL_PX: float = 700.0
-# Spatial dedupe radius: a candidate safety within these distances of an
-# existing one is skipped. Keeps the room from being wallpapered when many
-# rows happen to clamp to the same wall-edge.
-const SAFETY_DEDUPE_X_PX: float = 80.0
-const SAFETY_DEDUPE_Y_PX: float = 50.0
-# Player footprint — must mirror Player.PLAYER_WIDTH. Used to cap the
-# walk-off-edge X check at the wall the player can physically reach.
-const SAFETY_PLAYER_WIDTH: float = 80.0
-
-# Post-process the Markov layout: for every row, check whether walking off
-# either edge lands somewhere within MAX_SAFE_FALL_PX. If not, schedule a
-# stone safety platform halfway down at the unsafe X. Returned safeties
-# are added during placement only — they don't enter _vert_layout, so the
-# spawn helpers' index-into-_all_rows arithmetic stays untouched.
-func _compute_fall_safeties(layout: Array[Dictionary]) -> Array[Dictionary]:
-	var safeties: Array[Dictionary] = []
-	if layout.size() < 2:
-		return safeties
-	# Bottom of the layout (largest Y in the original rows). Safety platforms
-	# at or below this point are pointless — they'd sit inside the floor.
-	var floor_y: float = -INF
-	for entry: Dictionary in layout:
-		floor_y = maxf(floor_y, float(entry.y))
-	# Build a working copy that grows as we insert safeties — that way each
-	# new safety is itself considered as a landing for higher rows.
-	var combined: Array[Dictionary] = layout.duplicate()
-	var safety_w: float = _platform_width * 1.5
-	# Repeat top-to-bottom passes until a full sweep produces no new safeties.
-	# Bounded so a pathological layout can't loop indefinitely.
-	for _pass in 3:
-		var inserted_this_pass: bool = false
-		for i in range(combined.size() - 1, 0, -1):
-			var entry: Dictionary = combined[i]
-			# Skip bridges — their actual shelves are placed by
-			# _add_vertical_main_platforms, not the entry's anchor X.
-			if String(entry.get("kind", "single")) == "bridge":
-				continue
-			var top_y: float = float(entry.y)
-			var top_x: float = float(entry.x)
-			var top_w: float = float(entry.width)
-			var nominal_left:  float = top_x - top_w * 0.5
-			var nominal_right: float = top_x + top_w * 0.5
-			# A platform edge that sits past a side wall is NOT a walk-off
-			# hazard — the wall stops the player before they reach the
-			# nominal edge, so they can't actually fall there. Skip those
-			# edges instead of clamping (the old clamp logic generated
-			# safeties for unreachable wall-corner edges, which is exactly
-			# the "safety where not needed" complaint).
-			var play_min: float = SIDE_WALL_T + SAFETY_PLAYER_WIDTH * 0.5
-			var play_max: float = room_width - SIDE_WALL_T - SAFETY_PLAYER_WIDTH * 0.5
-			var max_y: float = top_y + MAX_SAFE_FALL_PX
-
-			var unsafe_xs: Array[float] = []
-			if nominal_left >= play_min \
-					and not _has_landing_below(combined, nominal_left, top_y, max_y):
-				unsafe_xs.append(nominal_left)
-			if nominal_right <= play_max \
-					and not _has_landing_below(combined, nominal_right, top_y, max_y):
-				unsafe_xs.append(nominal_right)
-			if unsafe_xs.is_empty():
-				continue
-
-			var insert_y: float = top_y + MAX_SAFE_FALL_PX * 0.55
-			# Stay clear of the literal floor (give the floor row's footprint
-			# at least one full safety width of headroom).
-			if insert_y >= floor_y - safety_w * 0.5:
-				continue
-			# At most one safety per row source — covers the most-unsafe edge
-			# (the one further from the existing platform centre). Avoids the
-			# "wallpaper of stacked safeties at the room edges" failure mode.
-			var unsafe_x: float = unsafe_xs[0]
-			if unsafe_xs.size() > 1:
-				# Both edges unsafe — pick the one further from any existing
-				# safety so we spread coverage instead of stacking.
-				var dist_a: float = _nearest_safety_distance(safeties, unsafe_xs[0], insert_y)
-				var dist_b: float = _nearest_safety_distance(safeties, unsafe_xs[1], insert_y)
-				if dist_b > dist_a:
-					unsafe_x = unsafe_xs[1]
-			# Clamp safety center so its full footprint stays inside the
-			# playable interior (otherwise wide safeties at edge zones sink
-			# into the side wall the same way Markov platforms used to).
-			var safety_x: float = clampf(unsafe_x,
-					SIDE_WALL_T + safety_w * 0.5,
-					room_width - SIDE_WALL_T - safety_w * 0.5)
-			# Dedupe: skip if there's already a safety covering this spot.
-			if _is_duplicate_safety(safeties, safety_x, insert_y):
-				continue
-			var safety: Dictionary = {
-				"x": safety_x,
-				"y": insert_y,
-				"kind": "single",
-				"width": safety_w,
-				"type": "stone",
-			}
-			safeties.append(safety)
-			combined.append(safety)
-			inserted_this_pass = true
-		if not inserted_this_pass:
-			break
-	return safeties
-
-func _is_duplicate_safety(existing: Array[Dictionary], x: float, y: float) -> bool:
-	for s in existing:
-		if absf(float(s.x) - x) <= SAFETY_DEDUPE_X_PX \
-				and absf(float(s.y) - y) <= SAFETY_DEDUPE_Y_PX:
-			return true
-	return false
-
-func _nearest_safety_distance(existing: Array[Dictionary], x: float, y: float) -> float:
-	var best: float = INF
-	for s in existing:
-		var dx: float = float(s.x) - x
-		var dy: float = float(s.y) - y
-		var d: float = sqrt(dx * dx + dy * dy)
-		if d < best:
-			best = d
-	return best
-
-# True if `layout` contains a platform whose X-range covers `x` and whose
-# Y is strictly below `top_y` (= larger Y in Godot 2D) but no further than
-# `max_y`. Used to detect blind walk-off-edge fall hazards.
-func _has_landing_below(layout: Array[Dictionary], x: float,
-		top_y: float, max_y: float) -> bool:
-	# Bridges place real platforms at fixed left/right shelves regardless of
-	# the layout entry's anchor, so account for both shelves.
-	var bridge_l: float = room_width * 0.20
-	var bridge_r: float = room_width * 0.80
-	var shelf_w:  float = _platform_width
-	for entry: Dictionary in layout:
-		var ey: float = float(entry.y)
-		if ey <= top_y or ey > max_y:
-			continue
-		var ew: float = float(entry.width)
-		if String(entry.get("kind", "single")) == "bridge":
-			if absf(x - bridge_l) <= shelf_w * 0.5 \
-					or absf(x - bridge_r) <= shelf_w * 0.5:
-				return true
-		else:
-			var ex: float = float(entry.x)
-			if absf(x - ex) <= ew * 0.5:
-				return true
-	return false
-
 func _max_horizontal_jump(v_gap: float) -> float:
 	const SAME_LEVEL_REACH: float = 240.0
 	const MAX_UP_REACH:     float = 120.0
