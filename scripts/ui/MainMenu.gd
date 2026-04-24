@@ -115,11 +115,16 @@ func _refresh_souls_counter() -> void:
 func _ensure_seed() -> void:
 	if not SaveManager or not SaveManager.get_world_seed_str().is_empty():
 		return
+	SaveManager.set_world_seed_str(_random_seed_str())
+
+# 8-char alnum (≈ 1.5e12 unique values) — enough variety per save without
+# overwhelming the UI label.
+func _random_seed_str() -> String:
 	var chars := "abcdefghijklmnopqrstuvwxyz0123456789"
 	var result := ""
 	for _i in 8:
 		result += chars[randi() % chars.length()]
-	SaveManager.set_world_seed_str(result)
+	return result
 
 func _refresh_seed_label() -> void:
 	var s: String = SaveManager.get_world_seed_str() if SaveManager else ""
@@ -169,9 +174,24 @@ func _on_profile() -> void:
 		_set_interactive(false)
 
 func _on_seed() -> void:
-	if _seed_dlg:
-		_seed_dlg.open()
-		_set_interactive(false)
+	# One click = new world seed. The old SeedDialog (manual entry) is kept in
+	# the scene tree but no longer opened from this button — leave it wired
+	# up for a future "advanced" entry point if needed.
+	if not SaveManager:
+		return
+	SaveManager.set_world_seed_str(_random_seed_str())
+	_refresh_seed_label()
+	_pulse_seed_button()
+
+# Brief visual confirmation: scale + tween back so the click reads as
+# "something happened" without a popup.
+func _pulse_seed_button() -> void:
+	if not _btn_seed:
+		return
+	_btn_seed.scale = Vector2(1.15, 1.15)
+	var tw := create_tween()
+	tw.tween_property(_btn_seed, "scale", Vector2.ONE, 0.18)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _on_overlay_closed() -> void:
 	_refresh_buttons()
