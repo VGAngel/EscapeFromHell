@@ -53,8 +53,10 @@ const PLATFORM_T:  float = 30.0
 const VIEWPORT_WIDTH:  float = 1080.0
 const VIEWPORT_HEIGHT: float = 1920.0
 
-# Vertical levels span this many screens so the player has room to traverse.
-const VERTICAL_ROOM_SCREENS: int = 2
+# Vertical shaft height is measured in screens. room_count on the shaft room
+# equals the total screen count (L1=2 … L9=8). Kept as a constant in case we
+# want to re-introduce a per-segment multiplier later.
+const VERTICAL_ROOM_SCREENS: int = 1
 
 # Row Y positions — computed in _init_zone() from difficulty spacing.
 # Based on: floor_y - spacing * N.

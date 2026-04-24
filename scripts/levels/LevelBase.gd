@@ -195,7 +195,7 @@ func _build_vertical_shaft(gen: Object) -> void:
 	if "room_count" in room:
 		room.room_count = maxi(1, gen.room_count)
 	if "tileset" in room and LevelConfig:
-		room.tileset = LevelConfig.get_circle_tileset(circle)
+		room.tileset = LevelConfig.get_tileset_for_level(level_id)
 	# Force a sane width — entrance scenes ship with 720 px, but the shaft
 	# uses the full 1080 px viewport so Markov has room to spread platforms.
 	if "room_width" in room:

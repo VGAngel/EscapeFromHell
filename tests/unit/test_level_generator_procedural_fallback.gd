@@ -32,8 +32,8 @@ func test_generate_procedural_bypasses_static_flag_for_circle_opener() -> void:
 
 func test_generate_procedural_returns_expected_room_count_for_level_1() -> void:
 	var res: Object = lg.generate_procedural(1)
-	# levels_1_3 difficulty → room_count = 3 (entrance + main + exit)
-	assert_eq(res.room_scenes.size(), 3)
+	# ROOM_COUNT_BY_IDX[1] = 2 (entrance + exit for L1's minimal shaft)
+	assert_eq(res.room_scenes.size(), 2)
 
 func test_generate_procedural_first_is_entrance_last_is_exit() -> void:
 	var res: Object = lg.generate_procedural(1)

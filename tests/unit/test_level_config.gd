@@ -124,6 +124,32 @@ func test_get_circle_tileset_missing_key_falls_back_to_tileset1() -> void:
 	lc._circle_defaults = {"1": {"theme": "test_only"}}
 	assert_eq(lc.get_circle_tileset(1), "tileset1")
 
+# ── get_tileset_for_level ─────────────────────────────────────────────────────
+#
+# Per-level `tileset` override lets one circle span multiple art sets
+# (e.g. Circle 1: tileset1 for L1-L4, tileset12 from L5). Missing override
+# falls back to the circle default.
+
+func test_get_tileset_for_level_uses_circle_default_when_no_override() -> void:
+	lc._circle_defaults = {"1": {"tileset": "tileset1"}}
+	# Level 1 from real config has no per-level tileset → circle default wins.
+	assert_eq(lc.get_tileset_for_level(1), "tileset1")
+
+func test_get_tileset_for_level_override_wins_over_circle_default() -> void:
+	lc._circle_defaults = {"1": {"tileset": "tileset1"}}
+	lc._levels_by_id[1] = {"id": 1, "circle": 1, "tileset": "tileset_custom"}
+	assert_eq(lc.get_tileset_for_level(1), "tileset_custom")
+
+func test_get_tileset_for_level_multiple_overrides_in_same_circle() -> void:
+	# Regression guard for Circle 1 split: L1-L4 use circle default,
+	# L5+ override to a second tileset so one circle spans multiple art sets.
+	lc._circle_defaults = {"1": {"tileset": "tileset1"}}
+	lc._levels_by_id[5] = {"id": 5, "circle": 1, "tileset": "tileset12"}
+	lc._levels_by_id[7] = {"id": 7, "circle": 1, "tileset": "tileset12"}
+	assert_eq(lc.get_tileset_for_level(1), "tileset1",  "L1 inherits circle default")
+	assert_eq(lc.get_tileset_for_level(5), "tileset12", "L5 uses per-level override")
+	assert_eq(lc.get_tileset_for_level(7), "tileset12", "L7 uses per-level override")
+
 # ── get_difficulty ────────────────────────────────────────────────────────────
 
 func test_get_difficulty_explicit() -> void:

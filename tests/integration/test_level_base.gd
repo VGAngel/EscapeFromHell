@@ -362,8 +362,8 @@ func test_vertical_level_uses_single_shaft_room() -> void:
 		"shaft room must have is_vertical=true")
 
 func test_shaft_room_count_scales_height() -> void:
-	# room_count is the multiplier for shaft height: VIEWPORT_HEIGHT (1920) ×
-	# VERTICAL_ROOM_SCREENS (2) × room_count. The fake room only proves the
+	# room_count is the shaft height in screens: VIEWPORT_HEIGHT (1920) ×
+	# VERTICAL_ROOM_SCREENS (1) × room_count. The fake room only proves the
 	# field is plumbed; the real geometry calc happens in PlaceholderRoom._ready
 	# which we deliberately bypass here.
 	var lb: Node = _make_stub_loader_lb()

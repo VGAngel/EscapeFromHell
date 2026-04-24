@@ -34,6 +34,11 @@ const VERTICAL_SPACING := {
 	"extreme": MAX_JUMP_HEIGHT,                       # 200 px — moving platforms force timing
 }
 
+# Per-level shaft height in screens (1 screen = VIEWPORT_HEIGHT, see
+# PlaceholderRoom.VIEWPORT_HEIGHT). Indexed by idx_in_circle (1..9);
+# index 0 is unused. Linear ramp from L1=2 to L9=8.
+const ROOM_COUNT_BY_IDX: Array[int] = [0, 2, 3, 4, 4, 5, 6, 6, 7, 8]
+
 # Platform type preferences per difficulty tier.
 # easy    → wide static shelves (forgiving footing)
 # medium  → narrow static shelves (precision)
@@ -299,10 +304,11 @@ func _difficulty_for_index(idx_in_circle: int) -> Dictionary:
 		base = inj.get("levels_4_6", {"enemy_count_mod":  0, "trap_density": "medium", "room_count": 4})
 	else:
 		base = inj.get("levels_7_9", {"enemy_count_mod": +1, "trap_density": "high",   "room_count": 5})
-	# Per-level room count: idx 1→3, 2→4, 3→5, 4→6, 5..9→6 (capped).
-	# Each same-zone adjacent pair differs: medium(2,3)=4≠5, medium(3,4)=5≠6.
-	# Hard/extreme pairs (5-9) all hit the cap; _zone_tier_ changes at idx 5 and 8.
-	var room_count: int = mini(idx_in_circle + 2, 6)
+	# Per-level shaft length in screens. See ROOM_COUNT_BY_IDX for the full
+	# ramp (L1=2 … L9=8). Same-zone adjacent pairs (3,4) and (6,7) share their
+	# room_count by design — uniqueness there comes from seeded RNG in
+	# PlaceholderRoom.
+	var room_count: int = ROOM_COUNT_BY_IDX[clampi(idx_in_circle, 1, 9)]
 	return {
 		"enemy_count_mod": base.get("enemy_count_mod", 0),
 		"trap_density":    base.get("trap_density",    "medium"),

@@ -134,6 +134,16 @@ func get_circle_theme(circle: int) -> String:
 func get_circle_tileset(circle: int) -> String:
 	return _circle_defaults.get(str(circle), {}).get("tileset", "tileset1")
 
+## Returns the tileset for a specific level. Per-level override (`"tileset"`
+## field on the level entry) wins over the circle default. Used so one circle
+## can span multiple art sets (e.g. Circle 1: tileset1 for L1-L4, tileset12
+## from L5 onwards).
+func get_tileset_for_level(id: int) -> String:
+	var lvl_tileset: String = get_level(id).get("tileset", "")
+	if lvl_tileset != "":
+		return lvl_tileset
+	return get_circle_tileset(get_circle(id))
+
 func get_levels_in_circle(circle: int) -> Array:
 	var result: Array = []
 	for level: Dictionary in _data.get("levels", []):

@@ -69,7 +69,7 @@ func test_difficulty_index_1_is_low() -> void:
 	var d: Dictionary = lg._difficulty_for_index(1)
 	assert_eq(d.get("trap_density"), "low")
 	assert_eq(d.get("enemy_count_mod"), -1)
-	assert_eq(d.get("room_count"), 3)
+	assert_eq(d.get("room_count"), 2)
 
 func test_difficulty_index_3_is_low() -> void:
 	var d: Dictionary = lg._difficulty_for_index(3)
@@ -79,7 +79,7 @@ func test_difficulty_index_4_is_medium() -> void:
 	var d: Dictionary = lg._difficulty_for_index(4)
 	assert_eq(d.get("trap_density"), "medium")
 	assert_eq(d.get("enemy_count_mod"), 0)
-	assert_eq(d.get("room_count"), 6)  # mini(4+2, 6) = 6
+	assert_eq(d.get("room_count"), 4)  # ROOM_COUNT_BY_IDX[4] = 4
 
 func test_difficulty_index_6_is_medium() -> void:
 	var d: Dictionary = lg._difficulty_for_index(6)
@@ -253,19 +253,19 @@ func test_circle_style_returns_empty_when_not_in_config() -> void:
 # ── generate — result fields ──────────────────────────────────────────────────
 
 func test_generate_room_count_for_early_level() -> void:
-	# level 2 → index 2 → mini(2+2, 6) = 4
+	# level 2 → index 2 → ROOM_COUNT_BY_IDX[2] = 3
 	var r = lg.generate(2)
-	assert_eq(r.room_count, 4)
+	assert_eq(r.room_count, 3)
 
 func test_generate_room_count_for_mid_level() -> void:
-	# level 5 → index 5 → mini(5+2, 6) = 6
+	# level 5 → index 5 → ROOM_COUNT_BY_IDX[5] = 5
 	var r = lg.generate(5)
-	assert_eq(r.room_count, 6)
+	assert_eq(r.room_count, 5)
 
 func test_generate_room_count_for_late_level() -> void:
-	# level 8 → index 8 → mini(8+2, 6) = 6 (capped)
+	# level 8 → index 8 → ROOM_COUNT_BY_IDX[8] = 7
 	var r = lg.generate(8)
-	assert_eq(r.room_count, 6)
+	assert_eq(r.room_count, 7)
 
 func test_generate_trap_density_low_for_early_level() -> void:
 	var r = lg.generate(1)
@@ -289,7 +289,7 @@ func test_generate_same_seed_produces_same_rooms() -> void:
 	assert_eq(r1.room_scenes, r2.room_scenes)
 
 func test_generate_room_scenes_count_matches_room_count() -> void:
-	var r = lg.generate(5)   # medium → room_count 4
+	var r = lg.generate(5)   # medium → room_count 5
 	assert_eq(r.room_scenes.size(), r.room_count)
 
 func test_generate_soul_id_zero_when_no_souls() -> void:
@@ -643,9 +643,9 @@ func test_level1_and_level2_have_different_room_counts() -> void:
 
 func test_zone_tier_adjacent_levels_differ_in_circle1() -> void:
 	# Most adjacent pairs must differ in zone OR room_count.
-	# Pairs (5,6), (6,7), (8,9) share both zone and room_count (all capped at 6)
-	# by design — uniqueness within these levels comes from seeded RNG in PlaceholderRoom.
-	var known_same: Array = [5, 6, 8]
+	# Pairs (3,4) and (6,7) share both zone and room_count by design —
+	# uniqueness within these levels comes from seeded RNG in PlaceholderRoom.
+	var known_same: Array = [3, 6]
 	for idx in range(1, 9):
 		if idx in known_same:
 			continue
@@ -657,15 +657,15 @@ func test_zone_tier_adjacent_levels_differ_in_circle1() -> void:
 		assert_true(unique,
 			"levels %d and %d must differ in zone or room_count" % [idx, idx + 1])
 
-func test_room_count_max_is_capped_at_6() -> void:
+func test_room_count_max_is_capped_at_8() -> void:
 	for idx in range(1, 10):
 		var d: Dictionary = lg._difficulty_for_index(idx)
-		assert_true(d.get("room_count") <= 6,
-			"room_count must not exceed 6 (idx=%d)" % idx)
+		assert_true(d.get("room_count") <= 8,
+			"room_count must not exceed 8 (idx=%d)" % idx)
 
 func test_difficulty_index_2_room_count() -> void:
 	var d: Dictionary = lg._difficulty_for_index(2)
-	assert_eq(d.get("room_count"), 4)
+	assert_eq(d.get("room_count"), 3)
 
 func test_difficulty_index_6_room_count() -> void:
 	var d: Dictionary = lg._difficulty_for_index(6)

@@ -72,7 +72,9 @@
 **Поточна архітектура (квітень 2026 — після рефактору в [b6964f37](https://github.com/VGAngel/EscapeFromHell/commit/b6964f37)):**
 
 Один рівень = **одна суцільна шахта** (`PlaceholderRoom` з `room_type = "shaft"`).
-Висота = `room_count × VIEWPORT_HEIGHT × VERTICAL_ROOM_SCREENS` = `room_count × 3840 px`.
+Висота = `room_count × VIEWPORT_HEIGHT × VERTICAL_ROOM_SCREENS` = `room_count × 1920 px`,
+де `room_count` = кількість екранів шахти (L1=2 … L9=8; див. `ROOM_COUNT_BY_IDX`
+у `LevelGenerator.gd`).
 До рефактору шахта складалася з N стекових 2-екранних кімнат, що створювало візуальні розриви; тепер це історія.
 
 ```
@@ -515,7 +517,7 @@ for i in count:
 |---|---|---|
 | `VIEWPORT_WIDTH` | 1080 | `PlaceholderRoom.gd` |
 | `VIEWPORT_HEIGHT` | 1920 | `PlaceholderRoom.gd` |
-| `VERTICAL_ROOM_SCREENS` | 2 | `PlaceholderRoom.gd` |
+| `VERTICAL_ROOM_SCREENS` | 1 | `PlaceholderRoom.gd` |
 | `WALL_T` | 32 | `PlaceholderRoom.gd` |
 | `SIDE_WALL_T` | 60 | `PlaceholderRoom.gd` |
 | `PLATFORM_T` | 30 | `PlaceholderRoom.gd` |
@@ -629,7 +631,7 @@ for i in count:
   "procedural_levels": {
     "assembly": {
       "method": "sequential_rooms",       // legacy: переходить на shaft
-      "room_count_per_level": { "min": 3, "max": 6 }
+      "room_count_per_level": { "min": 2, "max": 8 }
     },
 
     "room_pools": {
@@ -698,7 +700,7 @@ const ZONE_PLATFORMS := {
 | `room_index` | int | 1 | Номер у стеку (для legacy) |
 | `circle` | int | 1 | 1..10 |
 | `room_width` | float | 1080 | Ширина (LevelBase override → 1080 для shaft) |
-| `room_height` | float | 900 | Висота (для vertical: VIEWPORT × 2 × room_count) |
+| `room_height` | float | 900 | Висота (для vertical: VIEWPORT × 1 × room_count) |
 | `is_vertical` | bool | false | Прапорець вертикального режиму |
 | `level_id` | int | 0 | ID для config-запитів |
 | `tileset` | String | `"tileset1"` | Який тайлсет (з `LevelConfig.get_circle_tileset`) |
@@ -709,7 +711,7 @@ const ZONE_PLATFORMS := {
 ```gdscript
 const VIEWPORT_WIDTH:        float = 1080.0
 const VIEWPORT_HEIGHT:       float = 1920.0
-const VERTICAL_ROOM_SCREENS: int   = 2       # один сегмент = 2 екрани
+const VERTICAL_ROOM_SCREENS: int   = 1       # шахта міряється в екранах
 const WALL_T:                float = 32.0
 const SIDE_WALL_T:           float = 60.0
 const PLATFORM_T:            float = 30.0
