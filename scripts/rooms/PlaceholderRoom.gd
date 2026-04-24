@@ -862,13 +862,33 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		if ptype == "_hint":
 			ptype = _platform_type_hint
 
-		# Reachability: snap X toward the previous platform if the jump from
-		# its closest edge can't physically clear the gap. Without this, narrow
-		# platforms in distant zones become unreachable on uphill rows.
+		# Reachability + walk-off safety: snap X toward the previous platform
+		# under TWO constraints:
+		#
+		#   1. Jumping UP from prev to current must be physically possible:
+		#      |dx| ≤ _max_horizontal_jump(v_gap) + (prev_w + new_w)/2
+		#
+		#   2. Walking off CURRENT (the player descends, so current = upper)
+		#      must drop onto the prev platform — i.e. their X-ranges must
+		#      overlap. Otherwise the player falls past prev into whatever's
+		#      below, often hundreds of px down (= tier-2 / death damage).
+		#      |dx| ≤ (prev_w + new_w)/2 − OVERLAP_REQUIRED
+		#
+		# OVERLAP_REQUIRED stays small (50 px) so we don't force every row
+		# into the same column, but it kills the "row 16 sits 690..1020,
+		# row 15 sits 163..647 → 43 px gap → blind 1091 px drop" failure mode.
 		if prev_x != -INF and kind == "single":
+			const OVERLAP_REQUIRED: float = 50.0
 			var v_gap: float = prev_y - ry  # > 0 means new row is higher
-			var max_center_dx: float = _max_horizontal_jump(v_gap) \
+			var max_jump_center: float = _max_horizontal_jump(v_gap) \
 					+ (prev_w + width) * 0.5
+			var max_overlap_center: float = (prev_w + width) * 0.5 - OVERLAP_REQUIRED
+			# The tighter of the two wins. Negative max_overlap_center means
+			# the platforms can't physically overlap (combined width too
+			# small for the required overlap) — fall back to jump-only.
+			var max_center_dx: float = max_jump_center
+			if max_overlap_center > 0.0:
+				max_center_dx = minf(max_jump_center, max_overlap_center)
 			var dx: float = x - prev_x
 			if absf(dx) > max_center_dx:
 				x = prev_x + signf(dx) * max_center_dx
