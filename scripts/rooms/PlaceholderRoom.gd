@@ -954,10 +954,18 @@ func _sample_weighted_str(table: Array, rng: RandomNumberGenerator) -> String:
 # Linear interp between the two with a 1.15× generosity factor (player can
 # walk to the platform's edge before launching, which we approximate via
 # +(prev_w + width)/2 in the caller).
-# Cap on a "blind" walk-off-edge fall (in px). Picked at the boundary of the
-# tier-1 / tier-2 fall-damage band (500 px = -1 HP max). Anything riskier
-# gets a stone safety platform inserted by _compute_fall_safeties().
-const MAX_SAFE_FALL_PX: float = 500.0
+# Cap on a "blind" walk-off-edge fall (in px). Picked just above the tier-2
+# fall-damage band so we only intervene when a fall would deal ≥ 2 HP — a
+# single-HP slip stays as part of the gameplay rather than spamming the
+# room with safety platforms. Tier-2 starts at 500 px → MAX of 700 px gives
+# the player ~200 px of "you should have looked first" before the post-process
+# steps in.
+const MAX_SAFE_FALL_PX: float = 700.0
+# Spatial dedupe radius: a candidate safety within these distances of an
+# existing one is skipped. Keeps the room from being wallpapered when many
+# rows happen to clamp to the same wall-edge.
+const SAFETY_DEDUPE_X_PX: float = 80.0
+const SAFETY_DEDUPE_Y_PX: float = 50.0
 
 # Post-process the Markov layout: for every row, check whether walking off
 # either edge lands somewhere within MAX_SAFE_FALL_PX. If not, schedule a
@@ -969,16 +977,17 @@ func _compute_fall_safeties(layout: Array[Dictionary]) -> Array[Dictionary]:
 	if layout.size() < 2:
 		return safeties
 	# Bottom of the layout (largest Y in the original rows). Safety platforms
-	# below this point are pointless — no platform will catch them either.
+	# at or below this point are pointless — they'd sit inside the floor.
 	var floor_y: float = -INF
 	for entry: Dictionary in layout:
 		floor_y = maxf(floor_y, float(entry.y))
 	# Build a working copy that grows as we insert safeties — that way each
-	# new safety is itself considered as a landing for higher rows AND for
-	# subsequent safety checks (a safety might still need its own safety).
+	# new safety is itself considered as a landing for higher rows.
 	var combined: Array[Dictionary] = layout.duplicate()
+	var safety_w: float = _platform_width * 1.5
 	# Repeat top-to-bottom passes until a full sweep produces no new safeties.
-	for _pass in 6:                       # cap depth to keep generation fast
+	# Bounded so a pathological layout can't loop indefinitely.
+	for _pass in 3:
 		var inserted_this_pass: bool = false
 		for i in range(combined.size() - 1, 0, -1):
 			var entry: Dictionary = combined[i]
@@ -1002,30 +1011,56 @@ func _compute_fall_safeties(layout: Array[Dictionary]) -> Array[Dictionary]:
 				continue
 
 			var insert_y: float = top_y + MAX_SAFE_FALL_PX * 0.55
-			# If the safety would land at or below the layout's floor, the
-			# unsafe X is genuinely unreachable — bail instead of stacking
-			# safeties past the bottom.
-			if insert_y >= floor_y - 30.0:
+			# Stay clear of the literal floor (give the floor row's footprint
+			# at least one full safety width of headroom).
+			if insert_y >= floor_y - safety_w * 0.5:
 				continue
-			# One safety per unsafe edge — placing a single platform at the
-			# average X often misses one of the edges when they're far apart.
-			var safety_w: float = _platform_width * 1.5
-			for unsafe_x in unsafe_xs:
-				var safety_x: float = clampf(unsafe_x,
-						room_width * 0.10, room_width * 0.90)
-				var safety: Dictionary = {
-					"x": safety_x,
-					"y": insert_y,
-					"kind": "single",
-					"width": safety_w,
-					"type": "stone",
-				}
-				safeties.append(safety)
-				combined.append(safety)
-				inserted_this_pass = true
+			# At most one safety per row source — covers the most-unsafe edge
+			# (the one further from the existing platform centre). Avoids the
+			# "wallpaper of stacked safeties at the room edges" failure mode.
+			var unsafe_x: float = unsafe_xs[0]
+			if unsafe_xs.size() > 1:
+				# Both edges unsafe — pick the one further from any existing
+				# safety so we spread coverage instead of stacking.
+				var dist_a: float = _nearest_safety_distance(safeties, unsafe_xs[0], insert_y)
+				var dist_b: float = _nearest_safety_distance(safeties, unsafe_xs[1], insert_y)
+				if dist_b > dist_a:
+					unsafe_x = unsafe_xs[1]
+			var safety_x: float = clampf(unsafe_x,
+					room_width * 0.10, room_width * 0.90)
+			# Dedupe: skip if there's already a safety covering this spot.
+			if _is_duplicate_safety(safeties, safety_x, insert_y):
+				continue
+			var safety: Dictionary = {
+				"x": safety_x,
+				"y": insert_y,
+				"kind": "single",
+				"width": safety_w,
+				"type": "stone",
+			}
+			safeties.append(safety)
+			combined.append(safety)
+			inserted_this_pass = true
 		if not inserted_this_pass:
 			break
 	return safeties
+
+func _is_duplicate_safety(existing: Array[Dictionary], x: float, y: float) -> bool:
+	for s in existing:
+		if absf(float(s.x) - x) <= SAFETY_DEDUPE_X_PX \
+				and absf(float(s.y) - y) <= SAFETY_DEDUPE_Y_PX:
+			return true
+	return false
+
+func _nearest_safety_distance(existing: Array[Dictionary], x: float, y: float) -> float:
+	var best: float = INF
+	for s in existing:
+		var dx: float = float(s.x) - x
+		var dy: float = float(s.y) - y
+		var d: float = sqrt(dx * dx + dy * dy)
+		if d < best:
+			best = d
+	return best
 
 # True if `layout` contains a platform whose X-range covers `x` and whose
 # Y is strictly below `top_y` (= larger Y in Godot 2D) but no further than

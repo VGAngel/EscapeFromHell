@@ -355,7 +355,10 @@ func test_full_markov_layout_has_few_unsafe_blind_drops_after_safeties() -> void
 	combined.append_array(layout)
 	combined.append_array(safeties)
 
-	const MAX_SAFE: float = 500.0
+	# Mirror MAX_SAFE_FALL_PX from PlaceholderRoom (tier-2 boundary + slack);
+	# tests intentionally accept tier-1 (1 HP) falls as part of the gameplay
+	# rather than spamming safety platforms over every edge.
+	const MAX_SAFE: float = 700.0
 	var total_edges: int  = 0
 	var unsafe_edges: int = 0
 	for i in range(layout.size() - 1, 0, -1):
