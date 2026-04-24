@@ -206,7 +206,7 @@ func _load_player_frames() -> void:
 	# bottom (half_h from the CharacterBody2D origin).
 	# Enemy sprites use a different constant (45 px) because their art packs
 	# centre the character deeper in the canvas — calibrate each pack separately.
-	const SPRITE_FEET_WORLD_PX: float = 35.0   # empirical for Dark_Elves pack
+	const SPRITE_FEET_WORLD_PX: float = 40.0   # empirical for Dark_Elves pack
 	var col: CollisionShape2D = get_node_or_null("CollisionShape2D")
 	if col and col.shape is RectangleShape2D:
 		var half_h: float = (col.shape as RectangleShape2D).size.y / 2.0
