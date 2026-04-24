@@ -199,6 +199,14 @@ func _load_player_frames() -> void:
 		return
 	_anim_sprite.sprite_frames = sf
 	_anim_sprite.scale = Vector2(PLAYER_SPRITE_SCALE, PLAYER_SPRITE_SCALE)
+	# Chibi canvases place the character's feet ~300 px below the canvas centre;
+	# at scale 0.15 that is ~45 px below the node origin. Shift the sprite up so
+	# its feet align with the collision box bottom, matching the enemy fix.
+	const SPRITE_FEET_PX: float = 45.0
+	var col: CollisionShape2D = get_node_or_null("CollisionShape2D")
+	if col and col.shape is RectangleShape2D:
+		var half_h: float = (col.shape as RectangleShape2D).size.y / 2.0
+		_anim_sprite.position.y = half_h - SPRITE_FEET_PX
 	if sf.has_animation("player_idle"):
 		_anim_sprite.play("player_idle")
 
