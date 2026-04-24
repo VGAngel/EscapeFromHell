@@ -75,6 +75,13 @@ func _ready() -> void:
 
 func _find_player() -> void:
 	_player = get_tree().get_first_node_in_group("player") as CharacterBody2D
+	# Enemies and the player must not physically block each other — contact
+	# damage is handled via distance check, not physics collision. Without this
+	# an enemy that falls on top of the player gets "stuck" on their head
+	# because is_on_floor() returns true (player acts as a floor).
+	if _player:
+		add_collision_exception_with(_player)
+		_player.add_collision_exception_with(self)
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 func _physics_process(delta: float) -> void:
