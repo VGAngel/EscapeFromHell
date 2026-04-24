@@ -43,7 +43,8 @@ var _facing_right:   bool    = true
 var _hit_cooldown:   float   = 0.0
 var _config_applied: bool    = false
 
-const GRAVITY: float = 900.0
+const GRAVITY: float       = 900.0
+const JUMP_VELOCITY: float = -650.0   # clears ~235 px — enough for max platform spacing (200 px)
 
 # ── Child nodes ───────────────────────────────────────────────────────────────
 @onready var _anim:           AnimationPlayer     = get_node_or_null("AnimationPlayer")
@@ -55,6 +56,8 @@ const GRAVITY: float = 900.0
 # Downward raycasts placed just ahead of each foot to detect platform edges.
 var _ray_left:  RayCast2D = null
 var _ray_right: RayCast2D = null
+
+var _jump_cooldown: float = 0.0
 
 func _ready() -> void:
 	_patrol_origin = global_position
@@ -113,6 +116,8 @@ func _tick_timers(delta: float) -> void:
 		_alert_timer -= delta
 	if _give_up_timer > 0.0 and state == State.GIVE_UP:
 		_give_up_timer -= delta
+	if _jump_cooldown > 0.0:
+		_jump_cooldown -= delta
 
 # ── Edge detection setup ─────────────────────────────────────────────────────
 func _build_edge_rays() -> void:
@@ -211,6 +216,13 @@ func _do_chase(_delta: float) -> void:
 
 	if is_on_wall():
 		velocity.x = 0.0
+
+	# Jump toward player if they are on a higher platform.
+	# Threshold 60 px avoids jumping when player is just slightly above (e.g. mid-air).
+	if is_on_floor() and _jump_cooldown <= 0.0:
+		if _player.global_position.y < global_position.y - 60.0:
+			velocity.y = JUMP_VELOCITY
+			_jump_cooldown = 1.5
 
 # ── GIVE UP ───────────────────────────────────────────────────────────────────
 func _enter_give_up() -> void:
