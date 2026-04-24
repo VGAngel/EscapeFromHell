@@ -199,14 +199,18 @@ func _load_player_frames() -> void:
 		return
 	_anim_sprite.sprite_frames = sf
 	_anim_sprite.scale = Vector2(PLAYER_SPRITE_SCALE, PLAYER_SPRITE_SCALE)
-	# Chibi canvases place the character's feet ~300 px below the canvas centre;
-	# at scale 0.15 that is ~45 px below the node origin. Shift the sprite up so
-	# its feet align with the collision box bottom, matching the enemy fix.
-	const SPRITE_FEET_PX: float = 45.0
+	# Dark_Elves chibi sprites use a 900×900 canvas but the character sits in
+	# the upper ~65 % of the frame, placing the feet only ~150–180 px below
+	# the canvas centre. At scale 0.15 that is ~25 px below the sprite origin.
+	# Shift the sprite DOWN so those feet land exactly on the collision-box
+	# bottom (half_h from the CharacterBody2D origin).
+	# Enemy sprites use a different constant (45 px) because their art packs
+	# centre the character deeper in the canvas — calibrate each pack separately.
+	const SPRITE_FEET_WORLD_PX: float = 25.0   # empirical for Dark_Elves pack
 	var col: CollisionShape2D = get_node_or_null("CollisionShape2D")
 	if col and col.shape is RectangleShape2D:
 		var half_h: float = (col.shape as RectangleShape2D).size.y / 2.0
-		_anim_sprite.position.y = half_h - SPRITE_FEET_PX
+		_anim_sprite.position.y = half_h - SPRITE_FEET_WORLD_PX
 	if sf.has_animation("player_idle"):
 		_anim_sprite.play("player_idle")
 
