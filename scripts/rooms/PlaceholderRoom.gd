@@ -837,12 +837,16 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		var zone: int = _markov_pick_zone(rng, prev_zone, prev_prev,
 				ZONE_COUNT, weight_by_delta)
 
-		# Y jitter within ±12% of one row gap so the grid doesn't read as such.
+		# Y jitter so the grid doesn't read as one. Bounded so two adjacent
+		# rows can't BOTH jitter to the extreme and end up > MAX_JUMP_HEIGHT
+		# apart — that would make jumping back UP physically impossible.
+		# Worst-case adjacent gap = spacing + 2 × (gap × jitter_ratio); for
+		# spacing 180 and jitter 0.05, max = 198 px (just under MAX_JUMP=200).
 		# Skip first/last row so floor/ceiling alignment stays clean.
 		var ry: float = float(rows[i])
 		if i > 0 and i < rows.size() - 1:
 			var gap: float = absf(float(rows[i]) - float(rows[i - 1]))
-			ry += rng.randf_range(-gap * 0.12, gap * 0.12)
+			ry += rng.randf_range(-gap * 0.05, gap * 0.05)
 
 		var x: float = room_width * zone_center[zone]
 		x += rng.randf_range(-room_width * 0.03, room_width * 0.03)
