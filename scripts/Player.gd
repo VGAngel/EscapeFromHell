@@ -14,8 +14,8 @@ enum State { IDLE, WALK, JUMP, FALL, STAFF_SWING, PICKUP, CARRYING, DEAD }
 # ── Dimensions ────────────────────────────────────────────────────────────────
 # Must match CollisionShape2D in Player.tscn. Used by LevelGenerator for
 # spacing rules and by systems that need to know the character's footprint.
-const PLAYER_WIDTH:  float = 80.0
-const PLAYER_HEIGHT: float = 100.0
+const PLAYER_WIDTH:  float = 60.0
+const PLAYER_HEIGHT: float = 90.0
 
 var state: State = State.IDLE
 
