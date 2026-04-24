@@ -221,11 +221,11 @@ func _do_chase(_delta: float) -> void:
 	var dir: float = sign(_player.global_position.x - global_position.x)
 	velocity.x = move_speed * chase_speed_mult * dir
 
-	# Jump toward player if they are on a higher platform.
-	# Must happen BEFORE the wall-stop so horizontal velocity is kept during
-	# the jump. Threshold 60 px avoids reacting when player is just mid-air.
+	# Jump toward player only when they are standing on a higher platform —
+	# not while they are mid-air themselves. _player.is_on_floor() prevents
+	# the enemy from jumping in sync with the player's own jump.
 	if is_on_floor() and _jump_cooldown <= 0.0:
-		if _player.global_position.y < global_position.y - 60.0:
+		if _player.is_on_floor() and _player.global_position.y < global_position.y - 60.0:
 			velocity.y = JUMP_VELOCITY
 			_jump_cooldown = 1.5
 
