@@ -42,6 +42,12 @@ var _pending_facing:          bool  = true
 var _facing_change_t:         float = 0.0
 var _lookahead_offset_x:      float = 0.0
 var _hud_offset_y:            float = 0.0
+var _fall_offset_y:           float = 0.0
+
+# How fast offset.x (lookahead) and offset.y (fall-look) chase their
+# target each second. Lower = smoother. Tuned to feel like the same
+# "weight" as the position smoothing.
+const _OFFSET_FOLLOW_SPEED := 1.8
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 func _ready() -> void:
@@ -179,18 +185,25 @@ func _process(delta: float) -> void:
 				_facing_change_t  = 0.0
 		else:
 			_facing_change_t = 0.0
-		var target_x: float = _lookahead_distance if _facing_right else -_lookahead_distance
-		# Smoothly tween offset.x toward the target so the camera shift
-		# isn't instantaneous on flip.
-		_lookahead_offset_x = lerpf(_lookahead_offset_x, target_x, clampf(delta * 4.0, 0.0, 1.0))
 
-	var fall_y: float = 0.0
+	# Frame-rate independent exponential lerp toward the target offsets so
+	# direction flips and fall-look glide in instead of snapping. Same
+	# "weight" as position smoothing keeps the whole camera feel coherent.
+	var target_x: float = 0.0
+	if _lookahead_enabled:
+		target_x = _lookahead_distance if _facing_right else -_lookahead_distance
+
+	var target_fall_y: float = 0.0
 	if _look_up_when_falling and parent is CharacterBody2D:
 		var body: CharacterBody2D = parent
 		if body.velocity.y > 200.0:
-			fall_y = _look_up_distance
+			target_fall_y = _look_up_distance
 
-	offset = Vector2(_lookahead_offset_x, _hud_offset_y + fall_y)
+	var t: float = 1.0 - exp(-_OFFSET_FOLLOW_SPEED * delta)
+	_lookahead_offset_x = lerpf(_lookahead_offset_x, target_x,      t)
+	_fall_offset_y      = lerpf(_fall_offset_y,      target_fall_y, t)
+
+	offset = Vector2(_lookahead_offset_x, _hud_offset_y + _fall_offset_y)
 
 # ── Public ────────────────────────────────────────────────────────────────────
 ## Apply a zoom preset by name from camera_config.json (e.g. "void_levels").
