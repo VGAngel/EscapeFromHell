@@ -36,11 +36,11 @@
    ↓
 [1. vertical — наративний]   ← статичний, перший рівень кола, божественне послання
 [2. vertical]
-[3. vertical] ─→ [3.1 vertical]    обов'язковий, праворуч
+[3. vertical]
 [4. vertical] ←─ [4.1 void]        необов'язковий, ліворуч
-[5. vertical] ─→ [5.1 vertical]    обов'язковий, праворуч
+[5. vertical]
 [6. vertical]
-[7. vertical] ─→ [7.1 vertical]    обов'язковий, праворуч
+[7. vertical]
 [8. vertical]
 [9. vertical] ←─ [9.1 void]        необов'язковий, ліворуч
 [10. boss]

@@ -223,7 +223,7 @@
 | circle_8 (fraud_machine) | ≈25 | 0 | ❌ |
 | circle_9 (betrayal_ice) | ≈25 | 0 | ❌ |
 | circle_10 (throne_abyss) | ≈25 | 0 | ❌ |
-| Branch рівні (vertical/void × 5 кіл) | 45 | 0 | ❌ |
+| Branch рівні (void × 9 кіл × 2) | 18 | 0 | ❌ |
 | Milestone static levels (50, 75, 99, 100) | 4 | 0 | ❌ |
 
 > Кімнати `circle_1` — це `PlaceholderRoom` з процедурною геометрією. Реальних тайлсет-кімнат ще немає в жодному колі.

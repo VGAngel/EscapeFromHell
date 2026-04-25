@@ -1089,33 +1089,6 @@
       "is_narrative": true
     },
     {
-      "id": 103,
-      "circle": 1,
-      "name": "Темні Коридори",
-      "type": "vertical",
-      "difficulty": 1,
-      "souls_count": 2,
-      "soul_types": [
-        "innocent",
-        "broken"
-      ],
-      "enemies": [
-        "skeleton",
-        "skeleton_archer"
-      ],
-      "traps": [
-        "ghost_platform",
-        "bottom_spikes"
-      ],
-      "bonuses": [
-        "hope_torch",
-        "manna"
-      ],
-      "hidden_soul": "H1",
-      "branch_of": 3,
-      "branch_required": true
-    },
-    {
       "id": 32,
       "circle": 4,
       "name": "Скарби і Пастки",
@@ -1409,7 +1382,8 @@
         "prayer_stone"
       ],
       "branch_of": 4,
-      "branch_required": false
+      "branch_required": false,
+      "hidden_soul": "H1"
     },
     {
       "id": 42,
@@ -1675,31 +1649,6 @@
         "wind_gusts"
       ],
       "is_narrative": true
-    },
-    {
-      "id": 105,
-      "circle": 1,
-      "name": "Тікай!",
-      "type": "vertical",
-      "difficulty": 1,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "skeleton"
-      ],
-      "traps": [
-        "collapse"
-      ],
-      "bonuses": [
-        "angel_feather"
-      ],
-      "special_mechanics": [
-        "chase_shadow"
-      ],
-      "branch_of": 5,
-      "branch_required": true
     },
     {
       "id": 52,
@@ -2239,37 +2188,6 @@
         "moving_gears"
       ],
       "is_narrative": true
-    },
-    {
-      "id": 107,
-      "circle": 1,
-      "name": "Тунелі Тіней",
-      "type": "vertical",
-      "difficulty": 2,
-      "souls_count": 3,
-      "soul_types": [
-        "broken",
-        "innocent",
-        "sleeping"
-      ],
-      "enemies": [
-        "skeleton_archer",
-        "skeleton_warrior"
-      ],
-      "traps": [
-        "darkness",
-        "ghost_platform",
-        "bottom_spikes"
-      ],
-      "bonuses": [
-        "hope_torch",
-        "angel_feather"
-      ],
-      "special_mechanics": [
-        "partial_darkness"
-      ],
-      "branch_of": 7,
-      "branch_required": true
     },
     {
       "id": 72,
@@ -3166,37 +3084,6 @@
       ]
     },
     {
-      "id": 113,
-      "circle": 2,
-      "name": "Туманні Лабіринти",
-      "type": "vertical",
-      "difficulty": 2,
-      "souls_count": 2,
-      "soul_types": [
-        "broken",
-        "innocent"
-      ],
-      "enemies": [
-        "undead_archer",
-        "skeleton_witch"
-      ],
-      "traps": [
-        "poison_gas",
-        "ghost_platform",
-        "sinking_platform"
-      ],
-      "bonuses": [
-        "hope_torch",
-        "broken_halo"
-      ],
-      "special_mechanics": [
-        "fog_visibility"
-      ],
-      "hidden_soul": "H3",
-      "branch_of": 13,
-      "branch_required": true
-    },
-    {
       "id": 114,
       "circle": 2,
       "name": "Затоплений Льох",
@@ -3230,65 +3117,8 @@
         "air_meter"
       ],
       "branch_of": 14,
-      "branch_required": false
-    },
-    {
-      "id": 115,
-      "circle": 2,
-      "name": "Болотяна Погоня",
-      "type": "vertical",
-      "difficulty": 2,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "undead_archer"
-      ],
-      "traps": [
-        "sinking_platform",
-        "poison_gas"
-      ],
-      "bonuses": [
-        "holy_water"
-      ],
-      "special_mechanics": [
-        "chase_swamp_wave"
-      ],
-      "branch_of": 15,
-      "branch_required": true
-    },
-    {
-      "id": 117,
-      "circle": 2,
-      "name": "Зелений Лабіринт",
-      "type": "vertical",
-      "difficulty": 3,
-      "souls_count": 3,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "innocent"
-      ],
-      "enemies": [
-        "undead_archer",
-        "skeleton_witch",
-        "necromancer"
-      ],
-      "traps": [
-        "poison_gas",
-        "sinking_platform",
-        "voice_of_relatives"
-      ],
-      "bonuses": [
-        "sinner_map",
-        "hope_torch"
-      ],
-      "special_mechanics": [
-        "fog_visibility"
-      ],
-      "branch_of": 17,
-      "branch_required": true
+      "branch_required": false,
+      "hidden_soul": "H3"
     },
     {
       "id": 119,
@@ -3334,36 +3164,6 @@
       "branch_required": false
     },
     {
-      "id": 123,
-      "circle": 3,
-      "name": "Розпечені Тунелі",
-      "type": "vertical",
-      "difficulty": 3,
-      "souls_count": 2,
-      "soul_types": [
-        "broken",
-        "sleeping"
-      ],
-      "enemies": [
-        "demon_archer",
-        "blood_demon"
-      ],
-      "traps": [
-        "lava_flow",
-        "bottom_spikes",
-        "lava_pit"
-      ],
-      "bonuses": [
-        "holy_water",
-        "prayer_stone"
-      ],
-      "special_mechanics": [
-        "temperature_mechanic"
-      ],
-      "branch_of": 23,
-      "branch_required": true
-    },
-    {
       "id": 124,
       "circle": 3,
       "name": "Вогняна Печера",
@@ -3399,66 +3199,6 @@
       "hidden_soul": "H5",
       "branch_of": 24,
       "branch_required": false
-    },
-    {
-      "id": 125,
-      "circle": 3,
-      "name": "Лава Наздоганяє",
-      "type": "vertical",
-      "difficulty": 3,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "fire_golem"
-      ],
-      "traps": [
-        "lava_flow",
-        "lava_pit"
-      ],
-      "bonuses": [
-        "holy_water",
-        "angel_feather"
-      ],
-      "special_mechanics": [
-        "rising_lava_fast"
-      ],
-      "branch_of": 25,
-      "branch_required": true
-    },
-    {
-      "id": 127,
-      "circle": 3,
-      "name": "Пекельна Кузня",
-      "type": "vertical",
-      "difficulty": 4,
-      "souls_count": 3,
-      "soul_types": [
-        "innocent",
-        "sleeping",
-        "broken"
-      ],
-      "enemies": [
-        "blood_demon",
-        "demon_archer"
-      ],
-      "traps": [
-        "lava_flow",
-        "steam_jet",
-        "bottom_spikes"
-      ],
-      "bonuses": [
-        "holy_water",
-        "manna"
-      ],
-      "special_mechanics": [
-        "temperature_mechanic",
-        "fire_jets"
-      ],
-      "hidden_soul": "H6",
-      "branch_of": 27,
-      "branch_required": true
     },
     {
       "id": 129,
@@ -3498,40 +3238,8 @@
         "fire_jets"
       ],
       "branch_of": 29,
-      "branch_required": false
-    },
-    {
-      "id": 133,
-      "circle": 4,
-      "name": "Темні Сховища",
-      "type": "vertical",
-      "difficulty": 4,
-      "souls_count": 3,
-      "soul_types": [
-        "broken",
-        "innocent",
-        "sleeping"
-      ],
-      "enemies": [
-        "succubus",
-        "hell_knight"
-      ],
-      "traps": [
-        "mirror",
-        "treasure_chest",
-        "ghost_platform"
-      ],
-      "bonuses": [
-        "sinner_map",
-        "broken_halo"
-      ],
-      "special_mechanics": [
-        "sin_temptation",
-        "darkness"
-      ],
-      "hidden_soul": "H7",
-      "branch_of": 33,
-      "branch_required": true
+      "branch_required": false,
+      "hidden_soul": "H6"
     },
     {
       "id": 134,
@@ -3568,68 +3276,8 @@
         "sin_temptation"
       ],
       "branch_of": 34,
-      "branch_required": false
-    },
-    {
-      "id": 135,
-      "circle": 4,
-      "name": "Жадібна Погоня",
-      "type": "vertical",
-      "difficulty": 4,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "hell_knight"
-      ],
-      "traps": [
-        "treasure_chest"
-      ],
-      "bonuses": [
-        "angel_feather",
-        "burnt_wings"
-      ],
-      "special_mechanics": [
-        "chase_hell_knight"
-      ],
-      "branch_of": 35,
-      "branch_required": true
-    },
-    {
-      "id": 137,
-      "circle": 4,
-      "name": "Лабіринт Монет",
-      "type": "vertical",
-      "difficulty": 5,
-      "souls_count": 4,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "broken",
-        "innocent"
-      ],
-      "enemies": [
-        "succubus",
-        "hell_knight"
-      ],
-      "traps": [
-        "mirror",
-        "fake_soul",
-        "treasure_chest",
-        "ghost_platform"
-      ],
-      "bonuses": [
-        "sinner_map",
-        "broken_halo",
-        "manna"
-      ],
-      "special_mechanics": [
-        "sin_temptation",
-        "moving_gold_platforms"
-      ],
-      "branch_of": 37,
-      "branch_required": true
+      "branch_required": false,
+      "hidden_soul": "H7"
     },
     {
       "id": 139,
@@ -3676,39 +3324,6 @@
       "branch_required": false
     },
     {
-      "id": 143,
-      "circle": 5,
-      "name": "Крижані Коридори",
-      "type": "vertical",
-      "difficulty": 5,
-      "souls_count": 3,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "innocent"
-      ],
-      "enemies": [
-        "magician_demon",
-        "ice_golem"
-      ],
-      "traps": [
-        "cracking_ice",
-        "ghost_platform",
-        "ice_slide"
-      ],
-      "bonuses": [
-        "hope_torch",
-        "broken_halo"
-      ],
-      "special_mechanics": [
-        "ice_physics",
-        "darkness"
-      ],
-      "hidden_soul": "H9",
-      "branch_of": 43,
-      "branch_required": true
-    },
-    {
       "id": 144,
       "circle": 5,
       "name": "Підлідна Пустота",
@@ -3743,70 +3358,8 @@
         "underwater_sections"
       ],
       "branch_of": 44,
-      "branch_required": false
-    },
-    {
-      "id": 145,
-      "circle": 5,
-      "name": "Тріщини Наздоганяють",
-      "type": "vertical",
-      "difficulty": 5,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "ice_golem"
-      ],
-      "traps": [
-        "cracking_ice",
-        "ice_slide"
-      ],
-      "bonuses": [
-        "angel_feather",
-        "hope_torch"
-      ],
-      "special_mechanics": [
-        "ice_physics",
-        "chase_cracking_floor"
-      ],
-      "branch_of": 45,
-      "branch_required": true
-    },
-    {
-      "id": 147,
-      "circle": 5,
-      "name": "Крижаний Лабіринт",
-      "type": "vertical",
-      "difficulty": 6,
-      "souls_count": 4,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "broken",
-        "innocent"
-      ],
-      "enemies": [
-        "ice_golem",
-        "magician_demon"
-      ],
-      "traps": [
-        "ice_slide",
-        "cracking_ice",
-        "darkness",
-        "ghost_platform"
-      ],
-      "bonuses": [
-        "hope_torch",
-        "broken_halo",
-        "manna"
-      ],
-      "special_mechanics": [
-        "ice_physics",
-        "darkness"
-      ],
-      "branch_of": 47,
-      "branch_required": true
+      "branch_required": false,
+      "hidden_soul": "H9"
     },
     {
       "id": 149,
@@ -3851,40 +3404,6 @@
       "branch_required": false
     },
     {
-      "id": 153,
-      "circle": 6,
-      "name": "Темні Зали",
-      "type": "vertical",
-      "difficulty": 6,
-      "souls_count": 4,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "innocent",
-        "broken"
-      ],
-      "enemies": [
-        "ghost_warrior",
-        "demon_archer"
-      ],
-      "traps": [
-        "wind_blast",
-        "falling_column",
-        "ghost_platform"
-      ],
-      "bonuses": [
-        "broken_halo",
-        "manna"
-      ],
-      "special_mechanics": [
-        "wind_gusts",
-        "darkness"
-      ],
-      "hidden_soul": "H11",
-      "branch_of": 53,
-      "branch_required": true
-    },
-    {
       "id": 154,
       "circle": 6,
       "name": "Підвали Гордині",
@@ -3922,69 +3441,6 @@
       "hidden_soul": "H12",
       "branch_of": 54,
       "branch_required": false
-    },
-    {
-      "id": 155,
-      "circle": 6,
-      "name": "Переслідування",
-      "type": "vertical",
-      "difficulty": 6,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "fallen_angel"
-      ],
-      "traps": [
-        "wind_blast",
-        "falling_column"
-      ],
-      "bonuses": [
-        "angel_feather",
-        "prayer_stone"
-      ],
-      "special_mechanics": [
-        "chase_fallen_angel",
-        "wind_gusts"
-      ],
-      "branch_of": 55,
-      "branch_required": true
-    },
-    {
-      "id": 157,
-      "circle": 6,
-      "name": "Коридори Слави",
-      "type": "vertical",
-      "difficulty": 7,
-      "souls_count": 4,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "broken",
-        "innocent"
-      ],
-      "enemies": [
-        "fallen_angel",
-        "demon_archer"
-      ],
-      "traps": [
-        "falling_column",
-        "ghost_platform",
-        "wind_blast",
-        "mirror"
-      ],
-      "bonuses": [
-        "broken_halo",
-        "manna",
-        "prayer_stone"
-      ],
-      "special_mechanics": [
-        "wind_gusts",
-        "false_indicators"
-      ],
-      "branch_of": 57,
-      "branch_required": true
     },
     {
       "id": 159,
@@ -4028,41 +3484,8 @@
         "demon_deal_offer"
       ],
       "branch_of": 59,
-      "branch_required": false
-    },
-    {
-      "id": 163,
-      "circle": 7,
-      "name": "Гілки-Пастки",
-      "type": "vertical",
-      "difficulty": 7,
-      "souls_count": 4,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "innocent",
-        "broken"
-      ],
-      "enemies": [
-        "necromancer",
-        "phantom_knight"
-      ],
-      "traps": [
-        "mirror",
-        "voice_of_relatives",
-        "ghost_platform"
-      ],
-      "bonuses": [
-        "sinner_map",
-        "broken_halo"
-      ],
-      "special_mechanics": [
-        "npc_hints_unreliable",
-        "darkness"
-      ],
-      "hidden_soul": "H13",
-      "branch_of": 63,
-      "branch_required": true
+      "branch_required": false,
+      "hidden_soul": "H11"
     },
     {
       "id": 164,
@@ -4100,72 +3523,8 @@
         "npc_hints_unreliable"
       ],
       "branch_of": 64,
-      "branch_required": false
-    },
-    {
-      "id": 165,
-      "circle": 7,
-      "name": "Втеча з Лісу",
-      "type": "vertical",
-      "difficulty": 7,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "phantom_knight"
-      ],
-      "traps": [
-        "voice_of_relatives",
-        "mirror"
-      ],
-      "bonuses": [
-        "angel_feather",
-        "sinner_map"
-      ],
-      "special_mechanics": [
-        "chase_forest",
-        "npc_hints_unreliable"
-      ],
-      "branch_of": 65,
-      "branch_required": true
-    },
-    {
-      "id": 167,
-      "circle": 7,
-      "name": "Деревний Лабіринт",
-      "type": "vertical",
-      "difficulty": 8,
-      "souls_count": 4,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "broken",
-        "innocent"
-      ],
-      "enemies": [
-        "necromancer",
-        "mimic",
-        "phantom_knight"
-      ],
-      "traps": [
-        "mirror",
-        "voice_of_relatives",
-        "ghost_platform",
-        "bottom_spikes"
-      ],
-      "bonuses": [
-        "sinner_map",
-        "hope_torch",
-        "broken_halo"
-      ],
-      "special_mechanics": [
-        "npc_hints_unreliable",
-        "darkness",
-        "false_indicators"
-      ],
-      "branch_of": 67,
-      "branch_required": true
+      "branch_required": false,
+      "hidden_soul": "H13"
     },
     {
       "id": 169,
@@ -4214,42 +3573,6 @@
       "branch_required": false
     },
     {
-      "id": 173,
-      "circle": 8,
-      "name": "Механічні Тунелі",
-      "type": "vertical",
-      "difficulty": 8,
-      "souls_count": 4,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "innocent",
-        "broken"
-      ],
-      "enemies": [
-        "blood_demon",
-        "magician_demon"
-      ],
-      "traps": [
-        "crusher",
-        "steam_jet",
-        "gear_trap",
-        "conveyor"
-      ],
-      "bonuses": [
-        "holy_water",
-        "broken_halo"
-      ],
-      "special_mechanics": [
-        "moving_gears",
-        "conveyor_belts",
-        "steam_jets"
-      ],
-      "hidden_soul": "H15",
-      "branch_of": 73,
-      "branch_required": true
-    },
-    {
       "id": 174,
       "circle": 8,
       "name": "Котельня",
@@ -4287,76 +3610,8 @@
         "steam_jets"
       ],
       "branch_of": 74,
-      "branch_required": false
-    },
-    {
-      "id": 175,
-      "circle": 8,
-      "name": "Конвеєр Смерті",
-      "type": "vertical",
-      "difficulty": 8,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "stone_golem"
-      ],
-      "traps": [
-        "crusher",
-        "conveyor",
-        "gear_trap"
-      ],
-      "bonuses": [
-        "angel_feather",
-        "holy_water"
-      ],
-      "special_mechanics": [
-        "conveyor_belts",
-        "chase_machine",
-        "moving_gears"
-      ],
-      "branch_of": 75,
-      "branch_required": true
-    },
-    {
-      "id": 177,
-      "circle": 8,
-      "name": "Зубчасті Лабіринти",
-      "type": "vertical",
-      "difficulty": 9,
-      "souls_count": 5,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "broken",
-        "innocent",
-        "sleeping"
-      ],
-      "enemies": [
-        "blood_demon",
-        "magician_demon"
-      ],
-      "traps": [
-        "crusher",
-        "gear_trap",
-        "steam_jet",
-        "conveyor",
-        "ghost_platform"
-      ],
-      "bonuses": [
-        "holy_water",
-        "manna",
-        "angel_feather"
-      ],
-      "special_mechanics": [
-        "moving_gears",
-        "conveyor_belts",
-        "steam_jets",
-        "crusher_rooms"
-      ],
-      "branch_of": 77,
-      "branch_required": true
+      "branch_required": false,
+      "hidden_soul": "H15"
     },
     {
       "id": 179,
@@ -4406,41 +3661,6 @@
       "branch_required": false
     },
     {
-      "id": 183,
-      "circle": 9,
-      "name": "Зоряні Тунелі",
-      "type": "vertical",
-      "difficulty": 9,
-      "souls_count": 5,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "innocent",
-        "broken",
-        "sleeping"
-      ],
-      "enemies": [
-        "reaper",
-        "phantom_knight"
-      ],
-      "traps": [
-        "void_tear",
-        "gravity_shift",
-        "darkness"
-      ],
-      "bonuses": [
-        "burnt_wings",
-        "broken_halo"
-      ],
-      "special_mechanics": [
-        "gravity_instability",
-        "darkness"
-      ],
-      "hidden_soul": "H17",
-      "branch_of": 83,
-      "branch_required": true
-    },
-    {
       "id": 184,
       "circle": 9,
       "name": "Нульова Гравітація",
@@ -4478,72 +3698,8 @@
         "gravity_instability"
       ],
       "branch_of": 84,
-      "branch_required": false
-    },
-    {
-      "id": 185,
-      "circle": 9,
-      "name": "Безконечна Втеча",
-      "type": "vertical",
-      "difficulty": 9,
-      "souls_count": 1,
-      "soul_types": [
-        "innocent"
-      ],
-      "enemies": [
-        "dark_entity"
-      ],
-      "traps": [
-        "void_tear",
-        "gravity_shift"
-      ],
-      "bonuses": [
-        "burnt_wings",
-        "angel_feather"
-      ],
-      "special_mechanics": [
-        "chase_void",
-        "gravity_instability"
-      ],
-      "branch_of": 85,
-      "branch_required": true
-    },
-    {
-      "id": 187,
-      "circle": 9,
-      "name": "Темний Лабіринт",
-      "type": "vertical",
-      "difficulty": 10,
-      "souls_count": 5,
-      "soul_types": [
-        "broken",
-        "sleeping",
-        "broken",
-        "innocent",
-        "sleeping"
-      ],
-      "enemies": [
-        "dark_entity",
-        "reaper"
-      ],
-      "traps": [
-        "darkness",
-        "void_tear",
-        "ghost_platform",
-        "gravity_shift"
-      ],
-      "bonuses": [
-        "hope_torch",
-        "burnt_wings",
-        "broken_halo"
-      ],
-      "special_mechanics": [
-        "gravity_instability",
-        "complete_darkness",
-        "space_tears"
-      ],
-      "branch_of": 87,
-      "branch_required": true
+      "branch_required": false,
+      "hidden_soul": "H17"
     },
     {
       "id": 189,

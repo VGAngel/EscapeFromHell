@@ -205,7 +205,7 @@
 | 6.6 | Платформи circle_6–10 (faith, sin, illusory, ice, soul_bridge) | `scripts/platforms/` | ✅ |
 | 6.7 | Боси 70, 100 | `scripts/enemies/BossCircle{7,10}.gd` + `scripts/levels/BossLevel.gd` | ✅ |
 | 6.8 | Фінальний бос (рівень 100) — фаза 1/2/3 | `scripts/enemies/BossCircle10.gd` + BossAI phases | ✅ |
-| 6.9 | Всі 45 branch-рівнів (vertical/void) | `scenes/rooms/circle_*_branch/` | ⬜ |
+| 6.9 | Всі 18 branch-рівнів (void) | `scenes/rooms/circle_*_branch/` | ⬜ |
 | 6.10 | Статичні рівні 75, 99 (milestone) | `scenes/levels/` | ⬜ |
 
 ---
@@ -258,7 +258,7 @@
 | # | Задача | Файли | Статус |
 |---|--------|-------|--------|
 | 10.1 | Пройти всі 100 основних рівнів вручну | — | ⬜ |
-| 10.2 | Пройти всі 45 branch-рівнів | — | ⬜ |
+| 10.2 | Пройти всі 18 branch-рівнів | — | ⬜ |
 | 10.3 | Перевірити всі 4 кінцівки | — | ⬜ |
 | 10.4 | Перевірити всі 22 апгрейди в дії | — | ⬜ |
 | 10.5 | Performance: 60 fps на mid-range Android | — | ⬜ |
