@@ -222,13 +222,20 @@ func _build_zone_card(level_id: int, tier: String, spacing: float,
 		vbox.add_child(lbl)
 
 	# Seed row — clickable Button styled flat to look like a label.
-	# Format: "seed  <level>#<room>  📋" — knowing both reproduces the exact
-	# room (Markov layout uses hash(level_id*1000 + room_index) as RNG seed).
-	var seed_str: String
+	# Format: "<world_seed>:<level>#<room>" — full reproducer for the
+	# current room. World seed (set on the main menu) folds into the
+	# Markov RNG via XOR with hash(level_id × 1000 + room_index), so
+	# without it the copy can't recreate the layout the player sees.
+	var world_seed: String = ""
+	if SaveManager:
+		world_seed = SaveManager.get_world_seed_str()
+	var location: String
 	if room_index >= 0:
-		seed_str = "%d#%d" % [level_id, room_index]
+		location = "%d#%d" % [level_id, room_index]
 	else:
-		seed_str = str(level_id)
+		location = str(level_id)
+	var seed_str: String = ("%s:%s" % [world_seed, location]) \
+			if world_seed != "" else location
 	var seed_btn := Button.new()
 	seed_btn.text = "seed  %s  📋" % seed_str
 	seed_btn.flat = true
