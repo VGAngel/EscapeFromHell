@@ -31,7 +31,7 @@ var air_acceleration: float = 500.0
 
 var staff_range:    float = 80.0
 var staff_cooldown: float = 4.5
-var staff_sin_cost: int   = 2
+var staff_sin_cost: int   = 1
 
 var max_hp: int = 3
 var current_hp: int = 3
