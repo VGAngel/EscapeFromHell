@@ -136,31 +136,38 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_root)
 
-	# Central panel
+	# CenterContainer fills the screen and auto-centers the panel inside it.
+	# This keeps the panel itself centered (PanelContainer + PRESET_CENTER
+	# only anchors its top-left corner to the screen midpoint, leaving the
+	# panel offset down-right of center).
+	var centerer := CenterContainer.new()
+	centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centerer.mouse_filter = Control.MOUSE_FILTER_PASS
+	_root.add_child(centerer)
+
 	_panel = PanelContainer.new()
-	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
-	_panel.custom_minimum_size = Vector2(320, 0)
+	# Sized for readability across phones / desktops. CenterContainer keeps
+	# this floating in the visual middle regardless of viewport size.
+	_panel.custom_minimum_size = Vector2(640, 560)
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.07, 0.06, 0.09, 0.97)
-	style.border_width_left   = 1
-	style.border_width_right  = 1
-	style.border_width_top    = 1
-	style.border_width_bottom = 1
+	style.border_width_left   = 2
+	style.border_width_right  = 2
+	style.border_width_top    = 2
+	style.border_width_bottom = 2
 	style.border_color = Color(0.55, 0.48, 0.22)
 	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
-		style.set("corner_radius_" + corner, 16)
-	style.content_margin_left   = 28.0
-	style.content_margin_right  = 28.0
-	style.content_margin_top    = 30.0
-	style.content_margin_bottom = 30.0
+		style.set("corner_radius_" + corner, 20)
+	style.content_margin_left   = 44.0
+	style.content_margin_right  = 44.0
+	style.content_margin_top    = 44.0
+	style.content_margin_bottom = 44.0
 	_panel.add_theme_stylebox_override("panel", style)
-	_root.add_child(_panel)
+	centerer.add_child(_panel)
 
 	_vbox = VBoxContainer.new()
-	_vbox.add_theme_constant_override("separation", 16)
+	_vbox.add_theme_constant_override("separation", 22)
 	_panel.add_child(_vbox)
 
 	_build_header()
@@ -175,34 +182,34 @@ func _build_header() -> void:
 	_lbl_title = Label.new()
 	_lbl_title.text = "РІВЕНЬ ПРОЙДЕНО"
 	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_title.add_theme_font_size_override("font_size", 24)
+	_lbl_title.add_theme_font_size_override("font_size", 36)
 	_lbl_title.add_theme_color_override("font_color", Color("#FFD700"))
 	_vbox.add_child(_lbl_title)
 
 	_lbl_subtitle = Label.new()
 	_lbl_subtitle.text = ""
 	_lbl_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_subtitle.add_theme_font_size_override("font_size", 13)
+	_lbl_subtitle.add_theme_font_size_override("font_size", 18)
 	_lbl_subtitle.add_theme_color_override("font_color", Color(0.65, 0.63, 0.68))
 	_vbox.add_child(_lbl_subtitle)
 
 func _build_stars() -> void:
 	_stars_row = HBoxContainer.new()
 	_stars_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_stars_row.add_theme_constant_override("separation", 10)
+	_stars_row.add_theme_constant_override("separation", 16)
 	_vbox.add_child(_stars_row)
 
 	for _i in 3:
 		var lbl := Label.new()
 		lbl.text = STAR_EMPTY
-		lbl.add_theme_font_size_override("font_size", 36)
+		lbl.add_theme_font_size_override("font_size", 56)
 		lbl.add_theme_color_override("font_color", Color("#FFD700"))
-		lbl.pivot_offset = Vector2(18, 18)
+		lbl.pivot_offset = Vector2(28, 28)
 		_stars_row.add_child(lbl)
 
 func _build_stats() -> void:
 	var stat_vbox := VBoxContainer.new()
-	stat_vbox.add_theme_constant_override("separation", 8)
+	stat_vbox.add_theme_constant_override("separation", 12)
 	_vbox.add_child(stat_vbox)
 
 	_stat_souls  = _make_stat_label("")
@@ -218,13 +225,13 @@ func _build_stats() -> void:
 func _build_buttons() -> void:
 	var btn_row := HBoxContainer.new()
 	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 14)
+	btn_row.add_theme_constant_override("separation", 24)
 	_vbox.add_child(btn_row)
 
 	_btn_hub  = _make_button("Хаб Раю",  false)
 	_btn_next = _make_button("Далі →",   true)
-	_btn_hub.custom_minimum_size.x  = 120
-	_btn_next.custom_minimum_size.x = 120
+	_btn_hub.custom_minimum_size  = Vector2(220, 64)
+	_btn_next.custom_minimum_size = Vector2(220, 64)
 
 	_btn_hub.pressed.connect(_on_hub_pressed)
 	_btn_next.pressed.connect(_on_next_pressed)
@@ -237,15 +244,15 @@ func _build_buttons() -> void:
 func _make_stat_label(text: String) -> Label:
 	var lbl := Label.new()
 	lbl.text = text
-	lbl.add_theme_font_size_override("font_size", 15)
+	lbl.add_theme_font_size_override("font_size", 22)
 	lbl.add_theme_color_override("font_color", Color(0.82, 0.80, 0.84))
 	return lbl
 
 func _make_button(text: String, primary: bool) -> Button:
 	var btn := Button.new()
 	btn.text = text
-	btn.custom_minimum_size = Vector2(100, 44)
-	btn.add_theme_font_size_override("font_size", 15)
+	btn.custom_minimum_size = Vector2(220, 64)
+	btn.add_theme_font_size_override("font_size", 22)
 
 	var normal := StyleBoxFlat.new()
 	var hover  := StyleBoxFlat.new()
