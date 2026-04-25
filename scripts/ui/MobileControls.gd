@@ -133,6 +133,11 @@ func _make_btn(label: String, action: String, btn_size: Vector2) -> Panel:
 	return p
 
 # ── Multi-touch dispatcher ────────────────────────────────────────────────────
+# Only press / release events are observed. Drag is ignored on purpose:
+# many devices fire a tiny ScreenDrag immediately after the initial
+# ScreenTouch (sub-pixel finger jitter). Reacting to drag would
+# release-then-repress the action, which Player.gd reads as two
+# separate "jump" presses → unintended double jump.
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var t: InputEventScreenTouch = event
@@ -140,11 +145,6 @@ func _input(event: InputEvent) -> void:
 			_handle_press(t.index, t.position)
 		else:
 			_handle_release(t.index)
-		return
-
-	if event is InputEventScreenDrag:
-		var d: InputEventScreenDrag = event
-		_handle_drag(d.index, d.position)
 
 func _handle_press(finger: int, pos: Vector2) -> void:
 	var btn: Panel = _hit_test(pos)
@@ -165,22 +165,6 @@ func _handle_release(finger: int) -> void:
 	# Only release the action if no other finger is still on the same button.
 	if not _action_still_held(action):
 		_release_action(action)
-	_refresh_visuals()
-
-func _handle_drag(finger: int, pos: Vector2) -> void:
-	var current: String = _finger_actions.get(finger, "")
-	var btn: Panel = _hit_test(pos)
-	var new_action: String = _btn_actions.get(btn, "") if btn else ""
-	if new_action == current:
-		return
-	# Finger slid off / onto a different button — treat as release+press.
-	if current != "":
-		_finger_actions.erase(finger)
-		if not _action_still_held(current):
-			_release_action(current)
-	if new_action != "":
-		_finger_actions[finger] = new_action
-		_press_action(new_action)
 	_refresh_visuals()
 
 func _hit_test(pos: Vector2) -> Panel:
