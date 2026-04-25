@@ -526,6 +526,10 @@ func show_pray_button(value: bool) -> void:
 	if _mobile_controls:
 		_mobile_controls.show_pray_button(value)
 
+func show_pickup_button(value: bool) -> void:
+	if _mobile_controls:
+		_mobile_controls.show_pickup_button(value)
+
 func _build_mobile_controls() -> void:
 	var mc_script: GDScript = preload("res://scripts/ui/MobileControls.gd")
 	_mobile_controls = mc_script.new()

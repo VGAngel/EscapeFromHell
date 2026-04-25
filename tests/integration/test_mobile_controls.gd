@@ -80,47 +80,61 @@ func test_movement_buttons_same_baseline() -> void:
 	var diff: float = abs(mc.btn_left.position.y - mc.btn_right.position.y)
 	assert_lt(diff, 1.0)
 
-# ── Focus mode ────────────────────────────────────────────────────────────────
+# ── Multi-touch dispatch ──────────────────────────────────────────────────────
 
-func test_all_buttons_have_no_focus() -> void:
-	assert_eq(mc.btn_left.focus_mode,  Control.FOCUS_NONE)
-	assert_eq(mc.btn_right.focus_mode, Control.FOCUS_NONE)
-	assert_eq(mc.btn_jump.focus_mode,  Control.FOCUS_NONE)
-	assert_eq(mc.btn_staff.focus_mode, Control.FOCUS_NONE)
-	assert_eq(mc.btn_pray.focus_mode,  Control.FOCUS_NONE)
+func _press(btn: Control, finger: int = 0) -> void:
+	var center: Vector2 = btn.global_position + btn.size * 0.5
+	mc._handle_press(finger, center)
 
-# ── Input event emission ──────────────────────────────────────────────────────
+func _release(finger: int = 0) -> void:
+	mc._handle_release(finger)
 
 func test_press_left_fires_move_left_action() -> void:
-	# Simulate button_down signal → check Input registers the action
-	mc.btn_left.emit_signal("button_down")
+	_press(mc.btn_left)
 	assert_true(Input.is_action_pressed("move_left"))
-	mc.btn_left.emit_signal("button_up")
+	_release()
 
 func test_release_left_clears_move_left_action() -> void:
-	mc.btn_left.emit_signal("button_down")
-	mc.btn_left.emit_signal("button_up")
+	_press(mc.btn_left)
+	_release()
 	assert_false(Input.is_action_pressed("move_left"))
 
 func test_press_right_fires_move_right_action() -> void:
-	mc.btn_right.emit_signal("button_down")
+	_press(mc.btn_right)
 	assert_true(Input.is_action_pressed("move_right"))
-	mc.btn_right.emit_signal("button_up")
+	_release()
 
 func test_press_jump_fires_jump_action() -> void:
-	mc.btn_jump.emit_signal("button_down")
+	_press(mc.btn_jump)
 	assert_true(Input.is_action_pressed("jump"))
-	mc.btn_jump.emit_signal("button_up")
+	_release()
 
 func test_press_staff_fires_action_action() -> void:
-	mc.btn_staff.emit_signal("button_down")
+	_press(mc.btn_staff)
 	assert_true(Input.is_action_pressed("action"))
-	mc.btn_staff.emit_signal("button_up")
+	_release()
 
 func test_press_pray_fires_pray_action() -> void:
-	mc.btn_pray.emit_signal("button_down")
+	mc.btn_pray.visible = true
+	_press(mc.btn_pray)
 	assert_true(Input.is_action_pressed("pray"))
-	mc.btn_pray.emit_signal("button_up")
+	_release()
+
+func test_two_fingers_can_hold_left_and_jump_simultaneously() -> void:
+	_press(mc.btn_left, 0)
+	_press(mc.btn_jump, 1)
+	assert_true(Input.is_action_pressed("move_left"))
+	assert_true(Input.is_action_pressed("jump"))
+	_release(0)
+	_release(1)
+
+func test_two_fingers_can_hold_right_and_jump_simultaneously() -> void:
+	_press(mc.btn_right, 0)
+	_press(mc.btn_jump, 1)
+	assert_true(Input.is_action_pressed("move_right"))
+	assert_true(Input.is_action_pressed("jump"))
+	_release(0)
+	_release(1)
 
 # ── HUD integration ───────────────────────────────────────────────────────────
 

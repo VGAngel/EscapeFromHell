@@ -142,6 +142,7 @@ func _on_body_entered(body: Node2D) -> void:
 	var tm: Node = get_node_or_null("/root/TutorialManager")
 	if tm and tm.has_method("show_hint"):
 		tm.show_hint("soul_pickup")
+	_set_pickup_button(true)
 
 func _on_body_exited(body: Node2D) -> void:
 	if not body.is_in_group("player"):
@@ -149,6 +150,22 @@ func _on_body_exited(body: Node2D) -> void:
 	_player_nearby = null
 	if _prompt_label:
 		_prompt_label.visible = false
+	_set_pickup_button(false)
+
+func _set_pickup_button(value: bool) -> void:
+	# Surface the pickup affordance on the on-screen mobile HUD. The HUD
+	# delegates to MobileControls; on desktop builds the call is harmless.
+	var hud: Node = null
+	if GameManager and "_hud" in GameManager:
+		hud = GameManager.get("_hud")
+	if hud == null:
+		# Fall back to the level's HUD child (LevelBase registers it on GM
+		# at begin_level, but during early _ready it may not be set yet).
+		var scene: Node = get_tree().current_scene if get_tree() else null
+		if scene:
+			hud = scene.get_node_or_null("HUD")
+	if hud and hud.has_method("show_pickup_button"):
+		hud.show_pickup_button(value)
 
 # ── Named-soul data ───────────────────────────────────────────────────────────
 
