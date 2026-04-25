@@ -58,7 +58,12 @@ const ZONE_PLATFORMS := {
 # in average width while still letting individual platforms vary —
 # instead of every platform on a level being identical.
 const PLATFORM_WIDTH_BUCKETS: Array[float] = [220.0, 190.0, 160.0, 130.0, 100.0, 70.0]
-const PLATFORM_WIDTH_SPREAD: float = 1.5
+# Spread = 2 + center mapping that lands at bucket index 1 for L1 and at
+# bucket index N-2 for L99 makes the triangular kernel cover exactly the
+# trio [220, 190, 160] at L1 and [130, 100, 70] at L99 (zero weight on the
+# others). Mid-game levels temporarily activate four neighbouring buckets
+# for a smooth crossfade.
+const PLATFORM_WIDTH_SPREAD: float = 2.0
 
 # ── Public result type ────────────────────────────────────────────────────────
 
@@ -473,15 +478,15 @@ func _difficulty_t(circle: int, idx_in_circle: int) -> float:
 	var global_level: float = float((circle - 1) * 10 + idx_in_circle)
 	return clampf((global_level - 1.0) / 98.0, 0.0, 1.0)
 
-## Triangular kernel over PLATFORM_WIDTH_BUCKETS. center slides from
-## bucket 0 at t=0 to bucket N-1 at t=1; spread controls how many
-## adjacent buckets get non-zero weight.
-##   t=0   → [1.00, 0.33, 0,    0,    0   ]  (mostly wide)
-##   t=0.5 → [0,    0.33, 1.00, 0.33, 0   ]  (mostly mid)
-##   t=1   → [0,    0,    0,    0.33, 1.00]  (mostly narrow)
+## Triangular kernel over PLATFORM_WIDTH_BUCKETS. The kernel center slides
+## from bucket 1 at t=0 (L1) to bucket N-2 at t=1 (L99), with spread=2,
+## so the active window is exactly the bucket trio at each endpoint:
+##   t=0    → [0.5, 1.0, 0.5, 0,   0,   0  ]  L1   uses [220, 190, 160]
+##   t=0.5  → [0,   0.25,0.75,0.75,0.25,0  ]  mid  crossfade
+##   t=1    → [0,   0,   0,   0.5, 1.0, 0.5]  L99  uses [130, 100, 70]
 func _platform_width_weights_for_t(t: float) -> Array[float]:
 	var n: int = PLATFORM_WIDTH_BUCKETS.size()
-	var center: float = t * float(n - 1)
+	var center: float = 1.0 + t * float(n - 3)
 	var out: Array[float] = []
 	for i in n:
 		var w: float = maxf(0.0, 1.0 - absf(float(i) - center) / PLATFORM_WIDTH_SPREAD)
