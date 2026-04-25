@@ -733,8 +733,13 @@ func _add_swamp_zone() -> void:
 func _sample_base_platform_width(rng: RandomNumberGenerator) -> float:
 	if _platform_width_buckets.is_empty() or _platform_width_weights.is_empty():
 		return _platform_width
-	return LevelGenerator.sample_platform_width(
+	# sample_platform_width is `static` on the LevelGenerator script — call
+	# through the script class, not the autoload instance, to silence the
+	# STATIC_CALLED_ON_INSTANCE warning.
+	return LevelGeneratorScript.sample_platform_width(
 			_platform_width_buckets, _platform_width_weights, rng)
+
+const LevelGeneratorScript := preload("res://scripts/levels/LevelGenerator.gd")
 
 func _add_main_platforms() -> void:
 	var col_l: float = room_width * 0.22
