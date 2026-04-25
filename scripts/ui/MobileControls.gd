@@ -8,9 +8,9 @@ extends Control
 const BTN_ALPHA   := 0.55
 const BTN_ALPHA_PRESSED := 0.75
 
-const SIZE_LARGE  := Vector2(190, 190)  # Jump
+const SIZE_LARGE  := Vector2(190, 190)  # Jump + Movement (same size)
 const SIZE_MEDIUM := Vector2(150, 150)  # Staff / Pray
-const SIZE_SMALL  := Vector2(170, 170)  # Movement (thumb-sized)
+const SIZE_SMALL  := Vector2(190, 190)  # Movement — matches jump
 
 const GAP_MOVE := 36.0                 # extra space between ← and →
 const GAP := 18.0
