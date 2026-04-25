@@ -122,6 +122,61 @@ func test_up_path_skips_topmost_platform() -> void:
 
 # ── Combined: validate_all ──────────────────────────────────────────────────
 
+func test_user_real_dump_row9_isolated_from_row10() -> void:
+	# Real dump (level 1, room 1#1), user reports "10th platform from the
+	# altar" — the altar sits at the top, so 10th from top = dump's row 9
+	# (indexed from bottom). Row 9 sits FAR right (x=877), row 10 above
+	# sits FAR left (x=421). Centre delta = 456 px, vertical gap = 185 px.
+	#
+	#   Walk-off from row 10 (range 256..586) — no band reaches row 9
+	#     (range 734..1019).
+	#   Jump UP from row 9 → row 10 — max_center ≈ 437 (< 456 by 19 px).
+	#
+	# Row 9 is effectively isolated from row 10: reachable only from below
+	# via bridge row 8. Validator must flag it on the up-path.
+	var layout: Array = [
+		_p("row8",  864.0, 2126.0, 330.0),
+		_p("row9",  877.0, 1956.0, 285.0),
+		_p("row10", 421.0, 1771.0, 330.0),
+	]
+	var up: Array = PathValidator.validate_up_path(layout)
+	var row9_up: Array = up.filter(func(i): return String(i.label) == "row9")
+	assert_eq(row9_up.size(), 1,
+		"row9 must be flagged — too far from row10 to jump up")
+
+func test_user_real_dump_row10_is_stuck_both_directions() -> void:
+	# Real dump (level 1, room 1#1), user reports row 10 as problematic:
+	#   row 10: y=1771, x=421, w=330  → range 256..586
+	#   row 9:  y=1956, x=877, w=285  → range 734..1019  (185 px below row 10)
+	#   row 8:  y=2126, bridge x=864  → bridge L 106..326, R 754..974 (355 px below)
+	#   row 11: y=1581, x=811, w=160  → range 731..891  (190 px above row 10)
+	#
+	# Walking off either edge of row 10 has no tier-0 landing — row 9 sits
+	# 456 px to the right (horizontal mismatch). Player drops past row 9
+	# to row 8's bridge → 355 px fall → tier-1 (-1 HP).
+	# Climbing back UP from row 10 to row 11 also fails: dx=390, v_gap=190,
+	# max_h ≈ 134, half-widths (330+160)/2 = 245 → max_center ≈ 379 < 390.
+	#
+	# Validator must flag BOTH down-path edges of row 10 and the up-path.
+	var layout: Array = [
+		_p("row8",  864.0, 2126.0, 330.0),  # bridge anchor — treat as single
+		_p("row9",  877.0, 1956.0, 285.0),
+		_p("row10", 421.0, 1771.0, 330.0),
+		_p("row11", 811.0, 1581.0, 160.0),
+	]
+	var down: Array = PathValidator.validate_down_path(layout)
+	var row10_down: Array = down.filter(func(i): return String(i.label) == "row10")
+	assert_eq(row10_down.size(), 2,
+		"row10 must have BOTH walk-off edges flagged (no tier-0 landing on either side)")
+	var sides: Array = row10_down.map(func(i): return String(i.side))
+	assert_true("left"  in sides, "row10 left walk-off must be flagged")
+	assert_true("right" in sides, "row10 right walk-off must be flagged")
+
+	var up: Array = PathValidator.validate_up_path(layout)
+	var row10_up: Array = up.filter(func(i): return String(i.label) == "row10")
+	assert_eq(row10_up.size(), 1,
+		"row10 must be flagged as having no reachable platform UP")
+
 func test_validate_all_combines_both_path_issues() -> void:
 	# A layout that breaks BOTH paths in different rows.
 	var layout: Array = [

@@ -901,15 +901,17 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		if ptype == "_hint":
 			ptype = _platform_type_hint
 
-		# Reachability only: snap X toward the previous platform when jumping
-		# UP from prev to current would be physically impossible. We
-		# intentionally do NOT enforce X-overlap or strict containment —
-		# Markov stays varied at the cost of occasional walk-off-edge falls
-		# (tier-1, ~1 HP). The fall-damage system handles the rest.
+		# Reachability snap: keep the jump UP from prev to current within
+		# physical reach AND leave 15% safety margin so the player isn't
+		# forced into pixel-perfect jumps. Without the margin a row can
+		# land exactly at the theoretical jump limit — feasible on paper,
+		# brutally tight in practice. We still don't enforce X-overlap or
+		# containment; the fall-damage tiers absorb walk-off mistakes.
 		if prev_x != -INF and kind == "single":
+			const REACH_SAFETY: float = 0.85
 			var v_gap: float = prev_y - ry  # > 0 means new row is higher
-			var max_center_dx: float = _max_horizontal_jump(v_gap) \
-					+ (prev_w + width) * 0.5
+			var max_center_dx: float = (_max_horizontal_jump(v_gap) \
+					+ (prev_w + width) * 0.5) * REACH_SAFETY
 			var dx: float = x - prev_x
 			if absf(dx) > max_center_dx:
 				x = prev_x + signf(dx) * max_center_dx
