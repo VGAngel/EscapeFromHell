@@ -8,13 +8,14 @@ extends Control
 const BTN_ALPHA   := 0.55
 const BTN_ALPHA_PRESSED := 0.75
 
-const SIZE_LARGE  := Vector2(120, 120)  # Jump
-const SIZE_MEDIUM := Vector2(90,  90)   # Staff
-const SIZE_SMALL  := Vector2(90,  90)   # Movement
+const SIZE_LARGE  := Vector2(150, 150)  # Jump
+const SIZE_MEDIUM := Vector2(115, 115)  # Staff / Pray
+const SIZE_SMALL  := Vector2(130, 130)  # Movement (thumb-sized)
 
-const GAP := 10.0
-const MARGIN_SIDE   := 20.0
-const MARGIN_BOTTOM := 8.0             # gap above sin bar
+const GAP_MOVE := 28.0                 # extra space between ← and →
+const GAP := 14.0
+const MARGIN_SIDE   := 28.0
+const MARGIN_BOTTOM := 16.0            # gap above sin bar
 
 # ── Public nodes (exposed for tests) ─────────────────────────────────────────
 var btn_left:  Button = null
@@ -38,7 +39,7 @@ func _build() -> void:
 	btn_right = _make_btn("→",  "move_right", SIZE_SMALL)
 	btn_jump  = _make_btn("↑",  "jump",       SIZE_LARGE)
 	btn_staff = _make_btn("⚔",  "action",     SIZE_MEDIUM)
-	btn_pray  = _make_btn("🙏", "pray",       SIZE_SMALL)
+	btn_pray  = _make_btn("🙏", "pray",       SIZE_MEDIUM)
 	btn_pray.visible = false
 
 # ── Layout ────────────────────────────────────────────────────────────────────
@@ -53,14 +54,14 @@ func _apply_safe_area() -> void:
 	# Left cluster: ← then →
 	var lx: float = MARGIN_SIDE
 	btn_left.position  = Vector2(lx, floor_y - SIZE_SMALL.y)
-	btn_right.position = Vector2(lx + SIZE_SMALL.x + GAP, floor_y - SIZE_SMALL.y)
+	btn_right.position = Vector2(lx + SIZE_SMALL.x + GAP_MOVE, floor_y - SIZE_SMALL.y)
 
 	# Right cluster: PRAY ← STAFF ← JUMP (right-to-left)
 	var rx: float = vp.x - MARGIN_SIDE - SIZE_LARGE.x
 	btn_jump.position  = Vector2(rx, floor_y - SIZE_LARGE.y)
 	btn_staff.position = Vector2(rx - SIZE_MEDIUM.x - GAP, floor_y - SIZE_MEDIUM.y)
-	btn_pray.position  = Vector2(rx - SIZE_MEDIUM.x - GAP - SIZE_SMALL.x - GAP,
-								 floor_y - SIZE_SMALL.y)
+	btn_pray.position  = Vector2(rx - SIZE_MEDIUM.x - GAP - SIZE_MEDIUM.x - GAP,
+								 floor_y - SIZE_MEDIUM.y)
 
 # ── Public API ────────────────────────────────────────────────────────────────
 func show_pray_button(value: bool) -> void:

@@ -4,6 +4,22 @@
 [ext_resource type="Script" path="res://scripts/ui/UpgradesScreen.gd" id="2_upgrades"]
 [ext_resource type="Script" path="res://scripts/ui/CollectionScreen.gd" id="3_collection"]
 
+[sub_resource type="StyleBoxFlat" id="MsgBoxStyle"]
+bg_color = Color(0.06, 0.04, 0.08, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.45, 0.4, 0.3, 0.55)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 24.0
+content_margin_top = 18.0
+content_margin_right = 24.0
+content_margin_bottom = 18.0
+
 [node name="Hub" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -44,30 +60,35 @@ offset_bottom = -70.0
 [node name="MessageBox" type="PanelContainer" parent="."]
 layout_mode = 1
 anchor_right = 1.0
-anchor_top = 0.55
-anchor_bottom = 0.8
-offset_left = 20.0
+anchor_top = 0.42
+anchor_bottom = 0.72
+offset_left = 40.0
 offset_top = 0.0
-offset_right = -20.0
+offset_right = -40.0
 offset_bottom = 0.0
+theme_override_styles/panel = SubResource("MsgBoxStyle")
 
 [node name="VBox" type="VBoxContainer" parent="MessageBox"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
+alignment = 1
 
 [node name="Speaker" type="Label" parent="MessageBox/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.7, 0.7, 0.5, 1.0)
 text = ""
+horizontal_alignment = 1
 
 [node name="Label" type="Label" parent="MessageBox/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 theme_override_colors/font_color = Color(0.95, 0.95, 0.86, 1.0)
 autowrap_mode = 3
 text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="BottomBar" type="HBoxContainer" parent="."]
 layout_mode = 1
