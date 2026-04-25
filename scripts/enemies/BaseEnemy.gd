@@ -435,14 +435,26 @@ func _collect_frames_in_dir(path: String) -> Array:
 	var dir := DirAccess.open(path)
 	if not dir:
 		return frames
-	var files: Array = []
+	# In exported builds DirAccess lists imported markers (.png.import or
+	# .png.remap) instead of the raw .png. Accept both, strip the suffix, and
+	# dedupe — load() resolves the canonical .png path to the .ctex anyway.
+	var seen := {}
 	dir.list_dir_begin()
 	var fname: String = dir.get_next()
 	while fname != "":
-		if not dir.current_is_dir() and fname.ends_with(".png") and not fname.begins_with("."):
-			files.append(fname)
+		if not dir.current_is_dir() and not fname.begins_with("."):
+			var canonical: String = ""
+			if fname.ends_with(".png"):
+				canonical = fname
+			elif fname.ends_with(".png.import"):
+				canonical = fname.substr(0, fname.length() - 7)   # strip ".import"
+			elif fname.ends_with(".png.remap"):
+				canonical = fname.substr(0, fname.length() - 6)   # strip ".remap"
+			if canonical != "" and not seen.has(canonical):
+				seen[canonical] = true
 		fname = dir.get_next()
 	dir.list_dir_end()
+	var files: Array = seen.keys()
 	files.sort()
 	for f in files:
 		var tex: Texture2D = load(path + f) as Texture2D
