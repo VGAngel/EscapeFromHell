@@ -434,12 +434,25 @@ func _zone_for_level(circle: int, idx_in_circle: int) -> Dictionary:
 	if override_tier != "":
 		tier = override_tier
 	var platform: Dictionary = ZONE_PLATFORMS.get(tier, ZONE_PLATFORMS["easy"])
+	# Tier still drives platform_type (stone vs moving), but width and
+	# spacing interpolate smoothly across the whole game so adjacent levels
+	# don't lurch (e.g. L1 → L2 used to halve platform width).
+	var t: float = _difficulty_t(circle, idx_in_circle)
+	var smooth_width:   float = lerpf(220.0, 110.0, t)
+	var smooth_spacing: float = lerpf(100.0, 200.0, t)
 	return {
 		"tier":           tier,
-		"spacing":        VERTICAL_SPACING.get(tier, VERTICAL_SPACING["easy"]),
+		"spacing":        smooth_spacing,
 		"platform_type":  platform.get("type", "stone"),
-		"platform_width": platform.get("width", 220.0),
+		"platform_width": smooth_width,
 	}
+
+## Smooth global difficulty parameter in [0, 1] from level 1 (t=0) to level
+## 99 (t=1). Used to interpolate platform width and vertical spacing so the
+## curve is continuous instead of stepped per tier.
+func _difficulty_t(circle: int, idx_in_circle: int) -> float:
+	var global_level: float = float((circle - 1) * 10 + idx_in_circle)
+	return clampf((global_level - 1.0) / 98.0, 0.0, 1.0)
 
 func _zone_tier(circle: int, idx_in_circle: int) -> String:
 	# Base tier from index within circle.
