@@ -10,7 +10,9 @@ const FADE_DURATION := 0.3
 
 var _root:       ColorRect    = null
 var _slots_box:  VBoxContainer = null
-var _confirm_slot: int = -1   # slot awaiting delete confirmation (-1 = none)
+var _confirm_slot:  int = -1   # slot awaiting delete confirmation (-1 = none)
+var _creating_slot: int = -1   # slot in name-entry mode (-1 = none)
+var _name_buffer:   String = ""
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -25,7 +27,9 @@ func _ready() -> void:
 
 func open() -> void:
 	visible = true
-	_confirm_slot = -1
+	_confirm_slot  = -1
+	_creating_slot = -1
+	_name_buffer   = ""
 	_refresh()
 	var tw := create_tween()
 	tw.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
@@ -62,10 +66,33 @@ func _refresh() -> void:
 
 # ── Slot actions ──────────────────────────────────────────────────────────────
 
+## Pick an existing profile and close.
 func _select_slot(slot: int) -> void:
 	if SaveManager:
 		SaveManager.load_slot(slot)
 	close()
+
+## Switch a card to "enter your name" mode.
+func _begin_create(slot: int) -> void:
+	_creating_slot = slot
+	_name_buffer   = ""
+	_refresh()
+
+## Confirm new-profile creation: load the slot, persist the name, close.
+func _confirm_create(slot: int) -> void:
+	if SaveManager:
+		SaveManager.load_slot(slot)
+		var nm: String = _name_buffer.strip_edges()
+		if nm.is_empty():
+			nm = "Профіль %d" % (slot + 1)
+		if SaveManager.has_method("set_profile_name"):
+			SaveManager.set_profile_name(nm)
+	close()
+
+func _cancel_create() -> void:
+	_creating_slot = -1
+	_name_buffer   = ""
+	_refresh()
 
 func _request_delete(slot: int) -> void:
 	if _confirm_slot == slot:
@@ -89,6 +116,7 @@ func _make_slot_card(info: Dictionary) -> Control:
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(0, 130)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.10, 0.08, 0.14) if not pending_confirm else Color(0.20, 0.06, 0.06)
@@ -107,6 +135,7 @@ func _make_slot_card(info: Dictionary) -> Control:
 
 	var hbox := HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 12)
+	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.add_child(hbox)
 
 	# ── Left: info ────────────────────────────────────────────────────────────
@@ -148,6 +177,29 @@ func _make_slot_card(info: Dictionary) -> Control:
 		lbl_empty.add_theme_color_override("font_color", Color(0.40, 0.38, 0.46))
 		info_col.add_child(lbl_empty)
 
+	# Empty slot in name-entry mode: replace the info column with a LineEdit
+	# row and short Створити/Скасувати buttons.
+	if not exists and _creating_slot == slot:
+		# Drop the auto-built info column and rebuild in entry mode.
+		for child in info_col.get_children():
+			child.queue_free()
+		var prompt := Label.new()
+		prompt.text = "Введіть ім'я:"
+		prompt.add_theme_font_size_override("font_size", 13)
+		prompt.add_theme_color_override("font_color", Color(0.60, 0.58, 0.68))
+		info_col.add_child(prompt)
+
+		var name_edit := LineEdit.new()
+		name_edit.placeholder_text = "Профіль %d" % (slot + 1)
+		name_edit.max_length = 24
+		name_edit.text = _name_buffer
+		name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_edit.add_theme_font_size_override("font_size", 16)
+		name_edit.text_changed.connect(func(t: String) -> void: _name_buffer = t)
+		name_edit.text_submitted.connect(func(_t: String) -> void: _confirm_create(slot))
+		info_col.add_child(name_edit)
+		name_edit.grab_focus.call_deferred()
+
 	# ── Right: action buttons ─────────────────────────────────────────────────
 	var btns_col := VBoxContainer.new()
 	btns_col.add_theme_constant_override("separation", 6)
@@ -165,9 +217,17 @@ func _make_slot_card(info: Dictionary) -> Control:
 		)
 		btn_del.pressed.connect(func() -> void: _request_delete(slot))
 		btns_col.add_child(btn_del)
+	elif _creating_slot == slot:
+		var btn_ok := _card_btn("Створити", Color(0.10, 0.18, 0.10), Color("#88DD88"))
+		btn_ok.pressed.connect(func() -> void: _confirm_create(slot))
+		btns_col.add_child(btn_ok)
+
+		var btn_cancel := _card_btn("Скасувати", Color(0.10, 0.10, 0.14), Color(0.7, 0.7, 0.7))
+		btn_cancel.pressed.connect(_cancel_create)
+		btns_col.add_child(btn_cancel)
 	else:
 		var btn_new := _card_btn("Новий\nПрофіль", Color(0.10, 0.18, 0.10), Color("#88DD88"))
-		btn_new.pressed.connect(func() -> void: _select_slot(slot))
+		btn_new.pressed.connect(func() -> void: _begin_create(slot))
 		btns_col.add_child(btn_new)
 
 	return card
@@ -238,11 +298,13 @@ func _build_header(parent: VBoxContainer) -> void:
 
 func _build_slots_area(parent: VBoxContainer) -> void:
 	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	parent.add_child(scroll)
 
 	var margin := MarginContainer.new()
+	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.add_theme_constant_override("margin_left",   16)
 	margin.add_theme_constant_override("margin_right",  16)
 	margin.add_theme_constant_override("margin_top",    16)
@@ -250,5 +312,6 @@ func _build_slots_area(parent: VBoxContainer) -> void:
 	scroll.add_child(margin)
 
 	_slots_box = VBoxContainer.new()
+	_slots_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_slots_box.add_theme_constant_override("separation", 16)
 	margin.add_child(_slots_box)
