@@ -95,12 +95,14 @@ func _load_config() -> void:
 			_zoom_presets[String(k)] = float(val)
 
 func _apply_smoothing_and_deadzone() -> void:
-	position_smoothing_enabled = _smoothing_enabled
-	position_smoothing_speed   = _smoothing_speed
+	# The project has physics_interpolation=true, so Godot already smooths the
+	# render position of the player (and thus this child camera) between
+	# physics ticks. Enabling Camera2D.position_smoothing on top fights that
+	# interpolation and produces visible jitter — leave it OFF.
+	position_smoothing_enabled = false
 
-	# Deadzone is expressed in pixels; Godot's drag margins are 0..1 fractions
-	# of the viewport. Convert using the project viewport size (1080×1920) so
-	# the feel is consistent regardless of the device's actual aspect ratio.
+	# Drag margins still help: they create a deadzone where the camera doesn't
+	# chase tiny motions, killing jitter from sub-pixel velocity noise.
 	var vp_size: Vector2 = Vector2(
 		ProjectSettings.get_setting("display/window/size/viewport_width", 1080),
 		ProjectSettings.get_setting("display/window/size/viewport_height", 1920)
@@ -114,7 +116,13 @@ func _apply_smoothing_and_deadzone() -> void:
 	drag_top_margin         = hy
 	drag_bottom_margin      = hy
 
+	# Smoothing the limit clamp makes it glide rather than snap when entering
+	# a clamped edge — combined with no position_smoothing this is fine.
 	limit_smoothed = true
+
+	# Camera updates its own logic in idle process so offset transitions
+	# happen at render rate (smooth) instead of physics rate (60 Hz steps).
+	process_callback = Camera2D.CAMERA2D_PROCESS_IDLE
 
 func _apply_default_zoom() -> void:
 	zoom = Vector2(_zoom_default, _zoom_default)
