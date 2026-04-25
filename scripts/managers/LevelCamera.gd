@@ -55,8 +55,10 @@ var _fall_offset_y:           float = 0.0
 const _POSITION_FOLLOW_SPEED := 8.0
 
 # How fast offset.x (lookahead) and offset.y (fall-look) chase their
-# target each second. Lower than position so flips feel deliberate.
-const _OFFSET_FOLLOW_SPEED := 3.0
+# target each second. Lower than position so flips feel deliberate —
+# 1.4 settles in ~1.5 s, gentle enough that the 240 px swing on a
+# direction flip glides instead of whipping.
+const _OFFSET_FOLLOW_SPEED := 1.4
 
 # Stay-up offset from player origin. Equivalent to the old Camera2D
 # position = (0, -80) in Player.tscn — keeps the player's torso/head
