@@ -549,6 +549,9 @@ func _on_respawn() -> void:
 		return
 	var pos: Vector2 = _respawn_position if _respawn_position != Vector2.ZERO \
 		else _spawn_point.global_position
+	# Lift respawn slightly so the player has time to react and lands on the
+	# first platform instead of falling straight past it.
+	pos.y -= 80.0
 	_player.respawn(pos)
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		if enemy.has_method("reset_to_patrol"):
