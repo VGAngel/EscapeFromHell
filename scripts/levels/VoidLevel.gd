@@ -44,9 +44,9 @@ func _setup_camera_zoom() -> void:
 	if cam and cam.has_method("apply_zoom_preset"):
 		cam.apply_zoom_preset("void_levels")
 
-# ── Soul collected override ────────────────────────────────────────────────────
+# ── Soul pickup override ──────────────────────────────────────────────────────
 
-func _on_soul_collected(soul: Node) -> void:
+func _on_soul_pickup_started(soul: Node) -> void:
 	super(soul)
 	_update_exit_indicator()
 	if _souls_found >= _souls_required and _souls_required > 0:
