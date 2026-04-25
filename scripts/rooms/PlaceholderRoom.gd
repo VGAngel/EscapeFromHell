@@ -67,6 +67,7 @@ const WALL_TEXTURES_BY_TILESET := {
 		"res://Assets/OurAssets/walls/circle1/base_a.png",
 		"res://Assets/OurAssets/walls/circle1/base_b.png",
 		"res://Assets/OurAssets/walls/circle1/base_c.png",
+		"res://Assets/OurAssets/walls/circle1/base_d.png",
 	],
 }
 
