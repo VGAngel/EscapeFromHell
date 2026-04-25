@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://player1tscn01"]
 
 [ext_resource type="Script" uid="uid://bml4i5up7waaq" path="res://scripts/Player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/managers/LevelCamera.gd" id="2_levelcam"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
 radius = 30.0
@@ -121,6 +122,4 @@ visible = false
 position = Vector2(0.0, -80.0)
 zoom = Vector2(1.0, 1.0)
 process_callback = 0
-position_smoothing_enabled = true
-position_smoothing_speed = 8.0
-limit_smoothed = true
+script = ExtResource("2_levelcam")

@@ -137,12 +137,8 @@ func _ready() -> void:
 	_staff_area.monitoring = false
 	_setup_sin_shader()
 	_load_player_frames()
-	# Level.tscn ships with its own Camera2D at (0,0); that one becomes
-	# current first since it's earlier in the tree. Force the Player camera
-	# to take over so it follows us instead.
-	var cam: Camera2D = get_node_or_null("Camera2D") as Camera2D
-	if cam:
-		cam.make_current()
+	# LevelCamera (attached to the Camera2D child) calls make_current() in
+	# its own _ready, so no manual takeover needed here.
 
 func _setup_sin_shader() -> void:
 	for path in SIN_TEXTURES:

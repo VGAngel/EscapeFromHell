@@ -32,8 +32,3 @@ position = Vector2(80.0, -64.0)
 [node name="Exit" type="Node2D" parent="."]
 position = Vector2(640.0, -64.0)
 script = ExtResource("8_portal")
-
-[node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(1.0, 1.0)
-process_callback = 0
-limit_smoothed = true

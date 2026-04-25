@@ -31,8 +31,3 @@ monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Exit"]
 shape = SubResource("RectangleShape2D_exit")
-
-[node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(1.0, 1.0)
-process_callback = 0
-limit_smoothed = true

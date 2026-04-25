@@ -18,9 +18,6 @@ extends "res://scripts/levels/LevelBase.gd"
 #   └── Exit (Area2D)
 #       └── LockedIcon (Node2D / Sprite2D / Label)  ← optional visual indicator
 
-## Zoom applied to the active Camera2D so the player can see more of the cave.
-const CAMERA_ZOOM := Vector2(0.8, 0.8)
-
 ## Scale overshoot used in the exit pulse tween.
 const EXIT_PULSE_SCALE := Vector2(1.25, 1.25)
 
@@ -39,22 +36,13 @@ func _ready() -> void:
 
 # ── Camera ────────────────────────────────────────────────────────────────────
 
+## Pull the "void_levels" zoom preset from camera_config.json. Deferred one
+## frame so the player (and its LevelCamera) is in the tree first.
 func _setup_camera_zoom() -> void:
-	var cam: Camera2D = _find_camera()
-	if cam:
-		cam.zoom = CAMERA_ZOOM
-
-func _find_camera() -> Camera2D:
-	# 1. Active camera reported by the viewport (covers Camera2D on Player)
-	if get_viewport():
-		var cam := get_viewport().get_camera_2d()
-		if cam:
-			return cam
-	# 2. Fallback: direct Camera2D child of the level
-	for child in get_children():
-		if child is Camera2D:
-			return child as Camera2D
-	return null
+	await get_tree().process_frame
+	var cam: Camera2D = get_viewport().get_camera_2d() if get_viewport() else null
+	if cam and cam.has_method("apply_zoom_preset"):
+		cam.apply_zoom_preset("void_levels")
 
 # ── Soul collected override ────────────────────────────────────────────────────
 
