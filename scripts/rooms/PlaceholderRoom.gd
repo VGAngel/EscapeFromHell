@@ -71,10 +71,6 @@ const WALL_TEXTURES_BY_TILESET := {
 	],
 }
 
-# Height of one wall-texture section in pixels — one screen tall, so a shaft
-# of room_count=N screens draws N textured blocks per side.
-const WALL_SECTION_HEIGHT: float = 1920.0
-
 # Row Y positions — computed in _init_zone() from difficulty spacing.
 # Based on: floor_y - spacing * N.
 # Ensure _row_high leaves enough clearance for PLAYER_HEIGHT + WALL_T above.
@@ -1194,12 +1190,13 @@ func _ensure_wall_textures_loaded() -> void:
 			if tex:
 				_wall_textures_cache.append(tex)
 
-## Draws one side wall as a stack of textured sections, one texture per
-## WALL_SECTION_HEIGHT. Texture pick per section is seeded by level_id so
-## the same level re-renders identically but adjacent levels differ. Uses a
-## native-width vertical slice from each source texture (random x-offset)
-## rather than squashing the full image into the narrow wall — otherwise a
-## 768-px source squeezed to a 60-px wall turns each stone into a thin streak.
+## Draws one side wall as a stack of textured sections at native pixel scale —
+## no horizontal or vertical stretching. Each section uses the source texture's
+## own height; if the remaining shaft height is shorter, we crop both source
+## and dest to match (taking the top of the texture). Texture pick per section
+## is seeded by level_id so the same level re-renders identically but adjacent
+## levels differ. A native-width vertical slice (random x-offset) is sampled
+## per section so a 768-px source isn't squashed into the 60-px wall.
 func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
 	if _wall_textures_cache.is_empty():
 		return
@@ -1213,13 +1210,16 @@ func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
 		var tex_h: float = float(tex.get_height())
 		var slice_w: float = minf(width, tex_w)
 		var x_off: float = rng.randf() * maxf(0.0, tex_w - slice_w)
-		var h: float = minf(WALL_SECTION_HEIGHT, room_height - y)
+		# Use the texture's native height as the section size — no vertical stretch.
+		# The last section may be shorter than the texture, in which case we crop
+		# both src and dest by the same amount so the ratio stays 1:1.
+		var section_h: float = minf(tex_h, room_height - y)
 		draw_texture_rect_region(
 			tex,
-			Rect2(x, y, width, h),
-			Rect2(x_off, 0.0, slice_w, tex_h)
+			Rect2(x, y, width, section_h),
+			Rect2(x_off, 0.0, slice_w, section_h)
 		)
-		y += WALL_SECTION_HEIGHT
+		y += tex_h
 
 func _draw() -> void:
 	_ensure_wall_textures_loaded()
