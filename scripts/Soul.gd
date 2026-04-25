@@ -95,6 +95,9 @@ func _process(delta: float) -> void:
 func _do_pickup() -> void:
 	if not is_instance_valid(_player_nearby):
 		return
+	# Player rejects pickup if already carrying a soul — don't consume self.
+	if _player_nearby.has_method("is_carrying") and _player_nearby.is_carrying():
+		return
 	# Pass a string soul_id so Player.pick_up_soul() can store it.
 	var soul_id_str: String = str(_soul_id) if _soul_id != 0 else str(get_instance_id())
 	_player_nearby.pick_up_soul(soul_id_str)

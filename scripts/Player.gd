@@ -234,9 +234,9 @@ func _apply_upgrades() -> void:
 	if SaveManager.get_upgrade_level("jump") > 0:
 		jump_force *= 1.0 + 0.20 * SaveManager.get_upgrade_level("jump")
 	if SaveManager.get_upgrade_level("staff_reach") > 0:
-		staff_range += 40.0
+		staff_range += 40.0 * SaveManager.get_upgrade_level("staff_reach")
 	if SaveManager.get_upgrade_level("staff_cooldown") > 0:
-		staff_cooldown -= 1.5
+		staff_cooldown = maxf(0.5, staff_cooldown - 1.5 * SaveManager.get_upgrade_level("staff_cooldown"))
 	_upgrade_quick_pickup      = SaveManager.get_upgrade_level("quick_pickup") > 0
 	_upgrade_double_jump       = SaveManager.get_upgrade_level("double_jump") > 0
 	_upgrade_soft_landing      = SaveManager.get_upgrade_level("soft_landing") > 0
@@ -470,6 +470,9 @@ func _take_damage(amount: int) -> void:
 func _die() -> void:
 	state = State.DEAD
 	velocity = Vector2.ZERO
+	# Awaited staff swings won't reach their cleanup line if we die mid-swing.
+	if _staff_area:
+		_staff_area.monitoring = false
 	if _anim:
 		_anim.play("player_death")
 	_shake_camera(0.3, 12.0)
@@ -586,12 +589,17 @@ func _update_sin_shader(delta: float) -> void:
 		mat.set_shader_parameter("texture_next", next_tex)
 		mat.set_shader_parameter("blend_t", _sin_blend_t)
 
-	# modulate — плавний перехід між кольорами станів
+	# modulate — плавний перехід між кольорами станів.
+	# Зберігаємо існуючу alpha, щоб не перебивати fade-in після respawn.
 	var target_mod: Color = SIN_MODULATES[target_idx].lerp(SIN_MODULATES[next_idx], local_t)
 	_sin_modulate = _sin_modulate.lerp(target_mod, delta * SIN_BLEND_SPEED)
-	_sprite.modulate = _sin_modulate
+	var tinted := _sin_modulate
+	tinted.a = _sprite.modulate.a
+	_sprite.modulate = tinted
 	if _anim_sprite:
-		_anim_sprite.modulate = _sin_modulate
+		var tinted_anim := _sin_modulate
+		tinted_anim.a = _anim_sprite.modulate.a
+		_anim_sprite.modulate = tinted_anim
 
 # ── Public helpers ────────────────────────────────────────────────────────────
 func _shake_camera(duration: float, intensity: float) -> void:

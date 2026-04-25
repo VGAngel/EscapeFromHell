@@ -198,7 +198,8 @@ func _enter_alert() -> void:
 
 func _do_alert(_delta: float) -> void:
 	if _alert_timer <= 0.0:
-		_alert_icon.visible = false
+		if _alert_icon:
+			_alert_icon.visible = false
 		_enter_chase()
 
 # ── CHASE ─────────────────────────────────────────────────────────────────────
@@ -306,8 +307,8 @@ func stun(duration: float) -> void:
 
 func receive_knockback(direction: Vector2, stun_duration: float) -> void:
 	state = State.STUNNED
-	_stun_timer = stun_duration
-	_hit_cooldown = stun_duration
+	_stun_timer = maxf(_stun_timer, stun_duration)
+	_hit_cooldown = maxf(_hit_cooldown, stun_duration)
 	velocity = direction
 	_play_sound("stun")
 
