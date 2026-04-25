@@ -57,7 +57,7 @@ const ZONE_PLATFORMS := {
 # to bucket N-1 (100 px, level 99). This keeps adjacent levels close
 # in average width while still letting individual platforms vary —
 # instead of every platform on a level being identical.
-const PLATFORM_WIDTH_BUCKETS: Array[float] = [220.0, 190.0, 160.0, 130.0, 100.0]
+const PLATFORM_WIDTH_BUCKETS: Array[float] = [220.0, 190.0, 160.0, 130.0, 100.0, 70.0]
 const PLATFORM_WIDTH_SPREAD: float = 1.5
 
 # ── Public result type ────────────────────────────────────────────────────────
