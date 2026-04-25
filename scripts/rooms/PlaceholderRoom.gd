@@ -841,16 +841,19 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 	# Adjacent zones dominate; cross-room jumps (±3) are forbidden because
 	# even a wide-on-wide pair (484+484 = 968 px combined) can't overlap a
 	# 678 px center-to-center gap, leaving the player to fall through into
-	# the wall. ±2 also de-weighted for the same reason at narrow widths.
-	# Anti-3-in-a-row stay-veto in _markov_pick_zone keeps the path moving
-	# even when "stay" gets the highest base weight.
-	var weight_by_delta: Array[float] = [0.20, 0.62, 0.08, 0.0]
+	# the wall. ±2 stays modest — too high and narrow widths in distant
+	# zones leave gaps. Stay weight is intentionally low (0.05) so the
+	# player doesn't see 3-4 platforms stacked in the same X column;
+	# anti-clustering veto in _markov_pick_zone enforces that strictly.
+	var weight_by_delta: Array[float] = [0.05, 0.65, 0.25, 0.05]
 
 	var section_per_row: Array[String] = _assign_sections(rows.size(), rng)
 
 	var layout: Array[Dictionary] = []
 	var prev_zone: int = rng.randi() % ZONE_COUNT
-	var prev_prev: int = -1
+	# Sliding window of last 3 zones for anti-clustering veto.
+	var prev_prev:      int = -1
+	var prev_prev_prev: int = -1
 	var prev_kind: String = ""
 	# Reachability state: anchor X and full width of the previous platform the
 	# player would launch from (for bridges, the side closer to the next zone).
@@ -863,7 +866,7 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		var profile: Dictionary = SECTION_PROFILES[section_name]
 
 		var zone: int = _markov_pick_zone(rng, prev_zone, prev_prev,
-				ZONE_COUNT, weight_by_delta)
+				prev_prev_prev, ZONE_COUNT, weight_by_delta)
 
 		# Y jitter so the grid doesn't read as one. Bounded so two adjacent
 		# rows can't BOTH jitter to the extreme and end up > MAX_JUMP_HEIGHT
@@ -929,8 +932,9 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		prev_x = x
 		prev_w = width if kind == "single" else _platform_width
 		prev_y = ry
-		prev_prev = prev_zone
-		prev_zone = zone
+		prev_prev_prev = prev_prev
+		prev_prev      = prev_zone
+		prev_zone      = zone
 		prev_kind = kind
 
 	return layout
@@ -1004,9 +1008,13 @@ func _max_horizontal_jump(v_gap: float) -> float:
 	return lerpf(SAME_LEVEL_REACH, MAX_UP_REACH, t) * 1.15
 
 func _markov_pick_zone(rng: RandomNumberGenerator, prev: int, prev_prev: int,
-		zone_count: int, weight_by_delta: Array[float]) -> int:
-	# Build candidate weights for this step. Skip the candidate that would form
-	# three rows in a row in the same zone (prev == prev_prev == candidate).
+		prev_prev_prev: int, zone_count: int,
+		weight_by_delta: Array[float]) -> int:
+	# Build candidate weights for this step. Veto candidates that would
+	# create visually-stuck columns:
+	#   • 3 same zones in a row  (z == prev == prev_prev)
+	#   • 3 of last 4 picks in the same zone (catches "A A B A" → A again)
+	# Sliding window keeps the path varied without forcing a hard zigzag.
 	var weights: Array[float] = []
 	weights.resize(zone_count)
 	var total: float = 0.0
@@ -1015,8 +1023,17 @@ func _markov_pick_zone(rng: RandomNumberGenerator, prev: int, prev_prev: int,
 		var w: float = 0.0
 		if d < weight_by_delta.size():
 			w = weight_by_delta[d]
+		# Veto: would make three consecutive picks in the same zone.
 		if z == prev and prev == prev_prev:
-			w = 0.0  # anti-repeat veto
+			w = 0.0
+		# Veto: would make 3 of the last 4 picks (incl. this one) in zone z.
+		# Counts how many of {prev, prev_prev, prev_prev_prev} equal z.
+		var window_hits: int = 0
+		if z == prev:           window_hits += 1
+		if z == prev_prev:      window_hits += 1
+		if z == prev_prev_prev: window_hits += 1
+		if window_hits >= 2:    # this pick would push window total to 3+
+			w = 0.0
 		weights[z] = w
 		total += w
 	if total <= 0.0:
