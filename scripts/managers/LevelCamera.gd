@@ -133,8 +133,11 @@ func _apply_camera_settings() -> void:
 	# clamp rather than snapping when the player runs at the level edge.
 	limit_smoothed = true
 
-	# Update at render rate so chase is smooth on high-refresh screens.
-	process_callback = Camera2D.CAMERA2D_PROCESS_IDLE
+	# Don't touch process_callback: with physics_interpolation enabled at
+	# the project level, Godot forces Camera2D to physics process and warns
+	# if we override that. Our follow logic lives in _process (render rate)
+	# anyway — the Camera2D's own process callback is irrelevant since we
+	# disabled its built-in smoothing.
 
 func _apply_default_zoom() -> void:
 	zoom = Vector2(_zoom_default, _zoom_default)
