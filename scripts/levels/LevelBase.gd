@@ -448,10 +448,13 @@ func _on_soul_dropped(_soul_id: String, drop_position: Vector2) -> void:
 	if not soul_scene or not _room_container:
 		_carried_soul_data = {}
 		return
+	# Drop straight down to the nearest platform so the soul rests on the
+	# ground rather than hanging in mid-air at the death position.
+	var grounded_position: Vector2 = _drop_to_ground(drop_position)
 	var soul: Node2D = soul_scene.instantiate()
 	# Convert world drop position to _room_container local space before _ready()
 	# captures _base_y for the bobbing animation.
-	soul.position = drop_position - _room_container.global_position
+	soul.position = grounded_position - _room_container.global_position
 	_room_container.add_child(soul)
 	var soul_type: String = _carried_soul_data.get("soul_type", "innocent")
 	if soul.has_method("set_soul_type"):
@@ -467,6 +470,23 @@ func _on_soul_dropped(_soul_id: String, drop_position: Vector2) -> void:
 	if not _souls_in_level.has(soul):
 		_souls_in_level.append(soul)
 	_carried_soul_data = {}
+
+## Cast a ray downward from `from` to find the first platform/floor and
+## return a position that rests on it. Falls back to the original point
+## if nothing is hit (e.g. the player died over a pit).
+func _drop_to_ground(from: Vector2) -> Vector2:
+	var space := get_world_2d().direct_space_state if is_inside_tree() else null
+	if not space:
+		return from
+	var query := PhysicsRayQueryParameters2D.create(from, from + Vector2(0, 4000.0))
+	query.exclude = []
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	var hit := space.intersect_ray(query)
+	if hit.is_empty():
+		return from
+	# Sit the soul a bit above the floor so the bobbing animation reads well.
+	return Vector2(from.x, hit["position"].y - 40.0)
 
 func _on_soul_delivered(soul_id: String) -> void:
 	_souls_found += 1
