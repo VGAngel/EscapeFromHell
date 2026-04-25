@@ -80,7 +80,9 @@ var _row_high: float = 0.0
 
 # Zone data populated from LevelGenerator.get_zone(level_id) in _init_zone().
 var _zone_tier:          String = "medium"
-var _platform_width:     float  = 160.0
+var _platform_width:     float  = 160.0  # mean — used as fallback / for bridges
+var _platform_width_buckets: Array = []
+var _platform_width_weights: Array = []
 var _platform_type_hint: String = "stone"
 
 # Bridge rows added by _init_zone() when the computed row spacing exceeds
@@ -253,6 +255,8 @@ func _init_zone() -> void:
 		_zone_tier          = zone.get("tier", "medium")
 		spacing             = zone.get("spacing", spacing)
 		_platform_width     = zone.get("platform_width", _platform_width)
+		_platform_width_buckets = zone.get("platform_width_buckets", [])
+		_platform_width_weights = zone.get("platform_width_weights", [])
 		_platform_type_hint = zone.get("platform_type", _platform_type_hint)
 
 	# Vertical rooms: stretch row spacing toward the jump ceiling so the screen
@@ -723,6 +727,15 @@ func _add_swamp_zone() -> void:
 	zone.set("zone_size", Vector2(swamp_width, 48.0))
 	add_child(zone)
 
+## Sample a base platform width from the level's weighted bucket
+## distribution. Falls back to the per-level mean (_platform_width) if the
+## bucket arrays were not provided.
+func _sample_base_platform_width(rng: RandomNumberGenerator) -> float:
+	if _platform_width_buckets.is_empty() or _platform_width_weights.is_empty():
+		return _platform_width
+	return LevelGenerator.sample_platform_width(
+			_platform_width_buckets, _platform_width_weights, rng)
+
 func _add_main_platforms() -> void:
 	var col_l: float = room_width * 0.22
 	var col_c: float = room_width * 0.50
@@ -876,7 +889,11 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 			x = (room_width * 0.20) if zone * 2 < ZONE_COUNT else (room_width * 0.80)
 
 		var width_mult: float = _sample_weighted(profile["widths"], rng)
-		var width: float = _platform_width * width_mult
+		# Sample the BASE width from the level's weighted bucket distribution
+		# instead of using a single tier-wide constant — gives smooth global
+		# difficulty progression while keeping section-level variety.
+		var base_w: float = _sample_base_platform_width(rng)
+		var width: float = base_w * width_mult
 		var ptype: String = _sample_weighted_str(profile["types"], rng)
 		if ptype == "_hint":
 			ptype = _platform_type_hint

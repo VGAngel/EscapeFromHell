@@ -51,6 +51,15 @@ const ZONE_PLATFORMS := {
 	"extreme": { "type": "moving_vertical",   "width": 110.0 },
 }
 
+# Platform width bucket distribution for the smooth difficulty curve.
+# Each level samples its platforms from these widths, weighted by a
+# triangular kernel whose center slides from bucket 0 (220 px, level 1)
+# to bucket N-1 (100 px, level 99). This keeps adjacent levels close
+# in average width while still letting individual platforms vary —
+# instead of every platform on a level being identical.
+const PLATFORM_WIDTH_BUCKETS: Array[float] = [220.0, 190.0, 160.0, 130.0, 100.0]
+const PLATFORM_WIDTH_SPREAD: float = 1.5
+
 # ── Public result type ────────────────────────────────────────────────────────
 
 class GeneratedLevel:
@@ -73,8 +82,14 @@ class GeneratedLevel:
 	var vertical_spacing:   float   = 280.0
 	# Recommended platform type for procedural rooms in this level.
 	var platform_type_hint: String  = "stone"
-	# Recommended platform width in pixels (height always = PLATFORM_HEIGHT).
+	# Mean recommended platform width in pixels (height always = PLATFORM_HEIGHT).
+	# Kept for debug overlay / back-compat; rooms should sample per platform
+	# from `platform_width_buckets` weighted by `platform_width_weights`.
 	var platform_width:     float   = 220.0
+	# Per-level weighted distribution of platform widths. See
+	# LevelGenerator.PLATFORM_WIDTH_BUCKETS for the bucket values.
+	var platform_width_buckets: Array[float] = []
+	var platform_width_weights: Array[float] = []
 
 # ── Internal data ─────────────────────────────────────────────────────────────
 
@@ -175,6 +190,8 @@ func generate(level_id: int) -> GeneratedLevel:
 	result.vertical_spacing   = zone.get("spacing", VERTICAL_SPACING["easy"])
 	result.platform_type_hint = zone.get("platform_type", "stone")
 	result.platform_width     = zone.get("platform_width", 220.0)
+	result.platform_width_buckets = zone.get("platform_width_buckets", PLATFORM_WIDTH_BUCKETS)
+	result.platform_width_weights = zone.get("platform_width_weights", [])
 
 	result.room_scenes = _pick_rooms(circle, result.room_count)
 	result.soul_data   = _soul_for_level(level_id, circle)
@@ -434,25 +451,74 @@ func _zone_for_level(circle: int, idx_in_circle: int) -> Dictionary:
 	if override_tier != "":
 		tier = override_tier
 	var platform: Dictionary = ZONE_PLATFORMS.get(tier, ZONE_PLATFORMS["easy"])
-	# Tier still drives platform_type (stone vs moving), but width and
-	# spacing interpolate smoothly across the whole game so adjacent levels
-	# don't lurch (e.g. L1 → L2 used to halve platform width).
+	# Tier still drives platform_type (stone vs moving). Width and spacing
+	# come from a global smooth curve so adjacent levels don't lurch.
 	var t: float = _difficulty_t(circle, idx_in_circle)
-	var smooth_width:   float = lerpf(220.0, 110.0, t)
+	var weights: Array[float] = _platform_width_weights_for_t(t)
+	var mean_width: float = _weighted_mean(PLATFORM_WIDTH_BUCKETS, weights)
 	var smooth_spacing: float = lerpf(100.0, 200.0, t)
 	return {
 		"tier":           tier,
 		"spacing":        smooth_spacing,
 		"platform_type":  platform.get("type", "stone"),
-		"platform_width": smooth_width,
+		"platform_width": mean_width,
+		"platform_width_buckets": PLATFORM_WIDTH_BUCKETS,
+		"platform_width_weights": weights,
 	}
 
 ## Smooth global difficulty parameter in [0, 1] from level 1 (t=0) to level
-## 99 (t=1). Used to interpolate platform width and vertical spacing so the
-## curve is continuous instead of stepped per tier.
+## 99 (t=1). Used to slide the platform width distribution and vertical
+## spacing across the whole game.
 func _difficulty_t(circle: int, idx_in_circle: int) -> float:
 	var global_level: float = float((circle - 1) * 10 + idx_in_circle)
 	return clampf((global_level - 1.0) / 98.0, 0.0, 1.0)
+
+## Triangular kernel over PLATFORM_WIDTH_BUCKETS. center slides from
+## bucket 0 at t=0 to bucket N-1 at t=1; spread controls how many
+## adjacent buckets get non-zero weight.
+##   t=0   → [1.00, 0.33, 0,    0,    0   ]  (mostly wide)
+##   t=0.5 → [0,    0.33, 1.00, 0.33, 0   ]  (mostly mid)
+##   t=1   → [0,    0,    0,    0.33, 1.00]  (mostly narrow)
+func _platform_width_weights_for_t(t: float) -> Array[float]:
+	var n: int = PLATFORM_WIDTH_BUCKETS.size()
+	var center: float = t * float(n - 1)
+	var out: Array[float] = []
+	for i in n:
+		var w: float = maxf(0.0, 1.0 - absf(float(i) - center) / PLATFORM_WIDTH_SPREAD)
+		out.append(w)
+	return out
+
+func _weighted_mean(values: Array, weights: Array) -> float:
+	var total_w: float = 0.0
+	var total_v: float = 0.0
+	for i in values.size():
+		var w: float = float(weights[i])
+		total_v += float(values[i]) * w
+		total_w += w
+	return total_v / total_w if total_w > 0.0 else float(values[0])
+
+## Sample a platform width from the per-level weighted bucket distribution.
+## Pass the GeneratedLevel's `platform_width_buckets` and
+## `platform_width_weights`. Falls back to the first bucket if weights are
+## empty. Uses the supplied RNG so per-room layouts stay deterministic.
+static func sample_platform_width(buckets: Array, weights: Array,
+		rng: RandomNumberGenerator) -> float:
+	if buckets.is_empty():
+		return 160.0
+	if weights.size() != buckets.size():
+		return float(buckets[0])
+	var total_w: float = 0.0
+	for w in weights:
+		total_w += float(w)
+	if total_w <= 0.0:
+		return float(buckets[0])
+	var pick: float = rng.randf() * total_w
+	var acc: float = 0.0
+	for i in buckets.size():
+		acc += float(weights[i])
+		if pick <= acc:
+			return float(buckets[i])
+	return float(buckets[buckets.size() - 1])
 
 func _zone_tier(circle: int, idx_in_circle: int) -> String:
 	# Base tier from index within circle.
