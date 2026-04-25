@@ -297,12 +297,14 @@ func reset_to_patrol() -> void:
 func stun(duration: float) -> void:
 	state = State.STUNNED
 	_stun_timer = maxf(_stun_timer, duration)
+	_hit_cooldown = maxf(_hit_cooldown, duration)
 	velocity.x = 0.0
 	_play_sound("stun")
 
 func receive_knockback(direction: Vector2, stun_duration: float) -> void:
 	state = State.STUNNED
 	_stun_timer = stun_duration
+	_hit_cooldown = stun_duration
 	velocity = direction
 	_play_sound("stun")
 
@@ -455,10 +457,10 @@ func _make_placeholder_sprite(color: Color, sz: Vector2) -> void:
 
 # ── Player contact damage ─────────────────────────────────────────────────────
 func _check_player_contact(delta: float) -> void:
+	if not _player or state == State.STUNNED:
+		return
 	if _hit_cooldown > 0.0:
 		_hit_cooldown -= delta
-		return
-	if not _player or state == State.STUNNED:
 		return
 	if contact_damage <= 0:
 		return

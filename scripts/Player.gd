@@ -397,7 +397,7 @@ func _apply_staff_hit() -> bool:
 		if body.is_in_group("enemy"):
 			var direction: Vector2 = Vector2.RIGHT if _facing_right else Vector2.LEFT
 			if body.has_method("receive_knockback"):
-				body.receive_knockback(direction * 280.0, 3.5)
+				body.receive_knockback(direction * 280.0, 4.0)
 			hit = true
 	return hit
 
