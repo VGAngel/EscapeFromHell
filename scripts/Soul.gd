@@ -1,6 +1,6 @@
 extends Area2D
 
-const SIZE: float = 70.0   # diameter px; collision radius = SIZE / 2 in Soul.tscn
+const SIZE: float = 80.0   # diameter px; collision radius = SIZE / 2 in Soul.tscn
 
 # Area2D pickup representing a soul in the level.
 #
