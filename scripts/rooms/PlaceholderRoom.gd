@@ -100,6 +100,11 @@ var _all_rows: Array = []
 # kind ∈ "single" | "bridge".
 var _vert_layout: Array[Dictionary] = []
 
+# Rows occupied by spawned souls — bonuses skip these (and their neighbours)
+# so the two pickups never share a platform or stand right next to each other.
+var _soul_rows: Array[int] = []
+const PICKUP_MIN_ROW_GAP: int = 2
+
 # ── Section profiles (vertical level pacing) ──────────────────────────────────
 #
 # Each vertical room is divided into "sections" stacked from bottom to top, like
@@ -465,11 +470,20 @@ func _spawn_one_soul_at_row(row_idx: int) -> void:
 	if not soul:
 		return
 	soul.add_to_group("soul")
-	if is_vertical and row_idx >= 0 and row_idx < _all_rows.size():
-		soul.position = Vector2(_vert_platform_x(row_idx), float(_all_rows[row_idx]) - 24.0)
-	else:
-		soul.position = Vector2(room_width * 0.5, _row_high - 24.0)
+	soul.position = _pickup_position_for_row(row_idx, 24.0)
 	add_child(soul)
+	if row_idx >= 0:
+		_soul_rows.append(row_idx)
+
+# Center an item on the platform at this row. Uses _vert_layout (post-jitter)
+# so the item sits exactly on the actual platform Y, not the un-jittered grid.
+func _pickup_position_for_row(row_idx: int, lift: float) -> Vector2:
+	if is_vertical and row_idx >= 0 and row_idx < _vert_layout.size():
+		var entry: Dictionary = _vert_layout[row_idx]
+		var x: float = float(entry.get("x", room_width * 0.5))
+		var y: float = float(entry.get("y", _row_high))
+		return Vector2(x, y - lift)
+	return Vector2(room_width * 0.5, _row_high - lift)
 
 # ── Bonus spawning ────────────────────────────────────────────────────────────
 
@@ -490,14 +504,75 @@ func _spawn_bonus() -> void:
 	if room_type == "shaft":
 		@warning_ignore("integer_division")
 		var bonus_count: int = maxi(1, room_count / 2)
-		_spawn_distributed(bonus_count, _spawn_one_bonus_at_row)
+		# Bonuses must not share a platform with souls, nor sit right next to
+		# one — keep at least PICKUP_MIN_ROW_GAP rows of separation.
+		var blocked: Dictionary = {}
+		for sr in _soul_rows:
+			for d in range(-PICKUP_MIN_ROW_GAP, PICKUP_MIN_ROW_GAP + 1):
+				blocked[sr + d] = true
+		_spawn_distributed_excluding(bonus_count, blocked, _spawn_one_bonus_at_row)
 		return
 	if room_type != "main":
 		return
 	# Only odd-indexed rooms get a bonus (even-indexed get a hazard).
 	if room_index % 2 == 0:
 		return
-	_spawn_one_bonus_at_row(_default_bonus_row())
+	var row: int = _default_bonus_row()
+	if row in _soul_rows:
+		row = _shift_off_blocked(row, {row: true})
+	_spawn_one_bonus_at_row(row)
+
+# Like _spawn_distributed, but if the chosen row is in `blocked`, walks to the
+# nearest free row in the [first..last] band. Falls through silently if no
+# slot can be found (very small rooms).
+func _spawn_distributed_excluding(count: int, blocked: Dictionary,
+		spawner: Callable) -> void:
+	if not is_vertical or _all_rows.is_empty() or count <= 0:
+		return
+	var n: int = _all_rows.size()
+	var first: int = 2
+	var last:  int = n - 3
+	if last <= first:
+		return
+	var span: int = last - first
+	var used: Dictionary = {}
+	for k in blocked.keys():
+		used[k] = true
+	for i in count:
+		var t: float = (float(i) + 0.5) / float(count)
+		var ideal: int = first + int(round(t * float(span)))
+		var picked: int = _nearest_free_row(ideal, first, last, used)
+		if picked < 0:
+			continue
+		used[picked] = true
+		spawner.call(picked)
+
+# Search outward from `ideal` (within [lo..hi]) for a row not in `used`.
+func _nearest_free_row(ideal: int, lo: int, hi: int, used: Dictionary) -> int:
+	if ideal >= lo and ideal <= hi and not used.has(ideal):
+		return ideal
+	var max_r: int = maxi(ideal - lo, hi - ideal)
+	for r in range(1, max_r + 1):
+		var down: int = ideal + r
+		if down <= hi and not used.has(down):
+			return down
+		var up: int = ideal - r
+		if up >= lo and not used.has(up):
+			return up
+	return -1
+
+# Single-shot fallback for non-shaft rooms.
+func _shift_off_blocked(row: int, _used: Dictionary) -> int:
+	if _all_rows.is_empty():
+		return row
+	var lo: int = 0
+	var hi: int = _all_rows.size() - 1
+	var blocked: Dictionary = {}
+	for sr in _soul_rows:
+		for d in range(-PICKUP_MIN_ROW_GAP, PICKUP_MIN_ROW_GAP + 1):
+			blocked[sr + d] = true
+	var found: int = _nearest_free_row(row, lo, hi, blocked)
+	return found if found >= 0 else row
 
 func _default_bonus_row() -> int:
 	if _all_rows.is_empty():
@@ -522,8 +597,8 @@ func _spawn_one_bonus_at_row(row_idx: int) -> void:
 	var key_idx: int = row_idx if row_idx >= 0 else room_index
 	var key: String = bonuses[key_idx % bonuses.size()]
 	bonus.set("bonus_type", BONUS_ENUM.get(key, 3))
-	if is_vertical and row_idx >= 0 and row_idx < _all_rows.size():
-		bonus.position = Vector2(_vert_platform_x(row_idx), float(_all_rows[row_idx]) - 40.0)
+	if is_vertical and row_idx >= 0 and row_idx < _vert_layout.size():
+		bonus.position = _pickup_position_for_row(row_idx, 40.0)
 	else:
 		bonus.position = Vector2(room_width * 0.5, _row_mid - 40.0)
 	add_child(bonus)

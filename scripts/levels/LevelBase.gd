@@ -470,8 +470,8 @@ func _on_soul_dropped(_soul_id: String, drop_position: Vector2) -> void:
 	_carried_soul_data = {}
 
 ## Cast a ray downward from `from` to find the first platform/floor and
-## return a position that rests on it. Falls back to the original point
-## if nothing is hit (e.g. the player died over a pit).
+## return a position that rests on it, horizontally centered on that platform.
+## Falls back to the original point if nothing is hit (e.g. died over a pit).
 func _drop_to_ground(from: Vector2) -> Vector2:
 	var space := get_world_2d().direct_space_state if is_inside_tree() else null
 	if not space:
@@ -483,8 +483,16 @@ func _drop_to_ground(from: Vector2) -> Vector2:
 	var hit := space.intersect_ray(query)
 	if hit.is_empty():
 		return from
+	# Snap X to the platform's own center so the soul rests in the middle of
+	# the shelf rather than wherever the player happened to die. _add_platform()
+	# sets body.position to the platform center, so collider.global_position.x
+	# is the authoritative midpoint.
+	var center_x: float = from.x
+	var collider: Object = hit.get("collider")
+	if collider is Node2D:
+		center_x = (collider as Node2D).global_position.x
 	# Sit the soul a bit above the floor so the bobbing animation reads well.
-	return Vector2(from.x, hit["position"].y - 40.0)
+	return Vector2(center_x, hit["position"].y - 40.0)
 
 func _on_soul_delivered(soul_id: String) -> void:
 	_souls_found += 1
