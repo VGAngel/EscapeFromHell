@@ -15,6 +15,12 @@ class_name LevelCamera
 ##
 ## Attach this script to the Camera2D node inside Player.tscn — that way it
 ## spawns with the player and there is no Level-vs-Player camera race.
+##
+## Implementation note: the camera runs in `top_level = true` mode, so its
+## transform is independent of the player. Each idle frame we lerp
+## global_position toward the player's actual position with an exponential
+## decay. This produces buttery follow that does NOT fight Godot's physics
+## interpolation, regardless of physics tick vs render rate mismatch.
 
 const CONFIG_PATH := "res://camera_config.json"
 
@@ -44,17 +50,36 @@ var _lookahead_offset_x:      float = 0.0
 var _hud_offset_y:            float = 0.0
 var _fall_offset_y:           float = 0.0
 
+# How fast the camera chases the player position each second (exponential
+# decay rate). Higher = snappier, lower = floatier. 8.0 settles in ~0.3 s.
+const _POSITION_FOLLOW_SPEED := 8.0
+
 # How fast offset.x (lookahead) and offset.y (fall-look) chase their
-# target each second. Lower = smoother. Tuned to feel like the same
-# "weight" as the position smoothing.
-const _OFFSET_FOLLOW_SPEED := 1.8
+# target each second. Lower than position so flips feel deliberate.
+const _OFFSET_FOLLOW_SPEED := 3.0
+
+# Stay-up offset from player origin. Equivalent to the old Camera2D
+# position = (0, -80) in Player.tscn — keeps the player's torso/head
+# visible above the camera centre rather than its feet.
+const _PLAYER_VERTICAL_OFFSET := -80.0
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 func _ready() -> void:
+	# Decouple from the player transform so we control follow ourselves.
+	# This is the key to jitter-free follow on devices where physics tick
+	# rate (60 Hz) differs from screen refresh rate (90 / 120 / 144 Hz).
+	top_level = true
+
 	_load_config()
-	_apply_smoothing_and_deadzone()
+	_apply_camera_settings()
 	_apply_default_zoom()
 	_apply_hud_offset()
+
+	# Snap to the player on the first frame so we don't lerp in from origin.
+	var parent: Node2D = get_parent() as Node2D
+	if parent:
+		global_position = parent.global_position + Vector2(0, _PLAYER_VERTICAL_OFFSET)
+
 	_apply_room_limits_deferred()
 	make_current()
 
@@ -94,45 +119,29 @@ func _load_config() -> void:
 		if val is float or val is int:
 			_zoom_presets[String(k)] = float(val)
 
-func _apply_smoothing_and_deadzone() -> void:
-	# The project has physics_interpolation=true, so Godot already smooths the
-	# render position of the player (and thus this child camera) between
-	# physics ticks. Enabling Camera2D.position_smoothing on top fights that
-	# interpolation and produces visible jitter — leave it OFF.
+func _apply_camera_settings() -> void:
+	# Built-in smoothing and drag margins are bypassed: with top_level=true
+	# we follow the player ourselves via a clean exponential lerp in
+	# _process. That removes every source of double-smoothing.
 	position_smoothing_enabled = false
+	drag_horizontal_enabled    = false
+	drag_vertical_enabled      = false
 
-	# Drag margins still help: they create a deadzone where the camera doesn't
-	# chase tiny motions, killing jitter from sub-pixel velocity noise.
-	var vp_size: Vector2 = Vector2(
-		ProjectSettings.get_setting("display/window/size/viewport_width", 1080),
-		ProjectSettings.get_setting("display/window/size/viewport_height", 1920)
-	)
-	var hx: float = clampf(_deadzone_w * 0.5 / vp_size.x, 0.0, 0.4)
-	var hy: float = clampf(_deadzone_h * 0.5 / vp_size.y, 0.0, 0.4)
-	drag_horizontal_enabled = true
-	drag_vertical_enabled   = true
-	drag_left_margin        = hx
-	drag_right_margin       = hx
-	drag_top_margin         = hy
-	drag_bottom_margin      = hy
-
-	# Smoothing the limit clamp makes it glide rather than snap when entering
-	# a clamped edge — combined with no position_smoothing this is fine.
+	# Limit clamp smoothing still helps — the camera glides into a wall
+	# clamp rather than snapping when the player runs at the level edge.
 	limit_smoothed = true
 
-	# Camera updates its own logic in idle process so offset transitions
-	# happen at render rate (smooth) instead of physics rate (60 Hz steps).
+	# Update at render rate so chase is smooth on high-refresh screens.
 	process_callback = Camera2D.CAMERA2D_PROCESS_IDLE
 
 func _apply_default_zoom() -> void:
 	zoom = Vector2(_zoom_default, _zoom_default)
 
 func _apply_hud_offset() -> void:
-	# Push the camera centre up by half the reserved HUD height so the
-	# player ends up roughly mid-screen visually instead of behind the
-	# buttons. Stored separately so apply_zoom_preset can rebuild offset.
+	# Stored as a Y bias that gets baked into global_position each frame
+	# in _process. Pushes the camera centre up by half the reserved HUD
+	# height so the player rests in the visible upper portion.
 	_hud_offset_y = -HUD_BOTTOM_RESERVE * 0.5
-	offset = Vector2(_lookahead_offset_x, _hud_offset_y)
 
 ## Defer one frame so the level's procedural rooms are added to
 ## RoomContainer before we read their metadata.
@@ -178,12 +187,14 @@ func _aggregate_room_rect(rc: Node2D) -> Rect2:
 			union = union.merge(rect)
 	return union
 
-# ── Per-frame: lookahead + look-up-when-falling ───────────────────────────────
+# ── Per-frame: smooth follow + lookahead + look-up-when-falling ──────────────
 func _process(delta: float) -> void:
-	var parent: Node = get_parent()
+	var parent: Node2D = get_parent() as Node2D
 	if parent == null:
 		return
 
+	# Latch facing with a delay so the camera doesn't whip around on
+	# every tiny direction tap.
 	if _lookahead_enabled and "_facing_right" in parent:
 		_pending_facing = bool(parent.get("_facing_right"))
 		if _pending_facing != _facing_right:
@@ -194,12 +205,10 @@ func _process(delta: float) -> void:
 		else:
 			_facing_change_t = 0.0
 
-	# Frame-rate independent exponential lerp toward the target offsets so
-	# direction flips and fall-look glide in instead of snapping. Same
-	# "weight" as position smoothing keeps the whole camera feel coherent.
-	var target_x: float = 0.0
+	# Resolve target offsets (lookahead + fall-look).
+	var target_lookahead: float = 0.0
 	if _lookahead_enabled:
-		target_x = _lookahead_distance if _facing_right else -_lookahead_distance
+		target_lookahead = _lookahead_distance if _facing_right else -_lookahead_distance
 
 	var target_fall_y: float = 0.0
 	if _look_up_when_falling and parent is CharacterBody2D:
@@ -207,11 +216,24 @@ func _process(delta: float) -> void:
 		if body.velocity.y > 200.0:
 			target_fall_y = _look_up_distance
 
-	var t: float = 1.0 - exp(-_OFFSET_FOLLOW_SPEED * delta)
-	_lookahead_offset_x = lerpf(_lookahead_offset_x, target_x,      t)
-	_fall_offset_y      = lerpf(_fall_offset_y,      target_fall_y, t)
+	# Exponential decay toward the target offsets — frame-rate independent.
+	var t_off: float = 1.0 - exp(-_OFFSET_FOLLOW_SPEED * delta)
+	_lookahead_offset_x = lerpf(_lookahead_offset_x, target_lookahead, t_off)
+	_fall_offset_y      = lerpf(_fall_offset_y,      target_fall_y,    t_off)
 
-	offset = Vector2(_lookahead_offset_x, _hud_offset_y + _fall_offset_y)
+	# Compose the desired camera world position and lerp toward it. With
+	# top_level=true this is the actual follow — no parent transform is
+	# applied implicitly.
+	var target_pos: Vector2 = parent.global_position + Vector2(
+		_lookahead_offset_x,
+		_PLAYER_VERTICAL_OFFSET + _hud_offset_y + _fall_offset_y
+	)
+	var t_pos: float = 1.0 - exp(-_POSITION_FOLLOW_SPEED * delta)
+	global_position = global_position.lerp(target_pos, t_pos)
+
+	# All deliberate offsets (HUD reserve, lookahead, fall-look) are baked
+	# into global_position above — the Camera2D.offset channel is left
+	# untouched so CameraShake can tween it independently.
 
 # ── Public ────────────────────────────────────────────────────────────────────
 ## Apply a zoom preset by name from camera_config.json (e.g. "void_levels").
