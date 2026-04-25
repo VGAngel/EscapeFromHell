@@ -32,7 +32,6 @@ var _souls_in_level:     Array           = []   # Array[Node] — soul pickups
 var _souls_required:     int             = 0
 var _souls_found:        int             = 0
 var _is_complete:        bool            = false
-var _escape_timer_total: float           = 0.0
 var _level_type:         String          = "platformer"
 var _respawn_position:   Vector2         = Vector2.ZERO  # updated by mid-altar
 var _carried_soul_data:  Dictionary      = {}
@@ -57,7 +56,6 @@ func _ready() -> void:
 	_connect_souls()
 	_connect_bonuses()
 	_connect_altars()
-	_setup_escape_timer()
 
 	GameManager.register_hud(_hud)
 	GameManager.begin_level(level_id, _souls_required)
@@ -548,20 +546,6 @@ func _on_level_completed(_id: int, stats: Dictionary) -> void:
 	if _level_complete and _level_complete.has_method("show_results"):
 		_level_complete.show_results(stats)
 
-# ── Escape timer ──────────────────────────────────────────────────────────────
-
-func _setup_escape_timer() -> void:
-	if _level_type != "escape":
-		return
-	_escape_timer_total = LevelConfig.get_level(level_id).get("escape_time", 60.0) if LevelConfig else 60.0
-	GameManager.start_escape_timer(_escape_timer_total)
-	get_tree().create_timer(_escape_timer_total).timeout.connect(_on_escape_timer_expired)
-
-func _on_escape_timer_expired() -> void:
-	if _is_complete:
-		return
-	GameManager.instant_death("fall")
-
 # ── Respawn ───────────────────────────────────────────────────────────────────
 
 func _on_respawn() -> void:
@@ -576,8 +560,6 @@ func _on_respawn() -> void:
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		if enemy.has_method("reset_to_patrol"):
 			enemy.reset_to_patrol()
-	if _level_type == "escape":
-		_setup_escape_timer()
 
 # ── Altars ────────────────────────────────────────────────────────────────────
 

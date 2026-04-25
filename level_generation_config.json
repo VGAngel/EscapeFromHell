@@ -191,7 +191,7 @@
 
   "level_type_distribution": {
     "note": "Типи рівнів з levels_config.json розподіляються по слотах всередині кола",
-    "pattern_per_circle": ["platformer", "platformer", "vertical", "platformer", "labyrinth", "platformer", "void", "platformer", "escape", "boss"],
-    "note2": "Шаблон повторюється для кожного кола. Void і escape — завжди на фіксованих позиціях."
+    "pattern_per_circle": ["vertical", "vertical", "vertical", "vertical", "vertical", "vertical", "void", "vertical", "vertical", "boss"],
+    "note2": "Шаблон повторюється для кожного кола. Бічні рівні зараз vertical (раніше labyrinth/escape — типи прибрані з конфігу)."
   }
 }

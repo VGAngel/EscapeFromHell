@@ -32,9 +32,7 @@
 
   "death_limits": {
     "vertical":  { "limit": 3, "soft": true  },
-    "labyrinth": { "limit": 3, "soft": true  },
     "void":      { "limit": 5, "soft": true  },
-    "escape":    { "limit": 3, "soft": true  },
     "boss":      { "limit": 0, "soft": false, "note": "Без ліміту" }
   },
 
@@ -47,9 +45,7 @@
 
   "respawn_points": {
     "vertical":  "level_start",
-    "labyrinth": "level_start",
     "void":      "level_start",
-    "escape":    "escape_start",
     "boss":      "boss_arena_entrance",
     "note": "Бос при respawn відновлює повне HP"
   },

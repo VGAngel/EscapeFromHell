@@ -118,11 +118,6 @@ func get_special_mechanics(id: int) -> Array:
 func has_mechanic(id: int, mechanic: String) -> bool:
 	return mechanic in get_special_mechanics(id)
 
-# ── Escape timer ──────────────────────────────────────────────────────────────
-
-func get_escape_time(id: int) -> float:
-	return float(get_level(id).get("escape_time", 60.0))
-
 # ── Circle helpers ────────────────────────────────────────────────────────────
 
 func get_circle_theme(circle: int) -> String:

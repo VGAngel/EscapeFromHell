@@ -11,13 +11,13 @@ func before_each() -> void:
 	lc._levels_by_id = {
 		1:  {"id": 1,  "circle": 1, "type": "platformer", "souls_count": 2,
 			 "static": true, "difficulty": 1, "enemies": ["shade"], "traps": [], "bonuses": []},
-		5:  {"id": 5,  "circle": 1, "type": "escape",     "souls_count": 3,
-			 "escape_time": 45.0, "special_mechanics": ["timed_escape"]},
+		5:  {"id": 5,  "circle": 1, "type": "vertical",   "souls_count": 3,
+			 "special_mechanics": ["timed_escape"]},
 		7:  {"id": 7,  "circle": 1, "type": "void",       "souls_count": 1},
 		10: {"id": 10, "circle": 1, "type": "boss",       "souls_count": 0},
 		11: {"id": 11, "circle": 2, "type": "platformer", "souls_count": 2,
 			 "special_mechanics": ["hidden_soul_room"]},
-		15: {"id": 15, "circle": 2, "type": "labyrinth",  "difficulty": 3,
+		15: {"id": 15, "circle": 2, "type": "vertical",   "difficulty": 3,
 			 "soul_types": ["innocent", "broken", "sleeping"]},
 		17: {"id": 17, "circle": 2, "type": "void",       "souls_count": 1,
 			 "hidden_soul": true},
@@ -40,8 +40,8 @@ func test_get_level_type_boss() -> void:
 func test_get_level_type_void() -> void:
 	assert_eq(lc.get_level_type(7), "void")
 
-func test_get_level_type_escape() -> void:
-	assert_eq(lc.get_level_type(5), "escape")
+func test_get_level_type_vertical() -> void:
+	assert_eq(lc.get_level_type(5), "vertical")
 
 func test_get_level_type_unknown_returns_platformer() -> void:
 	assert_eq(lc.get_level_type(999), "platformer", "unknown level uses fallback type")
@@ -82,7 +82,7 @@ func test_is_static_first_of_circle() -> void:
 	assert_true(lc.is_static(21), "id %% 10 == 1 is always static")
 
 func test_is_static_false_for_non_static() -> void:
-	assert_false(lc.is_static(15), "labyrinth mid-circle is not static")
+	assert_false(lc.is_static(15), "vertical mid-circle is not static")
 
 # ── get_circle ────────────────────────────────────────────────────────────────
 
@@ -193,14 +193,6 @@ func test_has_hidden_soul_via_mechanic() -> void:
 
 func test_has_hidden_soul_false() -> void:
 	assert_false(lc.has_hidden_soul(1))
-
-# ── get_escape_time ───────────────────────────────────────────────────────────
-
-func test_get_escape_time_explicit() -> void:
-	assert_eq(lc.get_escape_time(5), 45.0)
-
-func test_get_escape_time_default() -> void:
-	assert_eq(lc.get_escape_time(1), 60.0, "default escape time is 60s")
 
 # ── _make_fallback ────────────────────────────────────────────────────────────
 

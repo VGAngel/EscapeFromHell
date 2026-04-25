@@ -18,7 +18,6 @@ signal game_over  # reserved for future hard-fail states
 const SCENE_LEVEL        := "res://scenes/levels/Level.tscn"
 const SCENE_BOSS_LEVEL   := "res://scenes/levels/BossLevel.tscn"
 const SCENE_VOID_LEVEL   := "res://scenes/levels/VoidLevel.tscn"
-const SCENE_ESCAPE_LEVEL := "res://scenes/levels/EscapeLevel.tscn"
 const SCENE_HUB          := "res://scenes/Hub.tscn"
 const SCENE_MAIN_MENU    := "res://scenes/ui/MainMenu.tscn"
 const SCENE_ENDING       := "res://scenes/endings/EndingScreen.tscn"
@@ -31,9 +30,7 @@ const SCREEN_DARKEN_DURATION := 0.6
 # ── Death limits per level type ───────────────────────────────────────────────
 const DEATH_LIMITS := {
 	"vertical":  3,
-	"labyrinth": 3,
 	"void":      5,
-	"escape":    3,
 	"boss":      -1,  # unlimited
 	"platformer": -1,
 }
@@ -356,8 +353,7 @@ func _scene_for_level_type(level_type: String) -> String:
 	match level_type:
 		"boss":   return SCENE_BOSS_LEVEL
 		"void":   return SCENE_VOID_LEVEL
-		"escape": return SCENE_ESCAPE_LEVEL
-		_:        return SCENE_LEVEL   # platformer, vertical, labyrinth
+		_:        return SCENE_LEVEL   # platformer, vertical
 
 ## Fade-to-black wrapper; falls back to an immediate swap if the autoload is
 ## unavailable (e.g. in unit tests that don't boot the full project).
@@ -377,10 +373,6 @@ func activate_bonus(bonus_id: String, icon: String, duration: float) -> void:
 func use_ability(upgrade_id: String) -> void:
 	if _hud:
 		_hud.use_ability(upgrade_id)
-
-func start_escape_timer(duration: float) -> void:
-	if _hud:
-		_hud.start_escape_timer(duration)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
