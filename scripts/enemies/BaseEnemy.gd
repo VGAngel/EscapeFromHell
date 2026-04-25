@@ -35,6 +35,7 @@ var _player: CharacterBody2D = null
 var _chase_timer:    float = 0.0
 var _alert_timer:    float = 0.0
 var _stun_timer:     float = 0.0
+var _attack_timer:   float = 0.0
 var _give_up_timer:  float = 2.5
 var _last_known_pos: Vector2 = Vector2.ZERO
 var _patrol_origin:  Vector2 = Vector2.ZERO
@@ -117,6 +118,8 @@ func _tick_timers(delta: float) -> void:
 		_stun_timer -= delta
 		if _stun_timer <= 0.0 and state == State.STUNNED:
 			_enter_patrol()
+	if _attack_timer > 0.0:
+		_attack_timer -= delta
 	if _chase_timer > 0.0:
 		_chase_timer -= delta
 	if _alert_timer > 0.0:
@@ -467,6 +470,7 @@ func _check_player_contact(delta: float) -> void:
 	if global_position.distance_to(_player.global_position) > contact_range:
 		return
 	_hit_cooldown = HIT_COOLDOWN_TIME
+	_attack_timer = 0.5
 	if _player.has_method("receive_hit"):
 		var dir: Vector2 = (_player.global_position - global_position).normalized()
 		_player.receive_hit(contact_damage, dir * contact_knockback)
@@ -517,6 +521,8 @@ func _update_animation() -> void:
 		_anim.play(anim)
 
 func _get_anim_name() -> String:
+	if _attack_timer > 0.0:
+		return "enemy_attack"
 	match state:
 		State.PATROL:  return "enemy_walk"
 		State.ALERT:   return "enemy_idle"
