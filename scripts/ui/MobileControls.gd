@@ -8,14 +8,14 @@ extends Control
 const BTN_ALPHA   := 0.55
 const BTN_ALPHA_PRESSED := 0.75
 
-const SIZE_LARGE  := Vector2(150, 150)  # Jump
-const SIZE_MEDIUM := Vector2(115, 115)  # Staff / Pray
-const SIZE_SMALL  := Vector2(130, 130)  # Movement (thumb-sized)
+const SIZE_LARGE  := Vector2(190, 190)  # Jump
+const SIZE_MEDIUM := Vector2(150, 150)  # Staff / Pray
+const SIZE_SMALL  := Vector2(170, 170)  # Movement (thumb-sized)
 
-const GAP_MOVE := 28.0                 # extra space between ← and →
-const GAP := 14.0
-const MARGIN_SIDE   := 28.0
-const MARGIN_BOTTOM := 16.0            # gap above sin bar
+const GAP_MOVE := 36.0                 # extra space between ← and →
+const GAP := 18.0
+const MARGIN_SIDE   := 32.0
+const MARGIN_BOTTOM := 24.0            # gap above sin bar
 
 # ── Public nodes (exposed for tests) ─────────────────────────────────────────
 var btn_left:  Button = null
