@@ -868,14 +868,9 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 
 		# Bridge or single? Probability comes from the section profile.
 		# Anti-repeat: never two bridges in a row (visually heavy).
-		# Bridges sit at FIXED L/R shelves (room_width × 0.20 / 0.80) so the
-		# snap-back can't reposition them. Skip bridges when neither shelf
-		# would overlap with the previous row's footprint by ≥ 50 px —
-		# otherwise the player drops past the bridge into a multi-row fall.
 		var bridge_chance: float = float(profile.get("bridge_chance", 0.0))
 		var kind: String = "single"
-		if rng.randf() < bridge_chance and prev_kind != "bridge" \
-				and _bridge_can_catch_prev(prev_x, prev_w):
+		if rng.randf() < bridge_chance and prev_kind != "bridge":
 			kind = "bridge"
 			# Anchor X = side closer to the chosen zone (spawn helper hint).
 			x = (room_width * 0.20) if zone * 2 < ZONE_COUNT else (room_width * 0.80)
@@ -886,46 +881,15 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		if ptype == "_hint":
 			ptype = _platform_type_hint
 
-		# Reachability + walk-off safety: snap X toward the previous platform
-		# under THREE constraints, tightest wins:
-		#
-		#   1. Jumping UP from prev to current must be physically possible:
-		#      |dx| ≤ _max_horizontal_jump(v_gap) + (prev_w + new_w)/2
-		#
-		#   2. (Strict) Walking off CURRENT must land on prev — BOTH edges
-		#      of current must sit inside prev's footprint, otherwise the
-		#      player walking off the un-covered edge falls past prev into
-		#      whatever's below. Possible only when prev_w ≥ width:
-		#      |dx| ≤ (prev_w − new_w)/2
-		#
-		#   3. (Loose) When prev is narrower than current, strict containment
-		#      is impossible — fall back to "at least OVERLAP_REQUIRED of
-		#      shared X". One edge of current may still fall off prev, but
-		#      the player has agency to walk to the safe edge.
+		# Reachability only: snap X toward the previous platform when jumping
+		# UP from prev to current would be physically impossible. We
+		# intentionally do NOT enforce X-overlap or strict containment —
+		# Markov stays varied at the cost of occasional walk-off-edge falls
+		# (tier-1, ~1 HP). The fall-damage system handles the rest.
 		if prev_x != -INF and kind == "single":
-			const OVERLAP_REQUIRED: float = 50.0
-			# Min lateral freedom needed before strict containment kicks in.
-			# When contain_slack is < this, equal-width rows would be forced
-			# into the same X column over and over (visually 4-in-a-row).
-			const CONTAIN_MIN_SLACK: float = 50.0
 			var v_gap: float = prev_y - ry  # > 0 means new row is higher
-			var max_jump_center: float = _max_horizontal_jump(v_gap) \
+			var max_center_dx: float = _max_horizontal_jump(v_gap) \
 					+ (prev_w + width) * 0.5
-			var max_center_dx: float = max_jump_center
-			var contain_slack: float = (prev_w - width) * 0.5
-			if contain_slack >= CONTAIN_MIN_SLACK:
-				# Strict: current fits inside prev with real lateral room.
-				# Walking off ANY edge of current lands on prev.
-				max_center_dx = minf(max_center_dx, contain_slack)
-			else:
-				# Loose: prev isn't meaningfully wider than current. Force
-				# strict containment here would lock rows into one column;
-				# fall back to "≥ OVERLAP_REQUIRED of shared X". One edge
-				# of current may not be covered by prev — the player has
-				# agency to walk to the safe edge.
-				var max_overlap_center: float = (prev_w + width) * 0.5 - OVERLAP_REQUIRED
-				if max_overlap_center > 0.0:
-					max_center_dx = minf(max_center_dx, max_overlap_center)
 			var dx: float = x - prev_x
 			if absf(dx) > max_center_dx:
 				x = prev_x + signf(dx) * max_center_dx
@@ -1011,25 +975,6 @@ func _sample_weighted_str(table: Array, rng: RandomNumberGenerator) -> String:
 # Linear interp between the two with a 1.15× generosity factor (player can
 # walk to the platform's edge before launching, which we approximate via
 # +(prev_w + width)/2 in the caller).
-# True if at least one of the bridge's two shelves (L at room_width × 0.20,
-# R at × 0.80, both _platform_width wide) overlaps with the previous row's
-# footprint by ≥ OVERLAP_REQUIRED. Used to veto bridge placement when the
-# bridge wouldn't actually catch the player descending from the prev row.
-func _bridge_can_catch_prev(prev_x: float, prev_w: float) -> bool:
-	if prev_x == -INF:
-		return true                       # first row — nothing to catch
-	const OVERLAP_REQUIRED: float = 50.0
-	var prev_left:  float = prev_x - prev_w * 0.5
-	var prev_right: float = prev_x + prev_w * 0.5
-	var shelf_w:    float = _platform_width
-	for shelf_center in [room_width * 0.20, room_width * 0.80]:
-		var shelf_left:  float = shelf_center - shelf_w * 0.5
-		var shelf_right: float = shelf_center + shelf_w * 0.5
-		var overlap: float = minf(prev_right, shelf_right) - maxf(prev_left, shelf_left)
-		if overlap >= OVERLAP_REQUIRED:
-			return true
-	return false
-
 func _max_horizontal_jump(v_gap: float) -> float:
 	const SAME_LEVEL_REACH: float = 240.0
 	const MAX_UP_REACH:     float = 120.0
