@@ -203,6 +203,7 @@ func _ready() -> void:
 		_spawn_altar()
 		_spawn_bonus()
 		_install_debug_room_marker()
+		_spawn_atmosphere_particles()
 		if is_vertical:
 			_log_vertical_layout()
 
@@ -233,6 +234,64 @@ func _on_debug_room_body_entered(body: Node) -> void:
 	var dbg: Node = get_node_or_null("/root/DebugOverlay")
 	if dbg and dbg.has_method("set_active_room"):
 		dbg.set_active_room(room_index)
+
+# ── Atmosphere particles (Phase 2 backdrop) ──────────────────────────────────
+#
+# Sparse pale motes drifting upward through vertical shafts — adds the GDD's
+# "ghostly butterflies dissolving upward" feel without burning a sprite asset.
+# Implemented programmatically so we don't ship a .tscn for one effect; the
+# texture is also generated in code (a soft 8×8 disc) so there's no PNG to
+# import. Skipped on horizontal rooms and in the editor.
+func _spawn_atmosphere_particles() -> void:
+	if not is_vertical:
+		return
+	var particles := GPUParticles2D.new()
+	particles.name = "AtmosphereParticles"
+	particles.amount = 80
+	particles.lifetime = 30.0
+	# Pre-warm so motes are mid-drift the moment the level loads instead of
+	# all spawning bunched at the emission box edge.
+	particles.preprocess = 30.0
+	particles.position = Vector2(room_width / 2.0, room_height / 2.0)
+	particles.texture = _make_dust_texture()
+	particles.z_index = -1   # behind walls/platforms but above the backdrop fill
+
+	var mat := ParticleProcessMaterial.new()
+	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	# Emit across the playable interior (between the side walls) for the full
+	# shaft height — particles already populate the whole column at all times.
+	var inner_w: float = maxf(room_width - SIDE_WALL_T * 2.0, 1.0)
+	mat.emission_box_extents = Vector3(inner_w / 2.0, room_height / 2.0, 0.0)
+	mat.direction = Vector3(0.0, -1.0, 0.0)
+	mat.spread = 15.0
+	mat.initial_velocity_min = 8.0
+	mat.initial_velocity_max = 22.0
+	mat.gravity = Vector3.ZERO
+	mat.scale_min = 0.4
+	mat.scale_max = 1.4
+
+	# Alpha ramp: fade in, hold, fade out — soft ghostly presence.
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.78, 0.70, 0.95, 0.0))
+	grad.add_point(0.2, Color(0.85, 0.78, 1.0, 0.45))
+	grad.add_point(0.8, Color(0.92, 0.85, 1.0, 0.40))
+	grad.set_color(1, Color(0.78, 0.70, 0.95, 0.0))
+	var ramp := GradientTexture1D.new()
+	ramp.gradient = grad
+	mat.color_ramp = ramp
+
+	particles.process_material = mat
+	add_child(particles)
+
+func _make_dust_texture() -> Texture2D:
+	var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+	var center := Vector2(3.5, 3.5)
+	for y in 8:
+		for x in 8:
+			var d: float = Vector2(x, y).distance_to(center) / 4.0
+			var a: float = clampf(1.0 - d, 0.0, 1.0)
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	return ImageTexture.create_from_image(img)
 
 # Dev-only diagnostic: print the generated row Y/X positions and the largest
 # gap so it's obvious which room produced an unreachable hole. Disabled in
