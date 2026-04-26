@@ -148,7 +148,12 @@ func _init_procedural_level(force_procedural: bool = false) -> void:
 	_spawn_soul_node(gen)
 	_discover_souls()
 
-	if gen.soul_id > 0:
+	# Tag every spawned soul with its own dict so multi-soul levels show
+	# different names. Falls back to legacy single-primary tagging if the
+	# generator only supplied one entry.
+	if not gen.souls_data.is_empty():
+		_assign_soul_identities(gen.souls_data)
+	elif gen.soul_id > 0:
 		_mark_primary_soul(gen.soul_id, gen.soul_data)
 
 # ── Room layout — horizontal (default) ───────────────────────────────────────
@@ -338,6 +343,22 @@ func _mark_primary_soul(soul_id: int, soul_data: Dictionary) -> void:
 			soul.set_meta("soul_id", soul_id)
 			break
 
+# Assign each spawned soul a distinct identity (name, age, story…) drawn
+# from the generator's pre-deduped list. Without this, only one soul on a
+# multi-soul level got a name and the others delivered as anonymous, so
+# the altar reveal popup never fired for them.
+func _assign_soul_identities(souls_data: Array) -> void:
+	var i: int = 0
+	for soul in _souls_in_level:
+		if i >= souls_data.size():
+			break
+		var data: Dictionary = souls_data[i]
+		var sid: int = int(data.get("id", 0))
+		if sid > 0 and soul.has_method("set_soul_data"):
+			soul.set_soul_data(sid, data)
+			soul.set_meta("soul_id", sid)
+		i += 1
+
 # ── Player ────────────────────────────────────────────────────────────────────
 
 func _spawn_player() -> void:
@@ -512,13 +533,27 @@ func _on_soul_delivered(soul_id: String) -> void:
 func _show_soul_delivered_popup() -> void:
 	if not _player or not is_inside_tree():
 		return
+	# Prefer the soul's actual name so the player sees WHO they delivered.
+	# Falls back to the generic message when the soul carried no name.
+	var soul_name: String = String(_carried_soul_data.get("name", ""))
+	var text: String = ("✦ %s ✦" % soul_name) if soul_name != "" else "Душа доставлена"
+
 	var lbl := Label.new()
-	lbl.text = "Душа доставлена"
+	lbl.text = text
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
-	lbl.position = _player.global_position + Vector2(-60.0, -120.0)
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	lbl.add_theme_constant_override("outline_size", 6)
+	lbl.add_theme_font_size_override("font_size", 36)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Width-aware horizontal centering: pin the label width and shift left by
+	# half so the text sits centred above the player regardless of length.
+	const POPUP_W: float = 480.0
+	lbl.size = Vector2(POPUP_W, 0.0)
+	lbl.position = _player.global_position + Vector2(-POPUP_W * 0.5, -160.0)
 	add_child(lbl)
+
 	var tw := create_tween().set_parallel(true)
-	tw.tween_property(lbl, "position:y", lbl.position.y - 120.0, 2.2)
+	tw.tween_property(lbl, "position:y", lbl.position.y - 140.0, 2.2)
 	tw.tween_property(lbl, "modulate:a", 0.0, 2.2).set_delay(0.4)
 	await get_tree().create_timer(2.6).timeout
 	if is_instance_valid(lbl):

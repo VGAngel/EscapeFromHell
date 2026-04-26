@@ -74,8 +74,12 @@ class GeneratedLevel:
 	var is_branch:     bool       = false   # true for branch levels (id > 100)
 	var parent_id:     int        = 0       # non-zero for branch levels
 	var room_scenes:   Array      = []      # Array[String] — paths to .tscn
-	var soul_id:       int        = 0       # 0 = none
+	var soul_id:       int        = 0       # 0 = none — primary (named) soul
 	var soul_data:     Dictionary = {}
+	# All souls planned for this level, one dict per spawned soul. Index 0 is
+	# always the primary (== soul_data); extras are circle-pool picks unique
+	# within this level so two souls can't share a name.
+	var souls_data:    Array      = []
 	var enemy_count_mod: int      = 0
 	var trap_density:  String     = "medium"
 	var room_count:    int        = 4
@@ -177,6 +181,8 @@ func generate(level_id: int) -> GeneratedLevel:
 		result.is_static = true
 		result.soul_data = _hidden_soul_levels.get(level_id, {})
 		result.soul_id   = result.soul_data.get("id", 0)
+		if not result.soul_data.is_empty():
+			result.souls_data = [result.soul_data]
 		return result
 
 	# Seed: deterministic per level; XOR with profile's world seed so players
@@ -204,6 +210,12 @@ func generate(level_id: int) -> GeneratedLevel:
 	result.room_scenes = _pick_rooms(circle, result.room_count)
 	result.soul_data   = _soul_for_level(level_id, circle)
 	result.soul_id     = result.soul_data.get("id", 0)
+
+	# Pick souls_count unique entries (primary + extras) so spawned souls on
+	# the same level all carry distinct names. souls_count comes from the
+	# level config; default 1 if it isn't set.
+	var souls_n: int = LevelConfig.get_souls_count(level_id) if LevelConfig else 1
+	result.souls_data = _souls_for_level(level_id, circle, maxi(1, souls_n))
 
 	return result
 
@@ -319,6 +331,34 @@ func _soul_for_level(level_id: int, circle: int) -> Dictionary:
 	if candidates.is_empty():
 		return {}
 	return candidates[randi() % candidates.size()]
+
+# Pick `count` distinct named souls for this level — primary first, then
+# extras drawn from the circle's unassigned pool. Within a level no two
+# returned dicts share an id, so the player meets unique souls each run.
+func _souls_for_level(level_id: int, circle: int, count: int) -> Array:
+	var picked: Array = []
+	var primary: Dictionary = _soul_for_level(level_id, circle)
+	if not primary.is_empty():
+		picked.append(primary)
+
+	var primary_id: int = int(primary.get("id", 0))
+	var pool: Array = []
+	for soul: Dictionary in _souls.get("named_souls", []):
+		if soul.get("circle", 0) != circle:
+			continue
+		if int(soul.get("level", 0)) not in [0, level_id]:
+			continue  # owned by another specific level
+		if int(soul.get("id", 0)) == primary_id:
+			continue
+		pool.append(soul)
+
+	# Shuffle deterministically — caller seeded the global RNG already.
+	pool.shuffle()
+	for soul in pool:
+		if picked.size() >= count:
+			break
+		picked.append(soul)
+	return picked
 
 # ── Difficulty ────────────────────────────────────────────────────────────────
 
