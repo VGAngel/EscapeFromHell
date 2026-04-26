@@ -29,6 +29,13 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load_config()
 	_build_pools()
+	# Universal UI click sound: every BaseButton anywhere in the scene tree
+	# gets `pressed → play_sfx("ui", "button_click")` wired automatically,
+	# so we don't have to remember it on each new button. Existing nodes are
+	# walked once at startup; future ones are caught by `node_added`.
+	if get_tree():
+		get_tree().node_added.connect(_on_node_added)
+		_wire_existing_buttons(get_tree().root)
 
 func _load_config() -> void:
 	var file := FileAccess.open(CONFIG_PATH, FileAccess.READ)
@@ -125,3 +132,22 @@ func _free_sfx_slot() -> AudioStreamPlayer:
 			return p
 	# All busy — reuse the oldest (first).
 	return _sfx_pool[0]
+
+# ── UI click auto-wiring ──────────────────────────────────────────────────────
+
+func _on_node_added(node: Node) -> void:
+	if node is BaseButton:
+		_wire_button(node)
+
+func _wire_existing_buttons(node: Node) -> void:
+	if node is BaseButton:
+		_wire_button(node)
+	for child in node.get_children():
+		_wire_existing_buttons(child)
+
+func _wire_button(btn: BaseButton) -> void:
+	if not btn.pressed.is_connected(_on_ui_button_pressed):
+		btn.pressed.connect(_on_ui_button_pressed)
+
+func _on_ui_button_pressed() -> void:
+	play_sfx("ui", "button_click")

@@ -283,8 +283,15 @@ func _tick_timers(delta: float) -> void:
 # ── Gravity ───────────────────────────────────────────────────────────────────
 func _handle_gravity(delta: float) -> void:
 	if is_on_floor():
-		if not _was_on_floor and absf(velocity.x) > 50.0:
-			_landing_decel_timer = 0.05
+		if not _was_on_floor:
+			# Just touched the floor this frame — pick the right thud based on
+			# how fast we were falling. The pre-zeroed velocity.y still holds
+			# the impact speed because we haven't reset it yet.
+			if SoundManager:
+				var land_key: String = "land_hard" if velocity.y > 500.0 else "land_soft"
+				SoundManager.play_sfx("player", land_key)
+			if absf(velocity.x) > 50.0:
+				_landing_decel_timer = 0.05
 		velocity.y = 0.0
 		return
 	if _jump_held and velocity.y < 0.0:
@@ -344,6 +351,8 @@ func _handle_jump(delta: float) -> void:
 		_jump_held = true
 		_jump_hold_timer = 0.0
 		_tutorial_hint("jump")
+		if SoundManager:
+			SoundManager.play_sfx("player", "jump")
 	elif _jump_buffer_timer > 0.0 and (_upgrade_double_jump or _temp_double_jump_timer > 0.0) \
 			and not is_on_floor() and _coyote_timer <= 0.0 and _jumps_done < 1:
 		velocity.y = -jump_force
@@ -351,6 +360,8 @@ func _handle_jump(delta: float) -> void:
 		_jump_held = true
 		_jump_hold_timer = 0.0
 		_jumps_done += 1
+		if SoundManager:
+			SoundManager.play_sfx("player", "jump")
 
 	if Input.is_action_pressed("jump") and _jump_held:
 		_jump_hold_timer += delta
@@ -492,6 +503,8 @@ func _take_damage(amount: int) -> void:
 		_shake_camera(0.15, 8.0)
 		if _anim:
 			_anim.play("player_hurt")
+		if SoundManager:
+			SoundManager.play_sfx("player", "hurt")
 
 func _die() -> void:
 	state = State.DEAD
@@ -513,6 +526,8 @@ func pick_up_soul(soul_id: String) -> void:
 	if carried_soul_id != "":
 		return
 	carried_soul_id = soul_id
+	if SoundManager:
+		SoundManager.play_sfx("souls", "pickup_resonance")
 	if _upgrade_quick_pickup:
 		_finish_pickup()
 	else:
@@ -533,6 +548,8 @@ func deliver_soul() -> void:
 	if carried_soul_id == "":
 		return
 	soul_delivered.emit(carried_soul_id)
+	if SoundManager:
+		SoundManager.play_sfx("souls", "delivered")
 	_drop_soul()
 
 func _drop_soul() -> void:

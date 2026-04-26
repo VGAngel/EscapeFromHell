@@ -67,6 +67,8 @@ func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
 	bonus_collected.emit(bonus_type, NAMES[bonus_type])
+	if SoundManager:
+		SoundManager.play_sfx("bonuses", "pickup_generic")
 	var tw := create_tween()
 	tw.parallel().tween_property(self, "scale", Vector2(1.5, 1.5), 0.15)
 	tw.parallel().tween_property(self, "modulate:a", 0.0, 0.2)
