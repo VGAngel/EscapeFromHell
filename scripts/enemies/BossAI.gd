@@ -454,6 +454,10 @@ func _update_animation() -> void:
 	if not _anim:
 		return
 	var anim := _get_anim_name()
+	# Bosses without a full animation set fall back to whatever they have.
+	# Skipping silently here matches BaseEnemy._update_animation behaviour.
+	if not _anim.has_animation(anim):
+		return
 	if _anim.current_animation != anim:
 		_anim.play(anim)
 
