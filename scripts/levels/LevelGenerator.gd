@@ -103,6 +103,9 @@ var _souls: Dictionary = {}
 
 var _static_levels: Array = []
 var _hidden_soul_levels: Dictionary = {}  # level_id → soul data
+# Tracks which (circle, type) fallbacks we've already logged this session,
+# so the warning fires once per missing room family instead of per room.
+var _fallback_logged: Dictionary = {}
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -269,8 +272,10 @@ func _resolve_room_path(circle: int, type: String, idx: int) -> String:
 	if type == "main":
 		# Clamp main index to what circle_1 ships with (24 variants).
 		fallback_idx = ((idx - 1) % 24) + 1
-	_report_warn("LevelGenerator: %s fallback — circle %d/%s_%d missing, using circle_1/%s_%d" % [
-		type, circle, type, idx, type, fallback_idx])
+	var key: String = "%d/%s" % [circle, type]
+	if not _fallback_logged.has(key):
+		_fallback_logged[key] = true
+		_report_warn("LevelGenerator: circle %d has no '%s' rooms — falling back to circle_1 for this type" % [circle, type])
 	return ROOM_SCENE_PATTERN % [1, type, fallback_idx]
 
 # ── DebugOverlay forwarders ───────────────────────────────────────────────────
