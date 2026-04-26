@@ -72,6 +72,8 @@ func open() -> void:
 	_confirm_panel.visible = false
 	visible = true
 	_animate_in()
+	if SoundManager:
+		SoundManager.play_sfx("ui", "pause_open")
 
 func close() -> void:
 	if not _visible_flag:
@@ -80,6 +82,8 @@ func close() -> void:
 	get_tree().paused = false
 	_animate_out()
 	resumed.emit()
+	if SoundManager:
+		SoundManager.play_sfx("ui", "pause_close")
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 

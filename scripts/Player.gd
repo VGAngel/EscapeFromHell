@@ -512,6 +512,8 @@ func _die() -> void:
 		_anim.play("player_death")
 	_shake_camera(0.3, 12.0)
 	_spawn_fx("death", global_position)
+	if SoundManager:
+		SoundManager.play_sfx("player", "death")
 	if carried_soul_id != "":
 		soul_dropped.emit(carried_soul_id, global_position)
 		_drop_soul()
@@ -680,6 +682,8 @@ func respawn(spawn_position: Vector2) -> void:
 	if _anim and _anim.has_animation("player_respawn_breath"):
 		_anim.play("player_respawn_breath")
 	_spawn_fx("respawn", global_position)
+	if SoundManager:
+		SoundManager.play_sfx("player", "respawn")
 
 func _spawn_fx(preset: String, at: Vector2, facing_right: bool = true) -> void:
 	if not is_inside_tree():

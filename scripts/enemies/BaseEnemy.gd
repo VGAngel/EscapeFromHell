@@ -206,6 +206,7 @@ func _do_alert(_delta: float) -> void:
 func _enter_chase() -> void:
 	state = State.CHASE
 	_chase_timer = chase_duration
+	_play_sound("chase")
 	_tutorial_hint("enemy_chasing")
 
 func _do_chase(_delta: float) -> void:
@@ -515,7 +516,19 @@ func _hide_question_mark() -> void:
 	pass
 
 func _play_sound(event: String) -> void:
-	pass  # override in subclass
+	# Map BaseEnemy state events to the audio_config.json `enemies.*` keys.
+	# Subclasses can still override for boss-specific cues.
+	if not SoundManager:
+		return
+	var key: String = ""
+	match event:
+		"alert":     key = "alert"
+		"chase":     key = "chase_start"
+		"give_up":   key = "give_up"
+		"step":      key = "patrol_step"
+		"stun":      key = "alert"   # no dedicated stun sfx yet — alert reads as "ouch"
+	if key != "":
+		SoundManager.play_sfx("enemies", key)
 
 func _tutorial_hint(hint_id: String) -> void:
 	if not is_inside_tree():
