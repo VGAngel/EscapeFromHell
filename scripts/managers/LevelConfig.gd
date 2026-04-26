@@ -151,3 +151,11 @@ func get_level_name(id: int) -> String:
 
 func total_levels() -> int:
 	return _levels_by_id.size()
+
+## Returns all level ids in their config-file order (NOT sorted).
+## Used by debug UI to enumerate the full catalog.
+func get_all_level_ids() -> Array:
+	var ids: Array = []
+	for level: Dictionary in _data.get("levels", []):
+		ids.append(int(level["id"]))
+	return ids

@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" path="res://Assets/hellAssets/Background/Background_01.png" id="5_bg"]
 [ext_resource type="Script" path="res://scripts/ui/ProfileScreen.gd" id="6_profile"]
 [ext_resource type="Script" path="res://scripts/ui/SeedDialog.gd" id="7_seed"]
+[ext_resource type="Script" path="res://scripts/ui/LevelDebugMenu.gd" id="8_levels"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -73,6 +74,13 @@ custom_minimum_size = Vector2(0, 90)
 theme_override_font_sizes/font_size = 32
 text = "Налаштування"
 
+[node name="BtnLevels" type="Button" parent="ButtonsContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 90)
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 0.65, 0.35, 1)
+text = "Levels (debug)"
+
 [node name="BtnSeed" type="Button" parent="ButtonsContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 90)
@@ -133,3 +141,8 @@ script = ExtResource("6_profile")
 layer = 10
 visible = false
 script = ExtResource("7_seed")
+
+[node name="LevelDebugMenu" type="CanvasLayer" parent="."]
+layer = 10
+visible = false
+script = ExtResource("8_levels")

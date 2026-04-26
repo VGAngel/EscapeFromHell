@@ -30,6 +30,7 @@ const FADE_DURATION := 0.5
 @onready var _btn_exit:    Button        = get_node_or_null("ButtonsContainer/BtnExit")
 @onready var _btn_profile: Button        = get_node_or_null("ButtonsContainer/BtnProfile")
 @onready var _btn_seed:    Button        = get_node_or_null("ButtonsContainer/BtnSeed")
+@onready var _btn_levels:  Button        = get_node_or_null("ButtonsContainer/BtnLevels")
 @onready var _seed_lbl:    Label         = get_node_or_null("SeedLabel")
 @onready var _version_lbl: Label         = $VersionLabel
 @onready var _collection:  CanvasLayer   = $CollectionScreen
@@ -37,6 +38,7 @@ const FADE_DURATION := 0.5
 @onready var _donate:      CanvasLayer   = $DonatePanel
 @onready var _profiles:    CanvasLayer   = get_node_or_null("ProfileScreen")
 @onready var _seed_dlg:    CanvasLayer   = get_node_or_null("SeedDialog")
+@onready var _level_debug: CanvasLayer   = get_node_or_null("LevelDebugMenu")
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -52,6 +54,8 @@ func _ready() -> void:
 		_btn_profile.pressed.connect(_on_profile)
 	if _btn_seed:
 		_btn_seed.pressed.connect(_on_seed)
+	if _btn_levels:
+		_btn_levels.pressed.connect(_on_levels)
 
 	_collection.closed.connect(_on_overlay_closed)
 	_settings.closed.connect(_on_overlay_closed)
@@ -60,6 +64,8 @@ func _ready() -> void:
 		_profiles.closed.connect(_on_overlay_closed)
 	if _seed_dlg:
 		_seed_dlg.closed.connect(_on_overlay_closed)
+	if _level_debug:
+		_level_debug.closed.connect(_on_overlay_closed)
 
 	_ensure_seed()
 	_refresh_buttons()
@@ -173,6 +179,11 @@ func _on_profile() -> void:
 		_profiles.open()
 		_set_interactive(false)
 
+func _on_levels() -> void:
+	if _level_debug:
+		_level_debug.open()
+		_set_interactive(false)
+
 func _on_seed() -> void:
 	# One click = new world seed. The old SeedDialog (manual entry) is kept in
 	# the scene tree but no longer opened from this button — leave it wired
@@ -266,6 +277,7 @@ func _build_fallback_ui() -> void:
 		["BtnProfile",    "Профіль"],
 		["BtnCollection", "Врятовані Душі  0/100"],
 		["BtnSettings",   "Налаштування"],
+		["BtnLevels",     "Levels (debug)"],
 		["BtnSeed",       "🌱  Seed"],
 		["BtnNoAds",      "Без реклами"],
 		["BtnDonate",     "Пожертвувати"],
@@ -291,11 +303,19 @@ func _build_fallback_ui() -> void:
 	add_child(ver)
 
 	# Overlay screens (empty CanvasLayers — scripts assign themselves)
-	for screen_name in ["CollectionScreen", "SettingsScreen", "DonatePanel", "ProfileScreen", "SeedDialog"]:
+	var screen_names := [
+		"CollectionScreen", "SettingsScreen", "DonatePanel",
+		"ProfileScreen", "SeedDialog", "LevelDebugMenu",
+	]
+	for screen_name in screen_names:
 		var cl := CanvasLayer.new()
 		cl.name  = screen_name
 		cl.layer = 10
 		add_child(cl)
+	# Attach debug overlay script so a code-only fallback wires up too.
+	var debug_node: CanvasLayer = get_node_or_null("LevelDebugMenu") as CanvasLayer
+	if debug_node and debug_node.get_script() == null:
+		debug_node.set_script(load("res://scripts/ui/LevelDebugMenu.gd"))
 
 func _make_menu_btn(text: String, primary: bool) -> Button:
 	var btn := Button.new()
