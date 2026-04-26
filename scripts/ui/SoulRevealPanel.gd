@@ -73,10 +73,14 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
+	# CenterContainer keeps the panel centered and re-centers automatically
+	# when the viewport size changes (FHD ↔ HD resolution switch).
+	var centerer := CenterContainer.new()
+	centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centerer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(centerer)
+
 	_panel = PanelContainer.new()
-	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	_panel.custom_minimum_size = Vector2(420, 0)
 
 	var style := StyleBoxFlat.new()
@@ -93,7 +97,7 @@ func _build_ui() -> void:
 	style.content_margin_top    = 22.0
 	style.content_margin_bottom = 22.0
 	_panel.add_theme_stylebox_override("panel", style)
-	_root.add_child(_panel)
+	centerer.add_child(_panel)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)

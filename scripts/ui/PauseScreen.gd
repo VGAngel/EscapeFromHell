@@ -170,12 +170,16 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_root)
 
+	# CenterContainer fills the screen and re-centers its child whenever
+	# the viewport size changes (resolution switch, orientation change).
+	var centerer := CenterContainer.new()
+	centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centerer.mouse_filter = Control.MOUSE_FILTER_PASS
+	_root.add_child(centerer)
+
 	# Central panel
 	_panel = PanelContainer.new()
-	_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
-	_panel.custom_minimum_size = Vector2(300, 0)
+	_panel.custom_minimum_size = Vector2(420, 0)
 	var style := StyleBoxFlat.new()
 	style.bg_color        = Color(0.08, 0.06, 0.10, 0.96)
 	style.border_width_left   = 1
@@ -192,7 +196,7 @@ func _build_ui() -> void:
 	style.content_margin_top    = 28.0
 	style.content_margin_bottom = 28.0
 	_panel.add_theme_stylebox_override("panel", style)
-	_root.add_child(_panel)
+	centerer.add_child(_panel)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 14)
@@ -266,12 +270,16 @@ func _build_ui() -> void:
 	_build_confirm_panel()
 
 func _build_confirm_panel() -> void:
+	# Wrap in its own CenterContainer so the confirm popup also stays centered
+	# (and recenters on resolution change) without inheriting PRESET_CENTER bug.
+	var confirm_centerer := CenterContainer.new()
+	confirm_centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	confirm_centerer.mouse_filter = Control.MOUSE_FILTER_PASS
+	confirm_centerer.z_index = 2
+	_root.add_child(confirm_centerer)
+
 	_confirm_panel = PanelContainer.new()
-	_confirm_panel.set_anchors_preset(Control.PRESET_CENTER)
-	_confirm_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_confirm_panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
-	_confirm_panel.custom_minimum_size = Vector2(280, 0)
-	_confirm_panel.z_index = 2
+	_confirm_panel.custom_minimum_size = Vector2(360, 0)
 
 	var style := StyleBoxFlat.new()
 	style.bg_color     = Color(0.10, 0.05, 0.06, 0.98)
@@ -289,7 +297,7 @@ func _build_confirm_panel() -> void:
 	style.content_margin_top    = 22.0
 	style.content_margin_bottom = 22.0
 	_confirm_panel.add_theme_stylebox_override("panel", style)
-	_root.add_child(_confirm_panel)
+	confirm_centerer.add_child(_confirm_panel)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 12)

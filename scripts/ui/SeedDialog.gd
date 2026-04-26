@@ -100,11 +100,16 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_root)
 
+	# CenterContainer fills the screen and re-centers the card automatically
+	# whenever the viewport size changes (resolution switch).
+	var centerer := CenterContainer.new()
+	centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centerer.mouse_filter = Control.MOUSE_FILTER_PASS
+	_root.add_child(centerer)
+
 	# Centred card
 	var card := PanelContainer.new()
-	card.set_anchors_preset(Control.PRESET_CENTER)
-	card.size = Vector2(440, 0)
-	card.position = Vector2(140, 360)
+	card.custom_minimum_size = Vector2(440, 0)
 	var card_style := StyleBoxFlat.new()
 	card_style.bg_color = Color(0.10, 0.08, 0.14)
 	card_style.border_width_left   = 1
@@ -119,7 +124,7 @@ func _build_ui() -> void:
 	card_style.content_margin_top    = 20.0
 	card_style.content_margin_bottom = 20.0
 	card.add_theme_stylebox_override("panel", card_style)
-	_root.add_child(card)
+	centerer.add_child(card)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 14)

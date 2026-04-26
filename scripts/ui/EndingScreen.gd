@@ -64,14 +64,18 @@ func _build_ui() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
+	# CenterContainer fills the screen and re-centers its child whenever
+	# the viewport size changes (resolution switch).
+	var centerer := CenterContainer.new()
+	centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centerer.mouse_filter = Control.MOUSE_FILTER_PASS
+	add_child(centerer)
+
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_theme_constant_override("separation", 24)
-	vbox.set_anchors_preset(Control.PRESET_CENTER)
-	vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	vbox.grow_vertical   = Control.GROW_DIRECTION_BOTH
 	vbox.custom_minimum_size = Vector2(560, 0)
-	add_child(vbox)
+	centerer.add_child(vbox)
 
 	var lbl_pre := Label.new()
 	lbl_pre.text = "— Кінцівка —"
