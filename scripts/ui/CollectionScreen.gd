@@ -9,10 +9,10 @@ signal closed
 # ── Constants ─────────────────────────────────────────────────────────────────
 const SOULS_PATH    := "res://souls_collection.json"
 const FADE_DURATION := 0.35
-const COLS          := 7
-const CELL_SIZE     := Vector2(62, 62)
-const CELL_GAP      := 5
-const DETAIL_W      := 200
+const COLS          := 6
+const CELL_SIZE     := Vector2(100, 100)
+const CELL_GAP      := 8
+const DETAIL_W      := 320
 
 # ── Soul data ─────────────────────────────────────────────────────────────────
 var _named_souls:  Array = []
@@ -199,7 +199,7 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 	lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 15)
+	lbl.add_theme_font_size_override("font_size", 24)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	if saved:
@@ -217,11 +217,11 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 	if is_hidden:
 		var badge := Label.new()
 		badge.text = "✦"
-		badge.add_theme_font_size_override("font_size", 12)
+		badge.add_theme_font_size_override("font_size", 20)
 		badge.add_theme_color_override("font_color",
 			Color("#FFD700") if saved else Color(0.45, 0.38, 0.12))
 		badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-		badge.position = Vector2(-10, 1)
+		badge.position = Vector2(-18, 2)
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn.add_child(badge)
 
@@ -413,15 +413,15 @@ func _build_ui() -> void:
 
 func _build_header(parent: VBoxContainer) -> void:
 	var hdr := HBoxContainer.new()
-	hdr.custom_minimum_size.y = 58
-	hdr.add_theme_constant_override("separation", 10)
+	hdr.custom_minimum_size.y = 88
+	hdr.add_theme_constant_override("separation", 18)
 
 	# Inline padding via MarginContainer
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",  16)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top",    0)
-	margin.add_theme_constant_override("margin_bottom", 0)
+	margin.add_theme_constant_override("margin_left",  24)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top",   12)
+	margin.add_theme_constant_override("margin_bottom", 6)
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(margin)
 	margin.add_child(hdr)
@@ -429,29 +429,29 @@ func _build_header(parent: VBoxContainer) -> void:
 	var title := Label.new()
 	title.text = "Врятовані Душі"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", Color("#FFD700"))
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(title)
 
 	_lbl_named = Label.new()
 	_lbl_named.text = "0 / 100"
-	_lbl_named.add_theme_font_size_override("font_size", 21)
+	_lbl_named.add_theme_font_size_override("font_size", 30)
 	_lbl_named.add_theme_color_override("font_color", Color(0.80, 0.78, 0.84))
 	_lbl_named.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(_lbl_named)
 
 	_lbl_hidden = Label.new()
 	_lbl_hidden.text = "✦ 0 / 20"
-	_lbl_hidden.add_theme_font_size_override("font_size", 20)
+	_lbl_hidden.add_theme_font_size_override("font_size", 28)
 	_lbl_hidden.add_theme_color_override("font_color", Color("#A07820"))
 	_lbl_hidden.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(_lbl_hidden)
 
 	var btn_close := Button.new()
 	btn_close.text = "✕"
-	btn_close.custom_minimum_size = Vector2(44, 44)
-	btn_close.add_theme_font_size_override("font_size", 27)
+	btn_close.custom_minimum_size = Vector2(72, 72)
+	btn_close.add_theme_font_size_override("font_size", 38)
 	var cs := StyleBoxEmpty.new()
 	btn_close.add_theme_stylebox_override("normal", cs)
 	btn_close.add_theme_stylebox_override("hover",  cs)
@@ -462,7 +462,7 @@ func _build_header(parent: VBoxContainer) -> void:
 func _build_circle_row(parent: VBoxContainer) -> void:
 	# Horizontally scrollable row of circle tabs
 	_circle_scroll = ScrollContainer.new()
-	_circle_scroll.custom_minimum_size.y = 40
+	_circle_scroll.custom_minimum_size.y = 64
 	_circle_scroll.vertical_scroll_mode   = ScrollContainer.SCROLL_MODE_DISABLED
 	_circle_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	parent.add_child(_circle_scroll)
@@ -496,14 +496,14 @@ func _build_circle_row(parent: VBoxContainer) -> void:
 
 func _build_type_row(parent: VBoxContainer) -> void:
 	var row := HBoxContainer.new()
-	row.custom_minimum_size.y = 38
-	row.add_theme_constant_override("separation", 5)
+	row.custom_minimum_size.y = 64
+	row.add_theme_constant_override("separation", 8)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",  10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top",    0)
-	margin.add_theme_constant_override("margin_bottom", 0)
+	margin.add_theme_constant_override("margin_left",  18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top",    6)
+	margin.add_theme_constant_override("margin_bottom", 6)
 	parent.add_child(margin)
 	margin.add_child(row)
 
@@ -536,10 +536,10 @@ func _build_grid_area(parent: VBoxContainer) -> void:
 	parent.add_child(_grid_scroll)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",  10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top",    8)
-	margin.add_theme_constant_override("margin_bottom", 8)
+	margin.add_theme_constant_override("margin_left",  18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top",   14)
+	margin.add_theme_constant_override("margin_bottom", 14)
 	_grid_scroll.add_child(margin)
 
 	_grid = GridContainer.new()
@@ -556,14 +556,14 @@ func _build_sheet() -> void:
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.09, 0.08, 0.12, 0.98)
-	style.border_width_top = 1
+	style.border_width_top = 2
 	style.border_color     = Color(0.30, 0.26, 0.40)
-	style.corner_radius_top_left  = 18
-	style.corner_radius_top_right = 18
-	style.content_margin_left   = 20.0
-	style.content_margin_right  = 20.0
-	style.content_margin_top    = 18.0
-	style.content_margin_bottom = 20.0
+	style.corner_radius_top_left  = 22
+	style.corner_radius_top_right = 22
+	style.content_margin_left   = 30.0
+	style.content_margin_right  = 30.0
+	style.content_margin_top    = 26.0
+	style.content_margin_bottom = 30.0
 	_sheet.add_theme_stylebox_override("panel", style)
 
 	# Absolutely positioned — starts off-screen below (position set in _ready after layout settles)
@@ -571,29 +571,29 @@ func _build_sheet() -> void:
 	_root.add_child(_sheet)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.add_theme_constant_override("separation", 12)
 	_sheet.add_child(vbox)
 
 	# Drag handle
 	var handle := ColorRect.new()
 	handle.color = Color(0.38, 0.35, 0.48)
-	handle.custom_minimum_size = Vector2(44, 4)
+	handle.custom_minimum_size = Vector2(64, 6)
 	handle.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	vbox.add_child(handle)
 
 	_sheet_name = Label.new()
-	_sheet_name.add_theme_font_size_override("font_size", 30)
+	_sheet_name.add_theme_font_size_override("font_size", 42)
 	_sheet_name.add_theme_color_override("font_color", Color(0.92, 0.90, 0.96))
 	_sheet_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_sheet_name)
 
 	_sheet_age = Label.new()
-	_sheet_age.add_theme_font_size_override("font_size", 20)
+	_sheet_age.add_theme_font_size_override("font_size", 28)
 	_sheet_age.add_theme_color_override("font_color", Color(0.58, 0.56, 0.64))
 	vbox.add_child(_sheet_age)
 
 	_sheet_loc = Label.new()
-	_sheet_loc.add_theme_font_size_override("font_size", 18)
+	_sheet_loc.add_theme_font_size_override("font_size", 26)
 	_sheet_loc.add_theme_color_override("font_color", Color(0.52, 0.50, 0.58))
 	vbox.add_child(_sheet_loc)
 
@@ -605,13 +605,13 @@ func _build_sheet() -> void:
 	vbox.add_child(_sheet_sep)
 
 	_sheet_text = Label.new()
-	_sheet_text.add_theme_font_size_override("font_size", 21)
-	_sheet_text.add_theme_color_override("font_color", Color(0.80, 0.78, 0.84))
+	_sheet_text.add_theme_font_size_override("font_size", 28)
+	_sheet_text.add_theme_color_override("font_color", Color(0.84, 0.82, 0.88))
 	_sheet_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_sheet_text)
 
 	_sheet_extra = Label.new()
-	_sheet_extra.add_theme_font_size_override("font_size", 20)
+	_sheet_extra.add_theme_font_size_override("font_size", 26)
 	_sheet_extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_sheet_extra)
 
@@ -629,7 +629,7 @@ func _build_completion_label() -> void:
 	_completion_lbl = Label.new()
 	_completion_lbl.text = "Всі 100 душ знайдені"
 	_completion_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_completion_lbl.add_theme_font_size_override("font_size", 27)
+	_completion_lbl.add_theme_font_size_override("font_size", 38)
 	_completion_lbl.add_theme_color_override("font_color", Color("#FFD700"))
 	_completion_lbl.set_anchors_preset(Control.PRESET_CENTER)
 	_completion_lbl.position.y = 200
@@ -642,18 +642,18 @@ func _filter_btn(text: String, active: bool) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.add_theme_font_size_override("font_size", 18)
+	btn.add_theme_font_size_override("font_size", 26)
 
 	var n := StyleBoxFlat.new()
 	n.bg_color = Color(0.14, 0.13, 0.18)
-	n.corner_radius_top_left    = 8
-	n.corner_radius_top_right   = 8
-	n.corner_radius_bottom_left = 8
-	n.corner_radius_bottom_right = 8
-	n.content_margin_left   = 10.0
-	n.content_margin_right  = 10.0
-	n.content_margin_top    = 5.0
-	n.content_margin_bottom = 5.0
+	n.corner_radius_top_left    = 10
+	n.corner_radius_top_right   = 10
+	n.corner_radius_bottom_left = 10
+	n.corner_radius_bottom_right = 10
+	n.content_margin_left   = 18.0
+	n.content_margin_right  = 18.0
+	n.content_margin_top    = 10.0
+	n.content_margin_bottom = 10.0
 
 	var h := n.duplicate() as StyleBoxFlat
 	h.bg_color = Color(0.22, 0.20, 0.28)
