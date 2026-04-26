@@ -1425,10 +1425,14 @@ func _draw() -> void:
 	var side_t: float = SIDE_WALL_T if is_vertical else WALL_T
 	var left_x:  float = float(sa_left)
 	var right_x: float = room_width - side_t - float(sa_right)
-	if is_vertical and not _wall_textures_cache.is_empty():
-		_draw_textured_side_wall(left_x,  side_t, "L")
-		_draw_textured_side_wall(right_x, side_t, "R")
-	else:
+	# Vertical shafts: the textured backdrop already paints walls along both
+	# edges of the frame, so an extra 60-px brick slice on top of that just
+	# squashed the brickwork into unrecognisable streaks (one brick is wider
+	# than the wall slot). Skip the textured side wall and let the backdrop
+	# carry the visual; physical collision is unaffected (built in _build_walls).
+	# Horizontal rooms still draw the flat coloured side walls so the player
+	# can see the room edges without backdrop art.
+	if not is_vertical:
 		draw_rect(Rect2(left_x,  0, side_t, room_height), wall_c)
 		draw_rect(Rect2(right_x, 0, side_t, room_height), wall_c)
 
