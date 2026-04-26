@@ -71,6 +71,14 @@ const WALL_TEXTURES_BY_TILESET := {
 	],
 }
 
+# Atmospheric backdrop drawn behind walls and platforms. Falls through to a
+# flat CIRCLE_COLORS fill when a tileset has no backdrop entries.
+const BACKDROP_TEXTURES_BY_TILESET := {
+	"tileset1": [
+		"res://Assets/OurAssets/walls/circle1/backdrop_a.png",
+	],
+}
+
 # Row Y positions — computed in _init_zone() from difficulty spacing.
 # Based on: floor_y - spacing * N.
 # Ensure _row_high leaves enough clearance for PLAYER_HEIGHT + WALL_T above.
@@ -1239,6 +1247,8 @@ func _add_platform(pos: Vector2, size: Vector2) -> void:
 # Cached texture list for the current tileset. Lazy-loaded on first _draw().
 var _wall_textures_cache: Array = []
 var _wall_textures_loaded: bool = false
+var _backdrop_textures_cache: Array = []
+var _backdrop_textures_loaded: bool = false
 
 func _ensure_wall_textures_loaded() -> void:
 	if _wall_textures_loaded:
@@ -1250,6 +1260,40 @@ func _ensure_wall_textures_loaded() -> void:
 			var tex: Texture2D = load(p)
 			if tex:
 				_wall_textures_cache.append(tex)
+
+func _ensure_backdrop_textures_loaded() -> void:
+	if _backdrop_textures_loaded:
+		return
+	_backdrop_textures_loaded = true
+	var paths: Array = BACKDROP_TEXTURES_BY_TILESET.get(tileset, [])
+	for p in paths:
+		if ResourceLoader.exists(p):
+			var tex: Texture2D = load(p)
+			if tex:
+				_backdrop_textures_cache.append(tex)
+
+## Draws an atmospheric backdrop tiled vertically at native texture height.
+## Width is stretched to fit the shaft (small uniform fog stretch is invisible).
+## Variant pick is seeded by level_id so the same level always renders the
+## same backdrop — adjacent levels can differ when more variants ship.
+func _draw_textured_backdrop(x: float, width: float) -> void:
+	if _backdrop_textures_cache.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("backdrop_%d" % level_id)
+	var n: int = _backdrop_textures_cache.size()
+	var y: float = 0.0
+	while y < room_height:
+		var tex: Texture2D = _backdrop_textures_cache[rng.randi() % n]
+		var tex_w: float = float(tex.get_width())
+		var tex_h: float = float(tex.get_height())
+		var section_h: float = minf(tex_h, room_height - y)
+		draw_texture_rect_region(
+			tex,
+			Rect2(x, y, width, section_h),
+			Rect2(0.0, 0.0, tex_w, section_h)
+		)
+		y += tex_h
 
 ## Draws one side wall as a stack of textured sections at native pixel scale —
 ## no horizontal or vertical stretching. Each section uses the source texture's
@@ -1284,12 +1328,18 @@ func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
 
 func _draw() -> void:
 	_ensure_wall_textures_loaded()
+	_ensure_backdrop_textures_loaded()
 
 	var bg: Color = CIRCLE_COLORS[clampi(circle, 0, CIRCLE_COLORS.size() - 1)]
 	var wall_c: Color = bg.darkened(0.35)
 
-	# Background fill
+	# Background fill — flat colour first, atmospheric backdrop layered on top
+	# for vertical shafts when textures are available. Walls/floor/ceiling
+	# overlay the backdrop, so the bg colour is only visible when no backdrop
+	# texture exists for the current tileset.
 	draw_rect(Rect2(0, 0, room_width, room_height), bg)
+	if is_vertical and not _backdrop_textures_cache.is_empty():
+		_draw_textured_backdrop(0.0, room_width)
 
 	# A "shaft" is the whole vertical level in one room — both ends are sealed.
 	# Legacy entrance/main/exit kept their split walls for the old stacked path.
