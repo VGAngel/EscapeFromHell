@@ -105,9 +105,11 @@ const PLAYER_ANIM_FOLDERS := {
 }
 const PLAYER_SPRITE_SCALE  := 0.15   # Dark_Elves ship on ~900×900 canvases
 const PLAYER_SPRITE_FPS    := 12.0
-const NON_LOOPING_ANIMS    := ["player_death", "player_staff_swing",
-							   "player_pickup", "player_hurt",
-							   "player_respawn_breath"]
+const NON_LOOPING_ANIMS    := [
+	"player_death", "player_staff_swing",
+	"player_pickup", "player_hurt",
+	"player_respawn_breath",
+]
 const SIN_THRESHOLDS := [0, 30, 60, 85]
 # modulate per state: clean → tainted → fallen → demon
 const SIN_MODULATES := [

@@ -216,7 +216,7 @@ func _do_idle() -> void:
 # ── PATROL ────────────────────────────────────────────────────────────────────
 var _patrol_dir: float = 1.0
 
-func _do_patrol(delta: float) -> void:
+func _do_patrol(_delta: float) -> void:
 	var phase_data := _get_current_phase_data()
 	var behavior: String = phase_data.get("behavior", "")
 	if behavior == "slow_patrol":
@@ -227,7 +227,7 @@ func _do_patrol(delta: float) -> void:
 		_patrol_dir *= -1.0
 
 # ── CHASE ─────────────────────────────────────────────────────────────────────
-func _do_chase(delta: float) -> void:
+func _do_chase(_delta: float) -> void:
 	if not _player:
 		state = BossState.PATROL
 		return
@@ -416,7 +416,7 @@ func spawn_copies(copy_scene: PackedScene, count: int = 3) -> void:
 			copy.setup_as_copy(self)
 		_copies.append(copy)
 
-func setup_as_copy(original: Node) -> void:
+func setup_as_copy(_original: Node) -> void:
 	_is_real_boss = false
 	modulate = Color(0.85, 0.85, 0.85, 0.9)
 

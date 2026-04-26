@@ -1,0 +1,12 @@
+excluded_directories: !!set
+  .git: null
+  .godot: null
+  addons: null
+  archive: null
+disable:
+  - class-definitions-order
+  - max-returns
+  - max-public-methods
+max-line-length: 120
+max-file-lines: 1500
+function-arguments-number: 12
