@@ -118,7 +118,27 @@ func _draw_textured() -> bool:
 	var visual_h: float = visual_w * (tex_h / tex_w)
 	var rect := Rect2(-visual_w / 2.0, -_size.y / 2.0, visual_w, visual_h)
 	draw_texture_rect(tex, rect, false)
+	_draw_top_rim_light(rect)
 	return true
+
+# Pale cream rim light along the upper edge — reads as the GDD's "cold
+# sourceless light from above" catching the platform top, and gives the
+# silhouette enough contrast to pop off the dimmed backdrop. Two thin lines
+# of decreasing alpha imitate a soft painted highlight without breaking the
+# bold-outline cartoon style.
+const RIM_COLOR_HARD: Color = Color(0.95, 0.92, 0.85, 0.55)
+const RIM_COLOR_SOFT: Color = Color(0.95, 0.92, 0.85, 0.22)
+
+func _draw_top_rim_light(rect: Rect2) -> void:
+	# Inset 4 px from the chipped corners so the highlight reads as light on
+	# the stone surface, not as a glowing border around the whole sprite.
+	var inset_x: float = 4.0
+	var x0: float = rect.position.x + inset_x
+	var x1: float = rect.position.x + rect.size.x - inset_x
+	var y_top: float = rect.position.y
+	# 1 px hard line at the very top + 2 px soft line just below = soft glow.
+	draw_line(Vector2(x0, y_top + 0.5), Vector2(x1, y_top + 0.5), RIM_COLOR_HARD, 1.0)
+	draw_line(Vector2(x0, y_top + 2.0), Vector2(x1, y_top + 2.0), RIM_COLOR_SOFT, 2.0)
 
 func _ensure_textures(paths: Array) -> Array:
 	var loaded: Array = []

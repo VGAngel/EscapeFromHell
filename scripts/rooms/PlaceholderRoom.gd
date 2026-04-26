@@ -1337,6 +1337,12 @@ func _ensure_backdrop_textures_loaded() -> void:
 ## Width is stretched to fit the shaft (small uniform fog stretch is invisible).
 ## Variant pick is seeded by level_id so the same level always renders the
 ## same backdrop — adjacent levels can differ when more variants ship.
+##
+## The modulate dims the texture to ~55 % brightness so the foreground
+## (platforms, walls, player, soul) reads cleanly against it without losing
+## the painted detail of the backdrop art.
+const BACKDROP_DIM: Color = Color(0.55, 0.55, 0.55, 1.0)
+
 func _draw_textured_backdrop(x: float, width: float) -> void:
 	if _backdrop_textures_cache.is_empty():
 		return
@@ -1352,7 +1358,8 @@ func _draw_textured_backdrop(x: float, width: float) -> void:
 		draw_texture_rect_region(
 			tex,
 			Rect2(x, y, width, section_h),
-			Rect2(0.0, 0.0, tex_w, section_h)
+			Rect2(0.0, 0.0, tex_w, section_h),
+			BACKDROP_DIM
 		)
 		y += tex_h
 
