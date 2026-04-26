@@ -4,8 +4,34 @@
   "anim_subpath": "PNG/PNG Sequences/",
 
   "note": "Шлях до кадрів: base_path + pack + / + character + / + anim_subpath + animation_folder",
+  "note_character_by_circle": "Optional. Maps circle number → character folder so a single enemy id can use simpler/fancier sprites as the player descends. The string circle key is matched against LevelConfig.get_circle(GameManager.current_level_id). Falls back to `character` when the circle isn't listed.",
 
   "enemies": {
+
+    "skeleton": {
+      "pack": "skeleton-chibi-2d-game-sprites",
+      "character": "Skeleton_1",
+      "character_by_circle": {
+        "1": "Skeleton_1",
+        "2": "Skeleton_1",
+        "3": "Skeleton_2",
+        "4": "Skeleton_2",
+        "5": "Skeleton_2",
+        "6": "Skeleton_3",
+        "7": "Skeleton_3",
+        "8": "Skeleton_3",
+        "9": "Skeleton_3",
+        "10": "Skeleton_3"
+      },
+      "animations": {
+        "enemy_idle":   "Idle",
+        "enemy_walk":   "Walking",
+        "enemy_run":    "Running",
+        "enemy_attack": "Slashing",
+        "enemy_stun":   "Hurt",
+        "enemy_death":  "Dying"
+      }
+    },
 
     "shadow_lost": {
       "pack": "free-fallen-angel-chibi-2d-game-sprites",

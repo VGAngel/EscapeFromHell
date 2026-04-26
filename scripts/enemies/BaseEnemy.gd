@@ -394,6 +394,15 @@ func _load_sprite_frames_from_map(id: String) -> bool:
 	var pack:      String     = entry.get("pack", "")
 	var character: String     = entry.get("character", "")
 	var anims:     Dictionary = entry.get("animations", {})
+	# Optional per-circle override: a single enemy id (e.g. "skeleton") can
+	# upgrade to a fancier character folder as the player descends. Falls
+	# through to the base `character` when the current circle isn't listed.
+	var by_circle: Dictionary = entry.get("character_by_circle", {})
+	if not by_circle.is_empty() and LevelConfig and GameManager:
+		var circle_str: String = str(LevelConfig.get_circle(GameManager.current_level_id))
+		var override: String = by_circle.get(circle_str, "")
+		if override != "":
+			character = override
 	if pack == "" or character == "" or anims.is_empty():
 		return false
 
