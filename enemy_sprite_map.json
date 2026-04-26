@@ -258,27 +258,59 @@
   "bosses": {
     "boss_01": {
       "pack": "free-golems-chibi-2d-game-sprites",
-      "character": "Golem_3"
+      "character": "Golem_3",
+      "animations": {
+        "boss_idle": "Idle",
+        "boss_walk": "Running",
+        "boss_stun": "Hurt"
+      }
     },
     "boss_02": {
       "pack": "free-fallen-angel-chibi-2d-game-sprites",
-      "character": "Fallen_Angels_3"
+      "character": "Fallen_Angels_3",
+      "animations": {
+        "boss_idle": "Idle",
+        "boss_walk": "Running",
+        "boss_stun": "Hurt"
+      }
     },
     "boss_03": {
       "pack": "free-golems-chibi-2d-game-sprites",
-      "character": "Golem_2"
+      "character": "Golem_2",
+      "animations": {
+        "boss_idle": "Idle",
+        "boss_walk": "Running",
+        "boss_stun": "Hurt"
+      }
     },
     "boss_05": {
       "pack": "chibi-winter-witch-character-sprite",
-      "character": "Winter_Witch_1"
+      "character": "Winter_Witch_1",
+      "animations": {
+        "boss_idle": "Idle",
+        "boss_walk": "Running",
+        "boss_stun": "Hurt",
+        "boss_charge_telegraph": "Idle Blinking",
+        "boss_charge": "Slashing"
+      }
     },
     "boss_07": {
       "pack": "ghost-knight-chibi-character-sprites",
-      "character": "Ghost_Knight_3"
+      "character": "Ghost_Knight_3",
+      "animations": {
+        "boss_idle": "Idle",
+        "boss_walk": "Running",
+        "boss_stun": "Hurt"
+      }
     },
     "boss_10": {
       "pack": "devil-hell-knight-succubus-chibi-2d-game-sprites",
-      "character": "Devil"
+      "character": "Devil",
+      "animations": {
+        "boss_idle": "Idle",
+        "boss_walk": "Running",
+        "boss_stun": "Hurt"
+      }
     }
   },
 

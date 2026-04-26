@@ -59,13 +59,20 @@ const BOSS_STUN_DURATION := 6.0
 @onready var _anim:   AnimationPlayer = $AnimationPlayer
 @onready var _sprite: Sprite2D        = $Sprite2D
 
+# Created at runtime by _load_sprite_frames_from_map() when the sprite map
+# has animation folders for this boss. When non-null, drives all visuals
+# and _sprite is hidden.
+var _anim_sprite: AnimatedSprite2D = null
+
 # ── Init ──────────────────────────────────────────────────────────────────────
 func _ready() -> void:
 	_load_config()
 	_find_player()
 	add_to_group("boss")
 	_start_phase(0)
-	_make_placeholder_sprite_from_config()
+	# Try real chibi sprites first; fall back to flat-colour placeholder.
+	if not _load_sprite_frames_from_map(boss_id):
+		_make_placeholder_sprite_from_config()
 
 ## Generate a solid-colour placeholder from bosses_config.json visual section.
 ## Subclasses that load real SpriteFrames should override or no-op this.
@@ -445,24 +452,40 @@ func is_blocking_totem(totem_position: Vector2) -> bool:
 
 # ── Facing & animation ────────────────────────────────────────────────────────
 func _update_facing() -> void:
+	var face_right: bool
 	if velocity.x > 10.0:
-		_sprite.flip_h = false
+		face_right = true
 	elif velocity.x < -10.0:
-		_sprite.flip_h = true
+		face_right = false
+	else:
+		return
+	if _anim_sprite:
+		_anim_sprite.flip_h = not face_right
+	if _sprite:
+		_sprite.flip_h = not face_right
 
 var _missing_anims_logged: Dictionary = {}
 
 func _update_animation() -> void:
+	var anim := _get_anim_name()
+
+	# Prefer AnimatedSprite2D loaded from enemy_sprite_map.json.
+	if _anim_sprite and _anim_sprite.sprite_frames \
+			and _anim_sprite.sprite_frames.has_animation(anim):
+		if _anim_sprite.animation != anim:
+			_anim_sprite.play(anim)
+		return
+
+	# Fall back to AnimationPlayer (hand-authored clips, if present).
 	if not _anim:
 		return
-	var anim := _get_anim_name()
 	if not _anim.has_animation(anim):
-		# Surface the missing-animation gap loudly, but only once per clip
-		# per boss instance so the error doesn't drown out everything else.
-		# See doc/animations.md — boss animations are an open todo.
+		# Boss animations are still a todo (doc/animations.md). Log each
+		# missing clip exactly once per instance so the issue stays
+		# visible without spamming every physics tick.
 		if not _missing_anims_logged.has(anim):
 			_missing_anims_logged[anim] = true
-			push_error("BossAI[%s]: missing animation '%s' on AnimationPlayer" % [boss_id, anim])
+			push_error("BossAI[%s]: missing animation '%s'" % [boss_id, anim])
 		return
 	if _anim.current_animation != anim:
 		_anim.play(anim)
@@ -477,3 +500,97 @@ func _get_anim_name() -> String:
 		BossState.STUNNED:          return "boss_stun"
 		BossState.PHASE_TRANSITION: return "boss_idle"
 	return "boss_idle"
+
+# ── Sprite loading ────────────────────────────────────────────────────────────
+
+const SPRITE_MAP_PATH: String = "res://enemy_sprite_map.json"
+const BOSS_SPRITE_SCALE: float = 0.18    # chibi canvases ~900×900 → ~162 px tall
+const BOSS_SPRITE_FEET_PX: float = 54.0  # 300 (canvas feet offset) × scale
+
+## Build a SpriteFrames from PNG sequences referenced in enemy_sprite_map.json
+## under "bosses" → <id>. Returns true if at least one animation was loaded
+## and an AnimatedSprite2D was attached.
+func _load_sprite_frames_from_map(id: String) -> bool:
+	var map_file := FileAccess.open(SPRITE_MAP_PATH, FileAccess.READ)
+	if not map_file:
+		return false
+	var map: Variant = JSON.parse_string(map_file.get_as_text())
+	map_file.close()
+	if not (map is Dictionary):
+		return false
+
+	var base_path:    String = map.get("base_path", "res://Assets/enemies/")
+	var anim_subpath: String = map.get("anim_subpath", "PNG/PNG Sequences/")
+	var entry: Dictionary = map.get("bosses", {}).get(id, {})
+	if entry.is_empty():
+		return false
+
+	var pack:      String     = entry.get("pack", "")
+	var character: String     = entry.get("character", "")
+	var anims:     Dictionary = entry.get("animations", {})
+	if pack == "" or character == "" or anims.is_empty():
+		return false
+
+	var sf := SpriteFrames.new()
+	var any_loaded := false
+	for anim_name in anims.keys():
+		var folder: String = anims[anim_name]
+		var full_path: String = "%s%s/%s/%s%s/" % [base_path, pack, character, anim_subpath, folder]
+		var frames: Array = _collect_frames_in_dir(full_path)
+		if frames.is_empty():
+			continue
+		sf.add_animation(anim_name)
+		sf.set_animation_loop(anim_name, anim_name not in ["boss_charge"])
+		sf.set_animation_speed(anim_name, 12.0)
+		for tex in frames:
+			sf.add_frame(anim_name, tex)
+		any_loaded = true
+
+	if not any_loaded:
+		return false
+
+	_anim_sprite = AnimatedSprite2D.new()
+	_anim_sprite.sprite_frames = sf
+	_anim_sprite.scale = Vector2(BOSS_SPRITE_SCALE, BOSS_SPRITE_SCALE)
+	# Align sprite feet to the bottom of the collision rectangle.
+	var col: CollisionShape2D = get_node_or_null("CollisionShape2D")
+	if col and col.shape is RectangleShape2D:
+		var half_h: float = (col.shape as RectangleShape2D).size.y / 2.0
+		_anim_sprite.position.y = half_h - BOSS_SPRITE_FEET_PX
+	add_child(_anim_sprite)
+
+	# Hide the placeholder Sprite2D so it doesn't double-up with the new visuals.
+	if _sprite:
+		_sprite.visible = false
+	return true
+
+func _collect_frames_in_dir(path: String) -> Array:
+	var frames: Array = []
+	var dir := DirAccess.open(path)
+	if not dir:
+		return frames
+	# Exported builds list .png.import / .png.remap markers instead of raw .png.
+	# Accept both, strip the suffix, and dedupe — load() resolves to .ctex anyway.
+	var seen := {}
+	dir.list_dir_begin()
+	var fname: String = dir.get_next()
+	while fname != "":
+		if not dir.current_is_dir() and not fname.begins_with("."):
+			var canonical: String = ""
+			if fname.ends_with(".png"):
+				canonical = fname
+			elif fname.ends_with(".png.import"):
+				canonical = fname.substr(0, fname.length() - 7)
+			elif fname.ends_with(".png.remap"):
+				canonical = fname.substr(0, fname.length() - 6)
+			if canonical != "" and not seen.has(canonical):
+				seen[canonical] = true
+		fname = dir.get_next()
+	dir.list_dir_end()
+	var files: Array = seen.keys()
+	files.sort()
+	for f in files:
+		var tex: Texture2D = load(path + f) as Texture2D
+		if tex:
+			frames.append(tex)
+	return frames
