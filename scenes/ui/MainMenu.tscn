@@ -1,15 +1,15 @@
 [gd_scene format=3 uid="uid://b4e5f6g7h8jaj"]
 
-[ext_resource type="Script" path="res://scripts/ui/MainMenu.gd" id="1_script"]
-[ext_resource type="Script" path="res://scripts/ui/CollectionScreen.gd" id="2_collection"]
-[ext_resource type="Script" path="res://scripts/ui/SettingsScreen.gd" id="3_settings"]
-[ext_resource type="Script" path="res://scripts/ui/DonatePanel.gd" id="4_donate"]
-[ext_resource type="Texture2D" path="res://Assets/hellAssets/Background/Background_01.png" id="5_bg"]
-[ext_resource type="Script" path="res://scripts/ui/ProfileScreen.gd" id="6_profile"]
-[ext_resource type="Script" path="res://scripts/ui/SeedDialog.gd" id="7_seed"]
-[ext_resource type="Script" path="res://scripts/ui/LevelDebugMenu.gd" id="8_levels"]
+[ext_resource type="Script" uid="uid://b4gnvj8u38kus" path="res://scripts/ui/MainMenu.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://d0wpr3ydq7n8" path="res://scripts/ui/CollectionScreen.gd" id="2_collection"]
+[ext_resource type="Script" uid="uid://chce4igqugr7h" path="res://scripts/ui/SettingsScreen.gd" id="3_settings"]
+[ext_resource type="Script" uid="uid://bsfiumx6xhwym" path="res://scripts/ui/DonatePanel.gd" id="4_donate"]
+[ext_resource type="Texture2D" uid="uid://d0qarfkc3tid4" path="res://Assets/hellAssets/Background/Background_01.png" id="5_bg"]
+[ext_resource type="Script" uid="uid://ban28gf3dasha" path="res://scripts/ui/ProfileScreen.gd" id="6_profile"]
+[ext_resource type="Script" uid="uid://cast2rtcomt55" path="res://scripts/ui/SeedDialog.gd" id="7_seed"]
+[ext_resource type="Script" uid="uid://c417f7i8b0ekx" path="res://scripts/ui/LevelDebugMenu.gd" id="8_levels"]
 
-[node name="MainMenu" type="Control"]
+[node name="MainMenu" type="Control" unique_id=412559525]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,7 +18,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Background" type="TextureRect" parent="." unique_id=1064748455]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,8 +28,9 @@ grow_vertical = 2
 texture = ExtResource("5_bg")
 stretch_mode = 1
 
-[node name="TitleLabel" type="Label" parent="."]
+[node name="TitleLabel" type="Label" parent="." unique_id=326763558]
 layout_mode = 1
+anchors_preset = 10
 anchor_right = 1.0
 offset_top = 100.0
 offset_bottom = 230.0
@@ -38,8 +39,9 @@ theme_override_font_sizes/font_size = 72
 text = "ESCAPE FROM HELL"
 horizontal_alignment = 1
 
-[node name="ButtonsContainer" type="VBoxContainer" parent="."]
+[node name="ButtonsContainer" type="VBoxContainer" parent="." unique_id=2056123876]
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.15
 anchor_top = 0.5
 anchor_right = 0.85
@@ -47,66 +49,67 @@ anchor_bottom = 0.5
 offset_top = -485.0
 offset_bottom = 485.0
 grow_vertical = 2
-alignment = 1
 theme_override_constants/separation = 20
+alignment = 1
 
-[node name="BtnPlay" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnPlay" type="Button" parent="ButtonsContainer" unique_id=1811215762]
 custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Грати"
 
-[node name="BtnProfile" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnProfile" type="Button" parent="ButtonsContainer" unique_id=1287238421]
 custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Профіль"
 
-[node name="BtnCollection" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnCollection" type="Button" parent="ButtonsContainer" unique_id=568533372]
 custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Врятовані Душі  0/100"
 
-[node name="BtnSettings" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnSettings" type="Button" parent="ButtonsContainer" unique_id=13022412]
 custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Налаштування"
 
-[node name="BtnLevels" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnLevels" type="Button" parent="ButtonsContainer" unique_id=315916667]
 custom_minimum_size = Vector2(0, 90)
-theme_override_font_sizes/font_size = 26
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.65, 0.35, 1)
+theme_override_font_sizes/font_size = 26
 text = "Levels (debug)"
 
-[node name="BtnSeed" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnSeed" type="Button" parent="ButtonsContainer" unique_id=1664812128]
 custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "🌱  Seed"
 
-[node name="BtnNoAds" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnNoAds" type="Button" parent="ButtonsContainer" unique_id=1702713150]
 custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Прибрати рекламу"
 
-[node name="BtnDonate" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnDonate" type="Button" parent="ButtonsContainer" unique_id=706767517]
 custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Підтримати"
 
-[node name="BtnExit" type="Button" parent="ButtonsContainer"]
-layout_mode = 2
+[node name="BtnExit" type="Button" parent="ButtonsContainer" unique_id=1167125026]
 custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Вихід"
 
-[node name="VersionLabel" type="Label" parent="."]
+[node name="VersionLabel" type="Label" parent="." unique_id=467441076]
 layout_mode = 1
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -117,32 +120,32 @@ theme_override_font_sizes/font_size = 14
 text = "v0.1"
 horizontal_alignment = 2
 
-[node name="CollectionScreen" type="CanvasLayer" parent="."]
+[node name="CollectionScreen" type="CanvasLayer" parent="." unique_id=1259175796]
 layer = 10
 visible = false
 script = ExtResource("2_collection")
 
-[node name="SettingsScreen" type="CanvasLayer" parent="."]
+[node name="SettingsScreen" type="CanvasLayer" parent="." unique_id=168947133]
 layer = 10
 visible = false
 script = ExtResource("3_settings")
 
-[node name="DonatePanel" type="CanvasLayer" parent="."]
+[node name="DonatePanel" type="CanvasLayer" parent="." unique_id=263337592]
 layer = 10
 visible = false
 script = ExtResource("4_donate")
 
-[node name="ProfileScreen" type="CanvasLayer" parent="."]
+[node name="ProfileScreen" type="CanvasLayer" parent="." unique_id=270427695]
 layer = 10
 visible = false
 script = ExtResource("6_profile")
 
-[node name="SeedDialog" type="CanvasLayer" parent="."]
+[node name="SeedDialog" type="CanvasLayer" parent="." unique_id=1906896397]
 layer = 10
 visible = false
 script = ExtResource("7_seed")
 
-[node name="LevelDebugMenu" type="CanvasLayer" parent="."]
+[node name="LevelDebugMenu" type="CanvasLayer" parent="." unique_id=480790457]
 layer = 10
 visible = false
 script = ExtResource("8_levels")
