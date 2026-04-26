@@ -12,6 +12,22 @@ extends Node2D
 
 const CONFIG_PATH := "res://placeholder_assets_config.json"
 
+# Textured variants per platform type. When the array isn't empty, the visual
+# picks one variant (seeded by position so each platform looks consistent
+# across re-renders) and draws it scaled to the platform width while keeping
+# the source aspect ratio — the visual extends below the 30 px collision so
+# platforms read as solid blocks with rocky undersides.
+const PLATFORM_TEXTURES: Dictionary = {
+	"stone": [
+		"res://Assets/OurAssets/platforms/circle1/stone_a.png",
+		"res://Assets/OurAssets/platforms/circle1/stone_b.png",
+		"res://Assets/OurAssets/platforms/circle1/stone_c.png",
+	],
+}
+
+# Lazy texture cache shared across instances (script-level).
+static var _tex_cache: Dictionary = {}
+
 var _color: Color
 var _size: Vector2
 var _label: String = ""
@@ -56,6 +72,10 @@ func _apply_type() -> void:
 func _draw() -> void:
 	if _size == Vector2.ZERO:
 		return
+
+	if _draw_textured():
+		return
+
 	var rect := Rect2(-_size / 2.0, _size)
 	draw_rect(rect, _color)
 	draw_rect(rect, Color(1, 1, 1, 0.25), false, 1.0)
@@ -66,3 +86,51 @@ func _draw() -> void:
 		var text_size := font.get_string_size(_label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
 		var pos := Vector2(-text_size.x / 2.0, text_size.y / 2.0 - 2.0)
 		draw_string(font, pos, _label, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, Color(1, 1, 1, 0.85))
+
+## Tries to draw the platform from a stored texture variant. Returns true if
+## a texture was drawn (caller skips the colored fallback). Width is taken
+## from _size.x; height is derived from the source aspect ratio so the rocky
+## underside scales naturally. The visual top edge lines up with the collision
+## top (y = -_size.y / 2) and the rest hangs downward.
+func _draw_textured() -> bool:
+	var paths: Array = PLATFORM_TEXTURES.get(platform_type, [])
+	if paths.is_empty():
+		return false
+	var loaded: Array = _ensure_textures(paths)
+	if loaded.is_empty():
+		return false
+
+	# Deterministic per-platform pick — same level always renders the same
+	# variant in the same spot, but different platforms differ.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(global_position)
+	var tex: Texture2D = loaded[rng.randi() % loaded.size()]
+
+	var tex_w: float = float(tex.get_width())
+	var tex_h: float = float(tex.get_height())
+	if tex_w <= 0.0 or tex_h <= 0.0:
+		return false
+
+	var visual_w: float = _size.x
+	var visual_h: float = visual_w * (tex_h / tex_w)
+	var rect := Rect2(-visual_w / 2.0, -_size.y / 2.0, visual_w, visual_h)
+	draw_texture_rect(tex, rect, false)
+	return true
+
+func _ensure_textures(paths: Array) -> Array:
+	var loaded: Array = []
+	for p in paths:
+		var key: String = String(p)
+		if _tex_cache.has(key):
+			var cached: Texture2D = _tex_cache[key]
+			if cached:
+				loaded.append(cached)
+			continue
+		if not ResourceLoader.exists(key):
+			_tex_cache[key] = null
+			continue
+		var tex: Texture2D = load(key)
+		_tex_cache[key] = tex
+		if tex:
+			loaded.append(tex)
+	return loaded
