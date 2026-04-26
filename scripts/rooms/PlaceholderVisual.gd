@@ -23,6 +23,9 @@ const PLATFORM_TEXTURES: Dictionary = {
 		"res://Assets/OurAssets/platforms/circle1/stone_b.png",
 		"res://Assets/OurAssets/platforms/circle1/stone_c.png",
 	],
+	"crumbling": [
+		"res://Assets/OurAssets/platforms/circle1/crumbling_a.png",
+	],
 }
 
 # Lazy texture cache shared across instances (script-level).
