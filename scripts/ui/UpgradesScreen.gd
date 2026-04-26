@@ -110,7 +110,7 @@ func _make_card(upgrade: Dictionary) -> Control:
 
 	# Card container
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(0, 88)
+	card.custom_minimum_size = Vector2(0, 140)
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.12, 0.10, 0.16) if not maxed else Color(0.10, 0.12, 0.10)
@@ -121,44 +121,44 @@ func _make_card(upgrade: Dictionary) -> Control:
 	style.border_color = Color(0.45, 0.35, 0.60) if not maxed else Color(0.28, 0.48, 0.28)
 	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
 		style.set("corner_radius_" + corner, 10)
-	style.content_margin_left   = 14.0
-	style.content_margin_right  = 14.0
-	style.content_margin_top    = 10.0
-	style.content_margin_bottom = 10.0
+	style.content_margin_left   = 22.0
+	style.content_margin_right  = 22.0
+	style.content_margin_top    = 16.0
+	style.content_margin_bottom = 16.0
 	card.add_theme_stylebox_override("panel", style)
 
 	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 12)
+	hbox.add_theme_constant_override("separation", 18)
 	card.add_child(hbox)
 
 	# Left: name + desc + level dots
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_theme_constant_override("separation", 4)
+	info.add_theme_constant_override("separation", 8)
 	hbox.add_child(info)
 
 	var lbl_name := Label.new()
 	lbl_name.text = upgrade_name
-	lbl_name.add_theme_font_size_override("font_size", 15)
+	lbl_name.add_theme_font_size_override("font_size", 26)
 	lbl_name.add_theme_color_override("font_color",
 		Color("#88DD88") if maxed else Color(0.90, 0.88, 0.96))
 	info.add_child(lbl_name)
 
 	var lbl_desc := Label.new()
 	lbl_desc.text = desc
-	lbl_desc.add_theme_font_size_override("font_size", 12)
-	lbl_desc.add_theme_color_override("font_color", Color(0.62, 0.60, 0.68))
+	lbl_desc.add_theme_font_size_override("font_size", 19)
+	lbl_desc.add_theme_color_override("font_color", Color(0.74, 0.72, 0.80))
 	lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(lbl_desc)
 
 	# Level dots (for multi-level upgrades)
 	if max_level > 1:
 		var dots_row := HBoxContainer.new()
-		dots_row.add_theme_constant_override("separation", 4)
+		dots_row.add_theme_constant_override("separation", 6)
 		info.add_child(dots_row)
 		for i in max_level:
 			var dot := ColorRect.new()
-			dot.custom_minimum_size = Vector2(10, 10)
+			dot.custom_minimum_size = Vector2(16, 16)
 			dot.color = Color("#88DD88") if i < cur_level else Color(0.28, 0.26, 0.35)
 			dots_row.add_child(dot)
 
@@ -171,9 +171,9 @@ func _make_card(upgrade: Dictionary) -> Control:
 func _make_buy_btn(id: String, cost: int, cur_level: int, max_level: int,
 		can_buy: bool, maxed: bool) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(76, 56)
+	btn.custom_minimum_size = Vector2(140, 96)
 	btn.focus_mode = Control.FOCUS_NONE
-	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_font_size_override("font_size", 22)
 
 	var s := StyleBoxFlat.new()
 	s.corner_radius_top_left    = 8
@@ -242,36 +242,36 @@ func _build_ui() -> void:
 
 func _build_header(parent: VBoxContainer) -> void:
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",   16)
-	margin.add_theme_constant_override("margin_right",  12)
-	margin.add_theme_constant_override("margin_top",     8)
-	margin.add_theme_constant_override("margin_bottom",  8)
+	margin.add_theme_constant_override("margin_left",   24)
+	margin.add_theme_constant_override("margin_right",  16)
+	margin.add_theme_constant_override("margin_top",    14)
+	margin.add_theme_constant_override("margin_bottom", 14)
 	parent.add_child(margin)
 
 	var hdr := HBoxContainer.new()
-	hdr.custom_minimum_size.y = 48
-	hdr.add_theme_constant_override("separation", 10)
+	hdr.custom_minimum_size.y = 80
+	hdr.add_theme_constant_override("separation", 18)
 	margin.add_child(hdr)
 
 	var title := Label.new()
 	title.text = "Апгрейди"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color(0.92, 0.90, 0.98))
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(title)
 
 	_lbl_currency = Label.new()
 	_lbl_currency.text = "💡 0"
-	_lbl_currency.add_theme_font_size_override("font_size", 17)
+	_lbl_currency.add_theme_font_size_override("font_size", 30)
 	_lbl_currency.add_theme_color_override("font_color", Color("#FFD700"))
 	_lbl_currency.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(_lbl_currency)
 
 	var btn_close := Button.new()
 	btn_close.text = "✕"
-	btn_close.custom_minimum_size = Vector2(44, 44)
-	btn_close.add_theme_font_size_override("font_size", 18)
+	btn_close.custom_minimum_size = Vector2(72, 72)
+	btn_close.add_theme_font_size_override("font_size", 32)
 	var empty := StyleBoxEmpty.new()
 	for state in ["normal","hover","pressed","focus"]:
 		btn_close.add_theme_stylebox_override(state, empty)
@@ -281,16 +281,16 @@ func _build_header(parent: VBoxContainer) -> void:
 
 func _build_cat_tabs(parent: VBoxContainer) -> void:
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size.y = 52
+	scroll.custom_minimum_size.y = 84
 	scroll.vertical_scroll_mode   = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	parent.add_child(scroll)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
+	row.add_theme_constant_override("separation", 8)
 	scroll.add_child(row)
 
-	var lm := Control.new(); lm.custom_minimum_size.x = 10
+	var lm := Control.new(); lm.custom_minimum_size.x = 16
 	row.add_child(lm)
 
 	var cat_icons := ["⚔️", "💪", "👻", "🙏", "🌑", "👁"]
@@ -303,20 +303,20 @@ func _build_cat_tabs(parent: VBoxContainer) -> void:
 
 		var btn := Button.new()
 		btn.text = "%s %s" % [icon, cat_label]
-		btn.custom_minimum_size = Vector2(0, 44)
+		btn.custom_minimum_size = Vector2(0, 72)
 		btn.focus_mode = Control.FOCUS_NONE
-		btn.add_theme_font_size_override("font_size", 13)
+		btn.add_theme_font_size_override("font_size", 22)
 
 		var n := StyleBoxFlat.new()
 		n.bg_color = Color(0.14, 0.12, 0.20)
-		n.corner_radius_top_left    = 8
-		n.corner_radius_top_right   = 8
-		n.corner_radius_bottom_left = 8
-		n.corner_radius_bottom_right = 8
-		n.content_margin_left   = 12.0
-		n.content_margin_right  = 12.0
-		n.content_margin_top    = 4.0
-		n.content_margin_bottom = 4.0
+		n.corner_radius_top_left    = 10
+		n.corner_radius_top_right   = 10
+		n.corner_radius_bottom_left = 10
+		n.corner_radius_bottom_right = 10
+		n.content_margin_left   = 20.0
+		n.content_margin_right  = 20.0
+		n.content_margin_top    = 8.0
+		n.content_margin_bottom = 8.0
 		var h := n.duplicate() as StyleBoxFlat
 		h.bg_color = Color(0.22, 0.18, 0.30)
 		for state in ["normal","hover","pressed","focus"]:
@@ -328,7 +328,7 @@ func _build_cat_tabs(parent: VBoxContainer) -> void:
 		row.add_child(btn)
 		_cat_tabs.append(btn)
 
-	var rm := Control.new(); rm.custom_minimum_size.x = 10
+	var rm := Control.new(); rm.custom_minimum_size.x = 16
 	row.add_child(rm)
 
 func _build_cards_area(parent: VBoxContainer) -> void:
@@ -338,12 +338,12 @@ func _build_cards_area(parent: VBoxContainer) -> void:
 	parent.add_child(_cards_scroll)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",   12)
-	margin.add_theme_constant_override("margin_right",  12)
-	margin.add_theme_constant_override("margin_top",    10)
-	margin.add_theme_constant_override("margin_bottom", 70)  # space above ad banner
+	margin.add_theme_constant_override("margin_left",   20)
+	margin.add_theme_constant_override("margin_right",  20)
+	margin.add_theme_constant_override("margin_top",    16)
+	margin.add_theme_constant_override("margin_bottom", 110)  # space above ad banner
 	_cards_scroll.add_child(margin)
 
 	_cards_box = VBoxContainer.new()
-	_cards_box.add_theme_constant_override("separation", 8)
+	_cards_box.add_theme_constant_override("separation", 14)
 	margin.add_child(_cards_box)
