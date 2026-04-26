@@ -278,9 +278,12 @@ func _build_ui() -> void:
 func _build_confirm_panel() -> void:
 	# Wrap in its own CenterContainer so the confirm popup also stays centered
 	# (and recenters on resolution change) without inheriting PRESET_CENTER bug.
+	# IGNORE so this full-screen overlay never absorbs clicks meant for the
+	# main panel's buttons behind it. Children still receive input when the
+	# confirm panel is shown, because mouse_filter is per-control.
 	var confirm_centerer := CenterContainer.new()
 	confirm_centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	confirm_centerer.mouse_filter = Control.MOUSE_FILTER_PASS
+	confirm_centerer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	confirm_centerer.process_mode = Node.PROCESS_MODE_ALWAYS
 	confirm_centerer.z_index = 2
 	_root.add_child(confirm_centerer)
