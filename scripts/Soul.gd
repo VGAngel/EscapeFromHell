@@ -54,11 +54,11 @@ func set_soul_type(type: String) -> void:
 func _start_pulse() -> void:
 	if _pulse_tween:
 		_pulse_tween.kill()
+	# Build the tween only after we know there'll be at least one tweener;
+	# otherwise create_tween().set_loops() with an empty body errors as
+	# "started with no Tweeners". Unknown types share the innocent pulse.
 	_pulse_tween = create_tween().set_loops()
 	match _soul_type:
-		"innocent":
-			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.6, 0.8)
-			_pulse_tween.tween_property($Sprite2D, "modulate:a", 1.0, 0.8)
 		"sleeping":
 			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.4, 1.8)
 			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.9, 1.8)
@@ -67,6 +67,10 @@ func _start_pulse() -> void:
 			_pulse_tween.tween_property($Sprite2D, "modulate:a", 1.0, 0.40)
 			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.85, 0.60)
 			_pulse_tween.tween_property($Sprite2D, "modulate:a", 1.0, 0.20)
+		_:
+			# innocent + broken + trap + any future type fall here
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 0.6, 0.8)
+			_pulse_tween.tween_property($Sprite2D, "modulate:a", 1.0, 0.8)
 
 func _build_prompt() -> void:
 	_prompt_label = Label.new()
