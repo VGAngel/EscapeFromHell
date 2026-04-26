@@ -17,7 +17,7 @@ extends Node2D
 
 # ── Child node references ─────────────────────────────────────────────────────
 @onready var _hud:               Node       = $HUD
-@onready var _pause_screen:      Node       = $PauseScreen
+@onready var _pause_screen:      Node       = get_node_or_null("PauseScreen")
 @onready var _collection_screen: Node       = get_node_or_null("CollectionScreen")
 @onready var _settings_screen:   Node       = get_node_or_null("SettingsScreen")
 @onready var _room_container:  Node2D     = $RoomContainer
@@ -59,9 +59,10 @@ func _ready() -> void:
 
 	GameManager.register_hud(_hud)
 	GameManager.begin_level(level_id, _souls_required)
-	_hud.pause_requested.connect(_pause_screen.toggle)
-	_pause_screen.collection_requested.connect(_on_pause_collection)
-	_pause_screen.settings_requested.connect(_on_pause_settings)
+	if _pause_screen:
+		_hud.pause_requested.connect(_pause_screen.toggle)
+		_pause_screen.collection_requested.connect(_on_pause_collection)
+		_pause_screen.settings_requested.connect(_on_pause_settings)
 	_connect_level_complete()
 
 	if LevelConfig and LevelConfig.has_mechanic(level_id, "tutorial_trigger"):
