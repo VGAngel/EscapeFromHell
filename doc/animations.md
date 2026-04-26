@@ -347,34 +347,34 @@ UI-анімації поки не заплановані. Кандидати д�
 ```
 ГРАВЕЦЬ (✅ повністю):
   стан → _state_to_anim() → _anim.play()
-    IDLE          → player_idle  /  player_carry_idle (якщо несе soul)
-    WALK          → player_walk  /  player_carry_walk (якщо несе soul)
-    JUMP          → player_jump
-    FALL          → player_fall
-    WALL_HANG     → player_wall_hang        (апгрейд wall_grab)
-    STAFF_SWING   → player_staff_swing      (прямий виклик з _handle_staff)
-    PICKUP        → player_pickup           (прямий виклик, тільки без quick_pickup)
-    DEAD          → player_death            (прямий виклик з _die)
+	IDLE          → player_idle  /  player_carry_idle (якщо несе soul)
+	WALK          → player_walk  /  player_carry_walk (якщо несе soul)
+	JUMP          → player_jump
+	FALL          → player_fall
+	WALL_HANG     → player_wall_hang        (апгрейд wall_grab)
+	STAFF_SWING   → player_staff_swing      (прямий виклик з _handle_staff)
+	PICKUP        → player_pickup           (прямий виклик, тільки без quick_pickup)
+	DEAD          → player_death            (прямий виклик з _die)
   прямі виклики:
-    _take_damage() → player_hurt
-    respawn()      → player_respawn_breath
+	_take_damage() → player_hurt
+	respawn()      → player_respawn_breath
 
 ВОРОГ (❌ анімацій немає):
   стан → _get_anim_name() → _anim.play()
-    PATROL   → enemy_walk   (80 px/s туди-сюди)
-    ALERT    → enemy_idle   (1.0s стоїть, AlertIcon видно)
-    CHASE    → enemy_run    (96 px/s, до 6s)
-    GIVE_UP  → enemy_idle   (2.5s, знак ? від AlertIcon)
-    RETURN   → enemy_walk   (56 px/s назад до origin)
-    STUNNED  → enemy_stun   (2.5s після удару посохом)
+	PATROL   → enemy_walk   (80 px/s туди-сюди)
+	ALERT    → enemy_idle   (1.0s стоїть, AlertIcon видно)
+	CHASE    → enemy_run    (96 px/s, до 6s)
+	GIVE_UP  → enemy_idle   (2.5s, знак ? від AlertIcon)
+	RETURN   → enemy_walk   (56 px/s назад до origin)
+	STUNNED  → enemy_stun   (2.5s після удару посохом)
 
 БОС (❌ анімацій немає):
   стан → _get_anim_name() → _anim.play()
-    IDLE               → boss_idle    (чекає гравця або stationary)
-    PATROL             → boss_walk    (slow_patrol: 40% speed)
-    CHASE              → boss_walk    (100% speed до гравця)
-    CHARGE_TELEGRAPH   → boss_charge_telegraph  (1.2s, тільки boss_05)
-    CHARGING           → boss_charge            (0.8s, 450 px/s, тільки boss_05)
-    STUNNED            → boss_stun    (6s від посоха / 4s від стіни)
-    PHASE_TRANSITION   → boss_idle    (тільки boss_10 Люцифер)
+	IDLE               → boss_idle    (чекає гравця або stationary)
+	PATROL             → boss_walk    (slow_patrol: 40% speed)
+	CHASE              → boss_walk    (100% speed до гравця)
+	CHARGE_TELEGRAPH   → boss_charge_telegraph  (1.2s, тільки boss_05)
+	CHARGING           → boss_charge            (0.8s, 450 px/s, тільки boss_05)
+	STUNNED            → boss_stun    (6s від посоха / 4s від стіни)
+	PHASE_TRANSITION   → boss_idle    (тільки boss_10 Люцифер)
 ```

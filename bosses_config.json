@@ -4,349 +4,349 @@
   "note": "Босів не можна вбити. Гравець перемагає через навігацію, механіки арени та посох для оглушення.",
 
   "staff_vs_boss": {
-    "stun_duration": 6.0,
-    "note": "Посох оглушує боса на 6 сек замість 2.5 як звичайного ворога. Основний інструмент гравця."
+	"stun_duration": 6.0,
+	"note": "Посох оглушує боса на 6 сек замість 2.5 як звичайного ворога. Основний інструмент гравця."
   },
 
   "bosses": [
 
-    {
-      "id": "boss_01",
-      "level": 10,
-      "circle": 1,
-      "name_key": "boss.boss_01_name",
-      "name": "Воротар",
-      "description": "Велетень що охороняє перехід між колами. Повільний але невблаганний.",
+	{
+	  "id": "boss_01",
+	  "level": 10,
+	  "circle": 1,
+	  "name_key": "boss.boss_01_name",
+	  "name": "Воротар",
+	  "description": "Велетень що охороняє перехід між колами. Повільний але невблаганний.",
 
-      "visual": {
-        "size": [64, 96],
-        "placeholder_color": "#AA3300",
-        "sprite": "enemies/boss_gatekeeper"
-      },
+	  "visual": {
+		"size": [64, 96],
+		"placeholder_color": "#AA3300",
+		"sprite": "enemies/boss_gatekeeper"
+	  },
 
-      "stats": {
-        "move_speed": 60,
-        "detection_range": 300,
-        "chase_duration": 999,
-        "note": "Не відстає — переслідує до кінця арени"
-      },
+	  "stats": {
+		"move_speed": 60,
+		"detection_range": 300,
+		"chase_duration": 999,
+		"note": "Не відстає — переслідує до кінця арени"
+	  },
 
-      "mechanic": {
-        "type": "collect_and_escape",
-        "description": "Знайди 3 уламки ключа розкидані по арені, зібери їх і добіжи до воріт.",
-        "win_condition": "all_key_fragments_collected_and_reach_exit",
-        "fragments": {
-          "count": 3,
-          "guarded": false,
-          "note": "Уламки не охороняються — небезпека в тому що бос постійно рухається аренею"
-        },
-        "staff_use": "Оглуши боса щоб пройти через вузьке місце або підібрати уламок поруч з ним"
-      },
+	  "mechanic": {
+		"type": "collect_and_escape",
+		"description": "Знайди 3 уламки ключа розкидані по арені, зібери їх і добіжи до воріт.",
+		"win_condition": "all_key_fragments_collected_and_reach_exit",
+		"fragments": {
+		  "count": 3,
+		  "guarded": false,
+		  "note": "Уламки не охороняються — небезпека в тому що бос постійно рухається аренею"
+		},
+		"staff_use": "Оглуши боса щоб пройти через вузьке місце або підібрати уламок поруч з ним"
+	  },
 
-      "arena": {
-        "type": "horizontal_corridor",
-        "width": 1200,
-        "height": 400,
-        "platforms": ["stone", "one_way", "moving_vertical"],
-        "note": "Довгий коридор з кількома рівнями платформ"
-      },
+	  "arena": {
+		"type": "horizontal_corridor",
+		"width": 1200,
+		"height": 400,
+		"platforms": ["stone", "one_way", "moving_vertical"],
+		"note": "Довгий коридор з кількома рівнями платформ"
+	  },
 
-      "god_message_before": "level_10",
-      "music": "music/boss_01_gatekeeper"
-    },
+	  "god_message_before": "level_10",
+	  "music": "music/boss_01_gatekeeper"
+	},
 
-    {
-      "id": "boss_02",
-      "level": 20,
-      "circle": 2,
-      "name_key": "boss.boss_02_name",
-      "name": "Хранитель Вітрів",
-      "description": "Літаючий дух що керує вітровими потоками арени.",
+	{
+	  "id": "boss_02",
+	  "level": 20,
+	  "circle": 2,
+	  "name_key": "boss.boss_02_name",
+	  "name": "Хранитель Вітрів",
+	  "description": "Літаючий дух що керує вітровими потоками арени.",
 
-      "visual": {
-        "size": [80, 80],
-        "placeholder_color": "#4466BB",
-        "sprite": "enemies/boss_wind_warden"
-      },
+	  "visual": {
+		"size": [80, 80],
+		"placeholder_color": "#4466BB",
+		"sprite": "enemies/boss_wind_warden"
+	  },
 
-      "stats": {
-        "move_speed": 120,
-        "flight": true,
-        "detection_range": 400,
-        "patrol_pattern": "figure_eight"
-      },
+	  "stats": {
+		"move_speed": 120,
+		"flight": true,
+		"detection_range": 400,
+		"patrol_pattern": "figure_eight"
+	  },
 
-      "mechanic": {
-        "type": "activate_in_sequence",
-        "description": "Активуй 3 вітрових тотеми у правильному порядку. Бос блокує тотем своєю присутністю — треба відігнати його посохом.",
-        "win_condition": "all_totems_activated_in_order",
-        "totems": {
-          "count": 3,
-          "blocked_when_boss_within": 120,
-          "activation_hold": 1.5
-        },
-        "wind_hazard": {
-          "enabled": true,
-          "gusts_interval": 4.0,
-          "push_force": 200,
-          "note": "Раз на 4 сек бос випускає порив вітру — відштовхує гравця"
-        },
-        "staff_use": "Штовхни боса від тотему щоб активувати, або відхили напрям пориву вітру"
-      },
+	  "mechanic": {
+		"type": "activate_in_sequence",
+		"description": "Активуй 3 вітрових тотеми у правильному порядку. Бос блокує тотем своєю присутністю — треба відігнати його посохом.",
+		"win_condition": "all_totems_activated_in_order",
+		"totems": {
+		  "count": 3,
+		  "blocked_when_boss_within": 120,
+		  "activation_hold": 1.5
+		},
+		"wind_hazard": {
+		  "enabled": true,
+		  "gusts_interval": 4.0,
+		  "push_force": 200,
+		  "note": "Раз на 4 сек бос випускає порив вітру — відштовхує гравця"
+		},
+		"staff_use": "Штовхни боса від тотему щоб активувати, або відхили напрям пориву вітру"
+	  },
 
-      "arena": {
-        "type": "open_vertical",
-        "width": 900,
-        "height": 700,
-        "platforms": ["stone", "moving_horizontal", "bounce"],
-        "note": "Відкрита вертикальна арена — бос літає вільно"
-      },
+	  "arena": {
+		"type": "open_vertical",
+		"width": 900,
+		"height": 700,
+		"platforms": ["stone", "moving_horizontal", "bounce"],
+		"note": "Відкрита вертикальна арена — бос літає вільно"
+	  },
 
-      "god_message_before": "level_20",
-      "music": "music/boss_02_hydra_flame"
-    },
+	  "god_message_before": "level_20",
+	  "music": "music/boss_02_hydra_flame"
+	},
 
-    {
-      "id": "boss_03",
-      "level": 30,
-      "circle": 3,
-      "name_key": "boss.boss_03_name",
-      "name": "Вогняний Колос",
-      "description": "Масивна істота з вогню. Повільна, але залишає вогняний слід.",
+	{
+	  "id": "boss_03",
+	  "level": 30,
+	  "circle": 3,
+	  "name_key": "boss.boss_03_name",
+	  "name": "Вогняний Колос",
+	  "description": "Масивна істота з вогню. Повільна, але залишає вогняний слід.",
 
-      "visual": {
-        "size": [96, 128],
-        "placeholder_color": "#FF4400",
-        "sprite": "enemies/boss_fire_colossus"
-      },
+	  "visual": {
+		"size": [96, 128],
+		"placeholder_color": "#FF4400",
+		"sprite": "enemies/boss_fire_colossus"
+	  },
 
-      "stats": {
-        "move_speed": 50,
-        "detection_range": 350,
-        "leaves_fire_trail": {
-          "duration": 8.0,
-          "damage_per_second": 1,
-          "visual": "fire_floor_hazard"
-        }
-      },
+	  "stats": {
+		"move_speed": 50,
+		"detection_range": 350,
+		"leaves_fire_trail": {
+		  "duration": 8.0,
+		  "damage_per_second": 1,
+		  "visual": "fire_floor_hazard"
+		}
+	  },
 
-      "mechanic": {
-        "type": "lure_into_trap",
-        "description": "Збери 3 вогняних кристали. Бос залишає вогняний слід — арена поступово стає небезпечнішою. Заманюй боса у його власний вогонь щоб відволікти.",
-        "win_condition": "all_crystals_collected_and_reach_exit",
-        "crystals": {
-          "count": 3,
-          "locations": "upper_platforms",
-          "note": "Кристали на верхніх платформах — треба добратись поки бос унизу"
-        },
-        "trap_mechanic": {
-          "enabled": true,
-          "description": "Якщо заманити боса у зону де вогонь його ж сліду — він оглушується на 8 сек",
-          "note": "Альтернатива посоху для тих хто хоче зберегти гріх"
-        },
-        "staff_use": "Стандартне оглушення 6 сек або заманюй у пастку для 8 сек"
-      },
+	  "mechanic": {
+		"type": "lure_into_trap",
+		"description": "Збери 3 вогняних кристали. Бос залишає вогняний слід — арена поступово стає небезпечнішою. Заманюй боса у його власний вогонь щоб відволікти.",
+		"win_condition": "all_crystals_collected_and_reach_exit",
+		"crystals": {
+		  "count": 3,
+		  "locations": "upper_platforms",
+		  "note": "Кристали на верхніх платформах — треба добратись поки бос унизу"
+		},
+		"trap_mechanic": {
+		  "enabled": true,
+		  "description": "Якщо заманити боса у зону де вогонь його ж сліду — він оглушується на 8 сек",
+		  "note": "Альтернатива посоху для тих хто хоче зберегти гріх"
+		},
+		"staff_use": "Стандартне оглушення 6 сек або заманюй у пастку для 8 сек"
+	  },
 
-      "arena": {
-        "type": "multi_tier",
-        "width": 1000,
-        "height": 600,
-        "platforms": ["stone", "one_way", "lava_edge", "crumbling"],
-        "note": "Кілька поверхів — бос переважно внизу, кристали вгорі"
-      },
+	  "arena": {
+		"type": "multi_tier",
+		"width": 1000,
+		"height": 600,
+		"platforms": ["stone", "one_way", "lava_edge", "crumbling"],
+		"note": "Кілька поверхів — бос переважно внизу, кристали вгорі"
+	  },
 
-      "god_message_before": null,
-      "music": "music/boss_03_fire_colossus"
-    },
+	  "god_message_before": null,
+	  "music": "music/boss_03_fire_colossus"
+	},
 
-    {
-      "id": "boss_05",
-      "level": 50,
-      "circle": 5,
-      "name_key": "boss.boss_05_name",
-      "name": "Гнів Втілений",
-      "description": "Берсерк що кидається навпростець. Не думає — тільки атакує.",
+	{
+	  "id": "boss_05",
+	  "level": 50,
+	  "circle": 5,
+	  "name_key": "boss.boss_05_name",
+	  "name": "Гнів Втілений",
+	  "description": "Берсерк що кидається навпростець. Не думає — тільки атакує.",
 
-      "visual": {
-        "size": [72, 104],
-        "placeholder_color": "#CC0022",
-        "sprite": "enemies/boss_winter_witch"
-      },
+	  "visual": {
+		"size": [72, 104],
+		"placeholder_color": "#CC0022",
+		"sprite": "enemies/boss_winter_witch"
+	  },
 
-      "stats": {
-        "move_speed": 200,
-        "detection_range": 500,
-        "charge_speed": 450,
-        "charge_pattern": "straight_line_toward_player"
-      },
+	  "stats": {
+		"move_speed": 200,
+		"detection_range": 500,
+		"charge_speed": 450,
+		"charge_pattern": "straight_line_toward_player"
+	  },
 
-      "mechanic": {
-        "type": "dodge_and_collect",
-        "description": "Зібери 3 душі в арені. Бос робить заряди — якщо врізається у стіну то оглушується на 4 сек. Використай цей момент.",
-        "win_condition": "all_souls_collected_and_reach_exit",
-        "charge_cycle": {
-          "telegraph_duration": 1.2,
-          "telegraph_visual": "boss_glows_red_and_shakes",
-          "charge_duration": 0.8,
-          "wall_stun_duration": 4.0,
-          "cooldown_after_charge": 2.5
-        },
-        "souls_in_arena": {
-          "count": 3,
-          "placement": "near_walls",
-          "note": "Душі біля стін — треба бути там де бос щойно врізався"
-        },
-        "staff_use": "Можна штовхнути заряджаючого боса у стіну раніше для зручнішого кута. Або стандартне оглушення."
-      },
+	  "mechanic": {
+		"type": "dodge_and_collect",
+		"description": "Зібери 3 душі в арені. Бос робить заряди — якщо врізається у стіну то оглушується на 4 сек. Використай цей момент.",
+		"win_condition": "all_souls_collected_and_reach_exit",
+		"charge_cycle": {
+		  "telegraph_duration": 1.2,
+		  "telegraph_visual": "boss_glows_red_and_shakes",
+		  "charge_duration": 0.8,
+		  "wall_stun_duration": 4.0,
+		  "cooldown_after_charge": 2.5
+		},
+		"souls_in_arena": {
+		  "count": 3,
+		  "placement": "near_walls",
+		  "note": "Душі біля стін — треба бути там де бос щойно врізався"
+		},
+		"staff_use": "Можна штовхнути заряджаючого боса у стіну раніше для зручнішого кута. Або стандартне оглушення."
+	  },
 
-      "arena": {
-        "type": "open_room",
-        "width": 800,
-        "height": 500,
-        "platforms": ["stone", "one_way", "falling"],
-        "note": "Відносно відкрита арена — важливі стіни по краях для механіки заряду"
-      },
+	  "arena": {
+		"type": "open_room",
+		"width": 800,
+		"height": 500,
+		"platforms": ["stone", "one_way", "falling"],
+		"note": "Відносно відкрита арена — важливі стіни по краях для механіки заряду"
+	  },
 
-      "god_message_before": "level_50",
-      "music": "music/boss_05_colossus"
-    },
+	  "god_message_before": "level_50",
+	  "music": "music/boss_05_colossus"
+	},
 
-    {
-      "id": "boss_07",
-      "level": 70,
-      "circle": 7,
-      "name_key": "boss.boss_07_name",
-      "name": "Зрадник",
-      "description": "Створює копії себе. Хтось із них справжній — решта тіні.",
+	{
+	  "id": "boss_07",
+	  "level": 70,
+	  "circle": 7,
+	  "name_key": "boss.boss_07_name",
+	  "name": "Зрадник",
+	  "description": "Створює копії себе. Хтось із них справжній — решта тіні.",
 
-      "visual": {
-        "size": [64, 88],
-        "placeholder_color": "#882288",
-        "sprite": "enemies/boss_betrayer"
-      },
+	  "visual": {
+		"size": [64, 88],
+		"placeholder_color": "#882288",
+		"sprite": "enemies/boss_betrayer"
+	  },
 
-      "stats": {
-        "move_speed": 140,
-        "detection_range": 380,
-        "copies_count": 3,
-        "copy_visual_tell": "same_as_mimic_soul_tells"
-      },
+	  "stats": {
+		"move_speed": 140,
+		"detection_range": 380,
+		"copies_count": 3,
+		"copy_visual_tell": "same_as_mimic_soul_tells"
+	  },
 
-      "mechanic": {
-        "type": "identify_and_evade",
-        "description": "В арені бос і 3 копії. Копії не шкодять але плутають. Знайди справжнього за підказками (пульс, тінь, звук). Оглуши посохом — копії зникнуть. Добіжи до виходу поки оглушений.",
-        "win_condition": "real_boss_stunned_and_reach_exit",
-        "copies": {
-          "count": 3,
-          "behavior": "mimic_player_movement_with_delay",
-          "visual_tells": "same as mimic soul — irregular pulse, wrong shadow, slight color shift",
-          "on_hit_with_staff": "copy_disappears_no_effect_on_real_boss"
-        },
-        "real_boss_tells": {
-          "pulse": "irregular",
-          "shadow": "wrong_direction",
-          "sound": "slight_dissonance",
-          "note": "Ті ж підказки що і міміки — гравець вже знає систему"
-        },
-        "recognition_upgrade": {
-          "effect": "real_boss_highlighted_red",
-          "note": "Апгрейд Розпізнавання — бос підсвічується червоним"
-        },
-        "copies_respawn": {
-          "enabled": true,
-          "delay": 10.0,
-          "note": "Якщо не встиг добігти за 10 сек — копії відновлюються"
-        },
-        "staff_use": "Обов'язково — єдиний спосіб оглушити справжнього боса"
-      },
+	  "mechanic": {
+		"type": "identify_and_evade",
+		"description": "В арені бос і 3 копії. Копії не шкодять але плутають. Знайди справжнього за підказками (пульс, тінь, звук). Оглуши посохом — копії зникнуть. Добіжи до виходу поки оглушений.",
+		"win_condition": "real_boss_stunned_and_reach_exit",
+		"copies": {
+		  "count": 3,
+		  "behavior": "mimic_player_movement_with_delay",
+		  "visual_tells": "same as mimic soul — irregular pulse, wrong shadow, slight color shift",
+		  "on_hit_with_staff": "copy_disappears_no_effect_on_real_boss"
+		},
+		"real_boss_tells": {
+		  "pulse": "irregular",
+		  "shadow": "wrong_direction",
+		  "sound": "slight_dissonance",
+		  "note": "Ті ж підказки що і міміки — гравець вже знає систему"
+		},
+		"recognition_upgrade": {
+		  "effect": "real_boss_highlighted_red",
+		  "note": "Апгрейд Розпізнавання — бос підсвічується червоним"
+		},
+		"copies_respawn": {
+		  "enabled": true,
+		  "delay": 10.0,
+		  "note": "Якщо не встиг добігти за 10 сек — копії відновлюються"
+		},
+		"staff_use": "Обов'язково — єдиний спосіб оглушити справжнього боса"
+	  },
 
-      "arena": {
-        "type": "labyrinth_rooms",
-        "width": 1100,
-        "height": 600,
-        "platforms": ["stone", "one_way", "soul_bridge", "illusory"],
-        "note": "Кілька кімнат з'єднані проходами — копії можуть бути в різних кімнатах"
-      },
+	  "arena": {
+		"type": "labyrinth_rooms",
+		"width": 1100,
+		"height": 600,
+		"platforms": ["stone", "one_way", "soul_bridge", "illusory"],
+		"note": "Кілька кімнат з'єднані проходами — копії можуть бути в різних кімнатах"
+	  },
 
-      "god_message_before": "level_70",
-      "music": "music/boss_07_betrayer"
-    },
+	  "god_message_before": "level_70",
+	  "music": "music/boss_07_betrayer"
+	},
 
-    {
-      "id": "boss_10",
-      "level": 100,
-      "circle": 10,
-      "name_key": "boss.boss_10_name",
-      "name": "Люцифер",
-      "description": "Він знав що ти прийдеш. Він чекав.",
+	{
+	  "id": "boss_10",
+	  "level": 100,
+	  "circle": 10,
+	  "name_key": "boss.boss_10_name",
+	  "name": "Люцифер",
+	  "description": "Він знав що ти прийдеш. Він чекав.",
 
-      "visual": {
-        "size": [128, 192],
-        "placeholder_color": "#330000",
-        "sprite": "enemies/boss_devil"
-      },
+	  "visual": {
+		"size": [128, 192],
+		"placeholder_color": "#330000",
+		"sprite": "enemies/boss_devil"
+	  },
 
-      "phases": [
+	  "phases": [
 
-        {
-          "phase": 1,
-          "trigger": "level_start",
-          "description": "Люцифер не рухається. Стоїть у центрі. Дивиться. Арена заповнена пастками.",
-          "behavior": "stationary_observer",
-          "mechanic": {
-            "type": "navigate_and_collect",
-            "souls_count": 5,
-            "note": "Збери 5 останніх душ в арені обходячи пастки. Бос просто дивиться — але де ти збираєш, там з'являються нові пастки.",
-            "trap_spawn_on_pickup": true
-          }
-        },
+		{
+		  "phase": 1,
+		  "trigger": "level_start",
+		  "description": "Люцифер не рухається. Стоїть у центрі. Дивиться. Арена заповнена пастками.",
+		  "behavior": "stationary_observer",
+		  "mechanic": {
+			"type": "navigate_and_collect",
+			"souls_count": 5,
+			"note": "Збери 5 останніх душ в арені обходячи пастки. Бос просто дивиться — але де ти збираєш, там з'являються нові пастки.",
+			"trap_spawn_on_pickup": true
+		  }
+		},
 
-        {
-          "phase": 2,
-          "trigger": "3_souls_collected",
-          "description": "Люцифер починає повільно рухатись. Його присутність збільшує гріх гравця пасивно.",
-          "behavior": "slow_patrol",
-          "sin_aura": {
-            "radius": 250,
-            "sin_per_second": 3,
-            "note": "Стій близько — гріх росте швидко. Трим дистанцію."
-          },
-          "mechanic": {
-            "type": "collect_remaining",
-            "souls_remaining": 2,
-            "staff_use": "Оглуши щоб зупинити sin aura на 6 сек"
-          }
-        },
+		{
+		  "phase": 2,
+		  "trigger": "3_souls_collected",
+		  "description": "Люцифер починає повільно рухатись. Його присутність збільшує гріх гравця пасивно.",
+		  "behavior": "slow_patrol",
+		  "sin_aura": {
+			"radius": 250,
+			"sin_per_second": 3,
+			"note": "Стій близько — гріх росте швидко. Трим дистанцію."
+		  },
+		  "mechanic": {
+			"type": "collect_remaining",
+			"souls_remaining": 2,
+			"staff_use": "Оглуши щоб зупинити sin aura на 6 сек"
+		  }
+		},
 
-        {
-          "phase": 3,
-          "trigger": "all_5_souls_collected",
-          "description": "Всі душі зібрані. Люцифер зупиняється. Відкривається центр арени.",
-          "behavior": "stationary_final",
-          "mechanic": {
-            "type": "prayer_ritual",
-            "description": "Підійди до центру арени і утримуй кнопку молитви. 8 секунд. Не рухайся.",
-            "hold_duration": 8.0,
-            "sin_effect": "sin_freezes_during_prayer",
-            "visual": "golden_light_expands_from_player_fills_arena",
-            "sound": "boss_10_prayer_finale",
-            "fail_condition": "player_moves_or_releases",
-            "on_success": "level_complete_trigger_ending_calculation"
-          }
-        }
+		{
+		  "phase": 3,
+		  "trigger": "all_5_souls_collected",
+		  "description": "Всі душі зібрані. Люцифер зупиняється. Відкривається центр арени.",
+		  "behavior": "stationary_final",
+		  "mechanic": {
+			"type": "prayer_ritual",
+			"description": "Підійди до центру арени і утримуй кнопку молитви. 8 секунд. Не рухайся.",
+			"hold_duration": 8.0,
+			"sin_effect": "sin_freezes_during_prayer",
+			"visual": "golden_light_expands_from_player_fills_arena",
+			"sound": "boss_10_prayer_finale",
+			"fail_condition": "player_moves_or_releases",
+			"on_success": "level_complete_trigger_ending_calculation"
+		  }
+		}
 
-      ],
+	  ],
 
-      "note_on_defeat": "Люцифера не перемагають — його залишають. Данило іде. Це єдина перемога яка можлива.",
-      "god_message_before": "level_100",
-      "music": "music/boss_10_lucifer"
-    }
+	  "note_on_defeat": "Люцифера не перемагають — його залишають. Данило іде. Це єдина перемога яка можлива.",
+	  "god_message_before": "level_100",
+	  "music": "music/boss_10_lucifer"
+	}
 
   ],
 
   "localization_keys": [
-    "boss.boss_01_name", "boss.boss_02_name", "boss.boss_03_name",
-    "boss.boss_05_name", "boss.boss_07_name", "boss.boss_10_name",
-    "boss.phase_begin", "boss.stun_warning", "boss.win_condition_hint"
+	"boss.boss_01_name", "boss.boss_02_name", "boss.boss_03_name",
+	"boss.boss_05_name", "boss.boss_07_name", "boss.boss_10_name",
+	"boss.phase_begin", "boss.stun_warning", "boss.win_condition_hint"
   ]
 }

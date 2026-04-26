@@ -66,9 +66,9 @@
 ```
 res://scenes/rooms/
   circle_1/
-    room_entrance_01.tscn
-    room_main_01.tscn ... room_main_24.tscn
-    room_exit_01.tscn
+	room_entrance_01.tscn
+	room_main_01.tscn ... room_main_24.tscn
+	room_exit_01.tscn
   circle_2/ ...
   circle_10/
 ```

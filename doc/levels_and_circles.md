@@ -78,26 +78,26 @@
 До рефактору шахта складалася з N стекових 2-екранних кімнат, що створювало візуальні розриви; тепер це історія.
 
 ```
-              ⛩ ВІВТАР (топ-рядок шахти)
-              ━━━━━━━━━━━━━━━━━━━━━━
-              ▓▓▓▓     ▓▓▓▓        rest section (старт)
-                    ▓▓▓▓▓▓▓
-              ▓▓                   challenge: вузькі + спецтипи
-                       ▓▓▓
-              ░░░░░░░  ░░░░        spike: crumbling/bounce/one_way
-                  ▓▓
-              ▓▓▓▓                 breath: широкі + bridges
-                       ▓▓▓▓▓
-              …       ↓             (Markov генерує наскрізно ~85 рядків
-                                     на room_count=4, секційний ритм
-                                     повторюється до низу)
-              ▓▓▓     ▓▓▓
-                       💀          ворог (один із room_count розкиданих)
-              ▓▓                   іменна душа на ~50–70% висоти
-                  🕊
-              ▓▓▓▓     ▓▓▓
-              ━━━━━━━━━━━━━━━━━━━━━━
-              ⛔ EXIT (низ шахти, заблокований до доставки душі)
+			  ⛩ ВІВТАР (топ-рядок шахти)
+			  ━━━━━━━━━━━━━━━━━━━━━━
+			  ▓▓▓▓     ▓▓▓▓        rest section (старт)
+					▓▓▓▓▓▓▓
+			  ▓▓                   challenge: вузькі + спецтипи
+					   ▓▓▓
+			  ░░░░░░░  ░░░░        spike: crumbling/bounce/one_way
+				  ▓▓
+			  ▓▓▓▓                 breath: широкі + bridges
+					   ▓▓▓▓▓
+			  …       ↓             (Markov генерує наскрізно ~85 рядків
+									 на room_count=4, секційний ритм
+									 повторюється до низу)
+			  ▓▓▓     ▓▓▓
+					   💀          ворог (один із room_count розкиданих)
+			  ▓▓                   іменна душа на ~50–70% висоти
+				  🕊
+			  ▓▓▓▓     ▓▓▓
+			  ━━━━━━━━━━━━━━━━━━━━━━
+			  ⛔ EXIT (низ шахти, заблокований до доставки душі)
 ```
 
 **Спавни (на одну шахту):**
@@ -329,10 +329,10 @@
 floor_y      = room_height − WALL_T − safe_area_bottom
 ceiling_y    = WALL_T + safe_area_top
 spacing      = max(zone.spacing, MAX_JUMP_HEIGHT × 0.9) = ≥ 180 px
-              (для is_vertical; легкий тир дав би 100 px,
-               але тоді платформи лізуть одна на одну)
+			  (для is_vertical; легкий тир дав би 100 px,
+			   але тоді платформи лізуть одна на одну)
 rows         = [floor_y − spacing, floor_y − 2·spacing, …]
-              поки y ≥ ceiling_y + 120
+			  поки y ≥ ceiling_y + 120
 ```
 
 Для `room_count = 4` (за замовчуванням) шахта = 15 360 px → ~85 рядків.
@@ -376,8 +376,8 @@ v_gap = prev_row_y − new_row_y          (>0 = новий рядок вище)
 max_h = lerp(SAME_LEVEL_REACH=240, MAX_UP_REACH=120, v_gap / MAX_JUMP_HEIGHT) × 1.15
 max_dx_center = max_h + (prev_w + new_w) / 2
 if |x − prev_x| > max_dx_center:
-    x = prev_x + sign(x − prev_x) × max_dx_center
-    x = clamp(x, room_width × 0.10, room_width × 0.90)
+	x = prev_x + sign(x − prev_x) × max_dx_center
+	x = clamp(x, room_width × 0.10, room_width × 0.90)
 ```
 
 Гарантує, що з кожної single-платформи **фізично** можна допригнути до наступної.
@@ -393,8 +393,8 @@ if |x − prev_x| > max_dx_center:
 
 ```
 for i in count:
-    t = (i + 0.5) / count
-    row_idx = first + round(t × (last − first))
+	t = (i + 0.5) / count
+	row_idx = first + round(t × (last − first))
 ```
 
 | Сутність | `count` | З чого береться тип |
@@ -484,25 +484,25 @@ for i in count:
 {
   "version": "1.3",
   "enums": { "level_types": [...], "soul_types": [...], "bonus_types": [...],
-             "trap_types": [...], "enemy_types": [...], "boss_types": [...] },
+			 "trap_types": [...], "enemy_types": [...], "boss_types": [...] },
 
   "enemy_sprites": { "skeleton": "<asset_folder>", ... },
 
   "circle_defaults": {
-    "1": {
-      "theme": "grey_stone",
-      "tileset": "tileset1",            // ← новий ключ
-      "enemies": ["skeleton", ...],
-      "traps":   ["collapse", ...],
-      "bonuses": ["manna", ...]
-    },
-    ...
+	"1": {
+	  "theme": "grey_stone",
+	  "tileset": "tileset1",            // ← новий ключ
+	  "enemies": ["skeleton", ...],
+	  "traps":   ["collapse", ...],
+	  "bonuses": ["manna", ...]
+	},
+	...
   },
 
   "levels": [
-    { "id": 1, "circle": 1, "type": "vertical", "is_narrative": true,
-      "soul_id": "soul_001", ... },
-    ...
+	{ "id": 1, "circle": 1, "type": "vertical", "is_narrative": true,
+	  "soul_id": "soul_001", ... },
+	...
   ]
 }
 ```
@@ -548,27 +548,27 @@ for i in count:
   "approach": "hybrid",
 
   "static_levels": {
-    "boss_levels": [10, 20, 30, 50, 70, 100],
-    "circle_openers": { "levels": [1, 11, 21, ...] },
-    "milestone_levels": [50, 75, 99, 100]
+	"boss_levels": [10, 20, 30, 50, 70, 100],
+	"circle_openers": { "levels": [1, 11, 21, ...] },
+	"milestone_levels": [50, 75, 99, 100]
   },
 
   "procedural_levels": {
-    "assembly": {
-      "method": "sequential_rooms",       // legacy: переходить на shaft
-      "room_count_per_level": { "min": 2, "max": 8 }
-    },
+	"assembly": {
+	  "method": "sequential_rooms",       // legacy: переходить на shaft
+	  "room_count_per_level": { "min": 2, "max": 8 }
+	},
 
-    "room_pools": {
-      "circle_1": {
-        "style": "antechamber_stone",
-        "platforms": ["stone", "one_way", ...],
-        "enemies":   ["shadow_lost", ...],
-        "traps":     ["spike_floor", ...],
-        "rooms_count": 24
-      },
-      ...
-    }
+	"room_pools": {
+	  "circle_1": {
+		"style": "antechamber_stone",
+		"platforms": ["stone", "one_way", ...],
+		"enemies":   ["shadow_lost", ...],
+		"traps":     ["spike_floor", ...],
+		"rooms_count": 24
+	  },
+	  ...
+	}
   }
 }
 ```
@@ -585,18 +585,18 @@ const STEP_JUMP:       float = PART_JUMP / 2.0         # 50 px
 
 # Spacing per tier (vertical levels)
 const VERTICAL_SPACING := {
-    "easy":    PART_JUMP,                       # 100 px
-    "medium":  PART_JUMP + STEP_JUMP,           # 150 px
-    "hard":    PART_JUMP + STEP_JUMP * 2.0,     # 200 px
-    "extreme": MAX_JUMP_HEIGHT,                 # 200 px
+	"easy":    PART_JUMP,                       # 100 px
+	"medium":  PART_JUMP + STEP_JUMP,           # 150 px
+	"hard":    PART_JUMP + STEP_JUMP * 2.0,     # 200 px
+	"extreme": MAX_JUMP_HEIGHT,                 # 200 px
 }
 
 # Platform preferences per tier
 const ZONE_PLATFORMS := {
-    "easy":    { "type": "stone",             "width": 220.0 },
-    "medium":  { "type": "stone",             "width": 110.0 },
-    "hard":    { "type": "moving_horizontal", "width": 110.0 },
-    "extreme": { "type": "moving_vertical",   "width": 110.0 },
+	"easy":    { "type": "stone",             "width": 220.0 },
+	"medium":  { "type": "stone",             "width": 110.0 },
+	"hard":    { "type": "moving_horizontal", "width": 110.0 },
+	"extreme": { "type": "moving_vertical",   "width": 110.0 },
 }
 ```
 
