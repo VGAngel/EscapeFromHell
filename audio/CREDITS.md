@@ -14,7 +14,7 @@ licensed CC0 (public domain — no attribution required).
 
 | In-game key | Source file | Re-purposed as |
 |---|---|---|
-| player.jump | sci-fi/forceField_004.ogg | air whoosh |
+| player.jump | impact/footstep_concrete_001.ogg | takeoff stomp (forceField_004 was too techno) |
 | player.footstep_stone | impact/footstep_concrete_002.ogg | step on stone |
 | player.land_soft | impact/footstep_concrete_004.ogg | low landing |
 | player.land_hard | impact/impactBell_heavy_000.ogg | high-fall thud |
