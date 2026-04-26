@@ -7,12 +7,16 @@ extends GutTest
 # Expected values are what _apply_banner_space() produces in a 1080×1920
 # viewport (content_scale_size) with no-ads baseline (banner_h = 0):
 #   VersionLabel: offset_top = -50, offset_bottom = -20 (anchored to bottom)
-#   ButtonsContainer: offset_bottom = vp_h - 320 = 1920 - 320 = 1600
+#   ButtonsContainer: anchored at viewport center with symmetric offsets
+#     (-485 / +485) that exactly fit 9 × 90 px buttons + 8 × 20 px gaps.
+#     With a banner present the container shifts up by banner_h / 2 so its
+#     visual midpoint stays above the banner.
 # If the _apply_banner_space formula changes, update here too.
 
 const VERSION_TOP_DEFAULT:    float = -50.0
 const VERSION_BOTTOM_DEFAULT: float = -20.0
-const BUTTONS_BOTTOM_DEFAULT: float = 1600.0
+const BUTTONS_TOP_DEFAULT:    float = -485.0
+const BUTTONS_BOTTOM_DEFAULT: float =  485.0
 const BANNER_PX:              int   = 60
 
 const MainMenuScene := preload("res://scenes/ui/MainMenu.tscn")
@@ -39,7 +43,10 @@ func test_buttons_container_shifted_up_by_banner_height_when_ads_active() -> voi
 	AdsManager._ads_removed = false
 	var menu: Control = _make_menu()
 	var buttons: Control = menu.get_node("ButtonsContainer") as Control
-	assert_almost_eq(buttons.offset_bottom, BUTTONS_BOTTOM_DEFAULT - BANNER_PX, 0.5)
+	# Both edges shift up by banner_h / 2 so the container stays the same
+	# height — only its center moves above the banner.
+	assert_almost_eq(buttons.offset_top,    BUTTONS_TOP_DEFAULT    - BANNER_PX * 0.5, 0.5)
+	assert_almost_eq(buttons.offset_bottom, BUTTONS_BOTTOM_DEFAULT - BANNER_PX * 0.5, 0.5)
 
 # ── Ads removed ───────────────────────────────────────────────────────────────
 
@@ -54,6 +61,7 @@ func test_buttons_container_full_position_after_no_ads() -> void:
 	AdsManager._ads_removed = true
 	var menu: Control = _make_menu()
 	var buttons: Control = menu.get_node("ButtonsContainer") as Control
+	assert_almost_eq(buttons.offset_top,    BUTTONS_TOP_DEFAULT,    0.5)
 	assert_almost_eq(buttons.offset_bottom, BUTTONS_BOTTOM_DEFAULT, 0.5)
 
 # ── Reactive reflow on purchase ───────────────────────────────────────────────

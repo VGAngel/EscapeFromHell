@@ -92,10 +92,15 @@ func _apply_banner_space() -> void:
 	var banner_h: int = get_banner_height()
 	_version_lbl.offset_top    = -50.0 - float(banner_h)
 	_version_lbl.offset_bottom = -20.0 - float(banner_h)
+	# ButtonsContainer is anchored to the viewport center with symmetric
+	# offsets that exactly fit its content. Shift both edges up by half the
+	# banner height so the visual midpoint stays above the banner instead
+	# of ballooning the container off-screen.
 	if has_node("ButtonsContainer"):
 		var buttons: Control = $ButtonsContainer
-		var vp_h: float = get_viewport().get_visible_rect().size.y
-		buttons.offset_bottom = (vp_h - 320.0) - float(banner_h)
+		var shift: float = float(banner_h) * 0.5
+		buttons.offset_top    = -485.0 - shift
+		buttons.offset_bottom =  485.0 - shift
 
 ## Separate helper so tests can stub without needing SafeArea fully up.
 ## Prefers AdsManager (always the freshest value) and falls back to
