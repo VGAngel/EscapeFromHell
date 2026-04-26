@@ -2,3 +2,23 @@
 .godot/
 /android/
 *.eps
+
+# macOS Finder metadata — should never be tracked
+.DS_Store
+**/.DS_Store
+
+# Build artifacts
+*.apk
+*.apk.idsig
+/build/
+
+# Claude worktrees (each agent session creates one — never commit)
+.claude/worktrees/
+
+# IDE / editor scratch
+.idea/
+script_templates/
+
+# Stray asset experiments (one-off tests outside the proper folders)
+/Assets/OurAssets/walls/tileset1_base.png
+/Assets/OurAssets/walls/tileset1_base.png.import
