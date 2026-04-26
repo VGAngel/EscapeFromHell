@@ -77,6 +77,9 @@ func _rebuild_collision() -> void:
 	var rect := RectangleShape2D.new()
 	rect.size = size
 	_shape.shape = rect
+	# Match BasePlatform: jump-through from below, solid from above.
+	_shape.one_way_collision = true
+	_shape.one_way_collision_margin = 2.0
 	add_child(_shape)
 
 func _rebuild_visual() -> void:
