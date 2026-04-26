@@ -106,18 +106,26 @@ func _resolve_sfx(category: String, key: String) -> String:
 	var raw: String = String(sfx_cfg.get(key, ""))
 	if raw == "":
 		return ""
-	return SFX_ROOT + raw + ".ogg"
+	# Returned without extension — _try_load_stream tries .ogg, .mp3, .wav.
+	return SFX_ROOT + raw
 
 func _resolve_music(rel_path: String) -> String:
-	return SFX_ROOT + rel_path + ".ogg"
+	return SFX_ROOT + rel_path
+
+# Audio files in res://audio/ may be ogg, mp3, or wav depending on source —
+# Kenney ships ogg, freesound packs often ship mp3, custom recordings wav.
+# Try each extension before giving up so callers don't need to know.
+const _AUDIO_EXTS: Array[String] = [".ogg", ".mp3", ".wav"]
 
 func _try_load_stream(path: String) -> AudioStream:
-	if not ResourceLoader.exists(path):
-		if not _warned.has(path):
-			_warned[path] = true
-			_report_warn("SoundManager: audio not found — " + path)
-		return null
-	return load(path) as AudioStream
+	for ext in _AUDIO_EXTS:
+		var full: String = path + ext
+		if ResourceLoader.exists(full):
+			return load(full) as AudioStream
+	if not _warned.has(path):
+		_warned[path] = true
+		_report_warn("SoundManager: audio not found — " + path + " (tried .ogg/.mp3/.wav)")
+	return null
 
 func _report_warn(msg: String) -> void:
 	var d: Node = get_node_or_null("/root/DebugOverlay")
