@@ -383,6 +383,10 @@ func _handle_staff() -> void:
 	var fx_origin: Vector2 = global_position + Vector2(40.0 if _facing_right else -40.0, -10.0)
 	_spawn_fx("staff_swing", fx_origin, _facing_right)
 
+	# Flip the staff hitbox to the side the player is facing. Without this
+	# the shape sits at its scene position (right side only) and swings to
+	# the left silently miss every enemy.
+	_orient_staff_area()
 	_staff_area.monitoring = true
 	await get_tree().create_timer(0.15).timeout
 	var hit := _apply_staff_hit()
@@ -410,6 +414,18 @@ func _apply_staff_hit() -> bool:
 				body.receive_knockback(direction * 280.0, 4.0)
 			hit = true
 	return hit
+
+# Mirror the StaffArea's collision shape to the player's facing side. The
+# scene-time position is hard-coded to the right (+x); without flipping,
+# left-facing swings can never overlap an enemy.
+func _orient_staff_area() -> void:
+	if not _staff_area:
+		return
+	var shape: CollisionShape2D = _staff_area.get_node_or_null("CollisionShape2D")
+	if not shape:
+		return
+	var x: float = absf(shape.position.x)
+	shape.position.x = x if _facing_right else -x
 
 # ── Fall damage ───────────────────────────────────────────────────────────────
 func _check_fall_damage() -> void:
