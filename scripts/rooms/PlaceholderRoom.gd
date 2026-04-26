@@ -76,6 +76,8 @@ const WALL_TEXTURES_BY_TILESET := {
 const BACKDROP_TEXTURES_BY_TILESET := {
 	"tileset1": [
 		"res://Assets/OurAssets/walls/circle1/backdrop_a.png",
+		"res://Assets/OurAssets/walls/circle1/backdrop_b.png",
+		"res://Assets/OurAssets/walls/circle1/backdrop_c.png",
 	],
 }
 
