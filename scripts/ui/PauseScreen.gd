@@ -108,7 +108,7 @@ func _refresh_stats() -> void:
 
 func _set_sin(value: float) -> void:
 	var ratio := clampf(value / 100.0, 0.0, 1.0)
-	_sin_bar.size.x = 120.0 * ratio
+	_sin_bar.size.x = 220.0 * ratio
 	_sin_bar.color = _sin_color(value)
 	_lbl_sin_pct.text = "%.0f%%" % value
 
@@ -168,6 +168,10 @@ func _build_ui() -> void:
 	_root.color = Color(0, 0, 0, 0.55)
 	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Force ALWAYS so children remain interactive while get_tree().paused = true.
+	# CanvasLayer already sets this in _ready, but applying it here too removes
+	# any chance of an inherited-mode regression from a future scene refactor.
+	_root.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_root)
 
 	# CenterContainer fills the screen and re-centers its child whenever
@@ -175,11 +179,13 @@ func _build_ui() -> void:
 	var centerer := CenterContainer.new()
 	centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	centerer.mouse_filter = Control.MOUSE_FILTER_PASS
+	centerer.process_mode = Node.PROCESS_MODE_ALWAYS
 	_root.add_child(centerer)
 
-	# Central panel
+	# Central panel — sized for 1080×1920 portrait (≈70% width).
 	_panel = PanelContainer.new()
-	_panel.custom_minimum_size = Vector2(420, 0)
+	_panel.custom_minimum_size = Vector2(760, 0)
+	_panel.process_mode = Node.PROCESS_MODE_ALWAYS
 	var style := StyleBoxFlat.new()
 	style.bg_color        = Color(0.08, 0.06, 0.10, 0.96)
 	style.border_width_left   = 1
@@ -191,22 +197,22 @@ func _build_ui() -> void:
 	style.corner_radius_top_right   = 16
 	style.corner_radius_bottom_left = 16
 	style.corner_radius_bottom_right = 16
-	style.content_margin_left   = 24.0
-	style.content_margin_right  = 24.0
-	style.content_margin_top    = 28.0
-	style.content_margin_bottom = 28.0
+	style.content_margin_left   = 40.0
+	style.content_margin_right  = 40.0
+	style.content_margin_top    = 44.0
+	style.content_margin_bottom = 44.0
 	_panel.add_theme_stylebox_override("panel", style)
 	centerer.add_child(_panel)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.add_theme_constant_override("separation", 22)
 	_panel.add_child(vbox)
 
 	# Title
 	_lbl_title = Label.new()
 	_lbl_title.text = "ПАУЗА"
 	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_title.add_theme_font_size_override("font_size", 39)
+	_lbl_title.add_theme_font_size_override("font_size", 60)
 	_lbl_title.add_theme_color_override("font_color", Color("#FFD700"))
 	vbox.add_child(_lbl_title)
 
@@ -226,24 +232,24 @@ func _build_ui() -> void:
 
 	var sin_lbl := Label.new()
 	sin_lbl.text = "😈"
-	sin_lbl.add_theme_font_size_override("font_size", 21)
+	sin_lbl.add_theme_font_size_override("font_size", 30)
 	sin_row.add_child(sin_lbl)
 
 	_sin_bar_bg = ColorRect.new()
-	_sin_bar_bg.custom_minimum_size = Vector2(120, 8)
+	_sin_bar_bg.custom_minimum_size = Vector2(220, 14)
 	_sin_bar_bg.color = Color(0.15, 0.15, 0.15)
 	_sin_bar_bg.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	sin_row.add_child(_sin_bar_bg)
 
 	_sin_bar = ColorRect.new()
 	_sin_bar.position = Vector2.ZERO
-	_sin_bar.size = Vector2(0, 8)
+	_sin_bar.size = Vector2(0, 14)
 	_sin_bar.color = Color.WHITE
 	_sin_bar_bg.add_child(_sin_bar)
 
 	_lbl_sin_pct = Label.new()
 	_lbl_sin_pct.text = "0%"
-	_lbl_sin_pct.add_theme_font_size_override("font_size", 18)
+	_lbl_sin_pct.add_theme_font_size_override("font_size", 26)
 	_lbl_sin_pct.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	_lbl_sin_pct.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	sin_row.add_child(_lbl_sin_pct)
@@ -275,11 +281,13 @@ func _build_confirm_panel() -> void:
 	var confirm_centerer := CenterContainer.new()
 	confirm_centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	confirm_centerer.mouse_filter = Control.MOUSE_FILTER_PASS
+	confirm_centerer.process_mode = Node.PROCESS_MODE_ALWAYS
 	confirm_centerer.z_index = 2
 	_root.add_child(confirm_centerer)
 
 	_confirm_panel = PanelContainer.new()
-	_confirm_panel.custom_minimum_size = Vector2(360, 0)
+	_confirm_panel.custom_minimum_size = Vector2(640, 0)
+	_confirm_panel.process_mode = Node.PROCESS_MODE_ALWAYS
 
 	var style := StyleBoxFlat.new()
 	style.bg_color     = Color(0.10, 0.05, 0.06, 0.98)
@@ -292,28 +300,28 @@ func _build_confirm_panel() -> void:
 	style.corner_radius_top_right   = 14
 	style.corner_radius_bottom_left = 14
 	style.corner_radius_bottom_right = 14
-	style.content_margin_left   = 22.0
-	style.content_margin_right  = 22.0
-	style.content_margin_top    = 22.0
-	style.content_margin_bottom = 22.0
+	style.content_margin_left   = 36.0
+	style.content_margin_right  = 36.0
+	style.content_margin_top    = 36.0
+	style.content_margin_bottom = 36.0
 	_confirm_panel.add_theme_stylebox_override("panel", style)
 	confirm_centerer.add_child(_confirm_panel)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
+	vbox.add_theme_constant_override("separation", 20)
 	_confirm_panel.add_child(vbox)
 
 	_lbl_exit_title = Label.new()
 	_lbl_exit_title.text = "Вийти з рівня?"
 	_lbl_exit_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_exit_title.add_theme_font_size_override("font_size", 27)
+	_lbl_exit_title.add_theme_font_size_override("font_size", 42)
 	_lbl_exit_title.add_theme_color_override("font_color", Color("#FF6644"))
 	vbox.add_child(_lbl_exit_title)
 
 	_lbl_exit_msg = Label.new()
 	_lbl_exit_msg.text = "Зібрані душі збережені.\nДуша в руках — буде втрачена."
 	_lbl_exit_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_exit_msg.add_theme_font_size_override("font_size", 20)
+	_lbl_exit_msg.add_theme_font_size_override("font_size", 28)
 	_lbl_exit_msg.add_theme_color_override("font_color", Color(0.75, 0.72, 0.70))
 	_lbl_exit_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_lbl_exit_msg)
@@ -324,12 +332,12 @@ func _build_confirm_panel() -> void:
 	vbox.add_child(btn_row)
 
 	_btn_exit_yes = _make_button("Вийти", false, true)
-	_btn_exit_yes.custom_minimum_size.x = 110
+	_btn_exit_yes.custom_minimum_size = Vector2(240, 90)
 	_btn_exit_yes.pressed.connect(_on_exit_yes_pressed)
 	btn_row.add_child(_btn_exit_yes)
 
 	_btn_exit_no = _make_button("Залишитись", true)
-	_btn_exit_no.custom_minimum_size.x = 110
+	_btn_exit_no.custom_minimum_size = Vector2(240, 90)
 	_btn_exit_no.pressed.connect(_on_exit_no_pressed)
 	btn_row.add_child(_btn_exit_no)
 
@@ -338,8 +346,9 @@ func _build_confirm_panel() -> void:
 func _make_button(text: String, primary: bool, danger: bool = false) -> Button:
 	var btn := Button.new()
 	btn.text = text
-	btn.custom_minimum_size = Vector2(252, 44)
-	btn.add_theme_font_size_override("font_size", 22)
+	btn.custom_minimum_size = Vector2(540, 96)
+	btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	btn.add_theme_font_size_override("font_size", 32)
 
 	var normal := StyleBoxFlat.new()
 	var hover  := StyleBoxFlat.new()
@@ -376,7 +385,7 @@ func _make_stat_label(text: String) -> Label:
 	var lbl := Label.new()
 	lbl.text = text
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 21)
+	lbl.add_theme_font_size_override("font_size", 30)
 	lbl.add_theme_color_override("font_color", Color(0.78, 0.76, 0.80))
 	return lbl
 
