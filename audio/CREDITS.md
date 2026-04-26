@@ -10,13 +10,11 @@ sample** (also CC0).
 - [UI Audio](https://kenney.nl/assets/ui-audio) — clicks, hovers, switches
 - [Casino Audio](https://kenney.nl/assets/casino-audio) — chip sounds repurposed for soul/bonus pickup chimes
 - [Sci-Fi Sounds](https://kenney.nl/assets/sci-fi-sounds) — kept around for future weapons / environment cues
-- [Freesound community sample 30946](https://freesound.org/) — dedicated jump-landing whoosh
 
 ## Mapping
 
 | In-game key | Source file | Re-purposed as |
 |---|---|---|
-| player.jump | freesound community sample 30946 (mp3) | dedicated jump-and-landing whoosh |
 | player.footstep_stone | impact/footstep_concrete_002.ogg | step on stone |
 | player.land_soft | impact/footstep_concrete_004.ogg | low landing |
 | player.land_hard | impact/impactBell_heavy_000.ogg | high-fall thud |

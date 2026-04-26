@@ -351,8 +351,6 @@ func _handle_jump(delta: float) -> void:
 		_jump_held = true
 		_jump_hold_timer = 0.0
 		_tutorial_hint("jump")
-		if SoundManager:
-			SoundManager.play_sfx("player", "jump")
 	elif _jump_buffer_timer > 0.0 and (_upgrade_double_jump or _temp_double_jump_timer > 0.0) \
 			and not is_on_floor() and _coyote_timer <= 0.0 and _jumps_done < 1:
 		velocity.y = -jump_force
@@ -360,8 +358,6 @@ func _handle_jump(delta: float) -> void:
 		_jump_held = true
 		_jump_hold_timer = 0.0
 		_jumps_done += 1
-		if SoundManager:
-			SoundManager.play_sfx("player", "jump")
 
 	if Input.is_action_pressed("jump") and _jump_held:
 		_jump_hold_timer += delta
