@@ -47,7 +47,9 @@ func _on_body_entered(body: Node2D) -> void:
 	_play_collect_fx()
 
 func _play_collect_fx() -> void:
-	monitoring = false
+	# Disabling monitoring synchronously inside body_entered raises
+	# "Function blocked during in/out signal" — defer to next idle.
+	set_deferred("monitoring", false)
 	var tw := create_tween()
 	tw.parallel().tween_property(self, "scale",    Vector2(1.8, 1.8), 0.18)
 	tw.parallel().tween_property(self, "modulate:a", 0.0, 0.25)
