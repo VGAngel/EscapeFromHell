@@ -21,19 +21,24 @@ func _ready() -> void:
 	_build_trigger()
 
 func _build_trigger() -> void:
+	# Thin top-strip trigger — wrapping the whole body would vanish the
+	# platform when the player's head clipped the underside on a jump-up.
 	_trigger = Area2D.new()
 	_trigger.collision_layer = 0
 	_trigger.collision_mask  = 1
 	var col := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(size.x, size.y + 8.0)
+	rect.size = Vector2(size.x, 12.0)
 	col.shape = rect
+	_trigger.position = Vector2(0.0, -size.y * 0.5 - 4.0)
 	_trigger.add_child(col)
 	add_child(_trigger)
 	_trigger.body_entered.connect(_on_body_entered)
 
 func _on_body_entered(body: Node2D) -> void:
 	if not _active or not body.is_in_group("player"):
+		return
+	if "velocity" in body and body.velocity.y < 0.0:
 		return
 	_vanish()
 

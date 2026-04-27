@@ -19,14 +19,18 @@ func _ready() -> void:
 	_build_trigger()
 
 func _build_trigger() -> void:
+	# Thin strip just ABOVE the platform top — same pattern as Sin/Mud/Ice
+	# platforms. A wide trigger that wrapped the whole body fired when the
+	# player's head clipped the underside on a jump-up, crumbling the platform
+	# before they ever landed on it.
 	_trigger = Area2D.new()
 	_trigger.collision_layer = 0
 	_trigger.collision_mask  = 1   # player layer
 	var col := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	# Slightly taller than platform so a landing player definitely overlaps.
-	rect.size = Vector2(size.x, size.y + 8.0)
+	rect.size = Vector2(size.x, 12.0)
 	col.shape = rect
+	_trigger.position = Vector2(0.0, -size.y * 0.5 - 4.0)
 	_trigger.add_child(col)
 	add_child(_trigger)
 	_trigger.body_entered.connect(_on_body_entered)
@@ -35,6 +39,11 @@ func _on_body_entered(body: Node2D) -> void:
 	if _crumbling:
 		return
 	if not body.is_in_group("player"):
+		return
+	# Extra safety: only crumble when the player is descending or grounded.
+	# Catches the rare case where a passing one-way collision still triggers
+	# the top-strip during a fast upward jump.
+	if "velocity" in body and body.velocity.y < 0.0:
 		return
 	_crumbling = true
 	await get_tree().create_timer(CRUMBLE_DELAY).timeout
