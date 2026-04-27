@@ -1139,37 +1139,27 @@ organic reach.
 
 Поточний стан sin-системи: shader-tint + Faith-platform gate + ending-розгалуження + щойно додані whispers (#6). Sin майже нічого не робить **механічно** до самого фіналу, гравець не бачить причин зростання. Нижче — покращення щоб sin став активним gameplay-loop'ом замість косметики.
 
-### S1. 🟢 Sin-source toast ⭐⭐⭐ (найдешевше)
+### S1. ✅ Sin-source toast
 
-**Що:** При кожному `+sin` — у HUD з'являється на 1.5с popup
-`+1% гріх ⚔ Посох` з іконкою джерела.
-
-**Чому:**
-- Гравець нарешті **бачить причину** замість "магічно зростає"
-- Класичний UX-патерн "show the consequence next to the cause" (Hollow
-  Knight, Dark Souls)
-- Реальна поведінкова зміна — гравець розуміє "посох коштує" і починає
-  обходити ворогів
-
-**Як:** Розширити `GameManager.add_sin(amount, cause)` + новий signal
-`sin_added(amount, cause)`. HUD-listener малює toast у нижньому лівому
-куті. Стек з 3 toasts max, fade-in 0.15 → hold 1.0 → fade-out 0.35.
-
-Іконки/тексти джерел:
-- `staff` ⚔ Посох
-- `death` 💀 Смерть
-- `sin_platform` 🟥 Гріховна платформа
-- `demon_deal` 👹 Угода з демоном
-- `sin_aura` 🔥 Аура Люцифера
-- `corrupt_soul` 👻 Зламана душа
-
-Cleansing/confession теж проходять через `sin_added(negative, "cleansing")`
-→ зелений toast.
-
-Edge cases: throttle для sin_platform tick'ів (показувати раз на 5с,
-агрегувати); перший toast у грі тримати довше (2.5с) для туторіалу.
-
-**Складність:** Дуже низька (~45 рядків + dict).
+**Реалізовано:**
+- `GameManager.add_sin(amount, cause)` + `reduce_sin(amount, cause)`
+  розширено новим параметром та signal'ом `sin_added(amount, cause)`
+  (negative для cleansing/confession)
+- Усі call-сайти оновлено з cause: `Player._handle_staff` → "staff",
+  `GameManager.trigger_death` → "death", `_check_death_limit` →
+  "extra_attempt", `complete_level` cleansing → "cleansing",
+  `SinPlatform._process` → "sin_platform" (через GameManager),
+  `BossLevel._on_sin_aura_tick` → "sin_aura"
+- HUD будує `_sin_toast_box` (BOTTOM_LEFT) і слухає `sin_added`:
+  - Іконки/labels у двох dict'ах для 9 cause-типів
+  - Throttle 4с per-cause + acumulator щоб per-frame ticks (sin_platform,
+    sin_aura) не спамили — пропущена сума доплачується наступним toast'ом
+  - Стек capped на 3, найстаріший FIFO
+  - Червоний backdrop + crimson border для +sin, зелений для −sin
+  - 22 px label з outline 4 px для читабельності
+  - Fade-in 0.15 → hold 1.2 → fade-out 0.35
+- 4 нових тести у `test_game_manager.gd` — signal emit з cause/default,
+  negative amount для reduce_sin, sin_changed contract collinear
 
 ---
 

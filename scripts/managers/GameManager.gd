@@ -7,6 +7,10 @@ extends Node
 signal level_started(level_id: int)
 signal level_completed(level_id: int, stats: Dictionary)
 signal player_died(death_count: int)
+## Emitted whenever sin changes by a known source. amount is signed (+ for
+## gain, − for cleansing/confession), cause is one of the SIN_CAUSE_* keys
+## the HUD knows how to render. Listeners (HUD toast) decide presentation.
+signal sin_added(amount: float, cause: String)
 signal player_respawned
 signal sin_changed(new_value: float)
 signal hp_changed(hp: int, max_hp: int)
@@ -142,20 +146,23 @@ func _set_hp(value: int) -> void:
 
 # ── Sin ───────────────────────────────────────────────────────────────────────
 
-func add_sin(amount: float) -> void:
+func add_sin(amount: float, cause: String = "unknown") -> void:
 	if not SaveManager:
 		return
 	SaveManager.add_sin(amount)
 	var new_sin: float = SaveManager.get_sin()
+	sin_added.emit(amount, cause)
 	sin_changed.emit(new_sin)
 	if _hud:
 		_hud.set_sin(new_sin)
 
-func reduce_sin(amount: float) -> void:
+func reduce_sin(amount: float, cause: String = "cleansing") -> void:
 	if not SaveManager:
 		return
 	SaveManager.reduce_sin(amount)
 	var new_sin: float = SaveManager.get_sin()
+	# Negative amount in the toast so HUD knows it's a positive event.
+	sin_added.emit(-amount, cause)
 	sin_changed.emit(new_sin)
 	if _hud:
 		_hud.set_sin(new_sin)
@@ -185,7 +192,7 @@ func trigger_death(cause: String = "enemy_hit") -> void:
 	_is_transitioning = true
 
 	_deaths_this_level += 1
-	add_sin(SIN_ON_DEATH)
+	add_sin(SIN_ON_DEATH, "death")
 	# Statistics — total deaths + per-cause breakdown for the stats screen.
 	if SaveManager:
 		SaveManager.add_stat("deaths_total", 1)
@@ -230,7 +237,7 @@ func _check_death_limit() -> void:
 		return  # unlimited
 	if _deaths_this_level >= limit:
 		# Soft limit: +1 extra attempt for +5% sin
-		add_sin(SIN_ON_SOFT_EXTRA)
+		add_sin(SIN_ON_SOFT_EXTRA, "extra_attempt")
 
 # ── Level complete ────────────────────────────────────────────────────────────
 
@@ -255,7 +262,7 @@ func complete_level() -> void:
 		# Tier 1: -1% per level. Higher tiers (if multi-level) scale linearly.
 		var cleansing_tier: int = SaveManager.get_upgrade_level("cleansing")
 		if cleansing_tier > 0:
-			reduce_sin(float(cleansing_tier))
+			reduce_sin(float(cleansing_tier), "cleansing")
 		# Statistics: cumulative play time + cleared levels counter.
 		SaveManager.add_play_time(elapsed)
 		SaveManager.add_stat("levels_cleared", 1)

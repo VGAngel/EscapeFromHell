@@ -64,6 +64,49 @@ func test_target_time_higher_circle_is_more_lenient() -> void:
 	var t10: float = gm._target_time_for_level(100)   # circle 10
 	assert_gte(t10, t1, "circle 10 target should be ≥ circle 1 target")
 
+# ── add_sin / reduce_sin emit sin_added with cause ────────────────────────────
+
+func test_add_sin_emits_sin_added_with_cause() -> void:
+	if not SaveManager:
+		pending("SaveManager autoload missing")
+		return
+	watch_signals(gm)
+	gm.add_sin(2.5, "staff")
+	assert_signal_emitted(gm, "sin_added")
+	var p: Array = get_signal_parameters(gm, "sin_added")
+	assert_almost_eq(p[0], 2.5, 0.001)
+	assert_eq(p[1], "staff")
+
+func test_add_sin_default_cause_is_unknown() -> void:
+	if not SaveManager:
+		pending("SaveManager autoload missing")
+		return
+	watch_signals(gm)
+	gm.add_sin(1.0)
+	var p: Array = get_signal_parameters(gm, "sin_added")
+	assert_eq(p[1], "unknown")
+
+func test_reduce_sin_emits_negative_amount() -> void:
+	if not SaveManager:
+		pending("SaveManager autoload missing")
+		return
+	SaveManager.add_sin(20.0)
+	watch_signals(gm)
+	gm.reduce_sin(5.0, "cleansing")
+	assert_signal_emitted(gm, "sin_added")
+	var p: Array = get_signal_parameters(gm, "sin_added")
+	assert_almost_eq(p[0], -5.0, 0.001, "reduce_sin should emit negative amount")
+	assert_eq(p[1], "cleansing")
+
+func test_add_sin_still_emits_sin_changed() -> void:
+	# Don't break the existing sin_changed contract that HUD.set_sin reads.
+	if not SaveManager:
+		pending("SaveManager autoload missing")
+		return
+	watch_signals(gm)
+	gm.add_sin(3.0, "death")
+	assert_signal_emitted(gm, "sin_changed")
+
 # ── _calc_light ───────────────────────────────────────────────────────────────
 
 func test_calc_light_all_souls_no_deaths() -> void:

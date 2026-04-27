@@ -77,11 +77,55 @@ var _ability_slots: Dictionary = {}
 # Shake tween for hearts
 var _hearts_tween: Tween = null
 
+# ── Sin-source toast (S1) ────────────────────────────────────────────────────
+# Stack of pop-ups in the bottom-left that show "+1% гріх ⚔ Посох" each
+# time GameManager.sin_added fires. Capped + per-cause throttled so per-
+# frame ticks (sin_platform, sin_aura) don't spam the screen.
+var _sin_toast_box: VBoxContainer = null
+const _SIN_TOAST_MAX:           int   = 3
+const _SIN_TOAST_FADE_IN:       float = 0.15
+const _SIN_TOAST_HOLD:          float = 1.20
+const _SIN_TOAST_FADE_OUT:      float = 0.35
+const _SIN_TOAST_THROTTLE_SEC:  float = 4.0   # min gap between same-cause toasts
+# Pending accumulator per cause so throttled ticks still report the totals
+# (e.g. "+6% гріх 🟥 Гріховна платформа" instead of one-tick crumbs).
+var _sin_toast_last_t: Dictionary = {}   # cause → seconds-since-startup
+var _sin_toast_pending: Dictionary = {}  # cause → accumulated amount
+const _SIN_CAUSE_ICONS: Dictionary = {
+	"staff":         "⚔",
+	"death":         "💀",
+	"sin_platform":  "🟥",
+	"demon_deal":    "👹",
+	"sin_aura":      "🔥",
+	"corrupt_soul":  "👻",
+	"extra_attempt": "🩸",
+	"cleansing":     "✨",
+	"confession":    "🙏",
+	"unknown":       "❓",
+}
+const _SIN_CAUSE_LABELS: Dictionary = {
+	"staff":         "Посох",
+	"death":         "Смерть",
+	"sin_platform":  "Гріховна платформа",
+	"demon_deal":    "Угода з демоном",
+	"sin_aura":      "Аура Люцифера",
+	"corrupt_soul":  "Зламана душа",
+	"extra_attempt": "Зайва спроба",
+	"cleansing":     "Очищення",
+	"confession":    "Сповідь",
+	"unknown":       "Інше",
+}
+
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
 	add_to_group("hud")
 	_build_ui()
+	# Sin-source toast pipeline. GameManager emits sin_added(amount, cause)
+	# whenever sin moves; we render a transient pop in the bottom-left so
+	# the player can connect each delta to its source.
+	if GameManager and GameManager.has_signal("sin_added"):
+		GameManager.sin_added.connect(_on_sin_added)
 
 func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
 	_max_hp     = max_hp
@@ -392,6 +436,7 @@ func _build_ui() -> void:
 	_build_top_row()
 	_build_bottom_row()
 	_build_sin_bar()
+	_build_sin_toast_box()
 	_build_pause_button()
 	_build_mobile_controls()
 
@@ -575,3 +620,86 @@ func _build_sin_bar() -> void:
 	_sin_bar.size = Vector2(0, 6)
 	_sin_bar.color = Color.WHITE
 	_sin_bar_bg.add_child(_sin_bar)
+
+# ── Sin-source toast (S1) ────────────────────────────────────────────────────
+
+func _build_sin_toast_box() -> void:
+	# Bottom-left, sitting just above the sin bar / mobile controls.
+	# Anchor to BOTTOM_LEFT so it stays put as toasts stack upwards.
+	_sin_toast_box = VBoxContainer.new()
+	_sin_toast_box.name = "SinToastBox"
+	_sin_toast_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_sin_toast_box.offset_left   = 24.0
+	_sin_toast_box.offset_top    = -380.0   # above mobile controls + sin bar
+	_sin_toast_box.offset_right  = 600.0
+	_sin_toast_box.offset_bottom = -200.0
+	_sin_toast_box.add_theme_constant_override("separation", 6)
+	_sin_toast_box.alignment = BoxContainer.ALIGNMENT_END
+	_sin_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_sin_toast_box)
+
+func _on_sin_added(amount: float, cause: String) -> void:
+	# Skip zero-deltas (defensive — shouldn't fire but guard anyway).
+	if absf(amount) < 0.01:
+		return
+	# Throttle per-cause so per-frame ticks don't flood the screen.
+	# Accumulate the suppressed amount and flush it as one toast when the
+	# throttle window passes.
+	var now: float = Time.get_ticks_msec() / 1000.0
+	var last: float = float(_sin_toast_last_t.get(cause, -999.0))
+	if now - last < _SIN_TOAST_THROTTLE_SEC:
+		_sin_toast_pending[cause] = float(_sin_toast_pending.get(cause, 0.0)) + amount
+		return
+	# Emit the new amount + any accumulated leftovers from the silent window.
+	var total: float = amount + float(_sin_toast_pending.get(cause, 0.0))
+	_sin_toast_pending.erase(cause)
+	_sin_toast_last_t[cause] = now
+	_spawn_sin_toast(total, cause)
+
+func _spawn_sin_toast(amount: float, cause: String) -> void:
+	# Cap visible toasts — drop the oldest before adding a new one.
+	while _sin_toast_box.get_child_count() >= _SIN_TOAST_MAX:
+		_sin_toast_box.get_child(0).queue_free()
+
+	var icon:  String = String(_SIN_CAUSE_ICONS.get(cause, "❓"))
+	var label: String = String(_SIN_CAUSE_LABELS.get(cause, "Інше"))
+	var sign_char: String = "+" if amount >= 0.0 else "−"
+	var text: String = "%s%.0f%% гріх  %s %s" % [sign_char, absf(amount), icon, label]
+
+	var panel := PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var style := StyleBoxFlat.new()
+	# Red for sin gain, green tint for cleansing/confession (negative).
+	if amount >= 0.0:
+		style.bg_color     = Color(0.10, 0.05, 0.06, 0.88)
+		style.border_color = Color("#8B0000")
+	else:
+		style.bg_color     = Color(0.04, 0.10, 0.06, 0.88)
+		style.border_color = Color("#3A8A4A")
+	for side in ["left", "right", "top", "bottom"]:
+		style.set("border_width_" + side, 2)
+	for corner in ["top_left", "top_right", "bottom_left", "bottom_right"]:
+		style.set("corner_radius_" + corner, 10)
+	style.content_margin_left   = 16.0
+	style.content_margin_right  = 16.0
+	style.content_margin_top    = 8.0
+	style.content_margin_bottom = 8.0
+	panel.add_theme_stylebox_override("panel", style)
+
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_color_override("font_color",
+		Color("#FFE4D0") if amount >= 0.0 else Color("#D6FFE0"))
+	lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.85))
+	lbl.add_theme_constant_override("outline_size", 4)
+	panel.add_child(lbl)
+
+	_sin_toast_box.add_child(panel)
+	panel.modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(panel, "modulate:a", 1.0, _SIN_TOAST_FADE_IN)
+	tw.tween_interval(_SIN_TOAST_HOLD)
+	tw.tween_property(panel, "modulate:a", 0.0, _SIN_TOAST_FADE_OUT)
+	tw.tween_callback(panel.queue_free)

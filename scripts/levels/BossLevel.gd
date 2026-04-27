@@ -444,7 +444,7 @@ func _on_boss_win() -> void:
 
 func _on_sin_aura_tick(amount: float) -> void:
 	if GameManager and GameManager.has_method("add_sin"):
-		GameManager.add_sin(amount)
+		GameManager.add_sin(amount, "sin_aura")
 	_shake_camera(0.08, 3.0)
 
 func _on_boss_stunned(_duration: float) -> void:

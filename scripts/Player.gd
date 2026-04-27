@@ -416,7 +416,12 @@ func _handle_staff() -> void:
 		state = State.IDLE
 
 	if not _upgrade_staff_purity:
-		SaveManager.add_sin(staff_sin_cost)
+		# Route through GameManager so the HUD toast + sin_changed signal
+		# fire — direct SaveManager.add_sin would skip the source pipeline.
+		if GameManager:
+			GameManager.add_sin(staff_sin_cost, "staff")
+		else:
+			SaveManager.add_sin(staff_sin_cost)
 	staff_used.emit()
 
 func _apply_staff_hit() -> bool:

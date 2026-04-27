@@ -34,7 +34,12 @@ func _build_top_trigger() -> void:
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint() or not _player_on:
 		return
-	if SaveManager:
+	# Route through GameManager (when available) so the HUD source-toast
+	# fires; the toast itself throttles per-cause so per-frame ticks here
+	# don't spam the screen.
+	if GameManager and GameManager.has_method("add_sin"):
+		GameManager.add_sin(SIN_PER_SEC * delta, "sin_platform")
+	elif SaveManager:
 		SaveManager.add_sin(SIN_PER_SEC * delta)
 
 func _on_body_entered(body: Node2D) -> void:
