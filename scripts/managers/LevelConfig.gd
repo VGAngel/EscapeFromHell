@@ -139,6 +139,32 @@ func get_tileset_for_level(id: int) -> String:
 		return lvl_tileset
 	return get_circle_tileset(get_circle(id))
 
+## Returns the side-wall config for a level as `{ draw: bool, width: int }`.
+##
+## Resolution order (later wins):
+##   1. fallback default — `{ draw: false, width: 60 }` (matches the legacy
+##      "no visible walls in shafts, 60 px collision" behaviour).
+##   2. `circle_defaults["<n>"].side_walls` — applies to every level in the
+##      circle unless overridden.
+##   3. level entry's `"side_walls"` block — per-level override.
+##
+## Each layer can supply only the keys it cares about (e.g. `{"width": 180}`
+## without `draw`); missing keys inherit from the previous layer.
+##
+## `draw=true` makes PlaceholderRoom render the textured side walls. When the
+## current tileset has no wall textures the renderer falls back to a flat
+## colour fill at the same width. `width` adjusts both physical collision
+## thickness and visual width.
+func get_side_walls_for_level(id: int) -> Dictionary:
+	var resolved: Dictionary = {"draw": false, "width": 60}
+	var circle_block: Dictionary = _circle_defaults.get(str(get_circle(id)), {}).get("side_walls", {})
+	for k in circle_block.keys():
+		resolved[k] = circle_block[k]
+	var lvl_block: Dictionary = get_level(id).get("side_walls", {})
+	for k in lvl_block.keys():
+		resolved[k] = lvl_block[k]
+	return resolved
+
 func get_levels_in_circle(circle: int) -> Array:
 	var result: Array = []
 	for level: Dictionary in _data.get("levels", []):

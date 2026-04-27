@@ -46,7 +46,9 @@ extends Node2D
 @export var tileset: String = "tileset1"
 
 const WALL_T:      float = 32.0   # floor / ceiling + horizontal room side walls
-const SIDE_WALL_T: float = 60.0   # side walls in vertical rooms
+## Default thickness of vertical-shaft side walls (px). Overridable per
+## level/circle via `LevelConfig.get_side_walls_for_level().width`.
+const SIDE_WALL_T: float = 60.0
 const PLATFORM_T:  float = 30.0
 
 # Viewport dimensions — must match project.godot display/window settings.
@@ -80,6 +82,13 @@ const BACKDROP_TEXTURES_BY_TILESET := {
 		"res://Assets/OurAssets/walls/circle1/backdrop_c.png",
 	],
 }
+
+# Side-wall config resolved at runtime from
+# LevelConfig.get_side_walls_for_level(level_id). Defaults match the legacy
+# behaviour (collision-only 60 px wall on vertical shafts, flat coloured
+# wall on horizontal rooms).
+var _side_wall_w:    float = SIDE_WALL_T
+var _side_wall_draw: bool  = false
 
 # Row Y positions — computed in _init_zone() from difficulty spacing.
 # Based on: floor_y - spacing * N.
@@ -195,6 +204,14 @@ func _ready() -> void:
 	set_meta("room_width",  room_width)
 	set_meta("room_height", room_height)
 
+	# Resolve side-wall config (collision width + visibility) before anything
+	# else uses _side_wall_w — _init_zone's Markov bounds and _build_walls
+	# both depend on it.
+	if LevelConfig and level_id > 0:
+		var sw: Dictionary = LevelConfig.get_side_walls_for_level(level_id)
+		_side_wall_w    = float(sw.get("width", SIDE_WALL_T))
+		_side_wall_draw = bool(sw.get("draw", false))
+
 	_init_zone()
 
 	if not Engine.is_editor_hint():
@@ -262,7 +279,7 @@ func _spawn_atmosphere_particles() -> void:
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 	# Emit across the playable interior (between the side walls) for the full
 	# shaft height — particles already populate the whole column at all times.
-	var inner_w: float = maxf(room_width - SIDE_WALL_T * 2.0, 1.0)
+	var inner_w: float = maxf(room_width - _side_wall_w * 2.0, 1.0)
 	mat.emission_box_extents = Vector3(inner_w / 2.0, room_height / 2.0, 0.0)
 	mat.direction = Vector3(0.0, -1.0, 0.0)
 	mat.spread = 15.0
@@ -311,7 +328,7 @@ func _log_vertical_layout() -> void:
 	print("[room %d#%d] tier=%s rows=%d max_y_gap=%dpx room_w=%dpx room_h=%dpx side_wall=%dpx safe_l/r=%d/%d" % [
 		level_id, room_index, _zone_tier, _vert_layout.size(),
 		int(max_y_gap), int(room_width), int(room_height),
-		int(SIDE_WALL_T), sa_l, sa_r,
+		int(_side_wall_w), sa_l, sa_r,
 	])
 	# One-line dump per row so you can grep / paste into a spreadsheet.
 	for i in _vert_layout.size():
@@ -752,7 +769,7 @@ func _build_walls() -> void:
 	# Side walls span the safe-area-adjusted height.
 	var wall_h:    float = room_height - float(sa_top + sa_bottom)
 	var wall_mid_y: float = float(sa_top) + wall_h / 2.0
-	var side_t:    float = SIDE_WALL_T if is_vertical else WALL_T
+	var side_t:    float = _side_wall_w if is_vertical else WALL_T
 	var wall_l_x:  float = side_t / 2.0 + float(sa_left)
 	var wall_r_x:  float = room_width - side_t / 2.0 - float(sa_right)
 
@@ -1070,8 +1087,8 @@ func _build_vertical_layout(rows: Array) -> Array[Dictionary]:
 		# side wall. Both single platforms and per-row anchors of bridges are
 		# constrained by their actual width.
 		if kind == "single":
-			var min_x: float = SIDE_WALL_T + width * 0.5
-			var max_x: float = room_width - SIDE_WALL_T - width * 0.5
+			var min_x: float = _side_wall_w + width * 0.5
+			var max_x: float = room_width - _side_wall_w - width * 0.5
 			x = clampf(x, min_x, max_x)
 
 		layout.append({
@@ -1422,19 +1439,27 @@ func _draw() -> void:
 		draw_rect(Rect2(0, room_height - WALL_T - sa_bottom, room_width, WALL_T), wall_c)
 	if needs_ceiling:
 		draw_rect(Rect2(0, sa_top, room_width, WALL_T), wall_c)
-	var side_t: float = SIDE_WALL_T if is_vertical else WALL_T
+	var side_t: float = _side_wall_w if is_vertical else WALL_T
 	var left_x:  float = float(sa_left)
 	var right_x: float = room_width - side_t - float(sa_right)
-	# Vertical shafts: the textured backdrop already paints walls along both
-	# edges of the frame, so an extra 60-px brick slice on top of that just
-	# squashed the brickwork into unrecognisable streaks (one brick is wider
-	# than the wall slot). Skip the textured side wall and let the backdrop
-	# carry the visual; physical collision is unaffected (built in _build_walls).
-	# Horizontal rooms still draw the flat coloured side walls so the player
-	# can see the room edges without backdrop art.
+	# Side-wall draw policy:
+	#   • horizontal rooms — always draw flat coloured side walls so the room
+	#     edges read against any background
+	#   • vertical shafts — only when the level config opts in via
+	#     side_walls.draw=true (see LevelConfig.get_side_walls_for_level).
+	#     When opted in, prefer textured rendering if the tileset has wall art;
+	#     otherwise fall back to the flat colour fill at the configured width.
+	# Physical collision (built in _build_walls) is unaffected by this flag.
 	if not is_vertical:
 		draw_rect(Rect2(left_x,  0, side_t, room_height), wall_c)
 		draw_rect(Rect2(right_x, 0, side_t, room_height), wall_c)
+	elif _side_wall_draw:
+		if not _wall_textures_cache.is_empty():
+			_draw_textured_side_wall(left_x,  side_t, "L")
+			_draw_textured_side_wall(right_x, side_t, "R")
+		else:
+			draw_rect(Rect2(left_x,  0, side_t, room_height), wall_c)
+			draw_rect(Rect2(right_x, 0, side_t, room_height), wall_c)
 
 	# Type badge
 	var type_colors := {"entrance": Color(0.2, 0.8, 0.3), "main": Color(0.6, 0.6, 0.9), "exit": Color(1.0, 0.85, 0.2)}

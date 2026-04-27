@@ -150,6 +150,33 @@ func test_get_tileset_for_level_multiple_overrides_in_same_circle() -> void:
 	assert_eq(lc.get_tileset_for_level(5), "tileset12", "L5 uses per-level override")
 	assert_eq(lc.get_tileset_for_level(7), "tileset12", "L7 uses per-level override")
 
+# ── get_side_walls_for_level ──────────────────────────────────────────────────
+#
+# Per-level/per-circle wall config — `{ draw: bool, width: int }` resolved
+# from level → circle defaults → fallback. Drives PlaceholderRoom's wall
+# draw and physical collision width.
+
+func test_get_side_walls_default_when_nothing_configured() -> void:
+	lc._circle_defaults = {"1": {}}
+	# Level 1 from before_each has no side_walls key → fallback applies.
+	var sw: Dictionary = lc.get_side_walls_for_level(1)
+	assert_eq(sw.get("draw"), false, "fallback hides the wall")
+	assert_eq(sw.get("width"), 60, "fallback width = 60 px")
+
+func test_get_side_walls_circle_default_applies() -> void:
+	lc._circle_defaults = {"1": {"side_walls": {"draw": true, "width": 180}}}
+	var sw: Dictionary = lc.get_side_walls_for_level(1)
+	assert_eq(sw.get("draw"), true,  "circle default opt-in")
+	assert_eq(sw.get("width"), 180,  "circle default width applies")
+
+func test_get_side_walls_level_override_wins_over_circle() -> void:
+	lc._circle_defaults = {"1": {"side_walls": {"draw": true, "width": 180}}}
+	lc._levels_by_id[1]["side_walls"] = {"draw": false}
+	var sw: Dictionary = lc.get_side_walls_for_level(1)
+	# `draw` overridden by level, `width` inherited from circle.
+	assert_eq(sw.get("draw"), false, "level override wins")
+	assert_eq(sw.get("width"), 180,  "missing keys inherit from circle")
+
 # ── get_difficulty ────────────────────────────────────────────────────────────
 
 func test_get_difficulty_explicit() -> void:
