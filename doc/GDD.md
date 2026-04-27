@@ -1,6 +1,6 @@
 # Game Design Document — Escape from Hell
 
-**Версія:** 1.3  
+**Версія:** 1.4  
 **Движок:** Godot 4  
 **Платформа:** Android (Google Play)  
 **Жанр:** 2D Platformer  
@@ -14,6 +14,10 @@
 > Зміни 1.2 → 1.3: переназначення клавіш у Settings, окремий екран
 > Statistics (час, смерті по причинах, рекорди, Світло), per-circle
 > soul progress у CollectionScreen.
+>
+> Зміни 1.3 → 1.4: boss progress bar з smart-format (X/Y для збору,
+> сек/сек для молитви), пульс золотим при ratio ≥ 0.8, signal
+> `progress_updated` від BossAI до BossLevel.
 
 ---
 
@@ -926,6 +930,36 @@ guard'иться `velocity.y < 0` (не реагувати на рух угор�
 | **Люцифер** | 100 | Фаза 1: збери 5 душ. Фаза 2: бос з sin aura. Фаза 3: молитва 8 сек стоячи | Devil |
 
 **Крижаний Лицар** (Frost_Knight_1) — сильний рідкісний ворог на рівнях 47–49, не бос.
+
+### Progress bar (objective tracker)
+
+Зверху арени — горизонтальний індикатор з ціллю боса. **Не HP** — це
+прогрес-метр (боси беззпрограшні, метр заповнюється по виконанню
+win-condition).
+
+Вміст залежить від боса:
+
+| Бос | Заголовок | Формат |
+|-----|-----------|--------|
+| boss_01 | Уламки | "X / 3" (int) |
+| boss_02 | Тотеми | "X / 3" (int) |
+| boss_03 | Кристали | "X / 3" (int) |
+| boss_05 | Уламки | "X / 3" (int) |
+| boss_10 фаза 1 | Душі | "X / 5" (int) |
+| boss_10 фаза 3 | Молитва | "X.X / 8.0" (sec, anim fill) |
+
+**Фіча-деталі:**
+- Анімація заповнення — tween 0.25с (кожен +1 читається як beat, не snap)
+- Колір червоний → пульс золотим при ratio ≥ 0.8 ("ось-ось")
+- Phase dots зверху — для багатофазних босів (boss_10 → 3 dots)
+- Bar зникає на `_on_boss_win` (fade-out 0.4с)
+- Рівень `BossLevel` ловить signal `BossAI.progress_updated(label, value, max_value)`
+
+**Архітектура:** [BossAI](../scripts/enemies/BossAI.gd) емітить
+`progress_updated` у `on_collectible_picked()`, `on_totem_activated()`,
+`tick_prayer()`, `reset_prayer()` (snap-to-zero коли гравець відпустив
+кнопку). [BossLevel._build_progress_bar](../scripts/levels/BossLevel.gd)
+будує UI; `_on_boss_progress` оновлює label/value/fill/colour.
 
 ---
 
