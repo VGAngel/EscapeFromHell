@@ -289,3 +289,51 @@ func test_unlock_ending_no_duplicates() -> void:
 	sm.unlock_ending("true_ending")
 	sm.unlock_ending("true_ending")
 	assert_eq(sm.get_unlocked_endings().size(), 1)
+
+# ── Per-level personal best ───────────────────────────────────────────────────
+
+func test_get_level_best_default_empty() -> void:
+	assert_eq(sm.get_level_best(1), {}, "no record yet → empty dict")
+
+func test_update_level_best_writes_first_record() -> void:
+	var rec: Dictionary = sm.update_level_best(1, 30.0, 2, 3, 1)
+	assert_eq(rec.get("time"),  30.0)
+	assert_eq(rec.get("stars"), 2)
+	assert_eq(rec.get("souls"), 3)
+	assert_eq(rec.get("deaths"), 1)
+	assert_eq(sm.get_level_best(1), rec, "stored record matches return value")
+
+func test_update_level_best_keeps_record_when_run_is_worse() -> void:
+	sm.update_level_best(1, 25.0, 3, 3, 0)
+	# Slower time + fewer stars than existing → stored record stays
+	var rec: Dictionary = sm.update_level_best(1, 40.0, 1, 3, 5)
+	assert_eq(rec, {}, "no improvement → empty return")
+	assert_eq(sm.get_level_best(1).get("time"), 25.0)
+	assert_eq(sm.get_level_best(1).get("stars"), 3)
+
+func test_update_level_best_writes_when_more_stars() -> void:
+	sm.update_level_best(1, 25.0, 1, 3, 5)
+	# More stars even with slower time → improvement
+	var rec: Dictionary = sm.update_level_best(1, 35.0, 3, 3, 0)
+	assert_eq(rec.get("stars"), 3)
+	assert_eq(sm.get_level_best(1).get("time"), 35.0)
+
+func test_update_level_best_writes_when_same_stars_faster_time() -> void:
+	sm.update_level_best(1, 30.0, 2, 3, 1)
+	# Same stars, better time → improvement
+	var rec: Dictionary = sm.update_level_best(1, 24.5, 2, 3, 1)
+	assert_eq(rec.get("time"), 24.5)
+	assert_eq(sm.get_level_best(1).get("time"), 24.5)
+
+func test_update_level_best_keeps_when_same_stars_slower_time() -> void:
+	sm.update_level_best(1, 24.5, 2, 3, 1)
+	var rec: Dictionary = sm.update_level_best(1, 30.0, 2, 3, 1)
+	assert_eq(rec, {})
+	assert_eq(sm.get_level_best(1).get("time"), 24.5)
+
+func test_level_bests_isolated_per_level() -> void:
+	sm.update_level_best(1, 25.0, 3, 3, 0)
+	sm.update_level_best(2, 50.0, 1, 1, 4)
+	assert_eq(sm.get_level_best(1).get("time"), 25.0)
+	assert_eq(sm.get_level_best(2).get("time"), 50.0)
+	assert_eq(sm.get_level_best(99), {}, "untouched level still empty")

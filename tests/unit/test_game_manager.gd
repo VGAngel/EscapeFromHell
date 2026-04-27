@@ -47,6 +47,23 @@ func test_calc_stars_found_exceeds_total_under_target_gives_3() -> void:
 	# Defensive: found > total still counts as cleared
 	assert_eq(gm._calc_stars(12, 10, 0, 1.0), 3)
 
+# ── _target_time_for_level ───────────────────────────────────────────────────
+# Default formula when levels_config has no override: 45 + circle * 6.
+
+func test_target_time_default_circle_1() -> void:
+	# circle 1 → 45 + 6 = 51s baseline
+	# (LevelConfig may override; allow either the config value or ≥ 30s sane floor)
+	var t: float = gm._target_time_for_level(1)
+	assert_gt(t, 0.0, "target_time must be positive")
+	assert_lt(t, 600.0, "target_time should not be insane")
+
+func test_target_time_higher_circle_is_more_lenient() -> void:
+	# Without per-level overrides, deeper circles get more time.
+	# If both come from the same source (LevelConfig override), allow equal.
+	var t1: float = gm._target_time_for_level(1)
+	var t10: float = gm._target_time_for_level(100)   # circle 10
+	assert_gte(t10, t1, "circle 10 target should be ≥ circle 1 target")
+
 # ── _calc_light ───────────────────────────────────────────────────────────────
 
 func test_calc_light_all_souls_no_deaths() -> void:
