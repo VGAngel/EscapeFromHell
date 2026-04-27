@@ -1,6 +1,6 @@
 # Game Design Document — Escape from Hell
 
-**Версія:** 1.2  
+**Версія:** 1.3  
 **Движок:** Godot 4  
 **Платформа:** Android (Google Play)  
 **Жанр:** 2D Platformer  
@@ -10,6 +10,10 @@
 > fatigue + vertical sight clamp, crumbling/ash warning shake, staff
 > impact sparks + flash, per-level personal best + 3-star рубрика
 > (1=clear / 2=no-deaths / 3=under target_time).
+>
+> Зміни 1.2 → 1.3: переназначення клавіш у Settings, окремий екран
+> Statistics (час, смерті по причинах, рекорди, Світло), per-circle
+> soul progress у CollectionScreen.
 
 ---
 
@@ -1059,12 +1063,16 @@ guard'иться `velocity.y < 0` (не реагувати на рух угор�
 - Зібрані душі та приховані душі
 - Куплені апгрейди та баланс Світла
 - Поточний гріх
-- Налаштування (звук, мова, графіка)
+- Налаштування (звук, мова, графіка, **переназначені клавіші**)
 - Прапорець `no_ads_purchased`
 - Переглянуті підказки туторіалу
 - **Per-level personal bests** — `level_bests` Dictionary (`{ time, stars,
   souls, deaths }` per level_id). Оновлюється тільки при покращенні
   (більше зірок, або те ж число зірок + кращий час).
+- **Statistics** — `statistics` bucket: `total_play_seconds`,
+  `levels_cleared`, `deaths_total`, `deaths_by_cause: { fall: N, … }`,
+  `light_earned_total`, `light_spent_total`. Інкрементується GameManager'ом
+  у точках смерті/завершення/spend_light.
 
 ---
 
@@ -1093,8 +1101,27 @@ guard'иться `velocity.y < 0` (не реагувати на рух угор�
 **Конфіг:** `pause_screen_config.json`  
 Trigger: кнопка пауза або Escape. Blur overlay.
 
-Кнопки: Продовжити / Колекція / Налаштування / Головне меню  
-При виборі "Головне меню" — підтвердження з попередженням що душа в руках буде втрачена.
+Кнопки: Продовжити / Врятовані Душі / **📊 Статистика** / Налаштування /
+Головне меню. При виборі "Головне меню" — підтвердження з попередженням що
+душа в руках буде втрачена.
+
+### Statistics screen
+**Скрипт:** `scripts/ui/StatisticsScreen.gd`  
+**Сцена:** `scenes/ui/StatisticsScreen.tscn`
+
+Окрема overlay-CanvasLayer, відкривається з PauseScreen → "📊 Статистика".
+Секції:
+- **⏱ Прогрес** — загальний час гри (HH:MM:SS), поточний рівень,
+  завершено рівнів
+- **👻 Душі** — звичайних X/100, прихованих X/20
+- **💀 Смерті** — загалом + per-cause breakdown ("від падіння", "від ворога",
+  "у лаві", "на шипах", …)
+- **💡 Світло** — поточний баланс, зароблено за все, витрачено за все
+- **🏆 Рекорди** — найкращий клір серед усіх рівнів (id + час + ★)
+- **😈 Гріх** — поточний %
+
+Дані беруться з `SaveManager.data["statistics"]` що оновлюється `GameManager`
+у `trigger_death(cause)`, `complete_level()`, та `SaveManager.spend_light()`.
 
 ### Level Complete
 **Конфіг:** `level_complete_config.json`
@@ -1131,6 +1158,12 @@ deaths)` — записує лише якщо stars зросли або при �
 
 При 100/100: теплий блиск + тихий дзвін + маленький текстовий попап.
 
+**Per-circle progress strip** під заголовком — 10 клітин (К1..К10):
+- "К%d" + "X/Y" звичайних душ
+- "✦ X/Y" прихованих душ — лише якщо в колі є приховані
+- Завершені цілком (X==Y) — золотий tint
+- Допомагає зорієнтуватись "які кола ще не зачищені"
+
 ### Хаб Раю
 **Конфіг:** `hub_config.json`
 
@@ -1149,12 +1182,21 @@ deaths)` — записує лише якщо stars зросли або при �
 ### Налаштування
 **Конфіг:** `settings_config.json`
 
-3 вкладки:
-- **Звук:** Master / Music / SFX слайдери (0–100), Вимкнути все
-- **Мова:** Українська / English (застосовується миттєво)
-- **Графіка:** Повноекранний, Роздільна здатність (якщо не fullscreen), Якість Low/Medium/High, V-Sync
+4 вкладки:
+- **🔊 Звук:** Master / Music / SFX слайдери (0–100), Вимкнути все
+- **🌐 Мова:** Українська / English (застосовується миттєво)
+- **🖥 Графіка:** Повноекранний, Роздільна здатність (якщо не fullscreen),
+  Якість Low/Medium/High, V-Sync, FHD/HD preset toggle
+- **⌨ Клавіші:** перепризначення 7 actions (`move_left`, `move_right`,
+  `jump`, `action`, `interact`, `look_down`, `pray`). Натиск кнопки →
+  "Натисніть клавішу..." → наступний key стає biding'ом. **Esc** скасовує.
+  Кнопка "↺ Скинути всі" повертає до snapshot з project.godot.
+  Зберігається у `keybindings: { action: physical_keycode }` дикті.
+  Non-key events (gamepad/mouse) на тих же діях не зачіпаються.
 
 Зберігається в `user://settings.json` при кожній зміні.
+
+**Не реалізовано:** мобільне переставлення кнопок MobileControls (drag-and-drop) — окрема задача.
 
 ---
 
