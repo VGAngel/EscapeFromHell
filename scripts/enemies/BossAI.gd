@@ -360,9 +360,13 @@ func on_collectible_picked() -> void:
 	_collectibles_collected += 1
 	_check_win_condition()
 
-	# Люцифер: при 3 зібраних переходить у фазу 2
-	if boss_id == "boss_10" and _collectibles_collected == 3:
-		advance_phase()
+	# Люцифер: 3 зібраних → фаза 2 (slow_patrol + sin_aura),
+	#          5 зібраних → фаза 3 (stationary_final + prayer_ritual).
+	if boss_id == "boss_10":
+		if _collectibles_collected == 3:
+			advance_phase()
+		elif _collectibles_collected == 5:
+			advance_phase()
 
 # Викликати з арени коли гравець активував тотем (boss_02)
 func on_totem_activated(totem_index: int) -> void:

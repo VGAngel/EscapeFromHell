@@ -340,6 +340,18 @@ func _build_arena_boss_05() -> void:
 	_spawn_collectible(room, frag_path, Vector2(W - 80.0,  H - WALL_T - 40.0), 1)
 	_spawn_collectible(room, frag_path, Vector2(W * 0.5,   H - WALL_T - 40.0), 2)
 
+# ── Soul pickup — auto-deliver in boss arenas (no altar) ─────────────────────
+
+## Boss arenas don't have altars. The base flow locks Player.carried_soul_id
+## until they reach an altar — meaning the player could only ever pick up
+## one soul, blocking phase progression on Boss10. Override the base hook so
+## the boss is notified and the carried slot is freed immediately, letting
+## the player chain pickups across the arena.
+func _on_soul_pickup_started(soul: Node) -> void:
+	super(soul)
+	if _player and _player.has_method("_drop_soul"):
+		_player._drop_soul()
+
 # ── Process: prayer mechanic ──────────────────────────────────────────────────
 
 func _process(delta: float) -> void:
