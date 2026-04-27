@@ -635,6 +635,12 @@ func _build_page_keys() -> Control:
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 14)
 
+	# ── Mobile button layout (C5) ────────────────────────────────────────
+	_build_mobile_layout_section(vbox)
+
+	var sep := HSeparator.new()
+	vbox.add_child(sep)
+
 	var hint := Label.new()
 	hint.text = "Тисни «Призначити» і потім бажану клавішу.\nНа мобільних — клавіатурні бінди не використовуються."
 	hint.add_theme_font_size_override("font_size", 18)
@@ -794,3 +800,168 @@ func _on_reset_keys_pressed() -> void:
 		_refresh_key_btn(String(action))
 	_data["keybindings"] = {}
 	_save()
+
+# ── Mobile layout (C5) ────────────────────────────────────────────────────────
+
+var _size_slider:    HSlider    = null
+var _size_label:     Label      = null
+var _btn_edit_mobile: Button    = null
+var _edit_overlay:   CanvasLayer = null
+
+func _build_mobile_layout_section(parent: VBoxContainer) -> void:
+	var hdr := Label.new()
+	hdr.text = "📱  Мобільні кнопки"
+	hdr.add_theme_font_size_override("font_size", 26)
+	hdr.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
+	parent.add_child(hdr)
+
+	# Size slider row.
+	var size_row := HBoxContainer.new()
+	size_row.add_theme_constant_override("separation", 18)
+	parent.add_child(size_row)
+
+	var sl_lbl := Label.new()
+	sl_lbl.text = "Розмір"
+	sl_lbl.custom_minimum_size.x = 200
+	sl_lbl.add_theme_font_size_override("font_size", 22)
+	sl_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	size_row.add_child(sl_lbl)
+
+	_size_slider = HSlider.new()
+	_size_slider.min_value = 0.6
+	_size_slider.max_value = 1.4
+	_size_slider.step      = 0.05
+	_size_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_style_slider(_size_slider)
+	var initial: float = 1.0
+	var mc: Node = _find_mobile_controls()
+	if mc and mc.has_method("get_size_scale"):
+		initial = float(mc.get_size_scale())
+	_size_slider.value = initial
+	_size_slider.value_changed.connect(_on_mobile_size_changed)
+	size_row.add_child(_size_slider)
+
+	_size_label = Label.new()
+	_size_label.text = "%d%%" % int(initial * 100.0)
+	_size_label.custom_minimum_size.x = 70
+	_size_label.add_theme_font_size_override("font_size", 22)
+	_size_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	size_row.add_child(_size_label)
+
+	# Edit-layout button.
+	_btn_edit_mobile = Button.new()
+	_btn_edit_mobile.text = "✋  Редагувати позиції кнопок"
+	_btn_edit_mobile.custom_minimum_size = Vector2(0, 60)
+	_btn_edit_mobile.add_theme_font_size_override("font_size", 22)
+	_btn_edit_mobile.focus_mode = Control.FOCUS_NONE
+	_style_choice_btn(_btn_edit_mobile, false)
+	_btn_edit_mobile.pressed.connect(_on_edit_mobile_pressed)
+	parent.add_child(_btn_edit_mobile)
+
+	# Reset.
+	var reset_mc := Button.new()
+	reset_mc.text = "↺  Скинути позиції до стандартних"
+	reset_mc.custom_minimum_size = Vector2(0, 60)
+	reset_mc.add_theme_font_size_override("font_size", 22)
+	reset_mc.focus_mode = Control.FOCUS_NONE
+	var rs := StyleBoxFlat.new()
+	rs.bg_color = Color(0.16, 0.10, 0.10)
+	rs.border_color = Color(0.55, 0.30, 0.30)
+	for side in ["left","right","top","bottom"]:
+		rs.set("border_width_" + side, 1)
+	for c in ["top_left","top_right","bottom_left","bottom_right"]:
+		rs.set("corner_radius_" + c, 8)
+	for state in ["normal","hover","pressed","focus"]:
+		reset_mc.add_theme_stylebox_override(state, rs)
+	reset_mc.add_theme_color_override("font_color", Color("#FF8866"))
+	reset_mc.pressed.connect(_on_reset_mobile_pressed)
+	parent.add_child(reset_mc)
+
+func _on_mobile_size_changed(value: float) -> void:
+	if _size_label:
+		_size_label.text = "%d%%" % int(value * 100.0)
+	var mc: Node = _find_mobile_controls()
+	if mc and mc.has_method("set_size_scale"):
+		mc.set_size_scale(value)
+		mc.save_layout()
+
+func _on_reset_mobile_pressed() -> void:
+	var mc: Node = _find_mobile_controls()
+	if mc and mc.has_method("reset_layout"):
+		mc.reset_layout()
+	if _size_slider:
+		_size_slider.value = 1.0   # triggers _on_mobile_size_changed
+
+func _on_edit_mobile_pressed() -> void:
+	var mc: Node = _find_mobile_controls()
+	if not mc or not mc.has_method("set_edit_mode"):
+		return
+	# Close settings so the player can see the controls behind it; show a
+	# floating "Done" overlay that exits edit mode and saves.
+	close()
+	mc.set_edit_mode(true)
+	_show_edit_overlay(mc)
+
+func _show_edit_overlay(mc: Node) -> void:
+	if _edit_overlay and is_instance_valid(_edit_overlay):
+		_edit_overlay.queue_free()
+	_edit_overlay = CanvasLayer.new()
+	_edit_overlay.layer = 50
+	_edit_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().root.add_child(_edit_overlay)
+
+	var hint := Label.new()
+	hint.text = "Перетягуй кнопки куди зручно. Натисни ✓ коли готовий."
+	hint.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	hint.offset_top    = 100.0
+	hint.offset_bottom = 200.0
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	hint.add_theme_font_size_override("font_size", 30)
+	hint.add_theme_color_override("font_color", Color("#FFD700"))
+	hint.add_theme_color_override("font_outline_color", Color(0,0,0,0.85))
+	hint.add_theme_constant_override("outline_size", 5)
+	_edit_overlay.add_child(hint)
+
+	var done := Button.new()
+	done.text = "✓ Готово"
+	done.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	done.offset_top = 230.0
+	done.custom_minimum_size = Vector2(220, 88)
+	done.add_theme_font_size_override("font_size", 30)
+	var ds := StyleBoxFlat.new()
+	ds.bg_color = Color(0.10, 0.18, 0.10)
+	ds.border_color = Color("#88DD88")
+	for side in ["left","right","top","bottom"]:
+		ds.set("border_width_" + side, 2)
+	for c in ["top_left","top_right","bottom_left","bottom_right"]:
+		ds.set("corner_radius_" + c, 10)
+	for state in ["normal","hover","pressed","focus"]:
+		done.add_theme_stylebox_override(state, ds)
+	done.add_theme_color_override("font_color", Color("#88DD88"))
+	done.pressed.connect(func() -> void: _on_edit_done(mc))
+	_edit_overlay.add_child(done)
+
+func _on_edit_done(mc: Node) -> void:
+	if mc and mc.has_method("set_edit_mode"):
+		mc.set_edit_mode(false)
+		if mc.has_method("save_layout"):
+			mc.save_layout()
+	if _edit_overlay and is_instance_valid(_edit_overlay):
+		_edit_overlay.queue_free()
+		_edit_overlay = null
+
+func _find_mobile_controls() -> Node:
+	# MobileControls is built inside HUD which is in any active level.
+	var hud: Node = get_tree().get_first_node_in_group("hud") if get_tree() else null
+	if not hud:
+		return null
+	# Walk children to find the MobileControls Control by class/property.
+	for child in hud.get_children():
+		if child is Control and child.has_method("set_edit_mode"):
+			return child
+		# Recurse one level — HUD nests it in _root.
+		for grand in child.get_children():
+			if grand is Control and grand.has_method("set_edit_mode"):
+				return grand
+	return null

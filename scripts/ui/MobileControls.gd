@@ -40,6 +40,21 @@ var _btn_actions: Dictionary = {}
 var _style_normal:  StyleBoxFlat = null
 var _style_pressed: StyleBoxFlat = null
 
+# ── Customisation (C5) ────────────────────────────────────────────────────────
+# Per-button position offsets from the default anchor — populated by
+# SaveManager.get_mobile_layout(). Keyed by action string for stability
+# across button refactors.
+var _btn_offsets: Dictionary = {}      # action → Vector2
+# Global size multiplier (0.6..1.4). Applied to every button's size.
+var _size_scale: float = 1.0
+# When true, buttons get a glowing border and react to drags instead of
+# firing input. Toggled by Settings → "Edit layout".
+var _edit_mode: bool = false
+var _edit_drag_btn: Panel = null
+var _edit_drag_start: Vector2 = Vector2.ZERO
+
+signal layout_changed
+
 # ── Init ──────────────────────────────────────────────────────────────────────
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -47,10 +62,26 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_styles()
 	_build()
+	_load_saved_layout()
 	_apply_safe_area()
 	var sa: Node = get_node_or_null("/root/SafeArea")
 	if sa and sa.has_signal("changed"):
 		sa.changed.connect(_apply_safe_area)
+
+func _load_saved_layout() -> void:
+	if not SaveManager:
+		return
+	var layout: Dictionary = SaveManager.get_mobile_layout()
+	if layout.is_empty():
+		return
+	_size_scale = clampf(float(layout.get("size_scale", 1.0)), 0.5, 1.6)
+	for action in layout.get("offsets", {}).keys():
+		var v: Variant = layout["offsets"][action]
+		if v is Vector2:
+			_btn_offsets[action] = v
+		elif v is Dictionary:
+			# JSON loses Vector2 type — survive a {x:..,y:..} round-trip.
+			_btn_offsets[action] = Vector2(float(v.get("x", 0.0)), float(v.get("y", 0.0)))
 
 func _build_styles() -> void:
 	_style_normal = StyleBoxFlat.new()
@@ -74,22 +105,59 @@ func _apply_safe_area() -> void:
 	var banner: int = int(sa.bottom_reserved) if sa else 0
 	var vp: Vector2 = get_viewport().get_visible_rect().size
 
+	# Resize buttons first — every position math below assumes the scaled
+	# size, otherwise saved offsets would drift each time scale changes.
+	_apply_size_scale()
+
+	var size_small:  Vector2 = SIZE_SMALL  * _size_scale
+	var size_medium: Vector2 = SIZE_MEDIUM * _size_scale
+	var size_large:  Vector2 = SIZE_LARGE  * _size_scale
+
 	# Bottom of the usable area (above sin bar + HUD bottom row + banner).
 	var floor_y: float = vp.y - float(banner) - 6.0 - 36.0 - 8.0 - MARGIN_BOTTOM
 
-	# Left cluster: ← then →
+	# Default left cluster: ← then →
 	var lx: float = MARGIN_SIDE
-	btn_left.position  = Vector2(lx, floor_y - SIZE_SMALL.y)
-	btn_right.position = Vector2(lx + SIZE_SMALL.x + GAP_MOVE, floor_y - SIZE_SMALL.y)
+	_set_default(btn_left,  "move_left",
+		Vector2(lx, floor_y - size_small.y))
+	_set_default(btn_right, "move_right",
+		Vector2(lx + size_small.x + GAP_MOVE, floor_y - size_small.y))
 
-	# Right cluster (right→left): JUMP ← STAFF ← PICKUP/PRAY
-	# Pickup and pray share the leftmost slot (only one shown at a time).
-	var rx: float = vp.x - MARGIN_SIDE - SIZE_LARGE.x
-	btn_jump.position  = Vector2(rx, floor_y - SIZE_LARGE.y)
-	btn_staff.position = Vector2(rx - SIZE_MEDIUM.x - GAP, floor_y - SIZE_MEDIUM.y)
-	var third_x: float = rx - SIZE_MEDIUM.x - GAP - SIZE_MEDIUM.x - GAP
-	btn_pickup.position = Vector2(third_x, floor_y - SIZE_MEDIUM.y)
-	btn_pray.position   = Vector2(third_x, floor_y - SIZE_MEDIUM.y)
+	# Default right cluster: JUMP / STAFF / PICKUP|PRAY
+	var rx: float = vp.x - MARGIN_SIDE - size_large.x
+	_set_default(btn_jump,  "jump",
+		Vector2(rx, floor_y - size_large.y))
+	_set_default(btn_staff, "action",
+		Vector2(rx - size_medium.x - GAP, floor_y - size_medium.y))
+	var third_x: float = rx - size_medium.x - GAP - size_medium.x - GAP
+	_set_default(btn_pickup, "interact",
+		Vector2(third_x, floor_y - size_medium.y))
+	_set_default(btn_pray,   "pray",
+		Vector2(third_x, floor_y - size_medium.y))
+
+## Apply default-position-plus-saved-offset for a button. Pulled out so
+## the offset application lives in one place.
+func _set_default(btn: Panel, action: String, default_pos: Vector2) -> void:
+	if not btn:
+		return
+	var off: Vector2 = _btn_offsets.get(action, Vector2.ZERO)
+	btn.position = default_pos + off
+
+func _apply_size_scale() -> void:
+	if not btn_left:
+		return
+	var s_small:  Vector2 = SIZE_SMALL  * _size_scale
+	var s_medium: Vector2 = SIZE_MEDIUM * _size_scale
+	var s_large:  Vector2 = SIZE_LARGE  * _size_scale
+	btn_left.size   = s_small;   btn_left.custom_minimum_size  = s_small
+	btn_right.size  = s_small;   btn_right.custom_minimum_size = s_small
+	btn_jump.size   = s_large;   btn_jump.custom_minimum_size  = s_large
+	btn_staff.size  = s_medium;  btn_staff.custom_minimum_size = s_medium
+	btn_pickup.size = s_medium;  btn_pickup.custom_minimum_size= s_medium
+	btn_pray.size   = s_medium;  btn_pray.custom_minimum_size  = s_medium
+	# Refresh corner radii (they're tied to btn width in _make_btn).
+	for btn in _btn_actions.keys():
+		_refresh_btn_style(btn as Panel)
 
 # ── Public API ────────────────────────────────────────────────────────────────
 func show_pray_button(value: bool) -> void:
@@ -139,6 +207,10 @@ func _make_btn(label: String, action: String, btn_size: Vector2) -> Panel:
 # release-then-repress the action, which Player.gd reads as two
 # separate "jump" presses → unintended double jump.
 func _input(event: InputEvent) -> void:
+	# Edit mode swallows touches: drag = move button, no game input fires.
+	if _edit_mode:
+		_handle_edit_input(event)
+		return
 	if event is InputEventScreenTouch:
 		var t: InputEventScreenTouch = event
 		if t.pressed:
@@ -207,3 +279,120 @@ func _refresh_visuals() -> void:
 	for btn in _btn_actions.keys():
 		var action: String = _btn_actions[btn]
 		_set_visual(btn, held_actions.has(action))
+
+# Reapply current style to a button after its size changed.
+func _refresh_btn_style(btn: Panel) -> void:
+	if not btn:
+		return
+	var style := _style_normal.duplicate() as StyleBoxFlat
+	var r := int(btn.size.x * 0.5)
+	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+		style.set("corner_radius_" + corner, r)
+	btn.add_theme_stylebox_override("panel", style)
+	# Resize the inner label so font scales with the button.
+	if btn.get_child_count() > 0 and btn.get_child(0) is Label:
+		(btn.get_child(0) as Label).add_theme_font_size_override(
+			"font_size", int(btn.size.y * 0.38))
+
+# ── Public API: customisation ────────────────────────────────────────────────
+
+## Toggle edit mode. While ON, buttons stop firing input and instead
+## reposition under finger drag. While OFF, normal play.
+func set_edit_mode(value: bool) -> void:
+	_edit_mode = value
+	# Wipe any pressed state when toggling so a stuck "jump" doesn't leak.
+	for action in _finger_actions.values():
+		_release_action(action)
+	_finger_actions.clear()
+	# Glow border on each button so the player sees they're draggable.
+	for btn in _btn_actions.keys():
+		_apply_edit_glow(btn as Panel, value)
+
+func is_edit_mode() -> bool:
+	return _edit_mode
+
+## Set global size scale (0.5..1.6) and re-layout immediately. Caller is
+## responsible for calling save_layout() when the user commits.
+func set_size_scale(scale: float) -> void:
+	_size_scale = clampf(scale, 0.5, 1.6)
+	_apply_safe_area()
+	layout_changed.emit()
+
+func get_size_scale() -> float:
+	return _size_scale
+
+## Snapshot current layout (offsets + scale) into a dict suitable for
+## SaveManager.set_mobile_layout().
+func get_layout() -> Dictionary:
+	# Vector2 doesn't survive JSON round-trip, store as plain dicts.
+	var offs: Dictionary = {}
+	for action in _btn_offsets.keys():
+		var v: Vector2 = _btn_offsets[action]
+		offs[action] = {"x": v.x, "y": v.y}
+	return {"size_scale": _size_scale, "offsets": offs}
+
+func save_layout() -> void:
+	if SaveManager:
+		SaveManager.set_mobile_layout(get_layout())
+
+## Wipe overrides + scale and re-layout from defaults. Persists immediately.
+func reset_layout() -> void:
+	_btn_offsets.clear()
+	_size_scale = 1.0
+	_apply_safe_area()
+	if SaveManager:
+		SaveManager.set_mobile_layout({})
+	layout_changed.emit()
+
+# ── Edit-mode internals ──────────────────────────────────────────────────────
+
+func _apply_edit_glow(btn: Panel, on: bool) -> void:
+	var style := _style_normal.duplicate() as StyleBoxFlat
+	if on:
+		style.border_color = Color("#FFD700")
+		for side in ["left","right","top","bottom"]:
+			style.set("border_width_" + side, 4)
+	var r := int(btn.size.x * 0.5)
+	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+		style.set("corner_radius_" + corner, r)
+	btn.add_theme_stylebox_override("panel", style)
+
+func _handle_edit_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var t: InputEventScreenTouch = event
+		if t.pressed:
+			_edit_drag_btn = _hit_test(t.position)
+			if _edit_drag_btn:
+				_edit_drag_start = t.position - _edit_drag_btn.position
+		else:
+			if _edit_drag_btn:
+				_commit_drag(_edit_drag_btn)
+				_edit_drag_btn = null
+	elif event is InputEventScreenDrag:
+		var d: InputEventScreenDrag = event
+		if _edit_drag_btn:
+			var new_pos: Vector2 = d.position - _edit_drag_start
+			_edit_drag_btn.position = _clamp_to_viewport(_edit_drag_btn, new_pos)
+
+func _commit_drag(btn: Panel) -> void:
+	# Convert the new on-screen position into an offset from the default
+	# anchor — so a future viewport / safe-area / scale change still
+	# applies the right delta instead of locking absolute pixels.
+	var action: String = _btn_actions.get(btn, "")
+	if action == "":
+		return
+	# Snapshot final position, recompute defaults without this entry.
+	var dropped_pos: Vector2 = btn.position
+	_btn_offsets.erase(action)
+	_apply_safe_area()
+	var default_pos: Vector2 = btn.position
+	_btn_offsets[action] = dropped_pos - default_pos
+	_apply_safe_area()
+	layout_changed.emit()
+
+func _clamp_to_viewport(btn: Panel, pos: Vector2) -> Vector2:
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	return Vector2(
+		clampf(pos.x, 0.0, vp.x - btn.size.x),
+		clampf(pos.y, 0.0, vp.y - btn.size.y)
+	)

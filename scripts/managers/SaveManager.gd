@@ -250,6 +250,18 @@ func get_profile_name() -> String:
 func set_profile_name(value: String) -> void:
 	data["profile_name"] = value
 
+# ── Mobile control layout ────────────────────────────────────────────────────
+# Per-button position overrides + global size scale, populated when the
+# player drags buttons in MobileControls edit mode. Empty dict = default
+# layout from MobileControls._apply_safe_area.
+
+func get_mobile_layout() -> Dictionary:
+	return data.get("mobile_layout", {})
+
+func set_mobile_layout(layout: Dictionary) -> void:
+	data["mobile_layout"] = layout
+	_flush()   # persist immediately so a crash mid-game doesn't lose tweaks
+
 # ── Statistics ────────────────────────────────────────────────────────────────
 # Aggregate counters survive across saves. Stored under data["statistics"] so
 # new keys don't churn the top-level schema. All getters degrade gracefully —

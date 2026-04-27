@@ -1325,6 +1325,33 @@ Risk-altar.
 
 # Controls — покращення управління
 
+### C5. ✅ Налаштовувані позиції/розміри кнопок
+
+**Реалізовано** як customisation layer над
+[MobileControls](../scripts/ui/MobileControls.gd) + UI у Settings →
+Keys tab.
+
+- **Persistence:** `SaveManager.get_mobile_layout()` /
+  `set_mobile_layout(layout)` зберігають `{ size_scale: float, offsets:
+  { action: {x, y} } }`. Auto-`_flush()` при save щоб crash mid-game не
+  втрачав налаштування
+- **Розмір (global):** slider 60-140% у Settings, immediate apply через
+  `MobileControls.set_size_scale(scale)`. Усі 3 розмірні класи
+  (SMALL/MEDIUM/LARGE) масштабуються синхронно. Шрифти на кнопках
+  ресайзяться разом з ними (`_refresh_btn_style`)
+- **Позиції (drag-to-move):** "✋ Редагувати позиції кнопок" → закриває
+  Settings, MobileControls входить у edit-mode (золоті borders), показує
+  floating "✓ Готово" overlay. Ігнорує game input — лише drag-to-move.
+  Натиск "Готово" → `save_layout()` + вихід
+- **Зберігання як offsets**, не absolute pos — `_commit_drag` обчислює
+  delta від default position (виставляє пусті offsets, перерахоує defaults,
+  бере різницю), щоб safe-area / scale зміни не "приклеювали" кнопку до
+  однієї точки
+- **Reset:** "↺ Скинути позиції" повертає всі offsets + scale до 1.0
+- **Тести:** 8 кейсів у `test_mobile_layout.gd` — defaults, clamp scale
+  0.5..1.6, layout round-trip через SaveManager, reset, edit-mode toggle,
+  розмір кнопки масштабується
+
 ### C4. ✅ Haptic feedback (mobile)
 
 **Реалізовано** як новий autoload `HapticManager`
