@@ -857,18 +857,24 @@ exit — генерує наступну "кімнату" коли гравец�
 
 ---
 
-### 34. 🟢 Перепризначення клавіш ⭐
+### 34. ✅ Перепризначення клавіш (PC)
 
-**Що:** Settings → Keys → редагувати будь-яку action. На мобільних —
-переставити кнопки в MobileControls.
+**Реалізовано** як 4-й tab у [SettingsScreen](../scripts/ui/SettingsScreen.gd):
 
-**Чому:** Стандарт індустрії. Користувачі очікують.
+- Список 7 rebindable actions: `move_left`, `move_right`, `jump`, `action`,
+  `interact`, `look_down`, `pray` (визначений у `REBINDABLE_ACTIONS` const)
+- Per-row: label + кнопка з поточним key label (через `OS.get_keycode_string`)
+- Натискання кнопки → "Натисніть клавішу..." → наступний `InputEventKey`
+  замінює `physical_keycode`. Esc скасовує без змін.
+- Зберігає у `user://settings.json` → `keybindings: { action: physical_keycode }`
+- На старті `_capture_default_keys()` робить snapshot → `_apply_keybindings()`
+  відновлює користувацькі біндинги після `_load()`
+- Кнопка "↺ Скинути всі" повертає до snapshot з project.godot
+- Зберігаються non-key events (gamepad, mouse) — переписується тільки
+  перший key event
 
-**Як:** Settings UI з рядом для кожної action. При натисканні
-"Призначити" → чекає InputEvent → перезаписує `InputMap`.
-Зберігає у `settings.json` → відновлює на старті.
-
-**Складність:** Середня. Особливо мобільні переставлювані кнопки.
+**Не реалізовано:** мобільне переставлення кнопок MobileControls — це
+окрема велика задача (drag-and-drop UI). Потребує окремого етапу.
 
 ---
 

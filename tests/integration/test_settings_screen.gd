@@ -30,11 +30,12 @@ func test_close_emits_signal() -> void:
 
 # ── Tab structure ─────────────────────────────────────────────────────────────
 
-func test_three_tabs_created() -> void:
-	assert_eq(ss._tab_btns.size(), 3)
+func test_four_tabs_created() -> void:
+	# Sound, Language, Graphics, Keys (added in the rebinding feature)
+	assert_eq(ss._tab_btns.size(), 4)
 
-func test_three_tab_pages_created() -> void:
-	assert_eq(ss._tab_pages.size(), 3)
+func test_four_tab_pages_created() -> void:
+	assert_eq(ss._tab_pages.size(), 4)
 
 func test_first_tab_active_on_open() -> void:
 	ss.open()
@@ -193,3 +194,57 @@ func test_sfx_toggle_mutes_sfx_bus() -> void:
 func test_escape_closes_screen() -> void:
 	# TODO: requires InputEvent simulation for "ui_cancel"
 	pass
+
+# ── Key rebinding ─────────────────────────────────────────────────────────────
+
+func test_keys_tab_lists_all_rebindable_actions() -> void:
+	# Each entry in REBINDABLE_ACTIONS has a button stored in _key_btns
+	for entry in ss.REBINDABLE_ACTIONS:
+		assert_true(ss._key_btns.has(entry.action),
+			"missing key button for action '%s'" % entry.action)
+
+func test_default_key_events_captured_on_ready() -> void:
+	# Snapshot includes every action that exists in InputMap at boot.
+	for entry in ss.REBINDABLE_ACTIONS:
+		if InputMap.has_action(entry.action):
+			assert_true(ss._default_key_events.has(entry.action),
+				"missing default events snapshot for '%s'" % entry.action)
+
+func test_set_binding_silent_overrides_input_map() -> void:
+	if not InputMap.has_action("jump"):
+		pending("jump action missing from InputMap")
+		return
+	# Use Q as the new key so we don't collide with the existing Space.
+	ss._set_binding_silent("jump", KEY_Q)
+	var found_q := false
+	for ev in InputMap.action_get_events("jump"):
+		if ev is InputEventKey and (ev as InputEventKey).physical_keycode == KEY_Q:
+			found_q = true
+			break
+	assert_true(found_q, "jump should now be bound to Q")
+	# Cleanup so other tests see the original binding back.
+	ss._on_reset_keys_pressed()
+
+func test_apply_keybindings_replays_saved_dict() -> void:
+	if not InputMap.has_action("jump"):
+		pending("jump action missing from InputMap")
+		return
+	ss._apply_keybindings({"jump": KEY_R})
+	var found_r := false
+	for ev in InputMap.action_get_events("jump"):
+		if ev is InputEventKey and (ev as InputEventKey).physical_keycode == KEY_R:
+			found_r = true
+			break
+	assert_true(found_r, "saved binding (R) should be applied")
+	ss._on_reset_keys_pressed()
+
+func test_reset_restores_default_key_events() -> void:
+	if not InputMap.has_action("jump"):
+		pending("jump action missing from InputMap")
+		return
+	# Stash how it looked at boot, then mutate, then reset.
+	var before_count: int = InputMap.action_get_events("jump").size()
+	ss._set_binding_silent("jump", KEY_Q)
+	ss._on_reset_keys_pressed()
+	assert_eq(InputMap.action_get_events("jump").size(), before_count,
+		"reset should restore the original event list")

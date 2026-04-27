@@ -60,16 +60,45 @@ var _lang_btns:     Dictionary     = {}   # code → Button
 var _toggle_vsync:       Button         = null
 var _resolution_btns:    Dictionary     = {}   # preset → Button
 
+# Keys tab widgets
+## Actions exposed to rebinding. Order = display order in the Keys tab.
+const REBINDABLE_ACTIONS: Array[Dictionary] = [
+	{"action": "move_left",  "label": "Вліво"},
+	{"action": "move_right", "label": "Вправо"},
+	{"action": "jump",       "label": "Стрибок"},
+	{"action": "action",     "label": "Посох"},
+	{"action": "interact",   "label": "Взаємодія"},
+	{"action": "look_down",  "label": "Огляд вниз"},
+	{"action": "pray",       "label": "Молитва"},
+]
+var _key_btns:        Dictionary = {}   # action → Button (shows current key)
+var _binding_action:  String     = ""   # non-empty = waiting for next key
+var _default_key_events: Dictionary = {}   # action → Array[InputEvent] (boot snapshot)
+
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
 	layer = 10
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_capture_default_keys()   # snapshot project.godot bindings BEFORE any user override
 	_load()
 	_build_ui()
 	_apply_all()
 	_root.modulate.a = 0.0
 	visible    = false
+
+## Snapshot the original key events for every rebindable action so the
+## "Reset" button can roll back and so we know what the project file
+## defines vs what the user customised.
+func _capture_default_keys() -> void:
+	for entry in REBINDABLE_ACTIONS:
+		var action: String = entry.action
+		if not InputMap.has_action(action):
+			continue
+		var events: Array = []
+		for ev in InputMap.action_get_events(action):
+			events.append(ev)
+		_default_key_events[action] = events
 
 # ── Persist ───────────────────────────────────────────────────────────────────
 
@@ -127,6 +156,7 @@ func _apply_all() -> void:
 	_apply_mute(_data.get("mute_all", false))
 	_apply_vsync(_data.get("vsync", true))
 	_apply_resolution(_data.get("resolution", "fhd"))
+	_apply_keybindings(_data.get("keybindings", {}))
 
 # ── Volume helpers ────────────────────────────────────────────────────────────
 
@@ -322,7 +352,7 @@ func _build_tab_bar(parent: VBoxContainer) -> void:
 	bar.add_theme_constant_override("separation", 4)
 	parent.add_child(bar)
 
-	var tabs := [["🔊", "Звук"], ["🌐", "Мова"], ["🖥", "Графіка"]]
+	var tabs := [["🔊", "Звук"], ["🌐", "Мова"], ["🖥", "Графіка"], ["⌨", "Клавіші"]]
 	for i in tabs.size():
 		var btn := Button.new()
 		btn.text = "%s  %s" % [tabs[i][0], tabs[i][1]]
@@ -363,8 +393,9 @@ func _build_pages(parent: VBoxContainer) -> void:
 	var page_sound    := _build_page_sound()
 	var page_language := _build_page_language()
 	var page_graphics := _build_page_graphics()
+	var page_keys     := _build_page_keys()
 
-	for page in [page_sound, page_language, page_graphics]:
+	for page in [page_sound, page_language, page_graphics, page_keys]:
 		page.set_anchors_preset(Control.PRESET_FULL_RECT)
 		stack.add_child(page)
 		_tab_pages.append(page)
@@ -577,3 +608,169 @@ func _style_choice_btn(btn: Button, active: bool) -> void:
 	btn.add_theme_stylebox_override("focus",   n)
 	btn.add_theme_color_override("font_color",
 		Color(0.92, 0.82, 1.00) if active else Color(0.72, 0.70, 0.78))
+
+# ── Keys page ─────────────────────────────────────────────────────────────────
+
+func _build_page_keys() -> Control:
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 14)
+
+	var hint := Label.new()
+	hint.text = "Тисни «Призначити» і потім бажану клавішу.\nНа мобільних — клавіатурні бінди не використовуються."
+	hint.add_theme_font_size_override("font_size", 18)
+	hint.add_theme_color_override("font_color", Color(0.65, 0.62, 0.70))
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(hint)
+
+	for entry in REBINDABLE_ACTIONS:
+		var action: String = entry.action
+		var label: String  = entry.label
+		vbox.add_child(_build_key_row(action, label))
+
+	# Reset all bindings
+	var reset_btn := Button.new()
+	reset_btn.text = "↺  Скинути всі до стандартних"
+	reset_btn.custom_minimum_size = Vector2(0, 60)
+	reset_btn.add_theme_font_size_override("font_size", 22)
+	reset_btn.focus_mode = Control.FOCUS_NONE
+	var rs := StyleBoxFlat.new()
+	rs.bg_color = Color(0.16, 0.10, 0.10)
+	rs.border_color = Color(0.55, 0.30, 0.30)
+	rs.border_width_left = 1; rs.border_width_right = 1
+	rs.border_width_top = 1;  rs.border_width_bottom = 1
+	for c in ["top_left","top_right","bottom_left","bottom_right"]:
+		rs.set("corner_radius_" + c, 8)
+	for state in ["normal","hover","pressed","focus"]:
+		reset_btn.add_theme_stylebox_override(state, rs)
+	reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
+	reset_btn.pressed.connect(_on_reset_keys_pressed)
+	vbox.add_child(reset_btn)
+
+	return vbox
+
+func _build_key_row(action: String, label_text: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 18)
+
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl.add_theme_font_size_override("font_size", 26)
+	lbl.add_theme_color_override("font_color", Color(0.85, 0.83, 0.90))
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(lbl)
+
+	var btn := Button.new()
+	btn.text = _key_label_for_action(action)
+	btn.custom_minimum_size = Vector2(220, 56)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.add_theme_font_size_override("font_size", 22)
+	_style_choice_btn(btn, false)
+	btn.pressed.connect(_on_rebind_pressed.bind(action))
+	row.add_child(btn)
+	_key_btns[action] = btn
+	return row
+
+# ── Keybinding logic ──────────────────────────────────────────────────────────
+
+## Read InputMap and return a friendly label for the first key event
+## bound to `action` (e.g. "Space", "Z", "← Arrow").
+func _key_label_for_action(action: String) -> String:
+	if not InputMap.has_action(action):
+		return "—"
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventKey:
+			var ke: InputEventKey = ev
+			var code: int = ke.physical_keycode if ke.physical_keycode != 0 else ke.keycode
+			return OS.get_keycode_string(code)
+	return "—"
+
+## Click handler — enter "press a key" mode for this action. The next
+## key the user presses (caught in _input below) becomes the new binding.
+func _on_rebind_pressed(action: String) -> void:
+	_binding_action = action
+	if _key_btns.has(action):
+		_key_btns[action].text = "Натисніть клавішу..."
+		_key_btns[action].modulate = Color("#FFD700")
+
+func _input(event: InputEvent) -> void:
+	if _binding_action == "" or not visible:
+		return
+	if not (event is InputEventKey):
+		return
+	var ke: InputEventKey = event
+	if not ke.pressed or ke.echo:
+		return
+	# Esc cancels rebinding without changing anything.
+	if ke.physical_keycode == KEY_ESCAPE:
+		_refresh_key_btn(_binding_action)
+		_binding_action = ""
+		get_viewport().set_input_as_handled()
+		return
+	_set_binding(_binding_action, ke.physical_keycode)
+	_binding_action = ""
+	get_viewport().set_input_as_handled()
+
+## Replace every key event on `action` with a single new physical_keycode.
+## Persists immediately so the new binding survives a restart.
+func _set_binding(action: String, physical_keycode: int) -> void:
+	if not InputMap.has_action(action):
+		return
+	# Wipe existing key events; keep non-key events (joypad etc.) untouched
+	# by re-adding them after the wipe.
+	var keep: Array = []
+	for ev in InputMap.action_get_events(action):
+		if not (ev is InputEventKey):
+			keep.append(ev)
+	InputMap.action_erase_events(action)
+	for ev in keep:
+		InputMap.action_add_event(action, ev)
+	var new_ev := InputEventKey.new()
+	new_ev.physical_keycode = physical_keycode
+	InputMap.action_add_event(action, new_ev)
+	_refresh_key_btn(action)
+
+	# Persist — store the dictionary keyed by action.
+	var map: Dictionary = _data.get("keybindings", {})
+	map[action] = physical_keycode
+	_data["keybindings"] = map
+	_save()
+
+func _refresh_key_btn(action: String) -> void:
+	if not _key_btns.has(action):
+		return
+	var btn: Button = _key_btns[action]
+	btn.text = _key_label_for_action(action)
+	btn.modulate = Color.WHITE
+
+## Apply the saved keybindings dict on startup. Each entry overrides the
+## first key event from project.godot for that action; non-key events
+## (gamepad / mouse) are preserved.
+func _apply_keybindings(map: Dictionary) -> void:
+	for action in map.keys():
+		if not InputMap.has_action(String(action)):
+			continue
+		_set_binding_silent(String(action), int(map[action]))
+
+func _set_binding_silent(action: String, physical_keycode: int) -> void:
+	# Same logic as _set_binding but without persistence (we ARE the loader).
+	var keep: Array = []
+	for ev in InputMap.action_get_events(action):
+		if not (ev is InputEventKey):
+			keep.append(ev)
+	InputMap.action_erase_events(action)
+	for ev in keep:
+		InputMap.action_add_event(action, ev)
+	var new_ev := InputEventKey.new()
+	new_ev.physical_keycode = physical_keycode
+	InputMap.action_add_event(action, new_ev)
+
+## Reset every rebindable action to the events captured at boot.
+func _on_reset_keys_pressed() -> void:
+	for action in _default_key_events.keys():
+		InputMap.action_erase_events(action)
+		for ev in _default_key_events[action]:
+			InputMap.action_add_event(action, ev)
+		_refresh_key_btn(String(action))
+	_data["keybindings"] = {}
+	_save()
