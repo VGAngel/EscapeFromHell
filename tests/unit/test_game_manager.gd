@@ -13,32 +13,39 @@ func before_each() -> void:
 		SaveManager._reset()
 
 # ── _calc_stars ───────────────────────────────────────────────────────────────
+# New rubric (per per-level personal-best system):
+#   1 = clear (any completion)
+#   2 = clear + no deaths
+#   3 = clear + no deaths + finished within target_time
 
-func test_calc_stars_all_souls_no_deaths_gives_3() -> void:
-	assert_eq(gm._calc_stars(10, 10, 0), 3)
+func test_calc_stars_all_souls_no_deaths_under_target_gives_3() -> void:
+	# elapsed=1.0 is well under any target_time → max stars
+	assert_eq(gm._calc_stars(10, 10, 0, 1.0), 3)
 
-func test_calc_stars_all_souls_one_death_gives_2() -> void:
-	assert_eq(gm._calc_stars(10, 10, 1), 2)
+func test_calc_stars_all_souls_no_deaths_over_target_gives_2() -> void:
+	# Without an explicit elapsed, default INF means "missed gold time"
+	assert_eq(gm._calc_stars(10, 10, 0), 2)
 
-func test_calc_stars_all_souls_two_deaths_gives_2() -> void:
-	assert_eq(gm._calc_stars(10, 10, 2), 2)
+func test_calc_stars_one_death_caps_at_1() -> void:
+	# Any death drops the run to 1 star regardless of soul count or time
+	assert_eq(gm._calc_stars(10, 10, 1, 1.0), 1)
 
-func test_calc_stars_all_souls_three_deaths_gives_1() -> void:
-	assert_eq(gm._calc_stars(10, 10, 3), 1)
+func test_calc_stars_three_deaths_gives_1() -> void:
+	assert_eq(gm._calc_stars(10, 10, 3, 1.0), 1)
 
 func test_calc_stars_missing_souls_gives_1() -> void:
-	assert_eq(gm._calc_stars(5, 10, 0), 1, "missing souls always 1 star")
+	assert_eq(gm._calc_stars(5, 10, 0, 1.0), 1, "missing souls always 1 star")
 
-func test_calc_stars_zero_souls_zero_total_gives_3() -> void:
-	# Edge: found >= total when both are 0
-	assert_eq(gm._calc_stars(0, 0, 0), 3)
+func test_calc_stars_zero_souls_zero_total_under_target_gives_3() -> void:
+	# Edge: found >= total when both are 0; elapsed under target → 3
+	assert_eq(gm._calc_stars(0, 0, 0, 1.0), 3)
 
 func test_calc_stars_zero_found_nonzero_total_gives_1() -> void:
-	assert_eq(gm._calc_stars(0, 5, 0), 1)
+	assert_eq(gm._calc_stars(0, 5, 0, 1.0), 1)
 
-func test_calc_stars_found_exceeds_total_gives_3() -> void:
-	# Defensive: found > total should still give max stars
-	assert_eq(gm._calc_stars(12, 10, 0), 3)
+func test_calc_stars_found_exceeds_total_under_target_gives_3() -> void:
+	# Defensive: found > total still counts as cleared
+	assert_eq(gm._calc_stars(12, 10, 0, 1.0), 3)
 
 # ── _calc_light ───────────────────────────────────────────────────────────────
 

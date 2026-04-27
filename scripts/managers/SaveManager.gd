@@ -249,6 +249,37 @@ func get_profile_name() -> String:
 func set_profile_name(value: String) -> void:
 	data["profile_name"] = value
 
+# ── Per-level personal best ───────────────────────────────────────────────────
+# Stored as `level_bests` (Dictionary keyed by str(level_id)) so persists in
+# JSON as plain objects. Each entry: { time, stars, souls, deaths }.
+
+func get_level_best(level_id: int) -> Dictionary:
+	var bests: Dictionary = data.get("level_bests", {})
+	return bests.get(str(level_id), {})
+
+## Update the best record if `stars` strictly improves OR `stars` matches
+## but `time` is faster. Returns the new best dict if updated, {} if the
+## existing record stood (and the run wasn't an improvement).
+func update_level_best(level_id: int, time: float, stars: int, souls: int, deaths: int) -> Dictionary:
+	var bests: Dictionary = data.get("level_bests", {})
+	var key: String = str(level_id)
+	var current: Dictionary = bests.get(key, {})
+	var prev_stars: int = int(current.get("stars", 0))
+	var prev_time:  float = float(current.get("time", INF))
+	var should_update: bool = stars > prev_stars \
+		or (stars == prev_stars and time < prev_time)
+	if not should_update:
+		return {}
+	var record: Dictionary = {
+		"time": time,
+		"stars": stars,
+		"souls": souls,
+		"deaths": deaths,
+	}
+	bests[key] = record
+	data["level_bests"] = bests
+	return record
+
 # ── Internal: load ────────────────────────────────────────────────────────────
 
 func _load() -> bool:

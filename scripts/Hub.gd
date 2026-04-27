@@ -179,7 +179,24 @@ func _show_hub() -> void:
 
 func _setup_continue_label() -> void:
 	var circle: int = ceili(float(_next_level_id) / 10.0)
-	_btn_continue.text = "Далі →\nКоло %d • Рівень %d" % [circle, _next_level_id]
+	var lines: Array[String] = ["Далі →", "Коло %d • Рівень %d" % [circle, _next_level_id]]
+	# If the player has played this level before, surface their best run on
+	# the button so they know what they're chasing.
+	if SaveManager and SaveManager.has_method("get_level_best"):
+		var best: Dictionary = SaveManager.get_level_best(_next_level_id)
+		if not best.is_empty():
+			var t: int = int(best.get("time", 0.0))
+			var stars: int = int(best.get("stars", 0))
+			lines.append("🏆 %d:%02d  %s" % [t / 60, t % 60, _stars_str(stars)])
+	_btn_continue.text = "\n".join(lines)
+
+func _stars_str(n: int) -> String:
+	const FULL := "★"
+	const EMPTY := "☆"
+	var out := ""
+	for i in 3:
+		out += FULL if i < n else EMPTY
+	return out
 
 func _refresh_currency() -> void:
 	var light: int = SaveManager.get_light() if SaveManager else 0

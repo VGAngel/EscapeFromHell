@@ -256,6 +256,21 @@ func complete_level() -> void:
 		if _hud and _hud.has_method("set_light"):
 			_hud.set_light(SaveManager.get_light())
 
+	var stars: int = _calc_stars(
+		_souls_found_this_level, _souls_total_this_level, _deaths_this_level, elapsed
+	)
+
+	# Personal-best bookkeeping. Capture the previous best BEFORE writing so
+	# LevelComplete can show "OLD" → "NEW" and a "NEW BEST!" badge.
+	var prev_best: Dictionary = {}
+	var new_best:  Dictionary = {}
+	if SaveManager:
+		prev_best = SaveManager.get_level_best(current_level_id)
+		new_best = SaveManager.update_level_best(
+			current_level_id, elapsed, stars,
+			_souls_found_this_level, _deaths_this_level
+		)
+
 	var stats := {
 		"level_id":    current_level_id,
 		"circle":      current_circle,
@@ -266,7 +281,10 @@ func complete_level() -> void:
 		"sin_total":   sin_now,
 		"light_earned": light_earned,
 		"time_seconds": elapsed,
-		"stars":        _calc_stars(_souls_found_this_level, _souls_total_this_level, _deaths_this_level),
+		"target_time":  _target_time_for_level(current_level_id),
+		"stars":        stars,
+		"previous_best": prev_best,
+		"new_best":      new_best,   # empty dict = run wasn't an improvement
 	}
 
 	level_completed.emit(current_level_id, stats)
@@ -382,13 +400,32 @@ func _base_max_hp() -> int:
 		base += SaveManager.get_upgrade_level("vitality")   # vitality: up to +3 (max 6 HP)
 	return clampi(base, 1, 6)
 
-func _calc_stars(found: int, total: int, deaths: int) -> int:
-	var all_souls := found >= total
-	if all_souls and deaths == 0:
+## Stars rubric (per-level personal-best system):
+##   1 = clear (any completion)
+##   2 = clear + no deaths
+##   3 = clear + no deaths + finished within target_time
+## target_time: prefer levels_config "target_time_seconds" entry; fall back
+## to a generous default of `45 + circle * 6` so the rating still works on
+## levels that haven't been hand-tuned yet.
+func _calc_stars(found: int, total: int, deaths: int, elapsed: float = INF) -> int:
+	var cleared: bool = found >= total
+	if not cleared:
+		return 1
+	if deaths > 0:
+		return 1
+	if elapsed <= _target_time_for_level(current_level_id):
 		return 3
-	if all_souls and deaths <= 2:
-		return 2
-	return 1
+	return 2
+
+func _target_time_for_level(level_id: int) -> float:
+	if LevelConfig:
+		var lvl: Dictionary = LevelConfig.get_level(level_id)
+		var t: float = float(lvl.get("target_time_seconds", 0.0))
+		if t > 0.0:
+			return t
+	# Default scales with circle so deeper levels get more time.
+	var circle: int = ceili(float(level_id) / 10.0)
+	return 45.0 + float(circle) * 6.0
 
 func _calc_light(found: int, total: int, deaths: int) -> int:
 	var base := 10

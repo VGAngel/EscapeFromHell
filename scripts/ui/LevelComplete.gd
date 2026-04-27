@@ -30,6 +30,9 @@ var _stat_souls:   Label          = null
 var _stat_deaths:  Label          = null
 var _stat_sin:     Label          = null
 var _stat_light:   Label          = null
+var _stat_time:    Label          = null
+var _stat_best:    Label          = null
+var _new_best_badge: Label        = null
 
 var _btn_hub:      Button         = null
 var _btn_next:     Button         = null
@@ -75,11 +78,37 @@ func _fill_static(stats: Dictionary) -> void:
 	_stat_sin.text    = "😈  Гріх:    %s%.0f%%  →  %.0f%%" % [sin_sign, sin_d, sin_t]
 	_stat_light.text  = "💡  +%d Світла" % light
 
-	for node in [_stat_souls, _stat_deaths, _stat_sin, _stat_light]:
+	# Time + previous best (if any)
+	var elapsed: float = stats.get("time_seconds", 0.0)
+	_stat_time.text    = "⏱  Час:     %s" % _format_time(elapsed)
+
+	var prev_best: Dictionary = stats.get("previous_best", {})
+	var new_best:  Dictionary = stats.get("new_best", {})
+	if prev_best.is_empty():
+		_stat_best.text = "🏆  Рекорд:   —"
+	else:
+		var pb_time:  float = float(prev_best.get("time", 0.0))
+		var pb_stars: int   = int(prev_best.get("stars", 0))
+		_stat_best.text = "🏆  Рекорд:   %s   %s" % [_format_time(pb_time), _stars_str(pb_stars)]
+
+	if _new_best_badge:
+		_new_best_badge.visible = not new_best.is_empty()
+
+	for node in [_stat_souls, _stat_deaths, _stat_time, _stat_best, _stat_sin, _stat_light]:
 		node.modulate.a = 0.0
 
 	_btn_hub.modulate.a  = 0.0
 	_btn_next.modulate.a = 0.0
+
+func _format_time(seconds: float) -> String:
+	var s: int = int(seconds)
+	return "%d:%02d" % [s / 60, s % 60]
+
+func _stars_str(n: int) -> String:
+	var out := ""
+	for i in 3:
+		out += STAR_FILLED if i < n else STAR_EMPTY
+	return out
 
 # ── Animation sequence ────────────────────────────────────────────────────────
 
@@ -98,7 +127,7 @@ func _animate_in(stats: Dictionary) -> void:
 		tw.tween_callback(_reveal_star.bind(star_labels[i], filled))
 
 	# 3. Stats slide in
-	var stat_nodes := [_stat_souls, _stat_deaths, _stat_sin, _stat_light]
+	var stat_nodes := [_stat_souls, _stat_deaths, _stat_time, _stat_best, _stat_sin, _stat_light]
 	for node in stat_nodes:
 		tw.tween_interval(STAT_DELAY)
 		tw.tween_property(node, "modulate:a", 1.0, 0.25)
@@ -214,13 +243,27 @@ func _build_stats() -> void:
 
 	_stat_souls  = _make_stat_label("")
 	_stat_deaths = _make_stat_label("")
+	_stat_time   = _make_stat_label("")
+	_stat_best   = _make_stat_label("")
 	_stat_sin    = _make_stat_label("")
 	_stat_light  = _make_stat_label("")
 
 	_stat_light.add_theme_color_override("font_color", Color("#FFD060"))
+	_stat_best.add_theme_color_override("font_color",  Color("#FFD700"))
 
-	for lbl in [_stat_souls, _stat_deaths, _stat_sin, _stat_light]:
+	for lbl in [_stat_souls, _stat_deaths, _stat_time, _stat_best, _stat_sin, _stat_light]:
 		stat_vbox.add_child(lbl)
+
+	# "NEW BEST!" badge sits next to the stars row, hidden by default.
+	_new_best_badge = Label.new()
+	_new_best_badge.text = "✨ НОВИЙ РЕКОРД ✨"
+	_new_best_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_new_best_badge.add_theme_font_size_override("font_size", 22)
+	_new_best_badge.add_theme_color_override("font_color", Color("#FFD700"))
+	_new_best_badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	_new_best_badge.add_theme_constant_override("outline_size", 4)
+	_new_best_badge.visible = false
+	stat_vbox.add_child(_new_best_badge)
 
 func _build_buttons() -> void:
 	var btn_row := HBoxContainer.new()

@@ -695,21 +695,23 @@ music-track). Найнижче = майже dub-bass без верхів.
 
 ## 🎯 Long-tail / replay
 
-### 26. 🟢 Per-level personal best + зірки ⭐⭐
+### 26. ✅ Per-level personal best + зірки
 
-**Що:** HUD при заході на рівень: "Best: 23s ⭐⭐⭐ • Souls: 3/3". Хаб /
-LevelComplete — три зірки: 1 = clear, 2 = no-deaths, 3 = under target time.
-
-**Чому:**
-- `_calc_stars` уже існує
-- Replay value: коли вже 1⭐ є, гравець повертається за 2-3⭐
-- Зробити best per-level в SaveManager.data.level_bests
-
-**Як:** SaveManager: `set_level_best(id, time, stars, souls)` /
-`get_level_best(id)`. LevelComplete показує old vs new. Hub continue показує
-поточний best.
-
-**Складність:** Низька-середня.
+**Реалізовано:**
+- `SaveManager.get_level_best(id)` / `update_level_best(id, time, stars,
+  souls, deaths)` — записує лише якщо stars зросли або при тому ж stars час
+  кращий
+- `GameManager._calc_stars(found, total, deaths, elapsed)` оновлено під
+  нову рубрику: 1 = clear, 2 = clear+0 deaths, 3 = clear+0 deaths+under
+  target_time. Target time бере `levels_config.target_time_seconds` або
+  fallback `45 + circle * 6` секунд
+- `GameManager.complete_level()` додає `previous_best`, `new_best`,
+  `target_time` у `stats` для UI
+- `LevelComplete` тепер показує час, попередній рекорд (чи "—") та badge
+  "✨ НОВИЙ РЕКОРД ✨" коли поточний run покращив запис
+- `Hub` continue button показує "🏆 0:23 ★★★" якщо для наступного рівня
+  є зерезервований рекорд
+- Тести в `test_game_manager.gd` оновлено під нову рубрику
 
 ---
 
