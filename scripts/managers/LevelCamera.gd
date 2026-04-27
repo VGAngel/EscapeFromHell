@@ -29,6 +29,13 @@ const CONFIG_PATH := "res://camera_config.json"
 ## by half of this so the player rests in the visible upper portion.
 const HUD_BOTTOM_RESERVE := 260.0
 
+## Look-down peek — hold the "look_down" action for LOOK_DOWN_HOLD_DELAY
+## seconds (without pressing it as a buffer for jump-cancel etc.) → camera
+## smoothly pans LOOK_DOWN_OFFSET pixels down so the player can scout what's
+## below before committing to a jump. Release → returns to normal.
+const LOOK_DOWN_OFFSET     := 220.0
+const LOOK_DOWN_HOLD_DELAY := 0.30
+
 # ── Cached config ─────────────────────────────────────────────────────────────
 var _lookahead_enabled:       bool  = true
 var _lookahead_distance:      float = 120.0
@@ -49,6 +56,8 @@ var _facing_change_t:         float = 0.0
 var _lookahead_offset_x:      float = 0.0
 var _hud_offset_y:            float = 0.0
 var _fall_offset_y:           float = 0.0
+var _look_down_offset_y:      float = 0.0
+var _look_down_hold_t:        float = 0.0   # how long ↓ has been held this press
 
 # How fast the camera chases the player position each second (exponential
 # decay rate). Higher = snappier, lower = floatier. 8.0 settles in ~0.3 s.
@@ -221,17 +230,23 @@ func _process(delta: float) -> void:
 		if body.velocity.y > 200.0:
 			target_fall_y = _look_up_distance
 
+	# Look-down peek: gated by hold-delay so a brief tap of ↓ doesn't twitch
+	# the camera. Only runs while grounded so the offset doesn't fight the
+	# fall-look path during big drops.
+	var target_look_down: float = _resolve_look_down_target(delta, parent)
+
 	# Exponential decay toward the target offsets — frame-rate independent.
 	var t_off: float = 1.0 - exp(-_OFFSET_FOLLOW_SPEED * delta)
-	_lookahead_offset_x = lerpf(_lookahead_offset_x, target_lookahead, t_off)
-	_fall_offset_y      = lerpf(_fall_offset_y,      target_fall_y,    t_off)
+	_lookahead_offset_x  = lerpf(_lookahead_offset_x,  target_lookahead,  t_off)
+	_fall_offset_y       = lerpf(_fall_offset_y,       target_fall_y,     t_off)
+	_look_down_offset_y  = lerpf(_look_down_offset_y,  target_look_down,  t_off)
 
 	# Compose the desired camera world position and lerp toward it. With
 	# top_level=true this is the actual follow — no parent transform is
 	# applied implicitly.
 	var target_pos: Vector2 = parent.global_position + Vector2(
 		_lookahead_offset_x,
-		_PLAYER_VERTICAL_OFFSET + _hud_offset_y + _fall_offset_y
+		_PLAYER_VERTICAL_OFFSET + _hud_offset_y + _fall_offset_y + _look_down_offset_y
 	)
 	var t_pos: float = 1.0 - exp(-_POSITION_FOLLOW_SPEED * delta)
 	global_position = global_position.lerp(target_pos, t_pos)
@@ -239,6 +254,34 @@ func _process(delta: float) -> void:
 	# All deliberate offsets (HUD reserve, lookahead, fall-look) are baked
 	# into global_position above — the Camera2D.offset channel is left
 	# untouched so CameraShake can tween it independently.
+
+## Track ↓ hold time and return the camera Y target. Requires:
+##   * "look_down" action exists in the InputMap (added in project.godot)
+##   * Player grounded — peeking mid-air feels like loss of control
+##   * No horizontal input — so ↓ used as fast-fall / movement modifier
+##     (planned later) doesn't double-trigger the peek
+## Releasing ↓ resets the hold timer immediately so the camera glides back.
+func _resolve_look_down_target(delta: float, parent: Node2D) -> float:
+	if not InputMap.has_action(&"look_down"):
+		return 0.0
+	if not Input.is_action_pressed(&"look_down"):
+		_look_down_hold_t = 0.0
+		return 0.0
+	# Skip when player is moving horizontally — they're trying to walk, not peek.
+	if Input.is_action_pressed(&"move_left") or Input.is_action_pressed(&"move_right"):
+		_look_down_hold_t = 0.0
+		return 0.0
+	# Skip while airborne so this doesn't fight fall-look.
+	var grounded: bool = true
+	if parent is CharacterBody2D:
+		grounded = (parent as CharacterBody2D).is_on_floor()
+	if not grounded:
+		_look_down_hold_t = 0.0
+		return 0.0
+	_look_down_hold_t += delta
+	if _look_down_hold_t < LOOK_DOWN_HOLD_DELAY:
+		return 0.0
+	return LOOK_DOWN_OFFSET
 
 # ── Public ────────────────────────────────────────────────────────────────────
 ## Apply a zoom preset by name from camera_config.json (e.g. "void_levels").

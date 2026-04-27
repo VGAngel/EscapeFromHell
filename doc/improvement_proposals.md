@@ -496,21 +496,16 @@ completion, експлорація, learning, polish).
 
 ---
 
-### 14. 🟢 Камера look-down ⭐⭐⭐
+### 14. ✅ Камера look-down
 
-**Що:** Затиснути ↓ (без guidedown руху) на 0.3с → камера плавно зміщується
-на ~200 px вниз. Відпустиш ↓ → повертається.
-
-**Чому:**
-- На вертикальних рівнях гравець постійно стрибає у "темряву" — не видно
-  що внизу
-- Гра-навмання → виправлений choice
-- Стандарт жанру (Hollow Knight, Celeste, Hades)
-
-**Як:** `LevelCamera` уже має offset/lookahead для горизонталі. Додати
-аналог для вертикалі. Чи через зміну `Camera2D.offset.y` плавним tween'ом.
-
-**Складність:** Низька (~20 рядків у LevelCamera).
+**Реалізовано** у [LevelCamera](../scripts/managers/LevelCamera.gd):
+- `LOOK_DOWN_OFFSET = 220` px, `LOOK_DOWN_HOLD_DELAY = 0.30s`
+- Нова дія `look_down` у `project.godot` (за замовчуванням ↓ та `S`)
+- Активується тільки коли: гравець на землі **і** не натискає `move_left`/
+  `move_right` (щоб ↓ використане для майбутнього fast-fall не дублювало)
+- `_resolve_look_down_target` віддає 0 / `LOOK_DOWN_OFFSET`, зглажує лерпом
+  через існуючий `_OFFSET_FOLLOW_SPEED`
+- При відпусканні таймер обнуляється — камера плавно повертається
 
 ---
 
