@@ -1,6 +1,6 @@
 # Game Design Document — Escape from Hell
 
-**Версія:** 1.5  
+**Версія:** 1.6  
 **Движок:** Godot 4  
 **Платформа:** Android (Google Play)  
 **Жанр:** 2D Platformer  
@@ -22,6 +22,11 @@
 > Зміни 1.4 → 1.5: WhisperManager — sin-tier репліки від Бога/демона
 > при перетині порогів 30/60/85 (1 раз на тир на рівень). Pause-aware
 > popup доставки душі з time-freeze.
+>
+> Зміни 1.5 → 1.6: sin-source toast у HUD — кожен sin-delta показується
+> з причиною (⚔ Посох, 💀 Смерть, 🟥 Гріховна платформа, 👹 Угода,
+> 🔥 Аура, ✨ Очищення). Throttle 4с per-cause + accumulator щоб
+> per-frame ticks не спамили.
 
 ---
 
@@ -286,6 +291,42 @@
 - 30–59%: помаранчевий
 - 60–84%: червоний
 - 85–100%: темно-червоний
+
+### Sin-source toast
+
+При кожній зміні гріху HUD показує **transient pop** у нижньому
+лівому куті з причиною та значенням:
+
+```
++1% гріх  ⚔ Посох
++5% гріх  💀 Смерть
+−5% гріх  ✨ Очищення   (зелений варіант)
+```
+
+| Cause | Іконка | Label | Тригер |
+|-------|--------|-------|--------|
+| `staff` | ⚔ | Посох | удар посохом (якщо нема `staff_purity`) |
+| `death` | 💀 | Смерть | `GameManager.trigger_death` |
+| `extra_attempt` | 🩸 | Зайва спроба | перевищення death-limit |
+| `sin_platform` | 🟥 | Гріховна платформа | стояння на SinPlatform |
+| `sin_aura` | 🔥 | Аура Люцифера | boss_10 фаза 2 |
+| `demon_deal` | 👹 | Угода з демоном | прийнята угода |
+| `corrupt_soul` | 👻 | Зламана душа | (зарезервовано — Soul-affinity S5) |
+| `cleansing` | ✨ | Очищення | апгрейд cleansing на завершенні рівня |
+| `confession` | 🙏 | Сповідь | (зарезервовано — Confessional booth S7) |
+
+**Throttle:** per-cause cooldown 4с + accumulator. Якщо джерело тригериться
+кожен frame (sin_platform 2%/сек), пропущена сума доплачується наступним
+toast'ом (наприклад "+6% гріх 🟥 Гріховна платформа" замість 60-ти
+крихт). Стек capped на 3 toasts; найстаріший FIFO.
+
+**Стиль:** червоний backdrop + crimson border для +sin, зелений для −sin.
+Label 22 px з outline 4 px. Fade-in 0.15 → hold 1.2 → fade-out 0.35с.
+
+**Архітектура:** `GameManager.add_sin(amount, cause)` /
+`reduce_sin(amount, cause)` емітять signal `sin_added(amount, cause)`.
+HUD підписаний у `_ready()` → `_on_sin_added` → `_spawn_sin_toast`.
+Усі call-сайти sin-зміни передають свою cause-строку.
 
 ### Вплив на платформи
 - **Faith платформа** — стає непрохідною якщо гріх ≥ 50%
@@ -1155,6 +1196,7 @@ win-condition).
 | **Ємність несіння** | Нижній правий | `✋ N/M` — лише коли куплено `soul_echo` (інакше прихована) |
 | Душі рівня | Нижній правий | X / Y на поточному рівні |
 | Шкала гріху | Низ (повна ширина) | Кольорова шкала 0–100% |
+| Sin-source toasts | Нижній лівий | Stack 3 max — `+1% гріх ⚔ Посох` при кожній зміні |
 
 **Стани бонусів:**
 - Активний: нормально
