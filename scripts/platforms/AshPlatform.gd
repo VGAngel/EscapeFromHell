@@ -39,10 +39,26 @@ func _on_body_entered(body: Node2D) -> void:
 	if "velocity" in body and body.velocity.y < 0.0:
 		return
 	_crumbling = true
+	_play_warning_shake()
 	await get_tree().create_timer(CRUMBLE_DELAY).timeout
 	if not is_inside_tree():
 		return
 	_collapse()
+
+## Quick jitter + warm tint during the very short CRUMBLE_DELAY so the
+## player can see the platform reacting to their step before it falls.
+func _play_warning_shake() -> void:
+	if not _visual:
+		return
+	var base_pos: Vector2 = _visual.position
+	var base_mod: Color   = _visual.modulate
+	var tw := create_tween()
+	# Ash is faster than Crumbling — single quick shake cycle.
+	tw.tween_property(_visual, "position", base_pos + Vector2(2.0, 0.0),  0.03)
+	tw.tween_property(_visual, "position", base_pos + Vector2(-2.0, 0.0), 0.03)
+	tw.tween_property(_visual, "position", base_pos, 0.02)
+	tw.parallel().tween_property(_visual, "modulate",
+		Color(1.20, 0.80, 0.55, base_mod.a), CRUMBLE_DELAY)
 
 func _collapse() -> void:
 	var tw := create_tween()

@@ -377,6 +377,12 @@ func _spawn_player() -> void:
 	_player.soul_delivered.connect(_on_soul_delivered)
 	_player.soul_dropped.connect(_on_soul_dropped)
 	_player.hp_changed.connect(_on_player_hp_changed)
+	if _player.has_signal("carry_changed") and _hud and _hud.has_method("set_carry_state"):
+		_player.carry_changed.connect(_hud.set_carry_state)
+		# Push the initial state so the indicator is correct on level entry
+		# (e.g. when soul_echo upgrade is first bought).
+		if _player.has_method("soul_capacity"):
+			_hud.set_carry_state(0, _player.soul_capacity())
 
 # ── Exit ──────────────────────────────────────────────────────────────────────
 

@@ -46,10 +46,27 @@ func _on_body_entered(body: Node2D) -> void:
 	if "velocity" in body and body.velocity.y < 0.0:
 		return
 	_crumbling = true
+	_play_warning_shake()
 	await get_tree().create_timer(CRUMBLE_DELAY).timeout
 	if not is_inside_tree():
 		return
 	_fade_out_and_disable()
+
+## Visual heads-up that this platform is about to collapse — small jitter +
+## warm tint while the CRUMBLE_DELAY timer runs. Lets the player see "jump
+## NOW" instead of being surprised by a silent disappearance.
+func _play_warning_shake() -> void:
+	if not _visual:
+		return
+	var base_pos: Vector2 = _visual.position
+	var base_mod: Color   = _visual.modulate
+	var tw := create_tween()
+	tw.set_loops(int(CRUMBLE_DELAY / 0.06))
+	tw.tween_property(_visual, "position", base_pos + Vector2(2.0, 0.0),  0.03)
+	tw.tween_property(_visual, "position", base_pos + Vector2(-2.0, 0.0), 0.03)
+	tw.parallel().tween_property(_visual, "modulate",
+		Color(1.15, 0.85, 0.6, base_mod.a), CRUMBLE_DELAY * 0.5)
+	tw.chain().tween_property(_visual, "position", base_pos, 0.0)
 
 func _fade_out_and_disable() -> void:
 	var fx: Node = get_node_or_null("/root/ParticleEffects")

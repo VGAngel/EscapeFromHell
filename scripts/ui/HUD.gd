@@ -32,6 +32,9 @@ var _timer_label:  Label            = null
 var _ability_row:  HBoxContainer    = null
 var _bonus_row:    HBoxContainer    = null
 var _souls_level:  Label            = null
+# "Carried soul slots" indicator — only visible when capacity > 1 (i.e. the
+# soul_echo upgrade has been bought). Shows current/max carried souls.
+var _carry_label:  Label            = null
 
 # Sin bar
 var _sin_bar:      ColorRect        = null
@@ -129,6 +132,19 @@ func add_soul_found() -> void:
 func set_total_souls(total: int) -> void:
 	_set_souls_total(total)
 	_pulse_node(_souls_total, 0.3)
+
+## Update the carried-soul slot indicator. Hidden when capacity <= 1
+## (no upgrade) — pre-soul_echo players don't need to know they can hold
+## "0/1" of a soul.
+func set_carry_state(carried: int, capacity: int) -> void:
+	if not _carry_label:
+		return
+	if capacity <= 1:
+		_carry_label.visible = false
+		return
+	_carry_label.visible = true
+	_carry_label.text = "✋ %d/%d" % [carried, capacity]
+	_pulse_node(_carry_label, 0.25)
 
 func set_light(amount: int) -> void:
 	_set_light(amount)
@@ -496,6 +512,17 @@ func _build_bottom_row() -> void:
 	_bonus_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_bonus_row.add_theme_constant_override("separation", 4)
 	_bottom_row.add_child(_bonus_row)
+
+	# Carry-capacity slots — hidden by default, surfaces when soul_echo
+	# upgrade is bought (or otherwise capacity > 1).
+	_carry_label = Label.new()
+	_carry_label.text = "✋ 0/2"
+	_carry_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_carry_label.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_carry_label.add_theme_font_size_override("font_size", 21)
+	_carry_label.add_theme_color_override("font_color", Color("#FFD700"))
+	_carry_label.visible = false
+	_bottom_row.add_child(_carry_label)
 
 	# Level souls counter (right)
 	_souls_level = Label.new()

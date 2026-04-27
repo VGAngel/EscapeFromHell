@@ -362,19 +362,15 @@ JSON по тегах: `sin_30`, `sin_60`, `sin_85`, `low_hp`, `near_death`.
 
 ## 🎯 Якісне покращення feel'у
 
-### 7. 🟢 Coyote-time візуалізація для сповзаючих платформ
+### 7. ✅ Coyote-time візуалізація для сповзаючих платформ
 
-**Що:** Поточні `CRUMBLE_DELAY = 0.5` (Crumbling) і `0.2` (Ash) дають
-вікно щоб встигнути стрибнути, але візуально це не зрозуміло. Додати
-тремтіння + falling-sand particles під час delay.
+**Реалізовано:** [CrumblingPlatform](../scripts/platforms/CrumblingPlatform.gd)
+та [AshPlatform](../scripts/platforms/AshPlatform.gd) тепер під час
+CRUMBLE_DELAY програють shake (±2 px по X) + warm-orange tint на `_visual`.
+Гравець бачить що "ось-ось" і встигає стрибнути.
 
-**Чому:** Гравець знає "скоро впаде, треба стрибати ЗАРАЗ". Менше відчуття
-"я не вийшов винним".
-
-**Як:** У `_on_body_entered` стартонути shake-tween на `_visual` плюс
-`ParticleEffects.spawn("crumble_warn", ...)`.
-
-**Складність:** Дуже низька.
+Не реалізовано (опційно): falling-sand particles via ParticleEffects —
+поточних shake+tint достатньо щоб читалося як попередження.
 
 ---
 

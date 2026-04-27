@@ -7,6 +7,9 @@ signal soul_delivered(soul_id: String)
 signal staff_used
 signal player_died
 signal hp_changed(current: int, maximum: int)
+## Emitted whenever the carried soul count changes (pickup / deliver /
+## drop / die). Useful for HUD indicators that show "carried / capacity".
+signal carry_changed(carried: int, capacity: int)
 
 # ── State ─────────────────────────────────────────────────────────────────────
 enum State { IDLE, WALK, JUMP, FALL, STAFF_SWING, PICKUP, CARRYING, DEAD }
@@ -564,6 +567,7 @@ func _finish_pickup() -> void:
 	_soul_visual.visible = true
 	# Most recently picked up soul drives the pickup feedback signal.
 	soul_picked_up.emit(carried_soul_ids[-1])
+	carry_changed.emit(carried_soul_ids.size(), soul_capacity())
 	if _upgrade_soul_shield:
 		_soul_shield_timer = 3.0
 
@@ -584,6 +588,7 @@ func deliver_soul() -> void:
 func _drop_soul() -> void:
 	carried_soul_ids.clear()
 	_soul_visual.visible = false
+	carry_changed.emit(0, soul_capacity())
 	if state == State.CARRYING:
 		state = State.IDLE
 
