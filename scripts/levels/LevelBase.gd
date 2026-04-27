@@ -549,34 +549,63 @@ func _on_soul_delivered(soul_id: String) -> void:
 	if _souls_found >= _souls_required and _exit_area and _exit_area.has_method("activate"):
 		_exit_area.activate()
 
+## Show "✦ Name ✦" celebration above the screen for ~1.6 s. World is
+## paused during the popup so enemies / hazards can't punish the player
+## while they read the name. Mounted on a CanvasLayer so it sits in
+## viewport space — adding a Control as a child of LevelBase (Node2D)
+## meant the popup tracked world coords and could land off-screen on
+## tall vertical shafts.
+const _POPUP_DURATION: float = 1.6
+
 func _show_soul_delivered_popup(data: Dictionary = {}) -> void:
 	if not _player or not is_inside_tree():
 		return
-	# Prefer the soul's actual name so the player sees WHO they delivered.
-	# Falls back to the generic message when the soul carried no name.
 	var soul_name: String = String(data.get("name", ""))
 	var text: String = ("✦ %s ✦" % soul_name) if soul_name != "" else "Душа доставлена"
 
+	# Always-on CanvasLayer so the tween keeps running while the tree is
+	# paused. Layer 11 sits above HUD (10) but below SceneTransition (100).
+	var canvas := CanvasLayer.new()
+	canvas.layer = 11
+	canvas.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(canvas)
+
 	var lbl := Label.new()
 	lbl.text = text
+	lbl.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	lbl.offset_left   = 0.0
+	lbl.offset_right  = 0.0
+	lbl.offset_top    = 320.0
+	lbl.offset_bottom = 420.0
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.88, 0.35))
 	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	lbl.add_theme_constant_override("outline_size", 6)
-	lbl.add_theme_font_size_override("font_size", 36)
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# Width-aware horizontal centering: pin the label width and shift left by
-	# half so the text sits centred above the player regardless of length.
-	const POPUP_W: float = 480.0
-	lbl.size = Vector2(POPUP_W, 0.0)
-	lbl.position = _player.global_position + Vector2(-POPUP_W * 0.5, -160.0)
-	add_child(lbl)
+	lbl.add_theme_font_size_override("font_size", 56)
+	lbl.process_mode = Node.PROCESS_MODE_ALWAYS
+	canvas.add_child(lbl)
 
-	var tw := create_tween().set_parallel(true)
-	tw.tween_property(lbl, "position:y", lbl.position.y - 140.0, 2.2)
-	tw.tween_property(lbl, "modulate:a", 0.0, 2.2).set_delay(0.4)
-	await get_tree().create_timer(2.6).timeout
-	if is_instance_valid(lbl):
-		lbl.queue_free()
+	# Freeze the world for the celebration. Skip if we're already paused
+	# (e.g. the player tapped the altar via PauseScreen) so we don't unpause
+	# someone else's pause when the popup ends.
+	var pre_paused: bool = get_tree().paused
+	if not pre_paused:
+		get_tree().paused = true
+
+	# Tween created from the always-process Label inherits its process mode,
+	# so the fade still runs while the tree is paused.
+	var tw := lbl.create_tween().set_parallel(true)
+	tw.tween_property(lbl, "modulate:a", 0.0, _POPUP_DURATION).set_delay(0.5)
+
+	# process_always=true keeps the timer ticking through the pause; a
+	# regular timer would freeze with the tree.
+	await get_tree().create_timer(_POPUP_DURATION + 0.2, true).timeout
+
+	if not pre_paused:
+		get_tree().paused = false
+	if is_instance_valid(canvas):
+		canvas.queue_free()
 
 # ── Player events ─────────────────────────────────────────────────────────────
 
