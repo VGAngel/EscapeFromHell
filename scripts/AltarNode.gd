@@ -79,9 +79,14 @@ func _activate() -> void:
 func _deliver_soul() -> void:
 	if not is_instance_valid(_player_node):
 		return
-	var soul_id: String = str(_player_node.get("carried_soul_id"))
-	if soul_id == "" or soul_id == "null":
+	if not _player_is_carrying_soul():
 		return
+
+	# Snapshot the carried list BEFORE deliver_soul() clears it. With the
+	# soul_echo upgrade the player can hand in two souls in one tap; we
+	# emit our own per-soul signal so listeners (LevelBase reveal popup)
+	# can chain the announcements.
+	var ids: Array = _player_carried_ids()
 
 	# Bind respawn at the same time if not yet done.
 	if not _is_active:
@@ -89,7 +94,8 @@ func _deliver_soul() -> void:
 
 	_player_node.deliver_soul()
 	_play_light_pillar()
-	soul_delivered_here.emit(soul_id)
+	for sid in ids:
+		soul_delivered_here.emit(String(sid))
 
 func _play_light_pillar() -> void:
 	# White-gold beam rising from altar center.
@@ -172,8 +178,25 @@ func bind_silently() -> void:
 func _player_is_carrying_soul() -> bool:
 	if not is_instance_valid(_player_node):
 		return false
-	var soul_id = _player_node.get("carried_soul_id")
-	return soul_id != null and str(soul_id) != ""
+	if _player_node.has_method("is_carrying"):
+		return bool(_player_node.is_carrying())
+	# Legacy fallback: read whichever carry-state field the Player exposes.
+	var ids = _player_node.get("carried_soul_ids")
+	if ids is Array:
+		return (ids as Array).size() > 0
+	var sid = _player_node.get("carried_soul_id")
+	return sid != null and str(sid) != ""
+
+func _player_carried_ids() -> Array:
+	if not is_instance_valid(_player_node):
+		return []
+	var ids = _player_node.get("carried_soul_ids")
+	if ids is Array:
+		return (ids as Array).duplicate()
+	var sid = _player_node.get("carried_soul_id")
+	if sid != null and str(sid) != "":
+		return [str(sid)]
+	return []
 
 func _set_pray_button(value: bool) -> void:
 	var hud: Node = get_tree().get_first_node_in_group("hud") if get_tree() else null

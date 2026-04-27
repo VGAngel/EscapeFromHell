@@ -34,7 +34,10 @@ var _souls_found:        int             = 0
 var _is_complete:        bool            = false
 var _level_type:         String          = "platformer"
 var _respawn_position:   Vector2         = Vector2.ZERO  # updated by mid-altar
-var _carried_soul_data:  Dictionary      = {}
+# Per-soul data keyed by soul_id (int). The player can carry > 1 with the
+# soul_echo upgrade, so we can't keep a single dict like before — each entry
+# survives until that specific soul is delivered or dropped.
+var _carried_souls_data: Dictionary      = {}
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -411,14 +414,17 @@ func _connect_souls() -> void:
 			soul.soul_pickup_started.connect(_on_soul_pickup_started)
 
 ## Called when the player manually picks up a soul from the ground.
-## Stores soul data so it can be shown on altar delivery.
+## Stores soul data so it can be shown on altar delivery. With soul_echo
+## the player can hold multiple souls at once — each gets its own entry
+## keyed by soul_id and survives until that soul is delivered or dropped.
 func _on_soul_pickup_started(soul: Node) -> void:
 	var soul_id: int = soul.get_meta("soul_id", 0)
-	_carried_soul_data = {"soul_id": soul_id}
+	var data: Dictionary = {"soul_id": soul_id}
 	if soul.has_method("get_soul_data"):
-		_carried_soul_data.merge(soul.get_soul_data())
+		data.merge(soul.get_soul_data())
 	if soul.has_method("get_soul_type"):
-		_carried_soul_data["soul_type"] = soul.get_soul_type()
+		data["soul_type"] = soul.get_soul_type()
+	_carried_souls_data[soul_id] = data
 
 	var boss: Node = _get_boss()
 	if boss and boss.has_method("on_collectible_picked"):
@@ -461,12 +467,13 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 	if TutorialManager and TutorialManager.has_method("show_hint"):
 		TutorialManager.show_hint("bonus_" + bonus_name.to_lower())
 
-## Called when the player dies while carrying a soul.
-## Re-spawns a Soul node at the death position so the player can retrieve it.
-func _on_soul_dropped(_soul_id: String, drop_position: Vector2) -> void:
+## Called when the player dies while carrying a soul. Player.gd emits one
+## soul_dropped per carried soul, so each call respawns ONE pickup at the
+## death position and clears just that entry from _carried_souls_data.
+func _on_soul_dropped(soul_id: String, drop_position: Vector2) -> void:
 	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
 	if not soul_scene or not _room_container:
-		_carried_soul_data = {}
+		_carried_souls_data.erase(soul_id.to_int())
 		return
 	# Drop straight down to the nearest platform so the soul rests on the
 	# ground rather than hanging in mid-air at the death position.
@@ -476,12 +483,13 @@ func _on_soul_dropped(_soul_id: String, drop_position: Vector2) -> void:
 	# captures _base_y for the bobbing animation.
 	soul.position = grounded_position - _room_container.global_position
 	_room_container.add_child(soul)
-	var soul_type: String = _carried_soul_data.get("soul_type", "innocent")
+	var stored_id: int = soul_id.to_int() if soul_id.is_valid_int() else 0
+	var entry: Dictionary = _carried_souls_data.get(stored_id, {})
+	var soul_type: String = entry.get("soul_type", "innocent")
 	if soul.has_method("set_soul_type"):
 		soul.set_soul_type(soul_type)
-	var stored_id: int = int(_carried_soul_data.get("soul_id", 0))
 	if stored_id != 0 and soul.has_method("set_soul_data"):
-		var data: Dictionary = _carried_soul_data.duplicate()
+		var data: Dictionary = entry.duplicate()
 		data.erase("soul_type")
 		soul.set_soul_data(stored_id, data)
 		soul.set_meta("soul_id", stored_id)
@@ -489,7 +497,7 @@ func _on_soul_dropped(_soul_id: String, drop_position: Vector2) -> void:
 		soul.soul_pickup_started.connect(_on_soul_pickup_started)
 	if not _souls_in_level.has(soul):
 		_souls_in_level.append(soul)
-	_carried_soul_data = {}
+	_carried_souls_data.erase(stored_id)
 
 ## Cast a ray downward from `from` to find the first platform/floor and
 ## return a position that rests on it, horizontally centered on that platform.
@@ -518,24 +526,26 @@ func _drop_to_ground(from: Vector2) -> Vector2:
 
 func _on_soul_delivered(soul_id: String) -> void:
 	_souls_found += 1
-	var id: int = soul_id.to_int() if soul_id.is_valid_int() else \
-		_carried_soul_data.get("soul_id", 0)
+	var id: int = soul_id.to_int() if soul_id.is_valid_int() else 0
 	GameManager.collect_soul(id)
-	# Show soul name reveal panel here — at delivery, not at pickup.
+	# Look up the matching soul's data so the reveal/popup show the right
+	# name — multiple souls can be in flight at once with the soul_echo
+	# upgrade, so we can't rely on a single "currently carried" dict.
+	var data: Dictionary = _carried_souls_data.get(id, {})
 	if _soul_reveal and _soul_reveal.has_method("show_soul") \
-			and _carried_soul_data.has("name") and _carried_soul_data.get("name", "") != "":
-		_soul_reveal.show_soul(_carried_soul_data)
-	_show_soul_delivered_popup()
-	_carried_soul_data = {}
+			and data.has("name") and data.get("name", "") != "":
+		_soul_reveal.show_soul(data)
+	_show_soul_delivered_popup(data)
+	_carried_souls_data.erase(id)
 	if _souls_found >= _souls_required and _exit_area and _exit_area.has_method("activate"):
 		_exit_area.activate()
 
-func _show_soul_delivered_popup() -> void:
+func _show_soul_delivered_popup(data: Dictionary = {}) -> void:
 	if not _player or not is_inside_tree():
 		return
 	# Prefer the soul's actual name so the player sees WHO they delivered.
 	# Falls back to the generic message when the soul carried no name.
-	var soul_name: String = String(_carried_soul_data.get("name", ""))
+	var soul_name: String = String(data.get("name", ""))
 	var text: String = ("✦ %s ✦" % soul_name) if soul_name != "" else "Душа доставлена"
 
 	var lbl := Label.new()

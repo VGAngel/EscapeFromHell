@@ -48,7 +48,11 @@ var _jumps_done:        int   = 0
 var _was_on_floor:      bool  = false
 var _landing_decel_timer: float = 0.0
 
-var carried_soul_id: String = ""
+## All souls the player is currently carrying. Capacity is normally 1; the
+## "soul_echo" upgrade raises it to 2 (see soul_capacity()). The first
+## element is treated as the most recently picked up — used for HUD/visual
+## hints — but `deliver_soul()` chains through every entry in order.
+var carried_soul_ids: Array[String] = []
 var _facing_right:   bool   = true
 
 # ── Fall damage ───────────────────────────────────────────────────────────────
@@ -514,16 +518,30 @@ func _die() -> void:
 	_spawn_fx("death", global_position)
 	if SoundManager:
 		SoundManager.play_sfx("player", "death")
-	if carried_soul_id != "":
-		soul_dropped.emit(carried_soul_id, global_position)
+	# Drop every carried soul on death — each spawns its own pickup at the
+	# death position so the soul_echo upgrade doesn't quietly lose one.
+	for sid in carried_soul_ids:
+		soul_dropped.emit(sid, global_position)
+	if not carried_soul_ids.is_empty():
 		_drop_soul()
 	player_died.emit()
 
 # ── Soul interaction ──────────────────────────────────────────────────────────
+
+## How many souls the player can carry simultaneously. 1 by default; the
+## "soul_echo" upgrade raises it to 2.
+func soul_capacity() -> int:
+	if SaveManager and SaveManager.has_upgrade("soul_echo"):
+		return 2
+	return 1
+
+func is_full() -> bool:
+	return carried_soul_ids.size() >= soul_capacity()
+
 func pick_up_soul(soul_id: String) -> void:
-	if carried_soul_id != "":
+	if is_full():
 		return
-	carried_soul_id = soul_id
+	carried_soul_ids.append(soul_id)
 	if SoundManager:
 		SoundManager.play_sfx("souls", "pickup_resonance")
 	if _upgrade_quick_pickup:
@@ -537,27 +555,34 @@ func pick_up_soul(soul_id: String) -> void:
 
 func _finish_pickup() -> void:
 	# pick_up_soul awaits 0.6s before calling this. If the player died (or
-	# the soul was already cleared via _die → _drop_soul) during the wait,
+	# all carried souls were cleared via _die → _drop_soul) during the wait,
 	# bail out so we don't override DEAD with CARRYING and end up holding a
-	# phantom soul (empty carried_soul_id, visible soul sprite).
-	if state == State.DEAD or carried_soul_id == "":
+	# phantom soul (empty carried_soul_ids, visible soul sprite).
+	if state == State.DEAD or carried_soul_ids.is_empty():
 		return
 	state = State.CARRYING
 	_soul_visual.visible = true
-	soul_picked_up.emit(carried_soul_id)
+	# Most recently picked up soul drives the pickup feedback signal.
+	soul_picked_up.emit(carried_soul_ids[-1])
 	if _upgrade_soul_shield:
 		_soul_shield_timer = 3.0
 
+## Deliver every carried soul. Each fires its own soul_delivered signal so
+## LevelBase can process them individually (reveal popup, light bonus,
+## SaveManager.add_soul). Snapshot the list first because handlers may
+## mutate state via signals.
 func deliver_soul() -> void:
-	if carried_soul_id == "":
+	if carried_soul_ids.is_empty():
 		return
-	soul_delivered.emit(carried_soul_id)
+	var to_deliver: Array[String] = carried_soul_ids.duplicate()
+	for sid in to_deliver:
+		soul_delivered.emit(sid)
 	if SoundManager:
 		SoundManager.play_sfx("souls", "delivered")
 	_drop_soul()
 
 func _drop_soul() -> void:
-	carried_soul_id = ""
+	carried_soul_ids.clear()
 	_soul_visual.visible = false
 	if state == State.CARRYING:
 		state = State.IDLE
@@ -569,7 +594,7 @@ func _update_state() -> void:
 	var on_floor: bool = is_on_floor()
 	var moving: bool = absf(velocity.x) > 10.0
 	if on_floor:
-		state = State.CARRYING if carried_soul_id != "" else (State.WALK if moving else State.IDLE)
+		state = State.CARRYING if not carried_soul_ids.is_empty() else (State.WALK if moving else State.IDLE)
 	else:
 		state = State.JUMP if velocity.y < 0.0 else State.FALL
 
@@ -587,8 +612,8 @@ func _update_animation() -> void:
 
 func _state_to_anim() -> String:
 	match state:
-		State.IDLE:        return "player_carry_idle" if carried_soul_id != "" else "player_idle"
-		State.WALK:        return "player_carry_walk" if carried_soul_id != "" else "player_walk"
+		State.IDLE:        return "player_carry_idle" if not carried_soul_ids.is_empty() else "player_idle"
+		State.WALK:        return "player_carry_walk" if not carried_soul_ids.is_empty() else "player_walk"
 		State.JUMP:        return "player_jump"
 		State.FALL:        return "player_fall"
 		State.STAFF_SWING: return "player_staff_swing"
@@ -670,7 +695,7 @@ func get_staff_cooldown_ratio() -> float:
 	return 1.0 - (_staff_timer / staff_cooldown)
 
 func is_carrying() -> bool:
-	return carried_soul_id != ""
+	return not carried_soul_ids.is_empty()
 
 func respawn(spawn_position: Vector2) -> void:
 	global_position = spawn_position

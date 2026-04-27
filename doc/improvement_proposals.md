@@ -296,29 +296,28 @@ else:
 
 ## 🎯 Висока користь, середня складність
 
-### 4. 🟢 Soul echo — нести 2 душі
+### 4. ✅ Soul echo — нести 2 душі
 
-**Що:** Апгрейд `soul_memory` (вже у конфігу!) дозволяє носити 2 душі
-одночасно.
+**Реалізовано** як апгрейд `soul_echo` ("Подвійна Ноша", cost 9) у
+[upgrades_config.json](../upgrades_config.json) категорії "Душа".
 
-**Чому:**
-- **Вже у `upgrades_config.json`** — лишилось додати логіку
-- Розблоковує паттерни: "пройди раз, збери дві, поверни обидві"
-- Стимулює прокачку upgrades
-- Економія часу = неявна нагорода за вибір цього апгрейда
+Зміни:
+- `Player.carried_soul_id: String` → `carried_soul_ids: Array[String]`
+- `Player.soul_capacity()` → 1 без апгрейду, 2 з `soul_echo`
+- `Player.is_carrying()` / `is_full()` — нові helper'и
+- `Player.deliver_soul()` емітить `soul_delivered` для **кожної** душі (не
+  тільки першої), AltarNode також пропускає всі через `soul_delivered_here`
+- `Player._die()` дропає кожну окремо — обидві re-spawn'ляться
+- `LevelBase._carried_soul_data` → `_carried_souls_data` (Dictionary keyed
+  by soul_id) — кожна душа має свою картку до доставки/смерті
+- `SoulBridgePlatform` оновлено для роботи з новим API
+- Старе поле `carried_soul_id` для legacy-fallback все ще читається в
+  AltarNode та SoulBridgePlatform (на випадок зовнішніх скриптів)
 
-**Як:** `Player.carried_soul_id: String` → `carried_soul_ids: Array[String]`.
-Capacity = `1 + SaveManager.get_upgrade_level("soul_memory")`. У
-`pick_up_soul`:
-```gdscript
-var cap: int = 1 + (SaveManager.get_upgrade_level("soul_memory") if SaveManager else 0)
-if carried_soul_ids.size() >= cap: return
-carried_soul_ids.append(soul_id)
-```
-SoulCarryVisual → візуально 2 sprite-spheres збоку.
-
-**Складність:** Середня. Зачіпає Player, AltarNode (deliver loop), HUD,
-LevelBase (multi-soul drop on death).
+**Не зроблено (можна додати окремо):**
+- Візуальний стек з 2-х душ над гравцем (зараз `SoulCarryVisual` показує
+  одну іконку незалежно від кількості)
+- HUD-індикатор "1/2" поточної ємності
 
 ---
 

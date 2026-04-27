@@ -131,6 +131,14 @@
           "max_level": 1,
           "note": "Без цього апгрейду загибель з душею = душа зникає назавжди з рівня.",
           "effect": { "type": "ability", "ability": "soul_persists_on_death" }
+        },
+        {
+          "id": "soul_echo",
+          "name": "Подвійна Ноша",
+          "description": "Дозволяє нести 2 душі одночасно. Збереш дві — здаси обидві за один підхід до вівтаря.",
+          "cost": 9,
+          "max_level": 1,
+          "effect": { "type": "ability", "ability": "carry_two_souls" }
         }
       ]
     },

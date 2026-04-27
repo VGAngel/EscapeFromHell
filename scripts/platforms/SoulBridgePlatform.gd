@@ -40,6 +40,10 @@ func _player_is_carrying() -> bool:
 		return false
 	if p.has_method("is_carrying"):
 		return p.is_carrying()
+	# Legacy property fallbacks for older Player schemas.
+	if "carried_soul_ids" in p:
+		var ids = p.carried_soul_ids
+		return ids is Array and (ids as Array).size() > 0
 	return "carried_soul_id" in p and String(p.carried_soul_id) != ""
 
 func _appear() -> void:
