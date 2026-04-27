@@ -179,13 +179,17 @@ func collect_hidden_soul(soul_id: String) -> void:
 
 # ── Death ─────────────────────────────────────────────────────────────────────
 
-func trigger_death(_cause: String = "enemy_hit") -> void:
+func trigger_death(cause: String = "enemy_hit") -> void:
 	if _is_transitioning:
 		return
 	_is_transitioning = true
 
 	_deaths_this_level += 1
 	add_sin(SIN_ON_DEATH)
+	# Statistics — total deaths + per-cause breakdown for the stats screen.
+	if SaveManager:
+		SaveManager.add_stat("deaths_total", 1)
+		SaveManager.incr_death_cause(cause)
 	player_died.emit(_deaths_this_level)
 
 	# Darken screen then respawn
@@ -252,6 +256,10 @@ func complete_level() -> void:
 		var cleansing_tier: int = SaveManager.get_upgrade_level("cleansing")
 		if cleansing_tier > 0:
 			reduce_sin(float(cleansing_tier))
+		# Statistics: cumulative play time + cleared levels counter.
+		SaveManager.add_play_time(elapsed)
+		SaveManager.add_stat("levels_cleared", 1)
+		SaveManager.add_stat("light_earned_total", light_earned)
 		SaveManager.save_after_level()
 		if _hud and _hud.has_method("set_light"):
 			_hud.set_light(SaveManager.get_light())

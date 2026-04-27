@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://stats0001screen"]
+
+[ext_resource type="Script" path="res://scripts/ui/StatisticsScreen.gd" id="1_stats"]
+
+[node name="StatisticsScreen" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_stats")

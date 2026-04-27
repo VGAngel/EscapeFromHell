@@ -880,39 +880,41 @@ exit — генерує наступну "кімнату" коли гравец�
 
 ## 🎯 Statistics & meta
 
-### 35. 🟢 Статистика гравця ⭐⭐
+### 35. ✅ Статистика гравця
 
-**Що:** Окремий екран у Pause / MainMenu:
-- Загальний час гри: 12:34:56
-- Смертей: 234 (з них від падіння: 89, ворогів: 67, лави: 23, шипів: 41…)
-- Найкращий рівень: L42 — 0:23 ★★★
-- Витрачено Світла: 1245
-- Середній sin за рівень: 23%
-- Найдовший combo: 7 ворогів за один прохід
-
-**Чому:**
-- Гравці люблять цифри
-- Допомагає рефлексувати "пройшов X% гри"
-- Маркетинг — прозорі скріни в Steam reviews
-
-**Як:** Тригери в GameManager рахують метрики, зберігаються у
-`SaveManager.data.statistics`. Окремий UI читає й малює.
-
-**Складність:** Низька-середня (логіка проста, UI один екран).
+**Реалізовано:**
+- `SaveManager.data["statistics"]` — універсальний bucket з API:
+  `add_stat(key, delta)`, `get_stat(key, default)`, `incr_death_cause(cause)`,
+  `get_deaths_by_cause()`, `add_play_time(seconds)`
+- `GameManager.trigger_death(cause)` записує в `deaths_total` +
+  `deaths_by_cause[cause]`
+- `GameManager.complete_level()` додає `total_play_seconds` (elapsed) +
+  `levels_cleared` + `light_earned_total`
+- `SaveManager.spend_light()` тепер автоматично пише `light_spent_total`
+- Новий [scripts/ui/StatisticsScreen.gd](../scripts/ui/StatisticsScreen.gd)
+  — окрема CanvasLayer-overlay з секціями: Прогрес, Душі, Смерті (з
+  per-cause breakdown), Світло, Рекорди (найкращий рівень з level_bests),
+  Гріх
+- Кнопка "📊 Статистика" у PauseScreen → emits `statistics_requested` →
+  LevelBase відкриває overlay
+- Сцена [scenes/ui/StatisticsScreen.tscn](../scenes/ui/StatisticsScreen.tscn)
+  додана у Level.tscn (вертикальні + платформери). Boss/Void можна додати
+  таким же способом якщо потрібно.
 
 ---
 
-### 36. 🟢 Soul collection by circle ⭐
+### 36. ✅ Soul collection by circle
 
-**Що:** В CollectionScreen додати progress bars по колах:
-"Коло 3: 7/10 ✦ 1/2". Замість одного "X/100".
-
-**Чому:** Орієнтує гравця "куди йти за пропущеними душами".
-
-**Як:** У `_refresh_counters` в CollectionScreen — групувати
-`saved_soul_ids` за circle (з souls_collection.json).
-
-**Складність:** Низька (~30 рядків).
+**Реалізовано** у [CollectionScreen](../scripts/ui/CollectionScreen.gd):
+- Новий `_circle_progress_box` HBox під заголовком — 10 клітин (К1..К10)
+- Кожна клітина: "К%d" + "X/Y" (named) + опційно "✦ X/Y" (hidden, лише
+  якщо circle має приховані душі)
+- Заповнені цілком ліки (X==Y) — золото-жовтий tint, інакше нейтральний
+- `_refresh_circle_progress()` викликається з `_refresh_counters()` →
+  оновлюється кожен раз як screen відкривається або душа додається
+- Дані беруться з `_named_souls`/`_hidden_souls` (loaded JSON) +
+  `SaveManager.get_saved_soul_ids()` / `get_hidden_soul_ids()` — групування
+  по `circle` field з кожної душі
 
 ---
 

@@ -20,6 +20,7 @@ extends Node2D
 @onready var _pause_screen:      Node       = get_node_or_null("PauseScreen")
 @onready var _collection_screen: Node       = get_node_or_null("CollectionScreen")
 @onready var _settings_screen:   Node       = get_node_or_null("SettingsScreen")
+@onready var _statistics_screen: Node       = get_node_or_null("StatisticsScreen")
 @onready var _room_container:  Node2D     = $RoomContainer
 @onready var _spawn_point:     Marker2D   = $SpawnPoint
 @onready var _exit_area:       Node2D     = $Exit
@@ -66,6 +67,8 @@ func _ready() -> void:
 		_hud.pause_requested.connect(_pause_screen.toggle)
 		_pause_screen.collection_requested.connect(_on_pause_collection)
 		_pause_screen.settings_requested.connect(_on_pause_settings)
+		if _pause_screen.has_signal("statistics_requested"):
+			_pause_screen.statistics_requested.connect(_on_pause_statistics)
 	_connect_level_complete()
 
 	if LevelConfig and LevelConfig.has_mechanic(level_id, "tutorial_trigger"):
@@ -676,6 +679,10 @@ func _on_pause_collection() -> void:
 func _on_pause_settings() -> void:
 	if _settings_screen and _settings_screen.has_method("open"):
 		_settings_screen.open()
+
+func _on_pause_statistics() -> void:
+	if _statistics_screen and _statistics_screen.has_method("open"):
+		_statistics_screen.open()
 
 # ── Pause ─────────────────────────────────────────────────────────────────────
 # ESC is handled by HUD._unhandled_input → pause_requested → _pause_screen.toggle().

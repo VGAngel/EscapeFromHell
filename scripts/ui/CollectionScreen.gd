@@ -32,6 +32,9 @@ var _root:       ColorRect       = null
 # Header
 var _lbl_named:  Label           = null
 var _lbl_hidden: Label           = null
+# Per-circle progress strip — populated in _build_circle_progress, refreshed
+# from _refresh_counters whenever SaveManager state changes.
+var _circle_progress_box: HBoxContainer = null
 
 # Filters – row 1: circle scroll tabs
 var _circle_scroll: ScrollContainer = null
@@ -137,6 +140,83 @@ func _refresh_counters() -> void:
 	_lbl_hidden.text = "✦ %d / 20" % hidden
 	_lbl_named.add_theme_color_override("font_color",
 		Color("#FFD700") if named >= 100 else Color(0.82, 0.80, 0.86))
+	_refresh_circle_progress()
+
+## Compute per-circle (1..10) counts from the loaded named/hidden lists and
+## the SaveManager's saved IDs, then refresh the inline progress strip so
+## the player can see "Circle 3: 7/10 ✦1/2" at a glance.
+func _refresh_circle_progress() -> void:
+	if not _circle_progress_box:
+		return
+	for child in _circle_progress_box.get_children():
+		child.queue_free()
+
+	var saved_ids:  Array = SaveManager.get_saved_soul_ids()  if SaveManager else []
+	var hidden_ids: Array = SaveManager.get_hidden_soul_ids() if SaveManager else []
+
+	# Build per-circle totals + found counts in one pass each.
+	var per_circle_total:    Dictionary = {}   # circle → named total
+	var per_circle_found:    Dictionary = {}   # circle → named found
+	var per_circle_h_total:  Dictionary = {}   # circle → hidden total
+	var per_circle_h_found:  Dictionary = {}   # circle → hidden found
+	for soul in _named_souls:
+		var c: int = int(soul.get("circle", 0))
+		if c <= 0:
+			continue
+		per_circle_total[c] = int(per_circle_total.get(c, 0)) + 1
+		if int(soul.get("id", 0)) in saved_ids:
+			per_circle_found[c] = int(per_circle_found.get(c, 0)) + 1
+	for soul in _hidden_souls:
+		var c: int = int(soul.get("circle", 0))
+		if c <= 0:
+			continue
+		per_circle_h_total[c] = int(per_circle_h_total.get(c, 0)) + 1
+		if str(soul.get("id", "")) in hidden_ids:
+			per_circle_h_found[c] = int(per_circle_h_found.get(c, 0)) + 1
+
+	# Render 10 cells (1..10), one per circle. Filled circles glow gold.
+	for c in range(1, 11):
+		var total:    int = int(per_circle_total.get(c, 0))
+		var found:    int = int(per_circle_found.get(c, 0))
+		var h_total:  int = int(per_circle_h_total.get(c, 0))
+		var h_found:  int = int(per_circle_h_found.get(c, 0))
+		_circle_progress_box.add_child(
+			_make_circle_cell(c, found, total, h_found, h_total)
+		)
+
+func _make_circle_cell(circle: int, found: int, total: int,
+		h_found: int, h_total: int) -> Control:
+	var v := VBoxContainer.new()
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.add_theme_constant_override("separation", 2)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var head := Label.new()
+	head.text = "К%d" % circle
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	head.add_theme_font_size_override("font_size", 18)
+	head.add_theme_color_override("font_color",
+		Color(0.55, 0.52, 0.62) if total == 0 else Color(0.85, 0.82, 0.90))
+	v.add_child(head)
+
+	var counts := Label.new()
+	counts.text = "%d/%d" % [found, total]
+	counts.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	counts.add_theme_font_size_override("font_size", 22)
+	var done: bool = total > 0 and found >= total
+	counts.add_theme_color_override("font_color",
+		Color("#FFD700") if done else Color(0.92, 0.90, 0.96))
+	v.add_child(counts)
+
+	if h_total > 0:
+		var hidden_lbl := Label.new()
+		hidden_lbl.text = "✦ %d/%d" % [h_found, h_total]
+		hidden_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		hidden_lbl.add_theme_font_size_override("font_size", 16)
+		hidden_lbl.add_theme_color_override("font_color",
+			Color("#FFE066") if h_found >= h_total else Color("#A07820"))
+		v.add_child(hidden_lbl)
+	return v
 
 # ── Grid ──────────────────────────────────────────────────────────────────────
 
@@ -405,9 +485,23 @@ func _build_ui() -> void:
 	_root.add_child(vbox)
 
 	_build_header(vbox)
+	_build_circle_progress(vbox)
 	_build_circle_row(vbox)
 	_build_type_row(vbox)
 	_build_grid_area(vbox)
+
+func _build_circle_progress(parent: VBoxContainer) -> void:
+	# 10 cells in one row, evenly spread, sitting just under the title bar.
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left",  16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top",    4)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	parent.add_child(margin)
+	_circle_progress_box = HBoxContainer.new()
+	_circle_progress_box.add_theme_constant_override("separation", 4)
+	_circle_progress_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margin.add_child(_circle_progress_box)
 	_build_sheet()
 	_build_completion_label()
 

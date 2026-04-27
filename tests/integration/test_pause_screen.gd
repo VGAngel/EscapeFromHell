@@ -97,8 +97,9 @@ func test_sin_color_at_29_is_white() -> void:
 # ── _set_sin ──────────────────────────────────────────────────────────────────
 
 func test_set_sin_bar_width_at_50_percent() -> void:
+	# Bar bg width = 220 px (FHD scale-up in PauseScreen); bar = ratio * 220.
 	ps._set_sin(50.0)
-	assert_almost_eq(ps._sin_bar.size.x, 60.0, 0.01)
+	assert_almost_eq(ps._sin_bar.size.x, 110.0, 0.01)
 
 func test_set_sin_bar_width_at_zero() -> void:
 	ps._set_sin(0.0)
@@ -106,7 +107,7 @@ func test_set_sin_bar_width_at_zero() -> void:
 
 func test_set_sin_bar_width_at_full() -> void:
 	ps._set_sin(100.0)
-	assert_almost_eq(ps._sin_bar.size.x, 120.0, 0.01)
+	assert_almost_eq(ps._sin_bar.size.x, 220.0, 0.01)
 
 func test_set_sin_updates_pct_label() -> void:
 	ps._set_sin(75.0)

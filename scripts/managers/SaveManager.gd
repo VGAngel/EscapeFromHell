@@ -111,6 +111,7 @@ func spend_light(amount: int) -> bool:
 	if get_light() < amount:
 		return false
 	data["light"] = get_light() - amount
+	add_stat("light_spent_total", amount)
 	return true
 
 # ── Souls ─────────────────────────────────────────────────────────────────────
@@ -248,6 +249,34 @@ func get_profile_name() -> String:
 
 func set_profile_name(value: String) -> void:
 	data["profile_name"] = value
+
+# ── Statistics ────────────────────────────────────────────────────────────────
+# Aggregate counters survive across saves. Stored under data["statistics"] so
+# new keys don't churn the top-level schema. All getters degrade gracefully —
+# never crash when a counter doesn't exist yet.
+
+func get_stat(key: String, default: Variant = 0) -> Variant:
+	return data.get("statistics", {}).get(key, default)
+
+func add_stat(key: String, delta: Variant = 1) -> void:
+	var stats: Dictionary = data.get("statistics", {})
+	stats[key] = stats.get(key, 0) + delta
+	data["statistics"] = stats
+
+func incr_death_cause(cause: String) -> void:
+	var stats: Dictionary = data.get("statistics", {})
+	var causes: Dictionary = stats.get("deaths_by_cause", {})
+	causes[cause] = int(causes.get(cause, 0)) + 1
+	stats["deaths_by_cause"] = causes
+	data["statistics"] = stats
+
+func get_deaths_by_cause() -> Dictionary:
+	return data.get("statistics", {}).get("deaths_by_cause", {})
+
+func add_play_time(seconds: float) -> void:
+	var stats: Dictionary = data.get("statistics", {})
+	stats["total_play_seconds"] = float(stats.get("total_play_seconds", 0.0)) + seconds
+	data["statistics"] = stats
 
 # ── Per-level personal best ───────────────────────────────────────────────────
 # Stored as `level_bests` (Dictionary keyed by str(level_id)) so persists in

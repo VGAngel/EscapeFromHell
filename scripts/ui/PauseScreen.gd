@@ -7,6 +7,7 @@ extends CanvasLayer
 signal resumed
 signal settings_requested
 signal collection_requested
+signal statistics_requested
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 const FADE_DURATION  := 0.2
@@ -31,6 +32,7 @@ var _lbl_sin_pct:   Label       = null
 
 var _btn_resume:    Button      = null
 var _btn_collection: Button     = null
+var _btn_statistics: Button     = null
 var _btn_settings:  Button      = null
 var _btn_menu:      Button      = null
 
@@ -147,6 +149,9 @@ func _on_resume_pressed() -> void:
 
 func _on_collection_pressed() -> void:
 	collection_requested.emit()
+
+func _on_statistics_pressed() -> void:
+	statistics_requested.emit()
 
 func _on_settings_pressed() -> void:
 	settings_requested.emit()
@@ -268,6 +273,10 @@ func _build_ui() -> void:
 	_btn_collection = _make_button("Врятовані Душі", false)
 	_btn_collection.pressed.connect(_on_collection_pressed)
 	vbox.add_child(_btn_collection)
+
+	_btn_statistics = _make_button("📊  Статистика", false)
+	_btn_statistics.pressed.connect(_on_statistics_pressed)
+	vbox.add_child(_btn_statistics)
 
 	_btn_settings = _make_button("Налаштування", false)
 	_btn_settings.pressed.connect(_on_settings_pressed)
