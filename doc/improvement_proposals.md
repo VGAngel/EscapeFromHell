@@ -218,3 +218,258 @@ return absf(d.x) <= sight_w and absf(d.y) <= sight_h
 
 Ніде не викликаються. "forgiveness" upgrade відсутній у `upgrades_config.json`.
 Чисте сміття, можна видалити (~30 рядків).
+
+---
+
+# Gameplay Improvements
+
+Не баги — нові механіки/фічі для покращення feel'у. Відсортовано за
+співвідношенням "імпакт / складність".
+
+## 🎯 Висока користь, мала складність
+
+### 1. 🟢 Wall-slide + wall-jump
+
+**Що:** Гравець в повітрі торкається стіни → сповзає на 40-60% gravity.
+Натиснення Jump під час wall-slide → штовхає у протилежний бік + догори.
+
+**Чому ідеально:**
+- Рівні **вертикальні шахти** — буквально створені для цього
+- Розширює дизайн платформ (вузькі коридори, "колодязі")
+- Шанс врятуватися з фейленого стрибка
+- Стандарт жанру (Hollow Knight, Celeste) — гравці очікують
+
+**Як:** Нова `State.WALL_SLIDE` у Player. `is_on_wall_only()` детектить → клемп
+`velocity.y = min(velocity.y, WALL_SLIDE_SPEED)`. Jump під час слайду →
+`velocity = Vector2(WALL_PUSH_X * away_dir, JUMP_VELOCITY)`.
+
+**Складність:** Середня (~30 рядків).
+**Залежності:** none.
+
+---
+
+### 2. 🟢 Швидкісний бонус Світла
+
+**Що:** Завершив рівень за < X секунд — додаткове Світло (наприклад +5/+10/+15
+залежно від рівня).
+
+**Чому:**
+- Уже є `_level_start_time` і `elapsed` у `complete_level`
+- Дає привід **перепроходити** рівні замість одноразового clear
+- Природна поява speedrun-комʼюніті
+- Прості тригери для соц-ключіп ("clear L23 in <30s")
+
+**Як:** У `levels_config.json` додати `gold_time_seconds`. У `complete_level`:
+```gdscript
+if elapsed < gold_time:
+    light_earned += 10
+    stats["gold_time"] = true
+```
+LevelComplete показує ⏱ icon коли gold_time true.
+
+**Складність:** Дуже низька (~10 рядків + конфіг).
+
+---
+
+### 3. 🟢 Risk-altar — пожертвуй гріх за подвійну нагороду
+
+**Що:** На вівтарі додатковий вибір — "Доставити з гріхом". Дає +2 Світла
+замість +1 але +5% sin.
+
+**Чому:**
+- Реалізує core fantasy ("частина пекла в тобі")
+- Гравець реально вибирає мораль кожні 30с
+- Counter (sin) і нагорода (light) уже є
+
+**Як:** Друга кнопка на altar prompt ("[Q] Sin-deliver"). У `_deliver_soul`:
+```gdscript
+if sinful_delivery:
+    SaveManager.add_light(2)
+    GameManager.add_sin(5.0)
+else:
+    SaveManager.add_light(1)
+```
+
+**Складність:** Низька. AltarNode + 1 нова дія в InputMap.
+
+---
+
+## 🎯 Висока користь, середня складність
+
+### 4. 🟢 Soul echo — нести 2 душі
+
+**Що:** Апгрейд `soul_memory` (вже у конфігу!) дозволяє носити 2 душі
+одночасно.
+
+**Чому:**
+- **Вже у `upgrades_config.json`** — лишилось додати логіку
+- Розблоковує паттерни: "пройди раз, збери дві, поверни обидві"
+- Стимулює прокачку upgrades
+- Економія часу = неявна нагорода за вибір цього апгрейда
+
+**Як:** `Player.carried_soul_id: String` → `carried_soul_ids: Array[String]`.
+Capacity = `1 + SaveManager.get_upgrade_level("soul_memory")`. У
+`pick_up_soul`:
+```gdscript
+var cap: int = 1 + (SaveManager.get_upgrade_level("soul_memory") if SaveManager else 0)
+if carried_soul_ids.size() >= cap: return
+carried_soul_ids.append(soul_id)
+```
+SoulCarryVisual → візуально 2 sprite-spheres збоку.
+
+**Складність:** Середня. Зачіпає Player, AltarNode (deliver loop), HUD,
+LevelBase (multi-soul drop on death).
+
+---
+
+### 5. 🟡 Dash з cooldown'ом
+
+**Що:** Подвійний tap руху (або окрема кнопка) → ривок 180 px за 0.15с з
+1.5с cooldown. iframes на час dash'у.
+
+**Чому:**
+- Спосіб втекти від ворога коли посох на cooldown
+- Розширює platforming-puzzles
+- Природний апгрейд (rookies без, prosper з shorter cooldown)
+
+**Як:** `_dash_timer`, `_dash_cooldown`. Під час `_dash_timer > 0`:
+- `velocity = Vector2(facing * DASH_SPEED, 0)`
+- `_invincibility_timer = max(...)` для iframes
+- gravity = 0
+
+**Складність:** Середня (~25 рядків) + UI cooldown indicator.
+**Ризик:** Може зламати дизайн level'ів (обхід платформ через dash через
+"непробивний" gap).
+
+---
+
+### 6. 🟡 Whisper при високому sin
+
+**Що:** Коли sin перевищує пороги (30/60/85) — раз на рівень над гравцем
+з'являється шепіт-репліка від демона/Бога.
+
+**Чому:**
+- Підсилює narrative tension без cutscenes
+- Гравець відчуває спостереження
+- Перевикористовує `_show_soul_delivered_popup` для відображення
+
+**Як:** Невеликий менеджер `WhisperManager` (autoload). Список реплік у
+JSON по тегах: `sin_30`, `sin_60`, `sin_85`, `low_hp`, `near_death`.
+Тригер у `GameManager.add_sin` коли перетинаємо поріг.
+
+**Складність:** Низька-середня. Контент-залежно (треба написати репліки).
+
+---
+
+## 🎯 Якісне покращення feel'у
+
+### 7. 🟢 Coyote-time візуалізація для сповзаючих платформ
+
+**Що:** Поточні `CRUMBLE_DELAY = 0.5` (Crumbling) і `0.2` (Ash) дають
+вікно щоб встигнути стрибнути, але візуально це не зрозуміло. Додати
+тремтіння + falling-sand particles під час delay.
+
+**Чому:** Гравець знає "скоро впаде, треба стрибати ЗАРАЗ". Менше відчуття
+"я не вийшов винним".
+
+**Як:** У `_on_body_entered` стартонути shake-tween на `_visual` плюс
+`ParticleEffects.spawn("crumble_warn", ...)`.
+
+**Складність:** Дуже низька.
+
+---
+
+### 8. 🟢 Маркер дропнутої душі в HUD
+
+**Що:** Коли гравець помирає несучи душу (вона дропається на платформі —
+вже працює), HUD показує іконку "↓ X м нижче — ти лишив там душу".
+
+**Чому:**
+- Гравець знає **куди повертатися**
+- Емоційне підкріплення "цю людину я ще не врятував"
+
+**Як:** У `LevelBase._on_soul_dropped` зберегти позицію → передати в HUD.
+HUD показує плаваючу іконку біля краю екрану з вертикальним зміщенням.
+
+**Складність:** Низька (~20 рядків).
+
+---
+
+### 9. 🟢 Динамічний chase music на ALERT
+
+**Що:** Перехід ворога у ALERT/CHASE → музика темнішає (низькі частоти
+підкреслюються або додається drum-шар). Повертається до спокійної через 5с
+після останнього CHASE.
+
+**Чому:**
+- Аудіо-фідбек "тебе побачили"
+- `SoundManager` уже підтримує crossfade
+
+**Як:** SoundManager exposed `set_intensity(0.0..1.0)` що ламає 2-track
+crossfade. BaseEnemy у `_enter_alert` → `SoundManager.bump_intensity(0.5)`,
+у `_begin_fatigue` → `SoundManager.decay_intensity()`.
+
+**Складність:** Низька-середня. Потребує наявності второї music-доріжки
+("intense" варіант).
+
+---
+
+## 🎯 Великі/опційні речі
+
+### 10. 🟡 Combo-staff
+
+**Що:** Послідовні удари в межах 1.5с підвищують stun-duration: 4с → 6с
+→ 8с. Скидається при пропуску вікна або міні-cooldown.
+
+**Чому:**
+- Більше мастері в комбаті
+- Винагороджує точну гру замість простого "стани і відбіжи"
+
+**Як:** `_combo_count`, `_combo_window_timer`. У `_apply_staff_hit` якщо
+hit && window > 0 → ++count, stun *= 1.0 + 0.5*count.
+
+**Складність:** Середня. Потребує балансу.
+
+---
+
+### 11. 🟡 Demon deals UI
+
+**Що:** Випадкові пропозиції від демонів між рівнями: "віддай 1 душу
+отримай 20% Світла". Уже є `SaveManager._demon_deals_accepted` лічильник.
+
+**Чому:**
+- Розкриває ending-розгалуження (`traitor`)
+- Дає гравцю мораль-вибори
+- Лічильники готові, треба тільки UI + контент
+
+**Як:** Новий `CanvasLayer` показується в Hub з 30% шансом між рівнями.
+2 кнопки: "Прийняти" (дрібниці зберігаються через `add_reward`,
+`_demon_deals_accepted += 1`) / "Відмовитися" (`+_deals_refused`).
+
+**Складність:** Середня (UI + балансування пропозицій).
+
+---
+
+### 12. 🔴 Daily seed challenge
+
+**Що:** Окремий режим "Daily" — фіксований seed для всіх гравців на день,
+leaderboard за часом/душами.
+
+**Чому:**
+- Спільнота: всі грають один і той же рівень
+- Daily retention boost
+- Seed-система **уже є** (world_seed_str)
+
+**Як:** Новий entry point у MainMenu. Daily seed = today's date hash. Стат
+зберігається окремо. Серверна частина — або без leaderboard (offline-only),
+або інтеграція з Steam/PlayGames.
+
+**Складність:** Висока (особливо leaderboard). Без leaderboard — низька.
+
+---
+
+## Топ-3 рекомендація
+
+1. **🥇 Швидкісний бонус Світла** (#2) — найменша робота, найбільший replay-value bump
+2. **🥈 Wall-slide + wall-jump** (#1) — найбільший gameplay-impact, природньо для жанру
+3. **🥉 Risk-altar** (#3) — реалізує narrative core, тривіальна імплементація
