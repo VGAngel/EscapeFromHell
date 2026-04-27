@@ -41,6 +41,7 @@ func _make(preset: String, flip: bool) -> CPUParticles2D:
 		"soul_pickup":  return _preset_soul_pickup()
 		"death":        return _preset_death()
 		"staff_swing":  return _preset_staff_swing(flip)
+		"staff_impact": return _preset_staff_impact()
 		"respawn":      return _preset_respawn()
 		"crumble":      return _preset_crumble()
 	return null
@@ -95,6 +96,26 @@ func _preset_staff_swing(facing_right: bool) -> CPUParticles2D:
 	p.scale_amount_min = 1.2
 	p.scale_amount_max = 2.0
 	p.color          = Color("#DDE1FF")
+	return p
+
+## Quick burst of bright sparks at the impact point — used when the staff
+## connects with an enemy. Short lifetime + high explosiveness so it reads
+## as a single "pop" without trailing across the screen.
+func _preset_staff_impact() -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.amount         = 18
+	p.lifetime       = 0.32
+	p.explosiveness  = 1.0
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 4.0
+	p.direction      = Vector2.UP
+	p.spread         = 180.0
+	p.initial_velocity_min = 90.0
+	p.initial_velocity_max = 220.0
+	p.gravity        = Vector2(0.0, 280.0)
+	p.scale_amount_min = 1.4
+	p.scale_amount_max = 2.6
+	p.color          = Color("#FFE066")
 	return p
 
 func _preset_respawn() -> CPUParticles2D:

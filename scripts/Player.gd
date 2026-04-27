@@ -426,6 +426,10 @@ func _apply_staff_hit() -> bool:
 			var direction: Vector2 = Vector2.RIGHT if _facing_right else Vector2.LEFT
 			if body.has_method("receive_knockback"):
 				body.receive_knockback(direction * 280.0, 4.0)
+			# Visual feedback at the impact point. flash_white is handled
+			# by BaseEnemy.receive_knockback itself; we add the spark burst
+			# here so non-BaseEnemy targets (custom bosses) still get sparks.
+			_spawn_fx("staff_impact", body.global_position)
 			hit = true
 	return hit
 

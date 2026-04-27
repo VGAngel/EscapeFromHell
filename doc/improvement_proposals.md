@@ -745,19 +745,19 @@ popup + persistent flag у SaveManager.
 
 ---
 
-### 29. 🟢 Іскри/flash від staff-удару ⭐
+### 29. ✅ Іскри/flash від staff-удару
 
-**Що:** Зараз посох тільки стуннув — нуль візуального feedback'у. Додати
-spark-particles на ворогові + білий flash на 0.08с.
-
-**Чому:** Імпакт без переробки урону. `Engine.time_scale = 0` під час
-flash уже є — додати тільки візуальну частину.
-
-**Як:** У `_apply_staff_hit` для кожного ворога → `ParticleEffects.spawn(
-"staff_impact", body.global_position)` + `body.modulate = white`, tween
-back to normal.
-
-**Складність:** Дуже низька. Може потребувати нового particle preset.
+**Реалізовано:**
+- `ParticleEffects._preset_staff_impact()` — короткий жовтий burst (18
+  частинок, 0.32с lifetime, gravity-pulled униз) — читається як одна
+  "вибух-іскра"
+- `BaseEnemy.flash_white(duration)` — тимчасово виставляє modulate на
+  over-bright (2.5×) і tween'ить назад до збереженого оригіналу. Викликається
+  з `receive_knockback()`, тож працює і для AI ворогів і для бажаних
+  скриптів-обгорток
+- `Player._apply_staff_hit` тепер спавнить `staff_impact` particles на
+  кожного потрапленого ворога (іскри) — це працює навіть для не-BaseEnemy
+  цілей (кастомні боси), а flash виконує сам ворог
 
 ---
 

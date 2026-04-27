@@ -365,6 +365,19 @@ func receive_knockback(direction: Vector2, stun_duration: float) -> void:
 	_hit_cooldown = maxf(_hit_cooldown, stun_duration)
 	velocity = direction
 	_play_sound("stun")
+	flash_white(0.08)
+
+## Quick white tint pulse used as hit-feedback on staff impact. Saves the
+## current modulate before swapping so we don't permanently bleach the
+## sprite if it's mid-tween (e.g. the warning shake on Crumbling).
+func flash_white(duration: float = 0.08) -> void:
+	var target: CanvasItem = _anim_sprite if _anim_sprite else _sprite
+	if not target:
+		return
+	var original: Color = target.modulate
+	target.modulate = Color(2.5, 2.5, 2.5, original.a)   # over-bright = readable flash
+	var tw := create_tween()
+	tw.tween_property(target, "modulate", original, duration).set_ease(Tween.EASE_OUT)
 
 # ── Soul pickup alert (called by level when player picks up soul) ──────────────
 func on_soul_picked_up_nearby(pickup_position: Vector2, alert_radius: float) -> void:
