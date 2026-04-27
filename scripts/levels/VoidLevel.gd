@@ -18,6 +18,11 @@ extends "res://scripts/levels/LevelBase.gd"
 #   └── Exit (Area2D)
 #       └── LockedIcon (Node2D / Sprite2D / Label)  ← optional visual indicator
 
+## Camera zoom applied to void levels — kept as a const for tests / scripts
+## that read it directly. Runtime zoom is driven by the "void_levels" preset
+## in camera_config.json (see _setup_camera_zoom); both should stay in sync.
+const CAMERA_ZOOM := Vector2(0.8, 0.8)
+
 ## Scale overshoot used in the exit pulse tween.
 const EXIT_PULSE_SCALE := Vector2(1.25, 1.25)
 
@@ -36,21 +41,54 @@ func _ready() -> void:
 
 # ── Camera ────────────────────────────────────────────────────────────────────
 
-## Pull the "void_levels" zoom preset from camera_config.json. Deferred one
-## frame so the player (and its LevelCamera) is in the tree first.
+## Pull the "void_levels" zoom preset from camera_config.json. Tries
+## synchronously first so callers (and tests) see the change immediately;
+## only waits a frame if no camera is in the tree yet (e.g. LevelCamera
+## still being attached after player spawn).
 func _setup_camera_zoom() -> void:
-	await get_tree().process_frame
-	var cam: Camera2D = get_viewport().get_camera_2d() if get_viewport() else null
-	if cam and cam.has_method("apply_zoom_preset"):
+	var cam: Camera2D = _find_camera()
+	if not cam:
+		await get_tree().process_frame
+		cam = _find_camera()
+	if not cam:
+		return
+	if cam.has_method("apply_zoom_preset"):
 		cam.apply_zoom_preset("void_levels")
+	else:
+		# Fallback for non-LevelCamera Camera2D nodes (e.g. scene templates
+		# without the custom script): apply the constant zoom directly.
+		cam.zoom = CAMERA_ZOOM
+
+## Resolve the active 2D camera, preferring an explicit child Camera2D when
+## one exists (matches LevelBase scene layout) and falling back to whatever
+## the viewport reports as current.
+func _find_camera() -> Camera2D:
+	for child in get_children():
+		if child is Camera2D:
+			return child
+	return get_viewport().get_camera_2d() if get_viewport() else null
 
 # ── Soul pickup override ──────────────────────────────────────────────────────
 
+## Void levels have no altar — pickup IS collection. Increment _souls_found
+## here so the exit-unlock check (_souls_found >= _souls_required in
+## LevelBase._on_exit_body_entered) actually advances, then auto-drop the
+## carried soul so the player's slot frees up for the next pickup.
+##
+## Tests still call _on_soul_collected for backwards compatibility; the alias
+## below routes them through this same method.
 func _on_soul_pickup_started(soul: Node) -> void:
 	super(soul)
+	_souls_found += 1
+	if _player and _player.has_method("_drop_soul"):
+		_player._drop_soul()
 	_update_exit_indicator()
 	if _souls_found >= _souls_required and _souls_required > 0:
 		_pulse_exit()
+
+## Backwards-compatible name used by older tests / hand-written calls.
+func _on_soul_collected(soul: Node) -> void:
+	_on_soul_pickup_started(soul)
 
 # ── Exit indicator ────────────────────────────────────────────────────────────
 
