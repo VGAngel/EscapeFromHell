@@ -342,21 +342,24 @@ else:
 
 ---
 
-### 6. 🟡 Whisper при високому sin
+### 6. ✅ Whisper при високому sin
 
-**Що:** Коли sin перевищує пороги (30/60/85) — раз на рівень над гравцем
-з'являється шепіт-репліка від демона/Бога.
+**Реалізовано** як новий autoload `WhisperManager`
+([scripts/managers/WhisperManager.gd](../scripts/managers/WhisperManager.gd)).
 
-**Чому:**
-- Підсилює narrative tension без cutscenes
-- Гравець відчуває спостереження
-- Перевикористовує `_show_soul_delivered_popup` для відображення
-
-**Як:** Невеликий менеджер `WhisperManager` (autoload). Список реплік у
-JSON по тегах: `sin_30`, `sin_60`, `sin_85`, `low_hp`, `near_death`.
-Тригер у `GameManager.add_sin` коли перетинаємо поріг.
-
-**Складність:** Низька-середня. Контент-залежно (треба написати репліки).
+- **Контент:** [whispers_config.json](../whispers_config.json) — 4 фрази
+  для кожного з 3 порогів (`tier_30`, `tier_60`, `tier_85`)
+- **Тригер:** слухає `GameManager.sin_changed` → виявляє перехід через поріг
+  (порівняння `_last_sin` vs `new_sin`); найвищий перейдений поріг
+  виграє за один delta (наприклад demon-deal стрибок 25%→90% → tier_85)
+- **Cap:** 1 whisper на тир на рівень. Скидається на `level_started`
+- **UI:** окрема CanvasLayer (layer 12 — над HUD), PanelContainer з
+  rounded border, shadow, dark backdrop. Label 36 px з товстим outline 7
+  щоб був чітко читабельний на будь-якому фоні
+- **Анімація:** fade-in 0.6с → hold 3.5с → fade-out 1.2с
+- **Тести:** 7 кейсів у `test_whisper_manager.gd` — config load,
+  threshold crossing, no-emit нижче порогів, multi-tier delta resolution,
+  cap-1, reset на level_started
 
 ---
 
