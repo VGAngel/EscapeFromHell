@@ -106,22 +106,13 @@ func _do_chase(delta: float) -> void:
 
 ---
 
-### D. 🟢 Вертикальний клемп
+### D. ✅ Вертикальний клемп
 
-**Що:** Гравець на іншій платформі (різниця по Y > 80-100 px) не "видимий".
-
-**Чому:** На вертикальних рівнях зараз ворог на ряду 3 бачить гравця на ряду 5 (різниця 200 px) і починає полювати — навіть якщо до нього неможливо дістатися (можна стрибнути лише через 2 кроки латерально).
-
-**Як:**
-```gdscript
-const MAX_VERTICAL_SIGHT: float = 100.0
-...
-var dy: float = absf(_player.global_position.y - global_position.y)
-if dy > MAX_VERTICAL_SIGHT: return false
-```
-
-**Складність:** Дуже низька (3 рядки).
-**Ризики:** Літаючі вороги можуть втрачати сенс — для них окремий exempt прапорець або більший ліміт.
+**Реалізовано** у [scripts/enemies/BaseEnemy.gd](../scripts/enemies/BaseEnemy.gd):
+`@export var max_vertical_sight: float = 100.0`. У `_can_see_player()` ворог
+повертає `false` якщо `|player.y - enemy.y| > max_vertical_sight`. Для
+літаючих ворогів (коли з'являться) — поставити `max_vertical_sight = 0` у
+сцені, що відключає перевірку.
 
 ---
 

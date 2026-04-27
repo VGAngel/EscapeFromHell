@@ -16,6 +16,11 @@ var state: State = State.PATROL
 @export var chase_duration:    float = 6.0
 @export var alert_duration:    float = 1.0
 @export var patrol_distance:   float = 120.0
+## Vertical sight clamp — player on a different platform row (|dy| beyond
+## this) is invisible even within detection_range. Without it a ground enemy
+## would "see" the player two platforms above and trigger an unwinnable chase.
+## Set to 0 to disable (e.g. for flying enemies authored later).
+@export var max_vertical_sight: float = 100.0
 ## Cooldown after GIVE_UP during which the enemy ignores the player even
 ## if visible — gives the player a real escape window. 0.0 = auto-derive
 ## from the parent room's circle (Circle 1 = 14 s, Circle 10 = 6 s).
@@ -196,6 +201,13 @@ func _can_see_player() -> bool:
 		return false
 	if _player.get("_soul_shield_timer") and _player._soul_shield_timer > 0.0:
 		return false
+	# Vertical clamp — different platform row = no sight. Ground enemies
+	# can't reach there anyway, and chasing toward a 200 px-above player
+	# just feels like the patrol is psychic.
+	if max_vertical_sight > 0.0:
+		var dy: float = absf(_player.global_position.y - global_position.y)
+		if dy > max_vertical_sight:
+			return false
 	return global_position.distance_to(_player.global_position) <= detection_range
 
 # ── ALERT ─────────────────────────────────────────────────────────────────────
