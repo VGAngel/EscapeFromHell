@@ -536,6 +536,12 @@ func pick_up_soul(soul_id: String) -> void:
 		_finish_pickup()
 
 func _finish_pickup() -> void:
+	# pick_up_soul awaits 0.6s before calling this. If the player died (or
+	# the soul was already cleared via _die → _drop_soul) during the wait,
+	# bail out so we don't override DEAD with CARRYING and end up holding a
+	# phantom soul (empty carried_soul_id, visible soul sprite).
+	if state == State.DEAD or carried_soul_id == "":
+		return
 	state = State.CARRYING
 	_soul_visual.visible = true
 	soul_picked_up.emit(carried_soul_id)
