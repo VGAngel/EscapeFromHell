@@ -78,3 +78,49 @@ func test_disabled_state_still_callable() -> void:
 	hm.death()
 	hm.boss_stun()
 	assert_false(hm.is_enabled())
+
+# ── Preset constants are sane ────────────────────────────────────────────────
+# Locks in the per-event tuning so a future "let me tweak amplitude"
+# accidentally pushing values to 0 or above 1 fails fast.
+
+func test_preset_amplitudes_within_zero_to_one() -> void:
+	for preset in [hm._PRESET_HIT, hm._PRESET_JUMP, hm._PRESET_PICKUP,
+			hm._PRESET_DEATH, hm._PRESET_BOSS_STUN, hm._PRESET_DELIVER]:
+		var amp: float = float(preset[1])
+		assert_gte(amp, 0.0, "amplitude must be ≥ 0")
+		assert_lte(amp, 1.0, "amplitude must be ≤ 1")
+
+func test_preset_durations_positive_int() -> void:
+	for preset in [hm._PRESET_HIT, hm._PRESET_JUMP, hm._PRESET_PICKUP,
+			hm._PRESET_DEATH, hm._PRESET_BOSS_STUN, hm._PRESET_DELIVER]:
+		var dur: int = int(preset[0])
+		assert_gt(dur, 0, "duration_ms must be positive")
+		assert_lt(dur, 1000, "duration_ms should be < 1s for game pulses")
+
+func test_death_preset_is_longest() -> void:
+	# Death is the heaviest haptic; everything else should be shorter than it.
+	var death_dur: int = int(hm._PRESET_DEATH[0])
+	for preset in [hm._PRESET_HIT, hm._PRESET_JUMP, hm._PRESET_PICKUP,
+			hm._PRESET_BOSS_STUN, hm._PRESET_DELIVER]:
+		assert_lt(int(preset[0]), death_dur,
+			"death pulse should be the longest haptic")
+
+func test_jump_preset_is_subtle() -> void:
+	# Jump fires constantly during play — must be the shortest + softest
+	# so it doesn't fatigue the player's hand.
+	var jump_dur: int = int(hm._PRESET_JUMP[0])
+	var jump_amp: float = float(hm._PRESET_JUMP[1])
+	for preset in [hm._PRESET_HIT, hm._PRESET_PICKUP, hm._PRESET_DEATH,
+			hm._PRESET_BOSS_STUN, hm._PRESET_DELIVER]:
+		assert_lte(jump_dur, int(preset[0]),
+			"jump should be the shortest haptic")
+		assert_lte(jump_amp, float(preset[1]),
+			"jump should be the softest haptic")
+
+# ── Toggle persistence path ──────────────────────────────────────────────────
+
+func test_toggle_off_then_on_round_trip() -> void:
+	hm.set_enabled(false)
+	hm.set_enabled(true)
+	hm.set_enabled(false)
+	assert_false(hm.is_enabled())

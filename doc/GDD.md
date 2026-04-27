@@ -1,6 +1,6 @@
 # Game Design Document — Escape from Hell
 
-**Версія:** 1.6  
+**Версія:** 1.7  
 **Движок:** Godot 4  
 **Платформа:** Android (Google Play)  
 **Жанр:** 2D Platformer  
@@ -27,6 +27,11 @@
 > з причиною (⚔ Посох, 💀 Смерть, 🟥 Гріховна платформа, 👹 Угода,
 > 🔥 Аура, ✨ Очищення). Throttle 4с per-cause + accumulator щоб
 > per-frame ticks не спамили.
+>
+> Зміни 1.6 → 1.7: HapticManager (вібрація mobile) для hit/jump/pickup/
+> death/deliver/boss_stun з toggle у Settings. Налаштовувані позиції
+> та розмір кнопок MobileControls — drag-to-move + 60-140% slider,
+> persisted у `mobile_layout` save bucket.
 
 ---
 
@@ -190,11 +195,51 @@
 |-----------|----------|------|
 | `BTN_ALPHA` | 0.55 | Прозорість кнопок у спокої |
 | `BTN_ALPHA_PRESSED` | 0.75 | Прозорість при натисканні |
-| `SIZE_LARGE` | 120×120 | Кнопка стрибка |
-| `SIZE_MEDIUM` | 90×90 | Кнопка посоха |
-| `SIZE_SMALL` | 90×90 | Кнопки руху та молитви |
-| `GAP` | 10 px | Відстань між кнопками |
-| `MARGIN_SIDE` | 20 px | Відступ від краю екрану |
+| `SIZE_LARGE` | 190×190 | Кнопка стрибка / руху |
+| `SIZE_MEDIUM` | 150×150 | Кнопка посоха / pickup / pray |
+| `GAP` | 18 px | Відстань між кнопками правого кластера |
+| `GAP_MOVE` | 36 px | Відстань між ← і → |
+| `MARGIN_SIDE` | 32 px | Відступ від краю екрану |
+| `MARGIN_BOTTOM` | 24 px | Відступ знизу |
+
+### Користувацька кастомізація мобільних кнопок (C5)
+
+Гравець може **рухати кожну кнопку drag-and-drop** і **масштабувати
+загалом** через Settings → Keys → "📱 Мобільні кнопки":
+
+- **Розмір slider 60-140%** — `MobileControls.set_size_scale(scale)`
+  ресайзить усі кнопки + corner radii + font в реальному часі.
+- **"✋ Редагувати позиції кнопок"** — закриває Settings, MobileControls
+  входить у edit-mode (золоті borders), показує floating "✓ Готово"
+  overlay поверх гри. У цьому режимі кнопки не запускають input — лише
+  переміщуються пальцем. Натиск "Готово" → save + вихід.
+- **"↺ Скинути позиції"** — повертає всі offsets + scale до 1.0.
+- **Persistence:** `SaveManager.data.mobile_layout = { size_scale: float,
+  offsets: { action: {x, y} } }`. Auto-`_flush()` при save щоб crash
+  mid-game не втрачав. Vector2 серіалізується як `{x, y}` дикт для
+  JSON-сумісності.
+- **Offset як delta від default** — при drag-commit обчислюється
+  `dropped_pos − default_pos` (а не absolute). Safe-area / scale зміни
+  зміщують кнопку коректно.
+
+### Haptic feedback (mobile)
+
+[HapticManager](../scripts/managers/HapticManager.gd) (autoload)
+обгортає `Input.vibrate_handheld(duration_ms, amplitude)`. На desktop
+автоматично no-op (`OS.has_feature("mobile" / "android")` check).
+
+| Подія | Тривалість | Амплітуда | Тригер |
+|-------|------------|-----------|--------|
+| `hit` | 80 ms | 0.55 | `Player._take_damage` |
+| `jump` | 25 ms | 0.20 | `Player._handle_jump` (звичайний + double) |
+| `pickup` | 55 ms | 0.45 | `Player._finish_pickup` |
+| `death` | 220 ms | 0.85 | `Player._die` |
+| `deliver` | 70 ms | 0.40 | `Player.deliver_soul` |
+| `boss_stun` | 3 × 40 ms | 0.55 | `BossLevel._on_boss_stunned` |
+
+**Toggle:** Settings → Sound → "Вібрація (mobile)". Default `true`.
+Зберігається в `settings.json` як `haptics: bool`. Jump спеціально
+найкоротший і найм'якший — fires часто, не повинен втомлювати.
 
 ---
 
@@ -1168,7 +1213,7 @@ win-condition).
 - Зібрані душі та приховані душі
 - Куплені апгрейди та баланс Світла
 - Поточний гріх
-- Налаштування (звук, мова, графіка, **переназначені клавіші**)
+- Налаштування (звук, мова, графіка, **переназначені клавіші**, **haptics toggle**)
 - Прапорець `no_ads_purchased`
 - Переглянуті підказки туторіалу
 - **Per-level personal bests** — `level_bests` Dictionary (`{ time, stars,
@@ -1178,6 +1223,9 @@ win-condition).
   `levels_cleared`, `deaths_total`, `deaths_by_cause: { fall: N, … }`,
   `light_earned_total`, `light_spent_total`. Інкрементується GameManager'ом
   у точках смерті/завершення/spend_light.
+- **Mobile button layout** — `mobile_layout: { size_scale: float,
+  offsets: { action: {x, y} } }`. Auto-flush при save щоб crash mid-game
+  не втрачав drag-tweak'и.
 
 ---
 
@@ -1289,20 +1337,22 @@ deaths)` — записує лише якщо stars зросли або при �
 **Конфіг:** `settings_config.json`
 
 4 вкладки:
-- **🔊 Звук:** Master / Music / SFX слайдери (0–100), Вимкнути все
+- **🔊 Звук:** Master / Music / SFX слайдери (0–100), Вимкнути все,
+  **Вібрація (mobile)** toggle (HapticManager).
 - **🌐 Мова:** Українська / English (застосовується миттєво)
 - **🖥 Графіка:** Повноекранний, Роздільна здатність (якщо не fullscreen),
   Якість Low/Medium/High, V-Sync, FHD/HD preset toggle
-- **⌨ Клавіші:** перепризначення 7 actions (`move_left`, `move_right`,
-  `jump`, `action`, `interact`, `look_down`, `pray`). Натиск кнопки →
-  "Натисніть клавішу..." → наступний key стає biding'ом. **Esc** скасовує.
-  Кнопка "↺ Скинути всі" повертає до snapshot з project.godot.
-  Зберігається у `keybindings: { action: physical_keycode }` дикті.
-  Non-key events (gamepad/mouse) на тих же діях не зачіпаються.
+- **⌨ Клавіші:**
+  - **📱 Мобільні кнопки** (зверху таба): slider розміру 60-140%,
+    "✋ Редагувати позиції кнопок" → drag-mode overlay, "↺ Скинути позиції".
+  - Перепризначення 7 keyboard actions (`move_left`, `move_right`,
+    `jump`, `action`, `interact`, `look_down`, `pray`). Натиск кнопки →
+    "Натисніть клавішу..." → наступний key стає biding'ом. **Esc** скасовує.
+    Кнопка "↺ Скинути всі" повертає до snapshot з project.godot.
+    Зберігається у `keybindings: { action: physical_keycode }` дикті.
+    Non-key events (gamepad/mouse) на тих же діях не зачіпаються.
 
 Зберігається в `user://settings.json` при кожній зміні.
-
-**Не реалізовано:** мобільне переставлення кнопок MobileControls (drag-and-drop) — окрема задача.
 
 ---
 
