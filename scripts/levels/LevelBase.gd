@@ -637,6 +637,18 @@ func _ready_late() -> void:
 	# Connect GameManager respawn signal after all nodes are ready.
 	if GameManager.player_respawned.connect(_on_respawn) != OK:
 		push_warning("Level: failed to connect player_respawned")
+	_schedule_vertical_tutorial_hints()
+
+## Surface vertical-only tutorial hints (e.g. camera look-down) shortly
+## after the level starts so the player has a moment to land first.
+## TutorialManager handles the "show only once across runs" bookkeeping.
+func _schedule_vertical_tutorial_hints() -> void:
+	if _level_type != "vertical" or not TutorialManager:
+		return
+	var t := get_tree().create_timer(2.5)
+	t.timeout.connect(func() -> void:
+		if TutorialManager and TutorialManager.has_method("show_hint"):
+			TutorialManager.show_hint("look_down"))
 
 # ── Tutorial ──────────────────────────────────────────────────────────────────
 
