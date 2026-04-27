@@ -1320,3 +1320,32 @@ Risk-altar.
 **Якщо обираєш ОДНУ зміну з найбільшим чистим впливом — S4 (стат-штрафи).** Зараз гравець може бути 95% sin і пройти весь рівень як 0%. З штрафами кожен % коштує реально.
 
 **Найкраща пара:** S1 + S4 — гравець бачить причину І відчуває наслідок одночасно. Каскад фідбеку.
+
+---
+
+# Controls — покращення управління
+
+### C4. ✅ Haptic feedback (mobile)
+
+**Реалізовано** як новий autoload `HapticManager`
+([scripts/managers/HapticManager.gd](../scripts/managers/HapticManager.gd)).
+
+- **Wraps** `Input.vibrate_handheld(duration_ms, amplitude)` з:
+  - Toggle перевіркою (`is_enabled()`)
+  - Mobile-only check через `OS.has_feature("mobile" / "android")`
+  - Auto-no-op на desktop і коли користувач вимкнув
+- **Event helpers:** `hit()` (80ms / 0.55), `jump()` (25ms / 0.20),
+  `pickup()` (55ms / 0.45), `death()` (220ms / 0.85),
+  `deliver()` (70ms / 0.40), `boss_stun()` (3 burst по 40ms)
+- **Хуки:**
+  - `Player._take_damage` → hit
+  - `Player._handle_jump` (обидві гілки — звичайний + double-jump) → jump
+  - `Player._finish_pickup` → pickup
+  - `Player._die` → death
+  - `Player.deliver_soul` → deliver
+  - `BossLevel._on_boss_stunned` → boss_stun
+- **Settings UI:** новий toggle "Вібрація (mobile)" у Sound tab.
+  Зберігається в `settings.json` як `haptics: bool` (default true).
+  `_apply_haptics()` пушить значення у HapticManager на старті
+- **Тести:** 10 кейсів у `test_haptic_manager.gd` — toggle persistence,
+  mobile detection, всі helper'и не крашаться, disabled state safe

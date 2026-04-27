@@ -358,6 +358,8 @@ func _handle_jump(delta: float) -> void:
 		_jump_held = true
 		_jump_hold_timer = 0.0
 		_tutorial_hint("jump")
+		if HapticManager:
+			HapticManager.jump()
 	elif _jump_buffer_timer > 0.0 and (_upgrade_double_jump or _temp_double_jump_timer > 0.0) \
 			and not is_on_floor() and _coyote_timer <= 0.0 and _jumps_done < 1:
 		velocity.y = -jump_force
@@ -365,6 +367,8 @@ func _handle_jump(delta: float) -> void:
 		_jump_held = true
 		_jump_hold_timer = 0.0
 		_jumps_done += 1
+		if HapticManager:
+			HapticManager.jump()
 
 	if Input.is_action_pressed("jump") and _jump_held:
 		_jump_hold_timer += delta
@@ -509,6 +513,8 @@ func _take_damage(amount: int) -> void:
 	current_hp -= amount
 	_invincibility_timer = 1.2
 	hp_changed.emit(current_hp, max_hp)
+	if HapticManager:
+		HapticManager.hit()
 	if current_hp <= 0:
 		_die()
 	else:
@@ -530,6 +536,8 @@ func _die() -> void:
 	_spawn_fx("death", global_position)
 	if SoundManager:
 		SoundManager.play_sfx("player", "death")
+	if HapticManager:
+		HapticManager.death()
 	# Drop every carried soul on death — each spawns its own pickup at the
 	# death position so the soul_echo upgrade doesn't quietly lose one.
 	for sid in carried_soul_ids:
@@ -577,6 +585,8 @@ func _finish_pickup() -> void:
 	# Most recently picked up soul drives the pickup feedback signal.
 	soul_picked_up.emit(carried_soul_ids[-1])
 	carry_changed.emit(carried_soul_ids.size(), soul_capacity())
+	if HapticManager:
+		HapticManager.pickup()
 	if _upgrade_soul_shield:
 		_soul_shield_timer = 3.0
 
@@ -592,6 +602,8 @@ func deliver_soul() -> void:
 		soul_delivered.emit(sid)
 	if SoundManager:
 		SoundManager.play_sfx("souls", "delivered")
+	if HapticManager:
+		HapticManager.deliver()
 	_drop_soul()
 
 func _drop_soul() -> void:

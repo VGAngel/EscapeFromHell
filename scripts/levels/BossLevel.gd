@@ -450,6 +450,8 @@ func _on_sin_aura_tick(amount: float) -> void:
 func _on_boss_stunned(_duration: float) -> void:
 	_shake_camera(0.25, 10.0)
 	_flash_notify("ОГЛУШЕНО!", 2.2, Color("#88EEFF"))
+	if HapticManager:
+		HapticManager.boss_stun()
 
 func _on_boss_stun_ended() -> void:
 	pass

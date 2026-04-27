@@ -30,6 +30,7 @@ const DEFAULTS := {
 	"language":         "uk",
 	"vsync":            true,
 	"resolution":       "fhd",
+	"haptics":          true,
 }
 
 # ── State ─────────────────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ var _lbl_master:    Label          = null
 var _lbl_music:     Label          = null
 var _lbl_sfx:       Label          = null
 var _toggle_mute:   Button         = null
+var _toggle_haptics: Button        = null
 
 # Language tab widgets
 var _lang_btns:     Dictionary     = {}   # code → Button
@@ -157,6 +159,7 @@ func _apply_all() -> void:
 	_apply_vsync(_data.get("vsync", true))
 	_apply_resolution(_data.get("resolution", "fhd"))
 	_apply_keybindings(_data.get("keybindings", {}))
+	_apply_haptics(_data.get("haptics", true))
 
 # ── Volume helpers ────────────────────────────────────────────────────────────
 
@@ -171,6 +174,10 @@ func _apply_mute(muted: bool) -> void:
 	var idx := AudioServer.get_bus_index(BUS_MASTER)
 	if idx >= 0:
 		AudioServer.set_bus_mute(idx, muted)
+
+func _apply_haptics(enabled: bool) -> void:
+	if HapticManager:
+		HapticManager.set_enabled(enabled)
 
 func _apply_vsync(enabled: bool) -> void:
 	DisplayServer.window_set_vsync_mode(
@@ -214,6 +221,13 @@ func _on_mute_pressed() -> void:
 	_update_toggle(_toggle_mute, muted)
 	_save()
 
+func _on_haptics_pressed() -> void:
+	var enabled: bool = not _data.get("haptics", true)
+	_data["haptics"] = enabled
+	_apply_haptics(enabled)
+	_update_toggle(_toggle_haptics, enabled)
+	_save()
+
 func _on_language_pressed(code: String) -> void:
 	_data["language"] = code
 	for c in _lang_btns:
@@ -251,6 +265,8 @@ func _refresh_widgets() -> void:
 	_sl_music.value  = vmu; _lbl_music.text  = "%d%%" % vmu
 	_sl_sfx.value    = vs;  _lbl_sfx.text    = "%d%%" % vs
 	_update_toggle(_toggle_mute, muted)
+	if _toggle_haptics:
+		_update_toggle(_toggle_haptics, _data.get("haptics", true))
 
 	for code in _lang_btns:
 		_update_toggle(_lang_btns[code], code == lang)
@@ -420,6 +436,10 @@ func _build_page_sound() -> Control:
 
 	_toggle_mute = _add_toggle_row(vbox, "Вимкнути звук повністю", false)
 	_toggle_mute.pressed.connect(_on_mute_pressed)
+
+	_toggle_haptics = _add_toggle_row(vbox, "Вібрація (mobile)",
+		_data.get("haptics", true))
+	_toggle_haptics.pressed.connect(_on_haptics_pressed)
 
 	return vbox
 
