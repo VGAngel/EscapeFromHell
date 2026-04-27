@@ -430,6 +430,11 @@ func spawn_copies(copy_scene: PackedScene, count: int = 3) -> void:
 func setup_as_copy(_original: Node) -> void:
 	_is_real_boss = false
 	modulate = Color(0.85, 0.85, 0.85, 0.9)
+	# Stay out of the "boss" lookup group so _get_boss() can't return a copy
+	# if tree order ever shifts. Copies still respond to staff via collision
+	# layer, just not via group_first lookups that drive win conditions.
+	if is_in_group("boss"):
+		remove_from_group("boss")
 
 func _do_copy_behavior(delta: float) -> void:
 	if not _player:

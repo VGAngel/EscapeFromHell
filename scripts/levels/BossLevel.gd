@@ -89,6 +89,18 @@ func _build_procedural_arena() -> void:
 			_build_arena_boss_07()
 		100:
 			_build_arena_boss_10()
+		# Levels 40/60/80/90 are flagged as "boss" in levels_config but their
+		# unique scenes/configs aren't authored yet. Fall back to the closest
+		# existing boss arena so the level is at least playable instead of
+		# softlocking on an empty stage with no exit unlock.
+		40:
+			_build_arena_boss_03()
+		60:
+			_build_arena_boss_05()
+		80:
+			_build_arena_boss_07()
+		90:
+			_build_arena_boss_10()
 		_:
 			pass  # other bosses fall back to hand-made scene when authored
 
@@ -374,6 +386,11 @@ func _process(delta: float) -> void:
 func _on_exit_body_entered(body: Node2D) -> void:
 	if body != _player or _is_complete:
 		return
+	# Some bosses (e.g. identify_and_evade) only declare victory when the
+	# player reaches the exit in the right state — ask the boss first so its
+	# win_condition_met signal can flip _boss_defeated before the guard below.
+	if _boss and not _boss_defeated and _boss.has_method("on_player_reached_exit"):
+		_boss.on_player_reached_exit()
 	if not _boss_defeated:
 		if TutorialManager:
 			TutorialManager.show_hint("defeat_boss_first")
