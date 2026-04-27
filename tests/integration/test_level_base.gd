@@ -167,23 +167,21 @@ func test_discover_souls_populates_souls_in_level_array() -> void:
 	lb._discover_souls()
 	assert_eq(lb._souls_in_level.size(), 1)
 
-# ── _on_soul_collected ────────────────────────────────────────────────────────
+# ── _on_soul_delivered ────────────────────────────────────────────────────────
+# Note: in the base flow, _souls_found ticks on DELIVERY (altar),
+# not on PICKUP (_on_soul_pickup_started just stores carried data
+# and notifies the boss). Void levels override the pickup path to
+# auto-deliver — those tests live in test_void_level.gd.
 
-func test_on_soul_collected_increments_souls_found() -> void:
-	# _on_soul_collected calls _get_boss() → get_tree(), so the node must be
-	# in the scene tree.  Use _make_safe_lb() which adds it properly.
+func test_on_soul_delivered_increments_souls_found() -> void:
 	var lb: Node = _make_safe_lb()
-	var soul: Node2D = autofree(Node2D.new())
-	soul.set_meta("soul_id", 0)
-	lb._on_soul_collected(soul)
+	lb._on_soul_delivered("0")
 	assert_eq(lb._souls_found, 1)
 
-func test_on_soul_collected_increments_multiple_times() -> void:
+func test_on_soul_delivered_increments_multiple_times() -> void:
 	var lb: Node = _make_safe_lb()
-	var soul: Node2D = autofree(Node2D.new())
-	soul.set_meta("soul_id", 0)
-	lb._on_soul_collected(soul)
-	lb._on_soul_collected(soul)
+	lb._on_soul_delivered("0")
+	lb._on_soul_delivered("0")
 	assert_eq(lb._souls_found, 2)
 
 # ── _room_height ──────────────────────────────────────────────────────────────
@@ -475,15 +473,15 @@ func test_player_died_ignored_when_level_complete() -> void:
 
 # ── Soul collected → GameManager ──────────────────────────────────────────────
 
-func test_soul_collected_increments_game_manager_count() -> void:
+func test_soul_delivered_increments_game_manager_count() -> void:
+	# Delivery (altar) is what credits SaveManager.add_soul via
+	# GameManager.collect_soul — pickup alone only stores carry data.
 	var lb: Node = _make_safe_lb()
 	if not GameManager or not GameManager.has_method("collect_soul"):
 		pass_test("skip")
 		return
-	var soul: Node2D = autofree(Node2D.new())
-	soul.set_meta("soul_id", 42)
 	var before: int = SaveManager.get_total_souls() if SaveManager else 0
-	lb._on_soul_collected(soul)
+	lb._on_soul_delivered("42")
 	var after: int = SaveManager.get_total_souls() if SaveManager else 0
 	assert_gt(after, before)
 
