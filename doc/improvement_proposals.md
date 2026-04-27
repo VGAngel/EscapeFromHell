@@ -971,17 +971,25 @@ emit flash. Drawing AOE — Polygon2D на підлозі.
 
 ---
 
-### 40. 🟢 Boss HP/Progress Bar для довгих фаз ⭐
+### 40. ✅ Boss progress bar для довгих фаз
 
-**Що:** Поточні боси без HP (5-душ collect / wait-for-prayer), але
-**progress bar для "як близько кінець"** знизить тривогу. Наприклад
-для boss_10 показати "Душ зібрано: 3/5" + "Молитва: 4/8с".
+**Реалізовано:**
+- `BossAI` новий signal `progress_updated(label, value, max_value)` —
+  емітиться у `on_collectible_picked`, `on_totem_activated`, `tick_prayer`,
+  `reset_prayer` (zeroed)
+- Per-boss labels (`_collectible_label`): "Уламки" / "Кристали" / "Душі"
+  залежно від `boss_id`
+- `BossLevel._build_phase_panel` тепер додає прогрес-бар (label + numeric
+  value + colored bar) під phase dots. Spawnиться навіть для single-phase
+  босів якщо є `progress_updated`
+- `_on_boss_progress` оновлює label + кількість, лерпом анімує заповнення,
+  пульс золотим кольором при ratio ≥ 0.8 ("ось-ось")
+- Smart formatting: "3 / 5" для int counts, "5.4 / 8.0" для prayer seconds
+- Bar зникає після `_on_boss_win` через `_hide_phase_panel` (вже існував)
 
-**Чому:** Замість "коли це закінчиться?" → "ще трохи".
-
-**Як:** BossLevel вже має `_phase_dots` — розширити на progress-meters.
-
-**Складність:** Низька (~30 рядків UI).
+**Тести:** 7 нових тестів у `test_boss_ai.gd` — signal emit на pickup/
+totem/prayer/reset, value parameters, label per boss_id, no-emit при
+неправильному порядку тотему.
 
 ---
 

@@ -51,6 +51,15 @@ var _notify_label:  Label       = null
 var _phase_dots:    Array       = []   # Array[ColorRect]
 var _phase_panel:   Control     = null
 
+# Progress bar — filled as the boss's objective advances
+# (collectibles / totems / prayer time). Driven by BossAI.progress_updated.
+var _progress_bar_bg: ColorRect = null
+var _progress_bar_fg: ColorRect = null
+var _progress_label:  Label     = null
+var _progress_value:  Label     = null
+const _PROGRESS_BAR_W: float    = 360.0
+const _PROGRESS_BAR_H: float    = 14.0
+
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
@@ -406,6 +415,8 @@ func _connect_boss_signals() -> void:
 	_boss.boss_stunned.connect(_on_boss_stunned)
 	_boss.boss_stun_ended.connect(_on_boss_stun_ended)
 	_boss.phase_changed.connect(_on_phase_changed)
+	if _boss.has_signal("progress_updated"):
+		_boss.progress_updated.connect(_on_boss_progress)
 
 func _register_arena_objects() -> void:
 	if not _boss.has_method("register_arena_objects"):
@@ -515,8 +526,12 @@ func _build_phase_panel() -> void:
 	if not _boss:
 		return
 	var total_phases: int = _boss.get("_phase_cfg").size() if _boss.get("_phase_cfg") != null else 0
-	if total_phases <= 1:
-		return   # single-phase boss needs no indicator
+	# Show the panel if the boss has multiple phases OR exposes the
+	# progress_updated signal — single-phase bosses (e.g. boss_01 collect-3)
+	# still benefit from a progress bar.
+	var has_progress: bool = _boss.has_signal("progress_updated")
+	if total_phases <= 1 and not has_progress:
+		return
 
 	var layer := CanvasLayer.new()
 	layer.layer = 5
@@ -524,22 +539,90 @@ func _build_phase_panel() -> void:
 
 	_phase_panel = Control.new()
 	_phase_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_phase_panel.custom_minimum_size = Vector2(0, 28)
+	_phase_panel.custom_minimum_size = Vector2(0, 70)
 	layer.add_child(_phase_panel)
 
-	var hbox := HBoxContainer.new()
-	hbox.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	hbox.add_theme_constant_override("separation", 10)
-	hbox.offset_top = 8.0
-	_phase_panel.add_child(hbox)
+	# Phase dots — only when boss actually has multiple phases.
+	if total_phases > 1:
+		var dots_row := HBoxContainer.new()
+		dots_row.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		dots_row.add_theme_constant_override("separation", 10)
+		dots_row.offset_top = 8.0
+		_phase_panel.add_child(dots_row)
 
-	_phase_dots.clear()
-	for i in total_phases:
-		var dot := ColorRect.new()
-		dot.custom_minimum_size = Vector2(12, 12)
-		dot.color = Color("#CC2222") if i == 0 else Color(0.28, 0.26, 0.35)
-		hbox.add_child(dot)
-		_phase_dots.append(dot)
+		_phase_dots.clear()
+		for i in total_phases:
+			var dot := ColorRect.new()
+			dot.custom_minimum_size = Vector2(12, 12)
+			dot.color = Color("#CC2222") if i == 0 else Color(0.28, 0.26, 0.35)
+			dots_row.add_child(dot)
+			_phase_dots.append(dot)
+
+	# Progress bar (label + bar + numeric value).
+	if has_progress:
+		_build_progress_bar(_phase_panel)
+
+func _build_progress_bar(parent: Control) -> void:
+	var holder := Control.new()
+	holder.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	holder.offset_top = 30.0
+	holder.custom_minimum_size = Vector2(_PROGRESS_BAR_W, 38)
+	holder.position = Vector2(-_PROGRESS_BAR_W * 0.5, 30.0)
+	parent.add_child(holder)
+
+	_progress_label = Label.new()
+	_progress_label.position = Vector2(0, 0)
+	_progress_label.size = Vector2(_PROGRESS_BAR_W * 0.7, 18)
+	_progress_label.add_theme_font_size_override("font_size", 14)
+	_progress_label.add_theme_color_override("font_color", Color(0.92, 0.90, 0.96))
+	_progress_label.text = ""
+	holder.add_child(_progress_label)
+
+	_progress_value = Label.new()
+	_progress_value.position = Vector2(_PROGRESS_BAR_W * 0.7, 0)
+	_progress_value.size = Vector2(_PROGRESS_BAR_W * 0.3, 18)
+	_progress_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_progress_value.add_theme_font_size_override("font_size", 14)
+	_progress_value.add_theme_color_override("font_color", Color("#FFD060"))
+	_progress_value.text = ""
+	holder.add_child(_progress_value)
+
+	_progress_bar_bg = ColorRect.new()
+	_progress_bar_bg.position = Vector2(0, 22)
+	_progress_bar_bg.size = Vector2(_PROGRESS_BAR_W, _PROGRESS_BAR_H)
+	_progress_bar_bg.color = Color(0.10, 0.08, 0.14, 0.85)
+	holder.add_child(_progress_bar_bg)
+
+	_progress_bar_fg = ColorRect.new()
+	_progress_bar_fg.position = Vector2.ZERO
+	_progress_bar_fg.size = Vector2(0, _PROGRESS_BAR_H)
+	_progress_bar_fg.color = Color("#CC2222")
+	_progress_bar_bg.add_child(_progress_bar_fg)
+
+func _on_boss_progress(label: String, value: float, max_value: float) -> void:
+	if not _progress_bar_fg or not is_instance_valid(_progress_bar_fg):
+		return
+	var ratio: float = 0.0 if max_value <= 0.0 else clampf(value / max_value, 0.0, 1.0)
+	_progress_label.text = label
+	# Integer counts read better as "3 / 5", floating values as "5.4 / 8.0".
+	if _is_integer_like(value, max_value):
+		_progress_value.text = "%d / %d" % [int(round(value)), int(round(max_value))]
+	else:
+		_progress_value.text = "%.1f / %.1f" % [value, max_value]
+	# Tween fill so +1 collectible reads as a beat instead of a snap.
+	var target_w: float = _PROGRESS_BAR_W * ratio
+	var tw := create_tween()
+	tw.tween_property(_progress_bar_fg, "size:x", target_w, 0.25) \
+		.set_ease(Tween.EASE_OUT)
+	# Pulse to gold near completion so the player feels "almost there".
+	if ratio >= 0.8:
+		_progress_bar_fg.color = Color("#FFD060")
+	else:
+		_progress_bar_fg.color = Color("#CC2222")
+
+func _is_integer_like(a: float, b: float) -> bool:
+	# Picks the nicer formatter — counts (souls, totems) vs prayer seconds.
+	return absf(a - round(a)) < 0.05 and absf(b - round(b)) < 0.05
 
 func _update_phase_dots(active_phase: int) -> void:
 	for i in _phase_dots.size():

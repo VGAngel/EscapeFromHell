@@ -480,3 +480,83 @@ func test_phase_2_increases_speed() -> void:
 func test_phase_3_activates_special_attack() -> void:
 	# TODO: special attacks are behavior-string driven; need config + scene
 	pass
+
+# ── Progress bar (#40) ────────────────────────────────────────────────────────
+
+func test_progress_signal_emitted_on_collectible_pickup() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._collectibles_total = 3
+	watch_signals(boss)
+	boss.on_collectible_picked()
+	assert_signal_emitted(boss, "progress_updated")
+
+func test_progress_signal_value_matches_count() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._collectibles_total = 5
+	watch_signals(boss)
+	boss.on_collectible_picked()
+	boss.on_collectible_picked()
+	# Latest emit should carry value=2, max=5.
+	var p: Array = get_signal_parameters(boss, "progress_updated")
+	assert_eq(p[1], 2.0, "value should be the new collectible count")
+	assert_eq(p[2], 5.0, "max should be the configured total")
+
+func test_progress_signal_emitted_on_totem_activation_in_order() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"type": "activate_in_sequence", "totems": {"count": 3}}
+	boss._next_totem_index = 0
+	watch_signals(boss)
+	boss.on_totem_activated(0)
+	assert_signal_emitted(boss, "progress_updated")
+	var p: Array = get_signal_parameters(boss, "progress_updated")
+	assert_eq(p[0], "Тотеми")
+	assert_eq(p[1], 1.0)
+	assert_eq(p[2], 3.0)
+
+func test_progress_signal_skipped_on_wrong_totem_order() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._mechanic = {"type": "activate_in_sequence", "totems": {"count": 3}}
+	boss._next_totem_index = 0
+	watch_signals(boss)
+	boss.on_totem_activated(2)   # wrong — expecting 0
+	assert_signal_emit_count(boss, "progress_updated", 0)
+
+func test_progress_signal_during_prayer_tick() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._phase_cfg = [{
+		"behavior": "stationary_final",
+		"mechanic": {"type": "prayer_ritual", "hold_duration": 8.0},
+	}]
+	boss._current_phase = 0
+	watch_signals(boss)
+	boss.tick_prayer(2.5)
+	assert_signal_emitted(boss, "progress_updated")
+	var p: Array = get_signal_parameters(boss, "progress_updated")
+	assert_eq(p[0], "Молитва")
+	assert_almost_eq(p[1], 2.5, 0.01)
+	assert_eq(p[2], 8.0)
+
+func test_reset_prayer_emits_zeroed_progress_when_in_prayer_phase() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss._phase_cfg = [{
+		"behavior": "stationary_final",
+		"mechanic": {"type": "prayer_ritual", "hold_duration": 8.0},
+	}]
+	boss._current_phase = 0
+	boss._prayer_progress = 4.0
+	watch_signals(boss)
+	boss.reset_prayer()
+	# UI must see the meter snap back to 0 so it doesn't appear stuck.
+	assert_signal_emitted(boss, "progress_updated")
+	var p: Array = get_signal_parameters(boss, "progress_updated")
+	assert_eq(p[1], 0.0)
+	assert_eq(p[2], 8.0)
+
+func test_collectible_label_per_boss() -> void:
+	var boss: Node = autofree(BossAIScript.new())
+	boss.boss_id = "boss_10"
+	assert_eq(boss._collectible_label(), "Душі")
+	boss.boss_id = "boss_03"
+	assert_eq(boss._collectible_label(), "Кристали")
+	boss.boss_id = "boss_99"   # unknown → fallback
+	assert_eq(boss._collectible_label(), "Зібрано")

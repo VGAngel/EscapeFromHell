@@ -6,6 +6,13 @@ signal boss_stun_ended
 signal phase_changed(phase_index: int)
 signal win_condition_met
 signal sin_aura_tick(amount: float)
+## Emitted whenever the boss's "objective progress" changes — collectible
+## picked up, totem activated, prayer ticked, etc. BossLevel listens and
+## drives the on-screen progress bar so the player always knows how close
+## the fight is to ending. label is a short Ukrainian noun ("Уламки",
+## "Тотеми", "Душі", "Молитва"). value/max are in same units (count or
+## seconds depending on the mechanic).
+signal progress_updated(label: String, value: float, max_value: float)
 
 # ── State ─────────────────────────────────────────────────────────────────────
 enum BossState { IDLE, PATROL, CHASE, CHARGE_TELEGRAPH, CHARGING, STUNNED, PHASE_TRANSITION }
@@ -359,6 +366,8 @@ func advance_phase() -> void:
 # Викликати з арени коли гравець підбирає уламок/кристал/душу
 func on_collectible_picked() -> void:
 	_collectibles_collected += 1
+	progress_updated.emit(_collectible_label(), float(_collectibles_collected),
+		float(maxi(_collectibles_total, _collectibles_collected)))
 	_check_win_condition()
 
 	# Люцифер: 3 зібраних → фаза 2 (slow_patrol + sin_aura),
@@ -369,12 +378,23 @@ func on_collectible_picked() -> void:
 		elif _collectibles_collected == 5:
 			advance_phase()
 
+## Friendly Ukrainian label per boss for the progress bar header.
+func _collectible_label() -> String:
+	match boss_id:
+		"boss_01": return "Уламки"
+		"boss_03": return "Кристали"
+		"boss_05": return "Уламки"
+		"boss_10": return "Душі"
+	return "Зібрано"
+
 # Викликати з арени коли гравець активував тотем (boss_02)
 func on_totem_activated(totem_index: int) -> void:
 	if totem_index != _next_totem_index:
 		return
 	_totems_activated += 1
 	_next_totem_index += 1
+	var total: int = int(_mechanic.get("totems", {}).get("count", 3))
+	progress_updated.emit("Тотеми", float(_totems_activated), float(total))
 	_check_win_condition()
 
 # ── Win condition ─────────────────────────────────────────────────────────────
@@ -411,11 +431,18 @@ func tick_prayer(delta: float) -> void:
 		return
 	var required: float = float(phase_data.get("mechanic", {}).get("hold_duration", 8.0))
 	_prayer_progress += delta
+	progress_updated.emit("Молитва", minf(_prayer_progress, required), required)
 	if _prayer_progress >= required:
 		win_condition_met.emit()
 
 func reset_prayer() -> void:
 	_prayer_progress = 0.0
+	# Notify UI that the meter went back to 0 — otherwise the bar appears
+	# "stuck" at the last partial value when the player releases the button.
+	var phase_data := _get_current_phase_data()
+	if phase_data.get("mechanic", {}).get("type") == "prayer_ritual":
+		var required: float = float(phase_data.get("mechanic", {}).get("hold_duration", 8.0))
+		progress_updated.emit("Молитва", 0.0, required)
 
 # ── Copies (boss_07) ──────────────────────────────────────────────────────────
 func spawn_copies(copy_scene: PackedScene, count: int = 3) -> void:
