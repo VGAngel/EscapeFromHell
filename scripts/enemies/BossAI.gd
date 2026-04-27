@@ -206,9 +206,10 @@ func _tick_sin_aura(delta: float) -> void:
 	if _sin_aura_tick_timer >= 1.0:
 		_sin_aura_tick_timer = 0.0
 		var amount: float = float(aura.get("sin_per_second", 3))
+		# BossLevel._on_sin_aura_tick → GameManager.add_sin already routes the
+		# tick through the canonical sin pipeline (which also notifies HUD).
+		# A second direct SaveManager.add_sin here would double-count it.
 		sin_aura_tick.emit(amount)
-		if SaveManager:
-			SaveManager.add_sin(amount)
 
 # ── IDLE ──────────────────────────────────────────────────────────────────────
 func _do_idle() -> void:

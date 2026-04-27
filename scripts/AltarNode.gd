@@ -146,7 +146,10 @@ func _update_prompt() -> void:
 	var has_soul: bool = _player_is_carrying_soul()
 	var visible_now: bool = _player_in_range and (has_soul or not _is_active)
 	_prompt.visible = visible_now
-	if show:
+	# `if show:` here was reading Node2D.show as a Callable (always truthy).
+	# Use visible_now so the prompt text is only refreshed when the prompt
+	# is actually shown.
+	if visible_now:
 		var txt: String = TEXT_DELIVER if has_soul else TEXT_BIND
 		if _prompt.has_method("set_text"):
 			_prompt.set_text(txt)
