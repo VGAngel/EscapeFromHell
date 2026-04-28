@@ -1387,21 +1387,51 @@ Keys tab.
 
 ## A. Головне меню — структура та ієрархія
 
-### U1. 🟢 Скоротити список кнопок до 5–6 ⭐⭐
-Зараз 9 кнопок (Грати/Профіль/Душі/Налаштування/Levels/Seed/NoAds/Donate/Вихід)
-— забагато для мобільного. Запропонована структура:
-- **Hero-CTA:** велика «Грати» з підписом «Рівень 4 · 23/100 душ»
-- **Continue-row:** маленька «Продовжити з рівня X» якщо є збереження
-- **Secondary row:** Колекція · Налаштування · Профіль
-- **Footer-row (icon-only):** 🌱 Seed · 🚫 No-Ads · 💝 Donate · ✕ Exit · 📊 Stats
+### U1. 🟡 Скоротити список кнопок до 5–6 ⭐⭐ — **відкладено**
+Не реалізовано (не міняє відчуття так, як hero-картка U2 + dynamic
+CTA U3). Лишається кандидатом на майбутнє: footer-row з іконками
+(Seed/NoAds/Donate/Exit) можна зробити окремим етапом.
 
-### U2. 🟢 Hero-картка над кнопками ⭐⭐
-Показувати ключовий стан гравця: круг, ім'я, душі, найкращий час, sin %.
-Перетворює «холодне» меню на «продовжити пригоду».
+### U2. ✅ Hero-картка над кнопками
 
-### U3. 🟢 Динамічний текст на «Грати» ⭐
-«Грати — рівень 4» / «Спробувати знову — рівень 7» / «Новий забіг»
-залежно від `SaveManager.get_current_level()` та чи є деаз минулий запуск.
+**Реалізовано** як `scripts/ui/HeroCard.gd` — `PanelContainer`
+(DarkPanel variation), що інстансується з MainMenu між TitleLabel і
+ButtonsContainer.
+
+**Layout:**
+```
+┌────────────────────────────────────────┐
+│ <profile name>                  Коло X │
+│                                Рівень Y│
+├────────────────────────────────────────┤
+│ 👻 Souls 23/100 · ✦ 4/20 · 💡 120      │
+│ 🏆 Найкращий: 0:42 ★★★ (рівень 7)      │
+│ 😈 Гріх 18%                            │
+└────────────────────────────────────────┘
+```
+
+- **Profile name** — `SaveManager.get_profile_name()`, fallback
+  "Невідомий"
+- **Circle/Level** — поточні значення, right-aligned в окремому VBox
+- **Souls/Hidden/Light** — компактний рядок з 3 значеннями
+- **Best run** — пройти всі 100 рівнів, max stars + min time
+  tiebreaker (та сама логіка що в StatisticsScreen)
+- **Sin** — кольоровий gradient SUCCESS → WARNING → SIN_RED через
+  lerp; 0% зелений, 50% жовтий, 100% червоний
+- **Auto-refresh** — `_process` polls SaveManager раз на секунду
+  поки картка видима (теж без сигналів)
+- **Theme variations** — TitleLabel, BodyLabel, ValueLabel, GoldSeparator
+- **Тести:** 6 кейсів у `tests/unit/test_hero_card.gd` — build,
+  refresh substring перевірки, sin-color mapping, repeated-refresh safety
+
+### U3. ✅ Динамічний текст на «Грати»
+
+**Реалізовано** в `MainMenu._refresh_play_button()`:
+- Якщо ще не грали (total_play_seconds == 0) або level==1 →
+  `▶  Грати`
+- Інакше → `▶  Продовжити — рівень N`
+- Викликається з `_refresh_souls_counter()` (який запускається при
+  `_ready` і після кожного закриття overlay'у)
 
 ### U4. 🟡 Сховати Levels(debug) у релізі ⭐
 Видалити кнопку або заховати під 5-тап на VersionLabel

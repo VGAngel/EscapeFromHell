@@ -84,6 +84,9 @@ func _ready() -> void:
 	var top_bar := preload("res://scripts/ui/TopBar.gd").new()
 	add_child(top_bar)
 
+	# Hero card — player snapshot above the button list.
+	_install_hero_card()
+
 	_apply_banner_space()
 	var sa: Node = get_node_or_null("/root/SafeArea")
 	if sa:
@@ -133,6 +136,42 @@ func _refresh_buttons() -> void:
 func _refresh_souls_counter() -> void:
 	var saved: int = SaveManager.get_total_souls() if SaveManager else 0
 	_btn_collect.text = "Врятовані Душі  %d/100" % saved
+	_refresh_play_button()
+
+# Dynamic label on the primary CTA — first run shows "Грати", later
+# runs prefix the current level so the menu reads as "continue your
+# descent". Falls back to a clean default if SaveManager is missing.
+func _refresh_play_button() -> void:
+	if _btn_play == null:
+		return
+	if SaveManager == null:
+		_btn_play.text = "Грати"
+		return
+	var lvl: int = int(SaveManager.get_current_level())
+	var played_before: bool = false
+	if SaveManager.has_method("get_stat"):
+		played_before = float(SaveManager.get_stat("total_play_seconds", 0.0)) > 0.0
+	if not played_before or lvl <= 1:
+		_btn_play.text = "▶  Грати"
+	else:
+		_btn_play.text = "▶  Продовжити — рівень %d" % lvl
+
+# HeroCard goes between TitleLabel and ButtonsContainer. We insert it as
+# a top-anchored Control so the existing button vertical centring isn't
+# disturbed.
+func _install_hero_card() -> void:
+	if has_node("HeroCard"):
+		return
+	var card := preload("res://scripts/ui/HeroCard.gd").new()
+	card.name = "HeroCard"
+	# Anchor: top-wide, sit just below the title.
+	card.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	var vp := get_viewport_rect().size
+	card.offset_left   = vp.x * 0.05
+	card.offset_right  = -vp.x * 0.05
+	card.offset_top    = vp.y * 0.205
+	card.offset_bottom = vp.y * 0.205 + 240
+	add_child(card)
 
 func _ensure_seed() -> void:
 	if not SaveManager or not SaveManager.get_world_seed_str().is_empty():
