@@ -313,8 +313,8 @@ func is_edit_mode() -> bool:
 
 ## Set global size scale (0.5..1.6) and re-layout immediately. Caller is
 ## responsible for calling save_layout() when the user commits.
-func set_size_scale(scale: float) -> void:
-	_size_scale = clampf(scale, 0.5, 1.6)
+func set_size_scale(value: float) -> void:
+	_size_scale = clampf(value, 0.5, 1.6)
 	_apply_safe_area()
 	layout_changed.emit()
 

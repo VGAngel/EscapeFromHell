@@ -102,6 +102,7 @@ func _fill_static(stats: Dictionary) -> void:
 
 func _format_time(seconds: float) -> String:
 	var s: int = int(seconds)
+	@warning_ignore("integer_division")
 	return "%d:%02d" % [s / 60, s % 60]
 
 func _stars_str(n: int) -> String:

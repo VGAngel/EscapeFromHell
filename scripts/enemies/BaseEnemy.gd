@@ -371,7 +371,7 @@ func receive_knockback(direction: Vector2, stun_duration: float) -> void:
 ## current modulate before swapping so we don't permanently bleach the
 ## sprite if it's mid-tween (e.g. the warning shake on Crumbling).
 func flash_white(duration: float = 0.08) -> void:
-	var target: CanvasItem = _anim_sprite if _anim_sprite else _sprite
+	var target: CanvasItem = (_anim_sprite as CanvasItem) if _anim_sprite else (_sprite as CanvasItem)
 	if not target:
 		return
 	var original: Color = target.modulate

@@ -187,6 +187,7 @@ func _setup_continue_label() -> void:
 		if not best.is_empty():
 			var t: int = int(best.get("time", 0.0))
 			var stars: int = int(best.get("stars", 0))
+			@warning_ignore("integer_division")
 			lines.append("🏆 %d:%02d  %s" % [t / 60, t % 60, _stars_str(stars)])
 	_btn_continue.text = "\n".join(lines)
 

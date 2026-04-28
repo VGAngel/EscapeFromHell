@@ -752,7 +752,7 @@ func _set_binding(action: String, physical_keycode: int) -> void:
 	for ev in keep:
 		InputMap.action_add_event(action, ev)
 	var new_ev := InputEventKey.new()
-	new_ev.physical_keycode = physical_keycode
+	new_ev.physical_keycode = physical_keycode as Key
 	InputMap.action_add_event(action, new_ev)
 	_refresh_key_btn(action)
 
@@ -788,7 +788,7 @@ func _set_binding_silent(action: String, physical_keycode: int) -> void:
 	for ev in keep:
 		InputMap.action_add_event(action, ev)
 	var new_ev := InputEventKey.new()
-	new_ev.physical_keycode = physical_keycode
+	new_ev.physical_keycode = physical_keycode as Key
 	InputMap.action_add_event(action, new_ev)
 
 ## Reset every rebindable action to the events captured at boot.
