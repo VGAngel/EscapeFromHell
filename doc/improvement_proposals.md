@@ -1484,20 +1484,61 @@ Low drone + дальній хор з fade-in/out при переходах.
 
 ## C. Візуальний стиль / theme
 
-### U11. 🟢 Єдина Theme.tres ⭐⭐⭐
-Кожен екран будує StyleBox у коді (StatisticsScreen, SettingsScreen,
-PauseScreen…). Винести у спільний `res://theme/main.tres`:
-primary/secondary/danger button styles, label styles, separator,
-panel. Один edit змінює всю гру. Великий, але одноразовий рефактор.
+### U11. ✅ Єдина Theme + UITheme autoload
 
-### U12. 🟢 Шрифтова ієрархія (5 рівнів) ⭐
-Зараз font_size розкиданий: 16/22/24/32/38/42/63. Звести до:
-- Display 48, Title 32, Section 24, Body 18, Caption 14
-- Винести у Theme як named font_sizes
+**Реалізовано** як `scripts/ui/UITheme.gd` autoload, що будує `Theme`
+у коді (тримати у тексті простіше за binary `.tres` бо StyleBoxFlat
+має багато властивостей) і чіпляє його до `tree.root.theme`.
 
-### U13. 🟢 Palette.gd з іменованими кольорами ⭐
-Зараз `Color("#FFD700")`, `Color(0.92, 0.90, 0.98)` розкидані.
-Винести: `Palette.GOLD`, `Palette.SIN_RED`, `Palette.UI_TEXT_PRIMARY` тощо.
+- **Type variations** (Godot 4 mechanism — встановлюється через
+  `node.theme_type_variation = "..."`):
+  - **Labels:** `DisplayLabel`, `TitleLabel`, `SectionLabel`,
+    `BodyLabel`, `ValueLabel`, `CaptionLabel`, `MutedLabel`
+  - **Buttons:** `PrimaryButton`, `SecondaryButton`, `DangerButton`,
+    `IconButton`
+  - **Panel:** `DarkPanel` (PanelContainer)
+  - **Separator:** `GoldSeparator` (HSeparator)
+- **Default Button + Label** теж стилізовані — більшість Control'ів
+  отримують гарний look без жодного коду
+- **Демо-міграція** на `StatisticsScreen.gd` — видалено 9 викликів
+  `add_theme_*_override` + 2 builds StyleBoxFlat → 4 рядки з
+  `theme_type_variation`. Майбутні екрани мігрують поступово
+- **Тести:** 12 кейсів у `tests/unit/test_ui_theme.gd` — наявність
+  всіх variation'ів, правильна base-type, font-size scale
+  ascending, Palette кольори підтягуються
+
+### U12. ✅ Шрифтова ієрархія (5 рівнів)
+
+Реалізовано як константи в UITheme:
+- `SIZE_DISPLAY = 48` — hero-headlines
+- `SIZE_TITLE = 32` — секційні заголовки overlay'ів
+- `SIZE_SECTION = 24` — підзаголовки
+- `SIZE_BODY = 18` — основний текст (default Label)
+- `SIZE_CAPTION = 14` — підказки, hint'и
+
+Кожна Label-variation в UITheme використовує одну з констант — ніяких
+магічних чисел в UI-скриптах.
+
+### U13. ✅ Palette.gd з іменованими кольорами
+
+**Реалізовано** як `scripts/ui/Palette.gd` (`class_name Palette extends
+RefCounted`). Чисто-data клас з SCREAMING_SNAKE_CASE константами,
+згрупованими за призначенням:
+
+- **Brand:** `GOLD`, `GOLD_DIM`, `HELL_RED`, `HELL_RED_DIM`
+- **Backgrounds:** `BG_BLACK`, `BG_DARK`, `BG_DARKER`, `BG_PANEL`,
+  `BG_PANEL_HOVER`, `BG_PANEL_PRESSED`
+- **Text:** `TEXT_DISPLAY`, `TEXT_PRIMARY`, `TEXT_SECONDARY`,
+  `TEXT_MUTED`, `TEXT_DISABLED`
+- **Accents:** `ACCENT_GREEN`, `ACCENT_BLUE`, `ACCENT_ORANGE`,
+  `SIN_RED`
+- **Borders:** `BORDER_DIM`, `BORDER_NEUTRAL`, `BORDER_HOVER`,
+  `BORDER_PRIMARY`, `BORDER_PRIMARY_H`
+- **Status:** `SUCCESS`, `WARNING`, `DANGER`
+- **Button flavors:** `BTN_PRIMARY_BG{,_H,_P}`, `BTN_DANGER_BG`
+
+UITheme використовує Palette скрізь, тому одна правка в Palette
+ріплекіт по всій грі.
 
 ### U14. 🟡 Ripple/glow на pressed-state ключових кнопок ⭐⭐
 Особливо «Грати» і soul-deliver popup OK — додає вагу натиску.

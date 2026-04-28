@@ -1233,6 +1233,45 @@ win-condition).
 
 ## 13. UI Екрани
 
+### Глобальна тема (UITheme + Palette)
+
+**Autoload:** `scripts/ui/UITheme.gd`
+**Data class:** `scripts/ui/Palette.gd`
+
+Глобальний `Theme` будується у коді на `_ready` UITheme і чіпляється
+до `tree.root.theme`. Усі Control'и автоматично отримують єдиний look.
+
+**Type variations** (встановлюються через `node.theme_type_variation`):
+- **Labels:** `DisplayLabel` (48px), `TitleLabel` (32px gold),
+  `SectionLabel` (24px gold), `BodyLabel` (18px), `ValueLabel`
+  (18px bright), `CaptionLabel` (14px muted), `MutedLabel`
+- **Buttons:** `PrimaryButton` (red flavor + orange text),
+  `SecondaryButton` (panel grey), `DangerButton` (dark red),
+  `IconButton` (transparent stylebox)
+- **Panel:** `DarkPanel` (PanelContainer)
+- **Separator:** `GoldSeparator` (HSeparator)
+
+**Font scale (5 рівнів):** `SIZE_DISPLAY=48`, `SIZE_TITLE=32`,
+`SIZE_SECTION=24`, `SIZE_BODY=18`, `SIZE_CAPTION=14`. Жодних
+магічних чисел в UI-скриптах.
+
+**Palette** — SCREAMING_SNAKE_CASE константи згруповані за
+призначенням (Brand, Backgrounds, Text, Accents, Borders, Status,
+Button flavors). Одна правка в Palette ріплекіт по всій грі.
+
+**Pattern для нового екрану:**
+```gdscript
+var lbl := Label.new()
+lbl.theme_type_variation = "SectionLabel"   # 24px gold
+lbl.text = "Прогрес"
+
+var btn := Button.new()
+btn.theme_type_variation = "PrimaryButton"  # red flavor
+btn.text = "Грати"
+```
+
+Без жодних `add_theme_*_override` викликів — все централізовано.
+
 ### UIRouter (back-stack)
 
 **Autoload:** `scripts/managers/UIRouter.gd`

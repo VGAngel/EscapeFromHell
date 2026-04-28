@@ -131,39 +131,37 @@ func _refresh() -> void:
 # ── UI helpers ────────────────────────────────────────────────────────────────
 
 func _section(title: String) -> void:
+	# SectionLabel theme-variation: 24px gold from UITheme.
 	var lbl := Label.new()
+	lbl.theme_type_variation = "SectionLabel"
 	lbl.text = title
-	lbl.add_theme_font_size_override("font_size", 32)
-	lbl.add_theme_color_override("font_color", Color("#FFD700"))
 	_vbox.add_child(lbl)
+	# GoldSeparator variation provides the dim-gold tint by default.
 	var sep := HSeparator.new()
-	var ss := StyleBoxFlat.new()
-	ss.bg_color = Color(0.32, 0.27, 0.18)
-	ss.content_margin_top = 1.0; ss.content_margin_bottom = 1.0
-	sep.add_theme_stylebox_override("separator", ss)
+	sep.theme_type_variation = "GoldSeparator"
 	_vbox.add_child(sep)
 
 func _line(label: String, value: String) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 16)
 	var l := Label.new()
+	l.theme_type_variation = "BodyLabel"
 	l.text = label
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	l.add_theme_font_size_override("font_size", 22)
-	l.add_theme_color_override("font_color", Color(0.82, 0.80, 0.86))
 	row.add_child(l)
 	var v := Label.new()
+	v.theme_type_variation = "ValueLabel"
 	v.text = value
 	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	v.add_theme_font_size_override("font_size", 22)
-	v.add_theme_color_override("font_color", Color(0.96, 0.94, 0.99))
 	row.add_child(v)
 	_vbox.add_child(row)
 
+# Used for one-off colored lines (errors, warnings) where the body
+# variation isn't appropriate. Kept tiny and explicit.
 func _make_line(text: String, color: Color) -> Label:
 	var l := Label.new()
+	l.theme_type_variation = "BodyLabel"
 	l.text = text
-	l.add_theme_font_size_override("font_size", 22)
 	l.add_theme_color_override("font_color", color)
 	return l
 
@@ -197,7 +195,7 @@ func _stars_str(n: int) -> String:
 
 func _build_ui() -> void:
 	_root = ColorRect.new()
-	_root.color = Color(0.05, 0.04, 0.08, 0.97)
+	_root.color = Palette.BG_DARKER
 	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_root)
@@ -223,22 +221,19 @@ func _build_header(parent: VBoxContainer) -> void:
 	hdr.add_theme_constant_override("separation", 18)
 	margin.add_child(hdr)
 
+	# DisplayLabel: 48px, TEXT_DISPLAY (theme handles the styling).
 	var title := Label.new()
+	title.theme_type_variation = "DisplayLabel"
 	title.text = "📊  Статистика"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 42)
-	title.add_theme_color_override("font_color", Color(0.92, 0.90, 0.98))
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(title)
 
+	# IconButton variation: empty StyleBoxes + muted/primary colours.
 	var btn_close := Button.new()
+	btn_close.theme_type_variation = "IconButton"
 	btn_close.text = "✕"
 	btn_close.custom_minimum_size = Vector2(72, 72)
-	btn_close.add_theme_font_size_override("font_size", 38)
-	var empty := StyleBoxEmpty.new()
-	for state in ["normal","hover","pressed","focus"]:
-		btn_close.add_theme_stylebox_override(state, empty)
-	btn_close.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
 	btn_close.pressed.connect(close)
 	hdr.add_child(btn_close)
 
