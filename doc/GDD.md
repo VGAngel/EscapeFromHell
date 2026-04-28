@@ -1335,6 +1335,23 @@ deaths)` — записує лише якщо stars зросли або при �
 
 Слоти збереження: показують поточне коло, рівень, кількість душ, час гри.
 
+**Атмосферний шар** (`scripts/ui/MenuAmbient.gd`) — будується у коді
+поверх Background:
+- 🔥 **Embers** — 22 теплі іскри піднімаються з низу екрану
+- 🌫 **Ash** — 18 частинок попелу сипуть зверху
+- 🕯 **Warm flicker** — повноекранний радіальний gradient (canvas_item
+  shader) пульсує як факел (1.7 с період + jitter)
+- 😈 **Sin-tinted vignette** — червоний overlay, alpha = sin% / 100 ×
+  0.22 (тоншає при чистій грі, темніє при високому гріху)
+- 🎮 **Parallax drift** — embers/ash зміщуються від нахилу
+  (`Input.get_accelerometer()`) на mobile або позиції миші на desktop
+  (±14×8 px, smoothing 6.0)
+- ✨ **Title breathing** — TitleLabel плавно дише (scale 1.000↔1.018
+  на 0.45 Hz)
+
+Все respect'ить `SaveManager.get_setting("reduce_motion")` — при
+ввімкненні емітери зупиняються, parallax/flicker/breathing стають no-op.
+
 ### Налаштування
 **Конфіг:** `settings_config.json`
 

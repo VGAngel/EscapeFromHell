@@ -73,6 +73,13 @@ func _ready() -> void:
 	_refresh_seed_label()
 	_version_lbl.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0.1")
 
+	# Atmospheric layer — embers, ash, flicker, sin-tint, parallax.
+	# Built in code so the .tscn can stay slim.
+	var title_node: Label = get_node_or_null("TitleLabel")
+	var amb := preload("res://scripts/ui/MenuAmbient.gd").new()
+	add_child(amb)
+	amb.setup(self, title_node)
+
 	_apply_banner_space()
 	var sa: Node = get_node_or_null("/root/SafeArea")
 	if sa:

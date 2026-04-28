@@ -1407,10 +1407,33 @@ Keys tab.
 Видалити кнопку або заховати під 5-тап на VersionLabel
 (як Android Developer Mode).
 
-### U5. 🟢 Параллакс і амбієнт на тлі меню ⭐⭐⭐
-Зараз тло — плоский ColorRect. Додати: тіні що ковзають,
-GPUParticles2D з попелом, легке мерехтіння факелу. Драматично
-змінює відчуття. Окремий шейдер для «pulsing red» (sin > 50%).
+### U5. ✅ Параллакс і амбієнт на тлі меню
+
+**Реалізовано** як окремий помічник
+[scripts/ui/MenuAmbient.gd](../scripts/ui/MenuAmbient.gd), що чіпляється
+до MainMenu з `_ready()`. Усе — у коді, без нових ассетів.
+
+- **Embers (CPUParticles2D, 22 шт)** — теплі оранжеві іскри піднімаються
+  з низу екрану. Spread 22°, gravity -18, velocity 18..42 px/s
+- **Ash (CPUParticles2D, 18 шт)** — холодний попіл сипле зверху,
+  gravity 8, velocity 10..22 px/s
+- **Warm flicker** — повноекранний ColorRect з canvas_item шейдером:
+  радіальний теплий gradient у центрі + темний vignette, амплітуда
+  пульсує по sin (1.7 с період) + small high-freq jitter — імітація
+  факелу
+- **Sin-tinted vignette** — окремий ColorRect, alpha = sin% / 100 ×
+  0.22, плавно tween-ається при зміні. Полл-інтервал 0.5 с
+- **Parallax drift** — embers/ash зміщуються на ±14×8 px залежно від
+  нахилу пристрою (`Input.get_accelerometer()`) на mobile або від
+  позиції миші на desktop. Lerp smoothing 6.0
+- **Title breathing** — TitleLabel плавно дише (scale 1.000↔1.018,
+  0.45 Hz) через `pivot_offset = size * 0.5`
+- **Reduce-motion gate** — читає `SaveManager.get_setting("reduce_motion")`
+  з graceful fallback. Якщо ввімкнено — embers/ash не emit'ять,
+  parallax/flicker/breathing не оновлюються
+- **Тести:** 5 кейсів у `tests/unit/test_menu_ambient.gd` —
+  створення дітей, безпечний `_process` tick, sin-tint clamp,
+  attach без title, reduce_motion no-op
 
 ### U6. 🟡 Звуковий бекграунд меню ⭐
 Low drone + дальній хор з fade-in/out при переходах.
