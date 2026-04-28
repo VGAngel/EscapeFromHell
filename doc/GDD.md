@@ -1347,10 +1347,10 @@ deaths)` — записує лише якщо stars зросли або при �
     "✋ Редагувати позиції кнопок" → drag-mode overlay, "↺ Скинути позиції".
   - Перепризначення 7 keyboard actions (`move_left`, `move_right`,
     `jump`, `action`, `interact`, `look_down`, `pray`). Натиск кнопки →
-    "Натисніть клавішу..." → наступний key стає biding'ом. **Esc** скасовує.
-    Кнопка "↺ Скинути всі" повертає до snapshot з project.godot.
-    Зберігається у `keybindings: { action: physical_keycode }` дикті.
-    Non-key events (gamepad/mouse) на тих же діях не зачіпаються.
+	"Натисніть клавішу..." → наступний key стає biding'ом. **Esc** скасовує.
+	Кнопка "↺ Скинути всі" повертає до snapshot з project.godot.
+	Зберігається у `keybindings: { action: physical_keycode }` дикті.
+	Non-key events (gamepad/mouse) на тих же діях не зачіпаються.
 
 Зберігається в `user://settings.json` при кожній зміні.
 
