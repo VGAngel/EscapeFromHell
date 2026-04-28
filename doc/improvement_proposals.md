@@ -1628,9 +1628,38 @@ Statistics і Collection: показувати shimmer-плейсхолдери
 
 ## E. HUD під час гри
 
-### U21. 🟢 Sin-bar як «отруйні вени» по краю екрану ⭐⭐⭐
-Замість прямокутної шкали — діегетичний vignette-shader,
-що пульсує сильніше з ростом sin. Драматично і унікально.
+### U21. ✅ Sin-bar як «отруйні вени» по краю екрану
+
+**Реалізовано** як `scripts/ui/SinVignette.gd` — Control з canvas_item
+шейдером, що рендерить діегетичний red-veins vignette по краях
+екрану під час геймплею. Інстансується HUD'ом одним рядком.
+
+**Шейдер:**
+- `edge_mask(uv)` — radial smoothstep, 0 у центрі, 1 на кутах. Тільки
+  на краях рендеримо щось — центр екрану лишається чистим
+- `veins(uv, t)` — двошаровий warped sin field з `pow(...,8)` щоб
+  зробити чіткі тонкі риджі ("вени")
+- Pulse: `0.5 + 0.5 * sin(time * pulse_hz * TAU)` множиться на alpha
+- `pulse_hz` lerp'ається 0.4 → 2.0 Hz залежно від sin% (0 = повільне
+  дихання, 100 = панічна пульсація)
+- Final alpha: `(mask*0.5 + veins*0.5) * pulse * intensity`,
+  capped at MAX_ALPHA = 0.55
+
+**Поведінка:**
+- На 0% sin — повністю прозорий
+- 30% — ледве помітний
+- 60% — чітко червоний по краях
+- 100% — інтенсивна швидка пульсація
+- Tween modulate.a (0.6 с) при зміні sin — ніколи не "стрибає"
+
+**Хуки:**
+- `GameManager.sin_changed(new_value)` → `set_sin()`
+- На `_ready` poll'имо `SaveManager.get_sin()` для resume з ненульовим sin
+- `_process(dt)` оновлює `time` uniform для пульсу
+
+**Тести:** 6 кейсів у `tests/unit/test_sin_vignette.gd` — shader
+material build, intensity = sin%/100, pulse_hz scales, clamp 0..100,
+time advances
 
 ### U22. 🟢 Soul-counter pop-анімація ⭐
 Коли підбираєш душу — лічильник «1/2» пульсує + легкий glow.

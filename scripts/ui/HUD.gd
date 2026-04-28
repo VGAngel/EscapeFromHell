@@ -121,11 +121,28 @@ const _SIN_CAUSE_LABELS: Dictionary = {
 func _ready() -> void:
 	add_to_group("hud")
 	_build_ui()
+	# Poison-veins vignette — diegetic full-screen sin indicator that
+	# overlays the existing UI without hiding it.
+	_install_sin_vignette()
 	# Sin-source toast pipeline. GameManager emits sin_added(amount, cause)
 	# whenever sin moves; we render a transient pop in the bottom-left so
 	# the player can connect each delta to its source.
 	if GameManager and GameManager.has_signal("sin_added"):
 		GameManager.sin_added.connect(_on_sin_added)
+
+
+# Add a SinVignette as a non-interactive overlay sibling. Built in code
+# so HUD.tscn doesn't change. Sits just above the regular HUD content
+# so the veins are visible but the HUD's text/icons remain on top by
+# z-order if added to a higher layer; here we add it below interactive
+# controls so taps still go through.
+func _install_sin_vignette() -> void:
+	var v := preload("res://scripts/ui/SinVignette.gd").new()
+	v.name = "SinVignette"
+	# Insert at index 0 of the HUD so it draws BEHIND the icons and bars
+	# but ABOVE the game viewport.
+	add_child(v)
+	move_child(v, 0)
 
 func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
 	_max_hp     = max_hp
