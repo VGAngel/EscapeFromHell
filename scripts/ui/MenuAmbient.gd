@@ -7,6 +7,9 @@ extends Node
 #   • Embers rising from the bottom (warm orange CPUParticles2D)
 #   • Ash falling from the top (cool grey CPUParticles2D)
 #   • Warm radial flicker (factor of a torch flame)
+#   • Sliding shadows — two soft dark blobs drifting horizontally at
+#     different speeds (parallax depth illusion, like an unseen flame
+#     casting moving shadows on dungeon walls)
 #   • Sin-tinted red vignette whose alpha tracks SaveManager.get_sin()
 #   • Parallax drift on embers/ash from mouse position or accelerometer
 #   • Subtle "breathing" scale-tween on a configurable Label
@@ -26,12 +29,24 @@ const SIN_TINT_MAX      := 0.22
 const TITLE_BREATH_AMP  := 0.018
 const TITLE_BREATH_HZ   := 0.45
 
+# Sliding shadows: two layers, different speeds, overlap-loop with the
+# screen width so the drift is seamless. Speeds are px/s — slow enough
+# to read as atmosphere rather than motion.
+const SHADOW_FAR_SPEED  := 28.0
+const SHADOW_NEAR_SPEED := -46.0
+const SHADOW_FAR_ALPHA  := 0.18
+const SHADOW_NEAR_ALPHA := 0.26
+
 var _root: Control = null
 var _title: Label = null
 var _embers: CPUParticles2D = null
 var _ash: CPUParticles2D = null
 var _flicker: ColorRect = null
 var _sin_tint: ColorRect = null
+var _shadow_far: ColorRect = null
+var _shadow_near: ColorRect = null
+var _shadow_far_x: float = 0.0
+var _shadow_near_x: float = 0.0
 var _t: float = 0.0
 var _tilt: Vector2 = Vector2.ZERO
 var _sin_poll: float = 0.0
@@ -40,14 +55,42 @@ var _reduce_motion: bool = false
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+# Preset config — toggles which subsystems are built. Lets the same
+# script power MainMenu (full ambient) and Hub (lighter, no ash/sin
+# tint/title breath) without duplicating the build pipeline.
+const _PRESETS := {
+	"menu": {
+		"shadows":  true,
+		"flicker":  true,
+		"embers":   true,
+		"ash":      true,
+		"sin_tint": true,
+		"parallax": true,
+		"breath":   true,
+	},
+	"hub": {
+		"shadows":  true,
+		"flicker":  true,
+		"embers":   true,
+		"ash":      false,
+		"sin_tint": true,
+		"parallax": false,
+		"breath":   false,
+	},
+}
+var _preset: Dictionary = _PRESETS["menu"]
+
+
 # Caller pattern (works in both editor builds and headless tests):
 #   var amb = preload("res://scripts/ui/MenuAmbient.gd").new()
 #   root.add_child(amb)
-#   amb.setup(root, title_label)
-func setup(root: Control, title: Label = null) -> void:
+#   amb.setup(root, title_label, "menu")
+func setup(root: Control, title: Label = null, preset: String = "menu") -> void:
 	name = "MenuAmbient"
 	_root = root
 	_title = title
+	if _PRESETS.has(preset):
+		_preset = _PRESETS[preset]
 	_build()
 
 
@@ -57,16 +100,26 @@ func _build() -> void:
 	if _root == null:
 		return
 	_reduce_motion = _read_reduce_motion()
-	_build_flicker()
-	_build_embers()
-	_build_ash()
-	_build_sin_tint()
+	if _preset.get("shadows", true):
+		_build_shadows()
+	if _preset.get("flicker", true):
+		_build_flicker()
+	if _preset.get("embers", true):
+		_build_embers()
+	if _preset.get("ash", true):
+		_build_ash()
+	if _preset.get("sin_tint", true):
+		_build_sin_tint()
 	# Insert ourselves above Background but below TitleLabel/buttons.
 	# Background is typically child index 0 in MainMenu.tscn.
+	# Order: shadows (deepest) → flicker → embers/ash → sin-tint.
 	if _root.has_node("Background"):
 		var bg_idx: int = _root.get_node("Background").get_index()
-		# Move particle/visual nodes right after the background.
-		for child in [_flicker, _embers, _ash, _sin_tint]:
+		var ordered := [
+			_shadow_far, _shadow_near,
+			_flicker, _embers, _ash, _sin_tint,
+		]
+		for child in ordered:
 			if child and child.is_inside_tree():
 				_root.move_child(child, bg_idx + 1)
 	set_process(true)
@@ -123,6 +176,60 @@ func _build_ash() -> void:
 		_ash.emitting = false
 
 
+# Two horizontally-drifting dark blobs at different depths.
+# Implemented as ColorRects with a canvas_item shader that draws a
+# soft elliptical gradient — wider than the screen so the loop seam is
+# never visible. Position is updated on _process; UV-based mask keeps
+# the blob soft-edged.
+func _build_shadows() -> void:
+	var size := _viewport_size()
+	# Far layer — wide, slow, low alpha
+	_shadow_far = _make_shadow_rect(size, 1.6, 0.45, SHADOW_FAR_ALPHA, 0.55)
+	_shadow_far.name = "ShadowFar"
+	_root.add_child(_shadow_far)
+	# Near layer — narrower, faster, higher alpha, lower vertical centre
+	_shadow_near = _make_shadow_rect(size, 1.1, 0.65, SHADOW_NEAR_ALPHA, 0.40)
+	_shadow_near.name = "ShadowNear"
+	_root.add_child(_shadow_near)
+	# Initial seed offset so they don't start aligned
+	_shadow_far_x = -size.x * 0.25
+	_shadow_near_x = size.x * 0.40
+
+
+# Builds one shadow ColorRect: width is `width_mult * viewport.x`,
+# rendered with a radial elliptical gradient via shader so the edges
+# are soft. `width_norm`, `height_norm` size the blob within UV space.
+func _make_shadow_rect(size: Vector2, width_mult: float,
+		v_center_norm: float, alpha: float, blob_w: float) -> ColorRect:
+	var rect := ColorRect.new()
+	rect.size = Vector2(size.x * width_mult, size.y)
+	rect.position = Vector2(0, 0)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sh := Shader.new()
+	sh.code = """
+shader_type canvas_item;
+uniform float alpha : hint_range(0.0, 1.0) = 0.2;
+uniform float vcenter : hint_range(0.0, 1.0) = 0.5;
+uniform float blob_w : hint_range(0.0, 1.0) = 0.5;
+void fragment() {
+	// Elliptical mask centred at (0.5, vcenter). Horizontally wide
+	// (blob_w), vertically tighter (0.35).
+	vec2 d = vec2((UV.x - 0.5) / blob_w,
+				  (UV.y - vcenter) / 0.35);
+	float r = length(d);
+	float mask = 1.0 - smoothstep(0.4, 1.0, r);
+	COLOR = vec4(0.0, 0.0, 0.0, mask * alpha);
+}
+"""
+	var sm := ShaderMaterial.new()
+	sm.shader = sh
+	sm.set_shader_parameter("alpha",   alpha)
+	sm.set_shader_parameter("vcenter", v_center_norm)
+	sm.set_shader_parameter("blob_w",  blob_w)
+	rect.material = sm
+	return rect
+
+
 # Warm radial vignette that pulses softly — mimics a torch flicker.
 func _build_flicker() -> void:
 	_flicker = ColorRect.new()
@@ -168,9 +275,14 @@ func _build_sin_tint() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	_update_parallax(delta)
-	_update_flicker()
-	_update_title_breathing()
+	if _preset.get("parallax", true):
+		_update_parallax(delta)
+	if _preset.get("flicker", true):
+		_update_flicker()
+	if _preset.get("shadows", true):
+		_update_shadows(delta)
+	if _preset.get("breath", true):
+		_update_title_breathing()
 	_sin_poll += delta
 	if _sin_poll >= 0.5:
 		_sin_poll = 0.0
@@ -215,6 +327,32 @@ func _update_flicker() -> void:
 	var base := 1.0 + 0.10 * sin(_t * TAU / FLICKER_PERIOD)
 	var jitter := 0.04 * sin(_t * 9.31 + 1.7)
 	sm.set_shader_parameter("strength", base + jitter)
+
+
+# Move shadow rects horizontally and wrap their position so the loop
+# is seamless. The rects are rendered wider than the screen (1.6× for
+# far, 1.1× for near) so the soft elliptical mask never reveals an edge
+# during wrap-around.
+func _update_shadows(delta: float) -> void:
+	if _reduce_motion:
+		return
+	if _shadow_far == null or _shadow_near == null:
+		return
+	var size := _viewport_size()
+	_shadow_far_x  += SHADOW_FAR_SPEED  * delta
+	_shadow_near_x += SHADOW_NEAR_SPEED * delta
+	# Wrap each layer back into the on-screen range. The rect is wider
+	# than the screen so we shift by viewport.x, not rect width.
+	var far_w  := _shadow_far.size.x
+	var near_w := _shadow_near.size.x
+	# Offset so the blob center moves; subtract half the (rect-screen)
+	# overhang so position 0 starts the rect with overlap on both edges.
+	var far_overhang  := far_w  - size.x
+	var near_overhang := near_w - size.x
+	var far_x  := -far_overhang  * 0.5 + fposmod(_shadow_far_x,  size.x) - size.x * 0.5
+	var near_x := -near_overhang * 0.5 + fposmod(_shadow_near_x, size.x) - size.x * 0.5
+	_shadow_far.position.x  = far_x
+	_shadow_near.position.x = near_x
 
 
 # Subtle "breathing" scale on title, anchored at its centre.

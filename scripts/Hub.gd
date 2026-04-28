@@ -105,6 +105,12 @@ func _ready() -> void:
 	_refresh_currency()
 	_build_skip_indicator()
 
+	# Atmospheric ambient layer (lighter "hub" preset — shadows + flicker
+	# + embers + sin-tint, no ash/parallax/breathing).
+	var amb := preload("res://scripts/ui/MenuAmbient.gd").new()
+	add_child(amb)
+	amb.setup(self, null, "hub")
+
 	modulate.a = 0.0
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)

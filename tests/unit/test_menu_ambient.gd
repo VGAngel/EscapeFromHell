@@ -38,6 +38,38 @@ func test_attach_creates_children() -> void:
 	assert_true(root.has_node("Ash"), "Ash should exist")
 	assert_true(root.has_node("FlickerVignette"), "Flicker should exist")
 	assert_true(root.has_node("SinTint"), "SinTint should exist")
+	assert_true(root.has_node("ShadowFar"), "ShadowFar should exist")
+	assert_true(root.has_node("ShadowNear"), "ShadowNear should exist")
+
+func test_shadows_drift_horizontally_each_frame() -> void:
+	ambient = _attach()
+	var far_rect: ColorRect = root.get_node("ShadowFar")
+	var near_rect: ColorRect = root.get_node("ShadowNear")
+	var x0_far: float = far_rect.position.x
+	var x0_near: float = near_rect.position.x
+	# Tick a fraction of a second; positions should change.
+	ambient._process(0.5)
+	assert_ne(far_rect.position.x, x0_far, "far shadow should drift")
+	assert_ne(near_rect.position.x, x0_near, "near shadow should drift")
+
+func test_hub_preset_skips_ash() -> void:
+	# Attach with the "hub" preset — ash should NOT be built.
+	var amb: Node = MenuAmbientScript.new()
+	root.add_child(amb)
+	amb.setup(root, null, "hub")
+	assert_true(root.has_node("Embers"), "embers still built in hub")
+	assert_false(root.has_node("Ash"), "ash should be skipped in hub preset")
+	assert_true(root.has_node("ShadowFar"), "shadows still built")
+	# Tick to make sure the preset gates don't crash on _process either.
+	amb._process(0.016)
+
+func test_reduce_motion_freezes_shadows() -> void:
+	ambient = _attach()
+	ambient._reduce_motion = true
+	var far_rect: ColorRect = root.get_node("ShadowFar")
+	var x0: float = far_rect.position.x
+	ambient._process(0.5)
+	assert_eq(far_rect.position.x, x0, "shadows must not move under reduce_motion")
 
 func test_attach_without_title_does_not_crash() -> void:
 	ambient = _attach(false)

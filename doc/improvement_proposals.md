@@ -1458,12 +1458,23 @@ ButtonsContainer.
   позиції миші на desktop. Lerp smoothing 6.0
 - **Title breathing** — TitleLabel плавно дише (scale 1.000↔1.018,
   0.45 Hz) через `pivot_offset = size * 0.5`
+- **Sliding shadows** — два темні елліптичні «плями» дрейфують
+  горизонтально на різних швидкостях (-46 / +28 px/s) і alpha (0.26 /
+  0.18). Ширина rect'а 1.6× / 1.1× екрану з canvas_item shader що
+  робить soft elliptical mask — seam при wrap-around невидимий.
+  Імітує тіні від невидимого джерела світла на стінах підземелля
 - **Reduce-motion gate** — читає `SaveManager.get_setting("reduce_motion")`
   з graceful fallback. Якщо ввімкнено — embers/ash не emit'ять,
-  parallax/flicker/breathing не оновлюються
-- **Тести:** 5 кейсів у `tests/unit/test_menu_ambient.gd` —
-  створення дітей, безпечний `_process` tick, sin-tint clamp,
-  attach без title, reduce_motion no-op
+  parallax/flicker/breathing/shadows не оновлюються
+- **Presets** — `setup(root, title, preset)` приймає `"menu"` (повний
+  набір) або `"hub"` (без ash, без parallax, без title-breath).
+  Дозволяє переюзати скрипт у Hub.gd одним рядком
+- **Hub.gd інтеграція** — атмосферний шар на Hub-екрані з пресетом
+  `"hub"`: shadows + flicker + embers + sin-tint
+- **Тести:** 8 кейсів у `tests/unit/test_menu_ambient.gd` —
+  створення дітей (включно з shadows), безпечний `_process` tick,
+  sin-tint clamp, attach без title, reduce_motion no-op (для shadows
+  теж), hub preset skip ash, shadow drift over time
 
 ### U6. 🟡 Звуковий бекграунд меню ⭐
 Low drone + дальній хор з fade-in/out при переходах.
