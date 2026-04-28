@@ -1445,10 +1445,34 @@ Low drone + дальній хор з fade-in/out при переходах.
 Статистика | Налаштування». Менше fade-tween, швидший доступ.
 Великий рефактор.
 
-### U8. 🟢 Централізований UIRouter / back-stack ⭐⭐
-Зараз кожен overlay сам обробляє Esc. Винести у `scripts/ui/UIRouter.gd`
-автолоад. `push(screen)` / `pop()` / `replace()`. Esc/Android-back
-завжди закриває верхній.
+### U8. ✅ Централізований UIRouter / back-stack
+
+**Реалізовано** як новий autoload
+[scripts/managers/UIRouter.gd](../scripts/managers/UIRouter.gd).
+
+- **Стек overlay'ів** — `_stack: Array[Node]`. API: `push()`, `pop()`,
+  `pop_all()`, `top()`, `depth()`, `is_open()`, `contains()`
+- **Сигнали** — `stack_changed(depth)`, `screen_pushed(screen)`,
+  `screen_popped(screen)` (готові підписники для майбутнього TopBar)
+- **Duck-typing контракт** — overlay має `signal closed`, `func open()`,
+  `func close()`. Опційно `router_title()` для TopBar
+- **Не перехоплює Esc** — overlay'і вже коректно це роблять через
+  `_unhandled_input` + `set_input_as_handled`. Замість цього router
+  слухає `closed` сигнал щоб тримати стек у синхроні
+- **Android hardware-back** — `NOTIFICATION_WM_GO_BACK_REQUEST`
+  викликає `pop()` якщо стек не порожній (Godot за замовчуванням
+  робить quit)
+- **Автоочистка** — підписаний на `tree_exiting` кожного pushed
+  screen'а, тому scene-change / queue_free автоматично видаляє з
+  стеку
+- **Подвійний push того ж screen'а** — no-op + повторний `open()` для
+  refresh контенту
+- **MainMenu міграція** — кожен `_on_*` хендлер тепер викликає
+  `_open_via_router(screen)` замість прямого `.open()`. 5 рядків
+  загального коду замість дублювання
+- **Тести:** 12 кейсів у `tests/unit/test_ui_router.gd` — push/pop
+  глибина, no-op на null, дубль-push, multi-stack ordering, pop-всі,
+  closed-signal sync, tree-exit cleanup, signal параметри
 
 ### U9. 🟡 Swipe-to-close для overlay ⭐
 Свайп вниз від хедера закриває екран — мобільна звичка

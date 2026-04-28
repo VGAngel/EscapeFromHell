@@ -165,20 +165,17 @@ func _fade_to(scene_path: String) -> void:
 	)
 
 func _on_collection() -> void:
-	_collection.open()
-	_set_interactive(false)
+	_open_via_router(_collection)
 
 func _on_settings() -> void:
-	_settings.open()
-	_set_interactive(false)
+	_open_via_router(_settings)
 
 func _on_no_ads() -> void:
 	if AdsManager and AdsManager.has_method("purchase_no_ads"):
 		AdsManager.purchase_no_ads()
 
 func _on_donate() -> void:
-	_donate.open()
-	_set_interactive(false)
+	_open_via_router(_donate)
 
 func _on_exit() -> void:
 	_set_interactive(false)
@@ -187,14 +184,24 @@ func _on_exit() -> void:
 	tw.tween_callback(func() -> void: get_tree().quit())
 
 func _on_profile() -> void:
-	if _profiles:
-		_profiles.open()
-		_set_interactive(false)
+	_open_via_router(_profiles)
 
 func _on_levels() -> void:
-	if _level_debug:
-		_level_debug.open()
-		_set_interactive(false)
+	_open_via_router(_level_debug)
+
+# Single entry point for "show overlay X" — pushes via UIRouter (so any
+# observer like the upcoming TopBar reacts) and disables menu buttons
+# while the overlay is up. The overlay's own `closed` signal still
+# triggers `_on_overlay_closed`, which re-enables buttons.
+func _open_via_router(screen: Node) -> void:
+	if screen == null:
+		return
+	var router: Node = get_node_or_null("/root/UIRouter")
+	if router and router.has_method("push"):
+		router.push(screen)
+	elif screen.has_method("open"):
+		screen.open()
+	_set_interactive(false)
 
 func _on_seed() -> void:
 	# One click = new world seed. The old SeedDialog (manual entry) is kept in

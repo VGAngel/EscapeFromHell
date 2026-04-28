@@ -1233,6 +1233,35 @@ win-condition).
 
 ## 13. UI Екрани
 
+### UIRouter (back-stack)
+
+**Autoload:** `scripts/managers/UIRouter.gd`
+
+Централізований стек modal-overlay'ів — один source-of-truth «що зараз
+відкрите» для будь-якої частини коду (UI, audio, pause тощо).
+
+**API:**
+- `push(screen)` — викликає `screen.open()` і додає на верх стеку.
+  Дубль-push того ж екрану викликає лише `open()` (refresh)
+- `pop()` — закриває верхній (через `screen.close()`)
+- `pop_all()` — закриває все (зворотний порядок)
+- `top()` / `depth()` / `is_open()` / `contains(screen)`
+
+**Сигнали:** `stack_changed(depth)`, `screen_pushed`, `screen_popped` —
+TopBar (U10) та інші observers слухають їх.
+
+**Контракт overlay:** має `signal closed`, `open()`, `close()`. Router
+підписаний на `closed` щоб синхронізувати стек коли overlay закривається
+сам (Esc, ✕). Не перехоплює `_unhandled_input` — overlay'і обробляють
+Esc як і раніше.
+
+**Android hardware-back:** `NOTIFICATION_WM_GO_BACK_REQUEST` викликає
+`pop()` якщо стек не порожній — інакше Godot за замовчуванням робить
+quit, що небажано при відкритому Settings.
+
+**MainMenu** використовує єдиний хелпер `_open_via_router(screen)`
+замість прямих `.open()` викликів.
+
 ### HUD (під час гри)
 **Конфіг:** `hud_config.json`
 
