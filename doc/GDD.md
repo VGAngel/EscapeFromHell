@@ -7,8 +7,8 @@
 **Мова розробки:** GDScript (typed)
 
 > Зміни 1.1 → 1.2: камера look-down, soul_echo (нести 2 душі), enemy
-> fatigue + vertical sight clamp, crumbling/ash warning shake, staff
-> impact sparks + flash, per-level personal best + 3-star рубрика
+> vertical sight clamp, crumbling/ash warning shake, staff impact
+> sparks + flash, per-level personal best + 3-star рубрика
 > (1=clear / 2=no-deaths / 3=under target_time).
 >
 > Зміни 1.2 → 1.3: переназначення клавіш у Settings, окремий екран
@@ -533,7 +533,7 @@ HUD показує індикатор `✋ N/M` лише коли ємність
 ### Стейт-машина
 
 ```
-PATROL → ALERT → CHASE → GIVE_UP → PATROL (fatigued) → PATROL (normal)
+PATROL → ALERT → CHASE → GIVE_UP → PATROL
 							  ↑
 						  STUNNED
 ```
@@ -549,27 +549,11 @@ PATROL → ALERT → CHASE → GIVE_UP → PATROL (fatigued) → PATROL (normal)
 ### Виявлення гравця (`_can_see_player`)
 
 Перевірки виконуються по черзі — false на будь-якій → ворог не бачить:
-1. **Fatigue** — після GIVE_UP таймер ігнорування гравця (див. нижче)
-2. **Soul Shield** — апгрейд: 3 сек після підбору душі ворог не реагує
-3. **Vertical sight clamp** — `|player.y - enemy.y| > max_vertical_sight`
+1. **Soul Shield** — апгрейд: 3 сек після підбору душі ворог не реагує
+2. **Vertical sight clamp** — `|player.y - enemy.y| > max_vertical_sight`
    (default 100 px) → ні. Гравець на іншому ряду шахти невидимий.
-4. **Detection range** — distance ≤ `detection_range` (default 200 px,
+3. **Detection range** — distance ≤ `detection_range` (default 200 px,
    override per enemy в `enemies_config.json`)
-
-### Post-chase fatigue (відпочинок)
-
-Після GIVE_UP ворог входить у "fatigued patrol" — патрулює як завжди, але
-`_can_see_player()` повертає false. Тривалість лінійно масштабується від
-кола:
-
-| Коло | Fatigue | Повний цикл (ALERT+CHASE+GIVE_UP+FATIGUE) |
-|------|---------|-------------------------------------------|
-| 1    | 14 с    | ~23.5 с |
-| 5    | 10 с    | ~19.5 с |
-| 10   | 6 с     | ~15.5 с |
-
-`@export var fatigue_duration: float = 0.0` дозволяє жорстко задати на сцені.
-0 = авто-розрахунок.
 
 ### Просторовий звук
 Дихання ворога чути з відстані 300 px — ще до того як гравець його бачить. Гравець може орієнтуватись на звук.

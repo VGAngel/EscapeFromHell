@@ -21,13 +21,6 @@ var state: State = State.PATROL
 ## would "see" the player two platforms above and trigger an unwinnable chase.
 ## Set to 0 to disable (e.g. for flying enemies authored later).
 @export var max_vertical_sight: float = 100.0
-## Cooldown after GIVE_UP during which the enemy ignores the player even
-## if visible — gives the player a real escape window. 0.0 = auto-derive
-## from the parent room's circle (Circle 1 = 14 s, Circle 10 = 6 s).
-@export var fatigue_duration:  float = 0.0
-
-const FATIGUE_MIN_SECONDS: float = 6.0    # Circle 10 — relentless
-const FATIGUE_MAX_SECONDS: float = 14.0   # Circle 1 — forgiving
 
 # ── Contact damage ────────────────────────────────────────────────────────────
 @export var contact_damage:    int   = 1
@@ -54,7 +47,6 @@ var _patrol_origin:  Vector2 = Vector2.ZERO
 var _patrol_dir:     float   = 1.0
 var _facing_right:   bool    = true
 var _hit_cooldown:   float   = 0.0
-var _fatigue_timer:  float   = 0.0
 var _config_applied: bool    = false
 
 const GRAVITY: float       = 900.0
@@ -139,8 +131,6 @@ func _tick_timers(delta: float) -> void:
 		_alert_timer -= delta
 	if _give_up_timer > 0.0 and state == State.GIVE_UP:
 		_give_up_timer -= delta
-	if _fatigue_timer > 0.0:
-		_fatigue_timer -= delta
 	if _jump_cooldown > 0.0:
 		_jump_cooldown -= delta
 
@@ -194,10 +184,6 @@ func _do_patrol(_delta: float) -> void:
 
 func _can_see_player() -> bool:
 	if not _player:
-		return false
-	# Fatigue: enemy just gave up a chase and needs to "rest" before
-	# spotting the player again — even if the player walks right past.
-	if _fatigue_timer > 0.0:
 		return false
 	if _player.get("_soul_shield_timer") and _player._soul_shield_timer > 0.0:
 		return false
@@ -283,33 +269,7 @@ func _do_give_up(_delta: float) -> void:
 	var reached: bool = absf(global_position.x - _last_known_pos.x) < 16.0
 	if reached or _give_up_timer <= 0.0:
 		_hide_question_mark()
-		_begin_fatigue()
 		_enter_patrol()
-
-# ── FATIGUE ──────────────────────────────────────────────────────────────────
-## Start the post-chase rest window. Duration scales with the parent room's
-## circle so early levels feel forgiving and late levels feel relentless:
-## Circle 1 → 14 s, Circle 10 → 6 s (linear). An explicit fatigue_duration
-## export overrides the auto-scale.
-func _begin_fatigue() -> void:
-	_fatigue_timer = fatigue_duration if fatigue_duration > 0.0 else _fatigue_for_circle()
-
-func _fatigue_for_circle() -> float:
-	var c: int = _resolve_room_circle()
-	if c <= 0:
-		return 10.0   # mid-tier default when no room context is available
-	# Linear from 14 s @ Circle 1 down to 6 s @ Circle 10.
-	var span: float = FATIGUE_MAX_SECONDS - FATIGUE_MIN_SECONDS
-	var t: float = clampf(float(c - 1) / 9.0, 0.0, 1.0)
-	return FATIGUE_MAX_SECONDS - span * t
-
-func _resolve_room_circle() -> int:
-	var node: Node = get_parent()
-	while node:
-		if "circle" in node and int(node.get("circle")) > 0:
-			return int(node.get("circle"))
-		node = node.get_parent()
-	return 0
 
 # ── RETURN ────────────────────────────────────────────────────────────────────
 # RETURN більше не потрібен — ворог патрулює ту платформу де зупинився.
@@ -350,7 +310,6 @@ func reset_to_patrol() -> void:
 	velocity        = Vector2.ZERO
 	state           = State.PATROL
 	_hit_cooldown   = 0.0
-	_fatigue_timer  = 0.0   # respawn = clean encounter, drop any leftover fatigue
 
 func stun(duration: float) -> void:
 	state = State.STUNNED
