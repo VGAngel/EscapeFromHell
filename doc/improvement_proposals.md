@@ -1376,3 +1376,163 @@ Keys tab.
   `_apply_haptics()` пушить значення у HapticManager на старті
 - **Тести:** 10 кейсів у `test_haptic_manager.gd` — toggle persistence,
   mobile detection, всі helper'и не крашаться, disabled state safe
+
+---
+
+# 🖼  UI / UX rework — головне меню та інтерфейс
+
+Розширений brainstorm. Легенда складності: ⭐ малий, ⭐⭐ середній,
+⭐⭐⭐ великий. Колір — мій вотинг: 🟢 беремо, 🟡 під питанням,
+🔴 на потім.
+
+## A. Головне меню — структура та ієрархія
+
+### U1. 🟢 Скоротити список кнопок до 5–6 ⭐⭐
+Зараз 9 кнопок (Грати/Профіль/Душі/Налаштування/Levels/Seed/NoAds/Donate/Вихід)
+— забагато для мобільного. Запропонована структура:
+- **Hero-CTA:** велика «Грати» з підписом «Рівень 4 · 23/100 душ»
+- **Continue-row:** маленька «Продовжити з рівня X» якщо є збереження
+- **Secondary row:** Колекція · Налаштування · Профіль
+- **Footer-row (icon-only):** 🌱 Seed · 🚫 No-Ads · 💝 Donate · ✕ Exit · 📊 Stats
+
+### U2. 🟢 Hero-картка над кнопками ⭐⭐
+Показувати ключовий стан гравця: круг, ім'я, душі, найкращий час, sin %.
+Перетворює «холодне» меню на «продовжити пригоду».
+
+### U3. 🟢 Динамічний текст на «Грати» ⭐
+«Грати — рівень 4» / «Спробувати знову — рівень 7» / «Новий забіг»
+залежно від `SaveManager.get_current_level()` та чи є деаз минулий запуск.
+
+### U4. 🟡 Сховати Levels(debug) у релізі ⭐
+Видалити кнопку або заховати під 5-тап на VersionLabel
+(як Android Developer Mode).
+
+### U5. 🟢 Параллакс і амбієнт на тлі меню ⭐⭐⭐
+Зараз тло — плоский ColorRect. Додати: тіні що ковзають,
+GPUParticles2D з попелом, легке мерехтіння факелу. Драматично
+змінює відчуття. Окремий шейдер для «pulsing red» (sin > 50%).
+
+### U6. 🟡 Звуковий бекграунд меню ⭐
+Low drone + дальній хор з fade-in/out при переходах.
+
+## B. Навігація / overlay поведінка
+
+### U7. 🟡 Tabbed hub замість 5 окремих overlay ⭐⭐⭐
+Один Drawer/Tab контейнер: «Прогрес | Колекція | Покращення |
+Статистика | Налаштування». Менше fade-tween, швидший доступ.
+Великий рефактор.
+
+### U8. 🟢 Централізований UIRouter / back-stack ⭐⭐
+Зараз кожен overlay сам обробляє Esc. Винести у `scripts/ui/UIRouter.gd`
+автолоад. `push(screen)` / `pop()` / `replace()`. Esc/Android-back
+завжди закриває верхній.
+
+### U9. 🟡 Swipe-to-close для overlay ⭐
+Свайп вниз від хедера закриває екран — мобільна звичка
+(Telegram, iOS sheets).
+
+### U10. 🟢 Persistent top-bar на hub-екранах ⭐⭐
+Ліворуч 🔙, по центру назва екрану, праворуч 💡 баланс + 👻 душі.
+Зараз ці лічильники розкидані по екранах.
+
+## C. Візуальний стиль / theme
+
+### U11. 🟢 Єдина Theme.tres ⭐⭐⭐
+Кожен екран будує StyleBox у коді (StatisticsScreen, SettingsScreen,
+PauseScreen…). Винести у спільний `res://theme/main.tres`:
+primary/secondary/danger button styles, label styles, separator,
+panel. Один edit змінює всю гру. Великий, але одноразовий рефактор.
+
+### U12. 🟢 Шрифтова ієрархія (5 рівнів) ⭐
+Зараз font_size розкиданий: 16/22/24/32/38/42/63. Звести до:
+- Display 48, Title 32, Section 24, Body 18, Caption 14
+- Винести у Theme як named font_sizes
+
+### U13. 🟢 Palette.gd з іменованими кольорами ⭐
+Зараз `Color("#FFD700")`, `Color(0.92, 0.90, 0.98)` розкидані.
+Винести: `Palette.GOLD`, `Palette.SIN_RED`, `Palette.UI_TEXT_PRIMARY` тощо.
+
+### U14. 🟡 Ripple/glow на pressed-state ключових кнопок ⭐⭐
+Особливо «Грати» і soul-deliver popup OK — додає вагу натиску.
+
+### U15. 🟢 Sin-stained UI tint ⭐⭐
+За високого sin% UI поступово темніє/червоніє
+(global Modulate на root CanvasLayer). Діегетична деталь, унікальна
+для гри.
+
+## D. Feedback & «feel»
+
+### U16. 🟢 Haptic + sound на кожен button-press ⭐
+HapticManager уже є. Пройтись по всіх Button-ах і
+викликати `HapticManager.tap_light()` (новий метод, 15ms / 0.15)
++ SoundManager.play("ui_tap").
+
+### U17. 🟢 Tap-grow анімація на всіх кнопках ⭐
+Зробити `_pulse_seed_button` загальним: підключити через
+`button.pressed.connect(UIFeedback.pulse.bind(button))`.
+
+### U18. 🟡 Skeleton-loader / shimmer ⭐⭐
+Statistics і Collection: показувати shimmer-плейсхолдери
+поки SaveManager парсить. Зараз клік → пауза → екран.
+
+### U19. 🟡 «NEW!» badge у Collection ⭐
+Якщо нову душу врятовано — відмітити в SaveManager.collection_seen
+і показати пульсуючий бейдж.
+
+### U20. 🔴 Versions/build chip → changelog overlay ⭐⭐
+Клік по `v0.1` відкриває changelog popup. Для тестерів і фанів.
+
+## E. HUD під час гри
+
+### U21. 🟢 Sin-bar як «отруйні вени» по краю екрану ⭐⭐⭐
+Замість прямокутної шкали — діегетичний vignette-shader,
+що пульсує сильніше з ростом sin. Драматично і унікально.
+
+### U22. 🟢 Soul-counter pop-анімація ⭐
+Коли підбираєш душу — лічильник «1/2» пульсує + легкий glow.
+
+### U23. 🟡 Mini-map / depth-indicator ⭐⭐
+Ліворуч екрану вертикальна шкала: положення на круглі
+(altar → bottom). Іконки душ, чекпойнтів, боса.
+
+### U24. 🟢 Damage flash vignette ⭐
+ColorRect з border-vignette шейдером, червоний flash при ударі.
+Tween alpha 0→0.5→0 за 0.25с.
+
+### U25. 🟡 Контекстні підказки внизу ⭐⭐
+Whisper-style: «Тримай ↓ щоб побачити нижче», «Подвійний тап —
+гасить світло», «Зачаїтись — Shift». Показувати раз на сесію
+через TutorialManager.
+
+## F. Доступність / зручність
+
+### U26. 🟢 Текстова шкала в Settings ⭐⭐
+UI 90/100/110/120%. Множник на font_size override-и.
+
+### U27. 🟡 High-contrast тема ⭐⭐
+Для денного світла на телефоні. Перемикач в Settings.
+
+### U28. 🟢 Reduce motion (доробити) ⭐
+Глобальний прапорець вимикає тремтіння камери, параллакс,
+particle ambient. Частково є — централізувати.
+
+### U29. 🟡 Однорукий режим / left-handed ⭐⭐
+Дзеркальне розташування MobileControls + великий «Грати»
+внизу екрану меню (а не в центрі).
+
+### U30. 🟢 Локалізація-ready ⭐⭐
+Зараз тексти hardcoded українською. Прокинути через `Loc`
+(autoload вже є). Підготовка до EN/RU/PL/інших.
+
+## 🎯 Топ-5 за ROI
+
+1. **U1 + U2 + U3** — Hero-картка + динамічна «Грати» —
+   миттєво робить меню «живим». ⭐⭐
+2. **U11 + U12 + U13** — Theme.tres + Palette.gd + font hierarchy —
+   найбільший майбутній виграш у часі. ⭐⭐⭐ (одноразово)
+3. **U10 + U8** — Top-bar з 💡/👻 + back-stack — рятує
+   «куди натиснути back». ⭐⭐
+4. **U5** — Параллакс/частинки на меню — найвищий «WOW» / зусилля. ⭐⭐⭐
+5. **U15 + U21** — Sin-stained UI tint + поізонні вени —
+   діегетичні деталі, унікальні для гри. ⭐⭐⭐
+
