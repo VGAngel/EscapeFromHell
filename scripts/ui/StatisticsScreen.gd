@@ -169,7 +169,9 @@ func _make_line(text: String, color: Color) -> Label:
 
 func _format_hms(seconds: float) -> String:
 	var s: int = int(seconds)
+	@warning_ignore("integer_division")
 	var h: int = s / 3600
+	@warning_ignore("integer_division")
 	var m: int = (s % 3600) / 60
 	var sec: int = s % 60
 	if h > 0:
@@ -180,6 +182,7 @@ func _format_time(seconds: float) -> String:
 	if seconds == INF:
 		return "—"
 	var s: int = int(seconds)
+	@warning_ignore("integer_division")
 	return "%d:%02d" % [s / 60, s % 60]
 
 func _stars_str(n: int) -> String:
