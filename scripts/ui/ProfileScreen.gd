@@ -25,6 +25,9 @@ func _ready() -> void:
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
+func router_title() -> String:
+	return "Профілі"
+
 func open() -> void:
 	visible = true
 	_confirm_slot  = -1

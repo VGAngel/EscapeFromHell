@@ -1478,9 +1478,35 @@ Low drone + дальній хор з fade-in/out при переходах.
 Свайп вниз від хедера закриває екран — мобільна звичка
 (Telegram, iOS sheets).
 
-### U10. 🟢 Persistent top-bar на hub-екранах ⭐⭐
-Ліворуч 🔙, по центру назва екрану, праворуч 💡 баланс + 👻 душі.
-Зараз ці лічильники розкидані по екранах.
+### U10. ✅ Persistent top-bar на hub-екранах
+
+**Реалізовано** як `scripts/ui/TopBar.gd` (CanvasLayer на layer 11,
+вище overlay layer 10). Інстансується з MainMenu одним рядком.
+
+- **Видимість** — підписаний на `UIRouter.stack_changed`. depth>=1 →
+  fade-in (0.18 с), depth==0 → fade-out
+- **Layout (left → right):**
+  - 🔙 Back-кнопка (IconButton variation) — викликає `UIRouter.pop()`
+  - Title (TitleLabel variation) — заповнює центр, текст з
+    `UIRouter.top().router_title()`
+  - Resources block: 💡 light (gold), 👻 souls (blue), 😈 sin (red)
+- **Resource polling** — оновлюється на router-change + раз на
+  секунду поки видимий (SaveManager не має сигналів)
+- **Safe-area aware** — top inset зчитується з `SafeArea.top_reserved`
+  і застосовується до `_bar.offset_top`. Підписаний на `SafeArea.changed`
+- **Tap absorbing** — BG ColorRect має `MOUSE_FILTER_STOP` щоб таппи
+  по бару не падали на overlay під ним
+- **Theme variations** — використовує IconButton/TitleLabel/BodyLabel
+  з UITheme; кольори ресурсів через `add_theme_color_override` +
+  Palette.GOLD/ACCENT_BLUE/SIN_RED
+- **`router_title()` додано** до 6 overlay'ів: StatisticsScreen
+  ("Статистика"), CollectionScreen ("Врятовані душі"), SettingsScreen
+  ("Налаштування"), DonatePanel ("Підтримати"), ProfileScreen
+  ("Профілі"), SeedDialog ("Зерно світу"), LevelDebugMenu
+  ("Рівні (debug)")
+- **Тести:** 6 кейсів у `tests/unit/test_top_bar.gd` — initial hidden,
+  show on push, title from router_title, empty title fallback, back
+  button → pop, resources render
 
 ## C. Візуальний стиль / theme
 

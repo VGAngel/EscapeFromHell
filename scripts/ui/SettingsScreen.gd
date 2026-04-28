@@ -125,6 +125,9 @@ func _save() -> void:
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
+func router_title() -> String:
+	return "Налаштування"
+
 func open() -> void:
 	visible = true
 	_refresh_widgets()

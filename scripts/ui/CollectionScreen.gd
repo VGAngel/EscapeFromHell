@@ -87,6 +87,9 @@ func _load_souls() -> void:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+func router_title() -> String:
+	return "Врятовані душі"
+
 func open() -> void:
 	visible = true
 	_cell_nodes.clear()

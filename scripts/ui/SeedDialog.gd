@@ -26,6 +26,9 @@ func _ready() -> void:
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
+func router_title() -> String:
+	return "Зерно світу"
+
 func open() -> void:
 	visible = true
 	_refresh()

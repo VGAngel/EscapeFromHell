@@ -1301,6 +1301,25 @@ quit, що небажано при відкритому Settings.
 **MainMenu** використовує єдиний хелпер `_open_via_router(screen)`
 замість прямих `.open()` викликів.
 
+### TopBar (persistent header)
+
+**Скрипт:** `scripts/ui/TopBar.gd` (CanvasLayer, layer=11)
+
+Persistent header що з'являється коли UIRouter має ≥1 overlay
+відкритий. Інстансується з MainMenu.
+
+**Layout:** `[🔙]   <Title>     💡 N   👻 X/100   😈 Y%`
+
+- **Back-кнопка** — `UIRouter.pop()`
+- **Title** — `UIRouter.top().router_title()` (overlay'і реалізують)
+- **Ресурси** — light/souls/sin зчитуються з SaveManager раз на секунду
+- **Safe-area** — top inset з SafeArea.top_reserved
+- **Видимість** — fade in/out на `UIRouter.stack_changed`
+
+`router_title()` реалізовано у: StatisticsScreen, CollectionScreen,
+SettingsScreen, DonatePanel, ProfileScreen, SeedDialog,
+LevelDebugMenu.
+
 ### HUD (під час гри)
 **Конфіг:** `hud_config.json`
 

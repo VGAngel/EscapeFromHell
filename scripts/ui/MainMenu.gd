@@ -80,6 +80,10 @@ func _ready() -> void:
 	add_child(amb)
 	amb.setup(self, title_node)
 
+	# Persistent TopBar (auto-shown when an overlay is on UIRouter).
+	var top_bar := preload("res://scripts/ui/TopBar.gd").new()
+	add_child(top_bar)
+
 	_apply_banner_space()
 	var sa: Node = get_node_or_null("/root/SafeArea")
 	if sa:

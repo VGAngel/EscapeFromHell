@@ -38,6 +38,9 @@ func _ready() -> void:
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
+func router_title() -> String:
+	return "Підтримати"
+
 func open() -> void:
 	visible = true
 	_lbl_thanks.visible = false

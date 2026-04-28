@@ -6,6 +6,8 @@ extends CanvasLayer
 #
 # Open via .open() / closes itself via ✕ button or Esc.
 
+const Palette := preload("res://scripts/ui/Palette.gd")
+
 signal closed
 
 const FADE_DURATION := 0.3
@@ -36,6 +38,9 @@ func _ready() -> void:
 	visible = false
 
 # ── Public ────────────────────────────────────────────────────────────────────
+
+func router_title() -> String:
+	return "Статистика"
 
 func open() -> void:
 	visible = true

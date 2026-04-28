@@ -26,6 +26,9 @@ func _ready() -> void:
 	_populate()
 
 
+func router_title() -> String:
+	return "Рівні (debug)"
+
 func open() -> void:
 	visible = true
 	if _filter_edit:
