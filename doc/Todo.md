@@ -15,11 +15,14 @@ release_plan.md — phase-level огляд + ризики + top-5 next.
 
 ### 🎯 Топ-5 наступних задач (з release_plan.md)
 
-1. **A8** — Доставка душі до altar (S, фундамент loop'у) — `LevelBase.gd`
+1. ~~**A8** — Доставка душі до altar~~ ✅ **уже реалізовано** (audit виявив що Todo.md відстав)
 2. **D1+D2** — Android signed AAB pipeline — keystore + build script
 3. **E1+E2** — Privacy policy hosted + in-game link
 4. **F1** — Crashlytics (Firebase) integration
 5. **A1** — Circle 6 (heresy_cathedral) контент
+
+**Новий пріоритет #1:** **A9** — Угоди з демонами UI + логіка (M, sin-механіка
+ще без UI), або **A11** — Hidden souls placement у handmade rooms (S).
 
 ---
 
@@ -187,7 +190,7 @@ release_plan.md — phase-level огляд + ризики + top-5 next.
 | 4.5 | Приховані душі: `soul_sense` підсвітка | `scripts/Soul.gd` | ✅ |
 | 4.6 | Логіка soul_memory (saved_soul_ids persist globally) | `scripts/managers/SaveManager.gd` | ✅ (permissive) |
 | 4.7 | Іменна душа: reveal panel з епітафією | `scripts/ui/SoulRevealPanel.gd` | ✅ |
-| 4.8 | Доставка душі до алтаря на рівні | `scripts/levels/LevelBase.gd` | ⬜ |
+| 4.8 | Доставка душі до алтаря на рівні | `scripts/levels/LevelBase.gd` | ✅ (Player.deliver_soul + AltarNode._deliver_soul + light pillar + LevelBase._on_soul_delivered + DeliveryRitual) |
 
 ---
 

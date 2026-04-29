@@ -57,7 +57,7 @@ Phase I: Release flow             → 1 тиждень
 | A5 | 🔥 Кімнати + вороги circle_10 (throne_abyss) | L | ⬜ |
 | A6 | 🔥 18 branch-рівнів (void) — handmade | L | ⬜ |
 | A7 | 🔥 Статичні рівні 75 + 99 (milestone) | M | ⬜ |
-| A8 | 🔥 Доставка душі до алтаря на рівні (механіка) | S | ⬜ |
+| A8 | 🔥 Доставка душі до алтаря на рівні (механіка) | S | ✅ — Player.deliver_soul + AltarNode + light pillar + LevelBase._on_soul_delivered + DeliveryRitual |
 | A9 | 🟠 Угоди з демонами — UI + логіка | M | ⬜ |
 | A10 | 🟠 Кат-сцени перед/після боса (10 шт) | M | ⬜ |
 | A11 | 🟠 Hidden souls: placement у handmade кімнатах | S | ⬜ |
@@ -284,11 +284,15 @@ Week 14    → I2-I4 (production release)
 
 ## 🎯 Топ-5 наступних задач (start here)
 
-1. **A8** — Доставка душі до алтаря на рівні. Малий S, фундамент loop'у.
+1. ~~**A8** — Доставка душі до алтаря~~ ✅ **уже реалізовано** (audit 2026-04-29)
 2. **D1+D2** — Android signed build pipeline. Без цього не можемо ніщо тестити на real device.
 3. **E1+E2** — Privacy policy hosted + in-game link. Блокатор Google Play.
 4. **F1** — Crashlytics integration. Без crash reports реліз сліпий.
 5. **A1** — Circle 6 (heresy). Найбільший залишковий контент-шматок.
+
+**Новий кандидат на #1:** **A9** — Угоди з демонами UI + логіка
+(M, sin-mechanic уже інтегрована, бракує лише UI), або
+**A11** — Hidden souls placement у handmade rooms (S).
 
 ---
 
