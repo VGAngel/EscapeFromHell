@@ -168,6 +168,10 @@ func _init_procedural_level(force_procedural: bool = false) -> void:
 			gen.platform_type_hint, gen.platform_width)
 
 	_spawn_soul_node(gen)
+	# Hidden ✦ soul (if this level is one of the 20 hidden-bearing
+	# levels). Spawned BEFORE _discover_souls so it gets picked up by
+	# the in-level soul list and assigned data correctly.
+	_spawn_hidden_soul_node(gen)
 	_discover_souls()
 
 	# Tag every spawned soul with its own dict so multi-soul levels show
@@ -177,6 +181,11 @@ func _init_procedural_level(force_procedural: bool = false) -> void:
 		_assign_soul_identities(gen.souls_data)
 	elif gen.soul_id > 0:
 		_mark_primary_soul(gen.soul_id, gen.soul_data)
+	# Tag the hidden node with its data + flag so the altar reveal popup
+	# and SaveManager.add_hidden_soul fire on delivery. Done after the
+	# named-soul pass so the hidden soul has a different `soul_id` slot.
+	if not gen.hidden_soul_data.is_empty():
+		_mark_hidden_soul(gen.hidden_soul_data)
 
 # ── Room layout — horizontal (default) ───────────────────────────────────────
 
@@ -350,6 +359,92 @@ func _spawn_soul_node(_gen: Object) -> void:
 
 	_room_container.add_child(soul)
 
+# Spawn a SECOND Soul node with set_hidden(true) at an off-path
+# location. For procedural rooms we tuck it near the END of the level
+# (encourages exploration) and offset to one side. For static levels
+# we drop it at the same 65%/50% sweet-spot but let level-specific
+# scenes override the position by placing a marker node "HiddenSoulSpawn".
+func _spawn_hidden_soul_node(gen: Object) -> void:
+	if gen == null or gen.hidden_soul_data.is_empty():
+		return
+	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
+	if not soul_scene:
+		return
+	var soul: Node = soul_scene.instantiate()
+	# Marker support: a level-specific .tscn can place a Marker2D
+	# named "HiddenSoulSpawn" anywhere it wants the ✦ soul to appear.
+	var marker: Node = get_node_or_null("HiddenSoulSpawn")
+	if marker == null:
+		marker = _find_descendant_named(self, "HiddenSoulSpawn")
+	if marker and marker is Node2D:
+		soul.position = (marker as Node2D).global_position
+	else:
+		# Procedural fallback — push toward the far end of the level
+		# layout, off the centre line so the player has to look for it.
+		var rooms: Array = _room_container.get_children()
+		if _level_type == "vertical" and not rooms.is_empty():
+			var total_h: float = 0.0
+			for r: Node in rooms:
+				total_h += _room_height(r)
+			var cx: float = _room_width(rooms[0]) * 0.5
+			# Bias toward the bottom (~85%) and offset right by ~25%
+			# of room width.
+			soul.position = Vector2(
+					cx + _room_width(rooms[0]) * 0.25,
+					total_h * 0.85)
+		elif not rooms.is_empty():
+			var total_w: float = 0.0
+			for r: Node in rooms:
+				total_w += _room_width(r)
+			var rh: float = _room_height(rooms[0])
+			soul.position = Vector2(total_w * 0.85, rh * 0.55)
+		else:
+			soul.position = Vector2(360.0, 400.0)
+	# Mark hidden BEFORE adding to tree so the visual is correct on first
+	# frame (Soul._ready reads _is_hidden).
+	if soul.has_method("set_hidden"):
+		soul.set_hidden(true)
+	_room_container.add_child(soul)
+
+
+# Tag the hidden Soul node with its full data + a meta flag so altar
+# delivery can route through SaveManager.add_hidden_soul instead of
+# the integer named-soul path.
+func _mark_hidden_soul(data: Dictionary) -> void:
+	for soul in _souls_in_level:
+		# Hidden Soul instances have set_hidden(true) → is_hidden() true.
+		# We use that as the discriminator: the first hidden soul in the
+		# in-level list gets the data tag.
+		var is_h: bool = false
+		if soul.has_method("is_hidden"):
+			is_h = bool(soul.is_hidden())
+		else:
+			is_h = bool(soul.get_meta("is_hidden", false))
+		if is_h and not soul.has_meta("hidden_id"):
+			var hid: String = String(data.get("id", ""))
+			soul.set_meta("hidden_id", hid)
+			soul.set_meta("hidden_data", data)
+			# Reuse the named-soul data setter so the reveal-popup
+			# rendering pipeline still works — the discriminator on
+			# delivery is the meta `hidden_id`, not the integer id.
+			if soul.has_method("set_soul_data"):
+				soul.set_soul_data(0, data)
+			break
+
+
+# Recursively search a subtree for a node with the given name.
+# Used by _spawn_hidden_soul_node to honour level-scene marker
+# overrides without forcing them to be top-level children.
+func _find_descendant_named(root: Node, target: String) -> Node:
+	for child in root.get_children():
+		if child.name == target:
+			return child
+		var sub: Node = _find_descendant_named(child, target)
+		if sub:
+			return sub
+	return null
+
+
 func _assign_soul_types() -> void:
 	var types: Array = LevelConfig.get_soul_types(level_id) if LevelConfig else []
 	for i: int in _souls_in_level.size():
@@ -449,7 +544,14 @@ func _on_soul_pickup_started(soul: Node) -> void:
 		data.merge(soul.get_soul_data())
 	if soul.has_method("get_soul_type"):
 		data["soul_type"] = soul.get_soul_type()
-	_carried_souls_data[soul_id] = data
+	# Hidden ✦ souls — key on the string H-id so the delivery handler
+	# can find them via the same string. Keep the soul_id=0 fallback
+	# for back-compat.
+	var hidden_id: String = String(soul.get_meta("hidden_id", ""))
+	if not hidden_id.is_empty():
+		_carried_souls_data[hidden_id] = data
+	else:
+		_carried_souls_data[soul_id] = data
 
 	var boss: Node = _get_boss()
 	if boss and boss.has_method("on_collectible_picked"):
@@ -550,6 +652,12 @@ func _drop_to_ground(from: Vector2) -> Vector2:
 	return Vector2(center_x, hit["position"].y - 40.0)
 
 func _on_soul_delivered(soul_id: String) -> void:
+	# Hidden ✦ souls use string ids prefixed with "H" (H1..H20). Route
+	# them through SaveManager.add_hidden_soul + the existing reveal
+	# pipeline. Named souls keep the integer id path.
+	if soul_id.begins_with("H"):
+		_on_hidden_soul_delivered(soul_id)
+		return
 	_souls_found += 1
 	var id: int = soul_id.to_int() if soul_id.is_valid_int() else 0
 	GameManager.collect_soul(id)
@@ -564,6 +672,26 @@ func _on_soul_delivered(soul_id: String) -> void:
 	_carried_souls_data.erase(id)
 	if _souls_found >= _souls_required and _exit_area and _exit_area.has_method("activate"):
 		_exit_area.activate()
+
+
+# Hidden ✦ delivery: persist via SaveManager and reuse the SoulReveal
+# popup. Doesn't increment `_souls_found` because hidden souls aren't
+# part of the level's required count — they're a discovery bonus.
+func _on_hidden_soul_delivered(hidden_id: String) -> void:
+	if SaveManager and SaveManager.has_method("add_hidden_soul"):
+		SaveManager.add_hidden_soul(hidden_id)
+	# Pull the data we stashed when the hidden soul was tagged in
+	# _mark_hidden_soul. _carried_souls_data may also have it under
+	# the soul_id=0 key.
+	var data: Dictionary = _carried_souls_data.get(hidden_id, {})
+	if data.is_empty():
+		data = _carried_souls_data.get(0, {})
+	if _soul_reveal and _soul_reveal.has_method("show_soul") \
+			and data.has("name") and data.get("name", "") != "":
+		_soul_reveal.show_soul(data)
+	_show_soul_delivered_popup(data)
+	_carried_souls_data.erase(hidden_id)
+	_carried_souls_data.erase(0)
 
 ## Show "✦ Name ✦" celebration above the screen for ~1.6 s. World is
 ## paused during the popup so enemies / hazards can't punish the player

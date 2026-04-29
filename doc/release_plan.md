@@ -60,7 +60,7 @@ Phase I: Release flow             → 1 тиждень
 | A8 | 🔥 Доставка душі до алтаря на рівні (механіка) | S | ✅ — Player.deliver_soul + AltarNode + light pillar + LevelBase._on_soul_delivered + DeliveryRitual |
 | A9 | 🟠 Угоди з демонами — UI + логіка | M | ⬜ |
 | A10 | 🟠 Кат-сцени перед/після боса (10 шт) | M | ⬜ |
-| A11 | 🟠 Hidden souls: placement у handmade кімнатах | S | ⬜ |
+| A11 | 🟠 Hidden souls: placement у handmade кімнатах | S | ✅ — JSON levels assigned + LevelGenerator/LevelBase pipeline + delivery routing |
 | A12 | 🟠 Milestone рівень 50: нарративна подія | S | ⬜ |
 | A13 | 🟠 Нарратив 50/75/99/100 (тексти) | M | ⬜ |
 | A14 | 🟠 Tutorial-рівні 1+2 з вшитими hand-made підказками | M | ⬜ |
@@ -291,8 +291,7 @@ Week 14    → I2-I4 (production release)
 5. **A1** — Circle 6 (heresy). Найбільший залишковий контент-шматок.
 
 **Новий кандидат на #1:** **A9** — Угоди з демонами UI + логіка
-(M, sin-mechanic уже інтегрована, бракує лише UI), або
-**A11** — Hidden souls placement у handmade rooms (S).
+(M, sin-mechanic уже інтегрована, бракує лише UI). A11 теж готовий.
 
 ---
 

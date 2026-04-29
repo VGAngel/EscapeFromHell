@@ -76,6 +76,10 @@ class GeneratedLevel:
 	var room_scenes:   Array      = []      # Array[String] — paths to .tscn
 	var soul_id:       int        = 0       # 0 = none — primary (named) soul
 	var soul_data:     Dictionary = {}
+	# Hidden ✦ soul assigned to this level (if any). Stored in
+	# souls_collection.json under the per-circle pair `level: 5/8/15/18/...`.
+	# LevelBase reads this and spawns a SECOND Soul node with set_hidden(true).
+	var hidden_soul_data: Dictionary = {}
 	# All souls planned for this level, one dict per spawned soul. Index 0 is
 	# always the primary (== soul_data); extras are circle-pool picks unique
 	# within this level so two souls can't share a name.
@@ -106,7 +110,8 @@ var _cfg:   Dictionary = {}
 var _souls: Dictionary = {}
 
 var _static_levels: Array = []
-var _hidden_soul_levels: Dictionary = {}  # level_id → soul data
+var _hidden_soul_levels: Dictionary = {}     # level_id → named soul data (legacy field name; really for primary souls placed by `level` key)
+var _hidden_soul_per_level: Dictionary = {}  # level_id → hidden ✦ soul data (H1..H20)
 # Tracks which (circle, type) fallbacks we've already logged this session,
 # so the warning fires once per missing room family instead of per room.
 var _fallback_logged: Dictionary = {}
@@ -157,11 +162,14 @@ func _load_souls() -> void:
 		if lvl > 0:
 			_hidden_soul_levels[lvl] = soul
 
-	# Hidden souls with explicit levels also mark those levels as static
+	# Hidden ✦ souls. Two per circle, placed on specific levels by the
+	# `level` key in souls_collection.json. Build a separate per-level
+	# lookup so LevelBase can spawn a SECOND Soul node alongside the
+	# primary named one.
 	for soul: Dictionary in _souls.get("hidden_souls", []):
-		var lvl: int = soul.get("level", 0)
-		if lvl > 0 and lvl not in _static_levels:
-			_static_levels.append(lvl)
+		var lvl: int = int(soul.get("level", 0))
+		if lvl > 0:
+			_hidden_soul_per_level[lvl] = soul
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
@@ -183,6 +191,9 @@ func generate(level_id: int) -> GeneratedLevel:
 		result.soul_id   = result.soul_data.get("id", 0)
 		if not result.soul_data.is_empty():
 			result.souls_data = [result.soul_data]
+		# Hidden ✦ souls can also live on static levels (e.g. milestone
+		# rooms). Surface them here too.
+		result.hidden_soul_data = _hidden_soul_per_level.get(level_id, {})
 		return result
 
 	# Seed: deterministic per level; XOR with profile's world seed so players
@@ -216,6 +227,11 @@ func generate(level_id: int) -> GeneratedLevel:
 	# level config; default 1 if it isn't set.
 	var souls_n: int = LevelConfig.get_souls_count(level_id) if LevelConfig else 1
 	result.souls_data = _souls_for_level(level_id, circle, maxi(1, souls_n))
+
+	# Hidden ✦ soul (one extra Soul node, set_hidden(true), placed
+	# off-path by LevelBase). Two per circle on specific levels —
+	# see _load_souls.
+	result.hidden_soul_data = _hidden_soul_per_level.get(level_id, {})
 
 	return result
 

@@ -103,7 +103,17 @@ func _do_pickup() -> void:
 	if _player_nearby.has_method("is_carrying") and _player_nearby.is_carrying():
 		return
 	# Pass a string soul_id so Player.pick_up_soul() can store it.
-	var soul_id_str: String = str(_soul_id) if _soul_id != 0 else str(get_instance_id())
+	# Hidden ✦ souls use their string id ("H1", "H2", …) so the
+	# delivery handler in LevelBase can route them through
+	# SaveManager.add_hidden_soul instead of the named-soul integer path.
+	var soul_id_str: String
+	var hidden_id: String = String(get_meta("hidden_id", ""))
+	if not hidden_id.is_empty():
+		soul_id_str = hidden_id
+	elif _soul_id != 0:
+		soul_id_str = str(_soul_id)
+	else:
+		soul_id_str = str(get_instance_id())
 	_player_nearby.pick_up_soul(soul_id_str)
 	# Notify LevelBase so it can store soul data for the altar delivery reveal.
 	soul_pickup_started.emit(self)
@@ -193,6 +203,12 @@ func set_hidden(is_hidden_soul: bool) -> void:
 	_is_hidden = is_hidden_soul
 	if is_hidden_soul:
 		modulate.a = 0.12
+
+
+# Public read so LevelBase can discriminate hidden ✦ souls from
+# regular named souls during delivery routing.
+func is_hidden() -> bool:
+	return _is_hidden
 
 # ── Floating name label ───────────────────────────────────────────────────────
 

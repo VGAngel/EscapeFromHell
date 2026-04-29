@@ -22,7 +22,7 @@ release_plan.md — phase-level огляд + ризики + top-5 next.
 5. **A1** — Circle 6 (heresy_cathedral) контент
 
 **Новий пріоритет #1:** **A9** — Угоди з демонами UI + логіка (M, sin-механіка
-ще без UI), або **A11** — Hidden souls placement у handmade rooms (S).
+ще без UI). A11 (hidden souls placement) — ✅ зроблено.
 
 ---
 
