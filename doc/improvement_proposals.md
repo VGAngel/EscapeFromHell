@@ -1674,9 +1674,41 @@ mechanical sweep був не потрібен, працює глобально.
 Statistics і Collection: показувати shimmer-плейсхолдери
 поки SaveManager парсить. Зараз клік → пауза → екран.
 
-### U19. 🟡 «NEW!» badge у Collection ⭐
-Якщо нову душу врятовано — відмітити в SaveManager.collection_seen
-і показати пульсуючий бейдж.
+### U19. ✅ «NEW!» badge у Collection
+
+**Реалізовано** — Collection cells для зібраних але ще не переглянутих
+named-souls тепер мають червону пульсуючу мітку «NEW» у лівому верхньому
+кутку. Зникає коли гравець відкриває detail-bottom-sheet тієї душі.
+
+**SaveManager API (нове):**
+- `souls_seen: Array<int>` — поле в save data
+- `is_soul_seen(soul_id)` — bool
+- `mark_soul_seen(soul_id)` — idempotent
+- `mark_all_souls_seen()` — quick "clear all"
+- `get_unseen_souls_count()` — лічба для HeroCard / TopBar потенційно
+
+**Migration** — pre-existing saves без `souls_seen` отримують в
+`_migrate()` seed з усіма поточними `saved_soul_ids` як seen. Без цього
+існуючі гравці отримали б wave «NEW» бейджів на 30+ душ після оновлення.
+
+**CollectionScreen UI:**
+- `_make_new_badge()` — невеликий PanelContainer (10×16) з червоним
+  bg + білий текст "NEW", 4px border-radius
+- Position: TOP_LEFT corner of cell (зліва — щоб не конфліктувало з
+  ✦ hidden-soul badge у TOP_RIGHT)
+- Infinite pulse tween (alpha 0.7↔1.0, 0.6 с each, TRANS_SINE)
+- **Reduce-motion aware** — pulse не запускається якщо
+  `MotionSettings.is_enabled()` → static badge тоді
+- **Hidden souls (✦)** не отримують NEW badge — їх identity сама по собі
+  discovery, ✦ glow вже це передає
+- Badge видаляється instantly з cell при кліку (не чекаючи rebuild) для
+  immediate cause-and-effect
+- `_remove_new_badge_for(id)` — pull's badge через `_cell_nodes` map
+
+**Тестів:** 9 кейсів у `tests/unit/test_save_manager_souls_seen.gd` —
+fresh-save defaults, mark + check, idempotent mark, count math
+(collected − seen, edge case seen-but-not-collected), mark_all clears,
+migration seeds existing souls
 
 ### U20. 🔴 Versions/build chip → changelog overlay ⭐⭐
 Клік по `v0.1` відкриває changelog popup. Для тестерів і фанів.

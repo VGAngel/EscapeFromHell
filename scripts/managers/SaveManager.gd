@@ -145,6 +145,38 @@ func add_hidden_soul(soul_id: String) -> void:
 		data["hidden_soul_ids"]    = ids
 		data["total_hidden_souls"] = ids.size()
 
+
+# ── "NEW!" badge tracking ─────────────────────────────────────────────────────
+# A collected soul is "unseen" until the player opens its detail sheet
+# in CollectionScreen. Used to render a NEW badge on the cell + a count
+# on HeroCard.
+
+func is_soul_seen(soul_id: int) -> bool:
+	return soul_id in data.get("souls_seen", [])
+
+func mark_soul_seen(soul_id: int) -> void:
+	var seen: Array = data.get("souls_seen", [])
+	if soul_id not in seen:
+		seen.append(soul_id)
+		data["souls_seen"] = seen
+
+# Mark every currently-saved soul as seen — used to "clear all NEW
+# badges" e.g. when the player tap-and-holds the collection counter
+# in HeroCard.
+func mark_all_souls_seen() -> void:
+	data["souls_seen"] = get_saved_soul_ids().duplicate()
+
+# How many collected named souls the player has NOT yet opened in
+# CollectionScreen. Drives the badge count on HeroCard / TopBar.
+func get_unseen_souls_count() -> int:
+	var saved: Array = get_saved_soul_ids()
+	var seen: Array  = data.get("souls_seen", [])
+	var n: int = 0
+	for id in saved:
+		if id not in seen:
+			n += 1
+	return n
+
 # ── Upgrades ──────────────────────────────────────────────────────────────────
 
 func get_upgrade_level(upgrade_id: String) -> int:
@@ -389,6 +421,7 @@ func _reset() -> void:
 		"saved_soul_ids":      [],
 		"total_hidden_souls":  0,
 		"hidden_soul_ids":     [],
+		"souls_seen":          [],   # ids of named souls already viewed in CollectionScreen
 		"upgrades":            {},
 		"flags":               {},
 		"active_rewards":      [],
@@ -414,6 +447,13 @@ func _migrate() -> void:
 		for reward in data.get("active_rewards", []):
 			flags[reward] = true
 		data["flags"] = flags
+
+	# `souls_seen` was added with the NEW-badge feature. For pre-existing
+	# saves we treat all currently-collected souls as already seen so
+	# the player doesn't get a sudden wave of "NEW" badges they never
+	# asked for.
+	if not data.has("souls_seen"):
+		data["souls_seen"] = data.get("saved_soul_ids", []).duplicate()
 
 	data["version"] = SAVE_VERSION
 	_flush()

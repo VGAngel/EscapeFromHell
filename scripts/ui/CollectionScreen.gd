@@ -329,8 +329,62 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn.add_child(badge)
 
+	# "NEW!" badge — shown on collected named souls the player hasn't
+	# opened the detail sheet for yet. Hidden souls don't get this since
+	# their identity is the discovery itself; the ✦ glow already says it.
+	if saved and not is_hidden:
+		var sid: int = int(soul.get("id", -1))
+		if sid >= 0 and SaveManager and not SaveManager.is_soul_seen(sid):
+			btn.add_child(_make_new_badge())
+
 	btn.pressed.connect(_on_cell_pressed.bind(soul, is_hidden, saved))
 	return btn
+
+
+# Pulsing red corner ribbon. Reused for all unseen-named-soul cells.
+func _make_new_badge() -> Control:
+	var box := PanelContainer.new()
+	box.name = "NewBadge"
+	box.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	box.position = Vector2(2, 2)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var s := StyleBoxFlat.new()
+	s.bg_color = Color("#CC2233")
+	s.border_color = Color("#FF6688")
+	s.border_width_left = 1
+	s.border_width_right = 1
+	s.border_width_top = 1
+	s.border_width_bottom = 1
+	s.corner_radius_top_left = 4
+	s.corner_radius_top_right = 4
+	s.corner_radius_bottom_left = 4
+	s.corner_radius_bottom_right = 4
+	s.content_margin_left = 4
+	s.content_margin_right = 4
+	s.content_margin_top = 1
+	s.content_margin_bottom = 1
+	box.add_theme_stylebox_override("panel", s)
+
+	var lbl := Label.new()
+	lbl.text = "NEW"
+	lbl.add_theme_font_size_override("font_size", 11)
+	lbl.add_theme_color_override("font_color", Color.WHITE)
+	box.add_child(lbl)
+
+	# Subtle infinite pulse so the eye snaps to the badge — looped tween
+	# on modulate.a between 0.7 and 1.0.
+	var ms: Node = get_node_or_null("/root/MotionSettings")
+	var reduce_motion: bool = (
+			ms and ms.has_method("is_enabled") and ms.is_enabled())
+	if not reduce_motion:
+		var tw := box.create_tween()
+		tw.set_loops()
+		tw.tween_property(box, "modulate:a", 0.7, 0.6) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_property(box, "modulate:a", 1.0, 0.6) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	return box
 
 func _style_cell(s: StyleBoxFlat, is_hidden: bool, saved: bool, hovered: bool) -> void:
 	if is_hidden:
@@ -391,9 +445,28 @@ func _animate_completion() -> void:
 
 func _on_cell_pressed(soul: Dictionary, is_hidden: bool, saved: bool) -> void:
 	if saved:
+		# Mark named souls as seen so the NEW badge clears next refresh.
+		if not is_hidden and SaveManager:
+			var sid: int = int(soul.get("id", -1))
+			if sid >= 0 and not SaveManager.is_soul_seen(sid):
+				SaveManager.mark_soul_seen(sid)
+				# Pull the badge off the just-pressed cell instantly so
+				# the player sees the cause-and-effect.
+				_remove_new_badge_for(sid)
 		_show_sheet(soul, is_hidden)
 	else:
 		_show_sheet_not_found(soul)
+
+
+# Find the cell associated with this soul id and queue_free its
+# NewBadge child if present. Cheap — cells are tracked in _cell_nodes.
+func _remove_new_badge_for(soul_id: int) -> void:
+	var cell: Variant = _cell_nodes.get(soul_id, null)
+	if cell == null or not is_instance_valid(cell):
+		return
+	var badge: Node = cell.get_node_or_null("NewBadge")
+	if badge:
+		badge.queue_free()
 
 func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
 	_sheet_name.text = soul.get("name", "?")
