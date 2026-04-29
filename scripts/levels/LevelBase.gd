@@ -75,8 +75,19 @@ func _ready() -> void:
 		_fire_tutorial_hints()
 
 	_report_level_diagnostics()
+	_spawn_title_card()
 
 	await get_tree().process_frame
+
+
+# Souls-style brief "CIRCLE N — NAME" overlay on level start. Gives
+# every level transition the same beat and quietly onboards new
+# players to the lore-arc structure of the descent.
+func _spawn_title_card() -> void:
+	var circle: int = LevelConfig.get_circle(level_id) if LevelConfig else 1
+	var card: CanvasLayer = preload("res://scripts/ui/TitleCard.gd").new()
+	card.setup(circle, level_id)
+	add_child(card)
 	_ready_late()
 
 # ── Diagnostics ───────────────────────────────────────────────────────────────

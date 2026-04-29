@@ -186,6 +186,11 @@ const REQUIRED_KEYS := [
 	"settings.mobile_drag_hint",
 	"settings.mobile_drag_done",
 	"settings.reduce_motion",
+	"title_card.circle_format",
+	"title_card.level_format",
+	"title_card.circles.1",
+	"title_card.circles.5",
+	"title_card.circles.10",
 ]
 
 func test_all_required_keys_resolve_in_uk() -> void:

@@ -1748,6 +1748,61 @@ migration seeds existing souls
 material build, intensity = sin%/100, pulse_hz scales, clamp 0..100,
 time advances
 
+### C1. 🟢 Onboarding revamp — Phase 1 (Title Card) ✅
+
+**Реалізовано** як `scripts/ui/TitleCard.gd` — Souls-style brief overlay
+що з'являється на старті КОЖНОГО рівня. Дає кожній level-transition
+однаковий beat і тихо онбордить нових гравців у lore-arc structure
+descent'у.
+
+Невелика, але потужна зміна: зараз level-load = «black fade → game».
+Після — level-load = «black fade → ceremony beat → game».
+
+**Layout (centred):**
+```
+        Коло 1               (TitleLabel — gold, 32px)
+        ЛІМБ                 (DisplayLabel — 48px + 8px outline)
+       ━━━━━━━━━              (GoldSeparator)
+       Рівень 1               (MutedLabel — 18px)
+```
+
+**Lifecycle:**
+- Fade in 0.45 с (TRANS_SINE_OUT) на `_ready`
+- Hold 2.4 с
+- Fade out 0.55 с (TRANS_SINE_IN) і `queue_free`
+- Будь-який тап (ui_accept / ui_cancel / mouse / touch) — early dismiss
+
+**Circle names** (10 кіл) — нова локалізаційна секція `title_card.circles.{1..10}`:
+1. Лімб, 2. Хіть, 3. Жага, 4. Жадібність, 5. Гнів, 6. Єресь,
+7. Насилля, 8. Шахрайство, 9. Зрада, 10. Трон Люцифера
+
+EN equivalents: Limbo / Lust / Gluttony / Greed / Wrath / Heresy /
+Violence / Fraud / Treachery / Lucifer's Throne. Fallback const
+`_FALLBACK_NAMES` у скрипті дублює UA на випадок коли Loc не
+завантажений (headless tests / boot races).
+
+**Reduce-motion aware:**
+- Skip fade tweens — instant alpha 1.0
+- Hold duration лишається той самий (читачі важливе)
+
+**Інтеграція:**
+- `LevelBase._spawn_title_card()` спавнить картку в кінці `_ready`
+  з `LevelConfig.get_circle(level_id)` і `level_id`
+- Layer = 12 (вище HUD=10, TopBar=11)
+
+**Тестів:** 9 у `tests/unit/test_title_card.gd` — побудова 3 labels,
+layer above HUD/TopBar, circle/level format substring, name uppercased,
+setup overrides circle/level, hold timer advances, dismiss flag,
+double-dismiss safe, reduce-motion default
+
+**Phase 2 ideas (deferred):**
+- Pre-prologue welcome moment (large game title 2с perші 60 секунд)
+- Глоss-jump tutorial з glowing platforms
+- Death-recap після 3+ deaths на одному рівні (C2)
+- Adaptive difficulty (C3)
+
+---
+
 ### B5. ✅ Soul-deliver ritual moment
 
 **Реалізовано** як новий компонент `scripts/DeliveryRitual.gd` (Node)
