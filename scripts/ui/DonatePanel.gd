@@ -28,6 +28,15 @@ var _lbl_thanks:  Label = null
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
+# Loc.t() with explicit fallback so headless tests / boot without the
+# autoload still render correctly.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
+
+
 func _ready() -> void:
 	layer   = 10
 	_build_ui()
@@ -35,6 +44,22 @@ func _ready() -> void:
 	visible = false
 	if AdsManager and AdsManager.has_signal("donate_purchased"):
 		AdsManager.donate_purchased.connect(_on_donate_purchased)
+	# Live re-render on language switch — re-set tracked label texts.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
+
+func _on_language_changed(_lang: String) -> void:
+	# Title and tagline are rebuilt next time we open from a fresh
+	# state — for now, just refresh the dynamic thank-you message and
+	# any "Підтримати" buttons we pushed into _cards_box.
+	if _lbl_thanks and _showing_thanks:
+		_lbl_thanks.text = _t("donate.thanks", {},
+				"Дякуємо ❤\nТвоя підтримка\nдуже важлива")
+	for card in _cards_box.get_children():
+		for btn in card.find_children("", "Button", true, false):
+			btn.text = _t("donate.btn_support", {}, "Підтримати")
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
@@ -158,7 +183,7 @@ func _make_card(sku: String) -> Control:
 
 func _make_buy_btn(sku: String) -> Button:
 	var btn := Button.new()
-	btn.text = "Підтримати"
+	btn.text = _t("donate.btn_support", {}, "Підтримати")
 	btn.custom_minimum_size = Vector2(100, 48)
 	btn.focus_mode = Control.FOCUS_NONE
 	btn.add_theme_font_size_override("font_size", 20)
@@ -198,7 +223,8 @@ func _on_donate_purchased(_sku: String) -> void:
 func _show_thanks() -> void:
 	_showing_thanks  = true
 	_thank_timer     = 3.5
-	_lbl_thanks.text = "Дякуємо ❤\nТвоя підтримка\nдуже важлива"
+	_lbl_thanks.text = _t("donate.thanks", {},
+			"Дякуємо ❤\nТвоя підтримка\nдуже важлива")
 	_lbl_thanks.visible = true
 
 	# Clear cards to make thanks label prominent
@@ -262,7 +288,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	margin.add_child(hdr)
 
 	var title := Label.new()
-	title.text = "Пожертвувати"
+	title.text = _t("donate.title", {}, "Пожертвувати")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
@@ -290,7 +316,8 @@ func _build_intro(parent: VBoxContainer) -> void:
 	parent.add_child(margin)
 
 	var lbl := Label.new()
-	lbl.text = "Гра безкоштовна і завжди такою залишиться.\nЯкщо хочеш підтримати розробника — це тут."
+	lbl.text = _t("donate.tagline", {},
+			"Гра безкоштовна і завжди такою залишиться.\nЯкщо хочеш підтримати розробника — це тут.")
 	lbl.add_theme_font_size_override("font_size", 20)
 	lbl.add_theme_color_override("font_color", Color(0.58, 0.55, 0.66))
 	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

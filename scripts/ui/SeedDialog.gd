@@ -23,6 +23,16 @@ func _ready() -> void:
 	_build_ui()
 	_root.modulate.a = 0.0
 	visible = false
+	# Live re-render the dynamic info label on language switch.
+	# Static labels (title, button) re-render next time the dialog opens.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
+
+func _on_language_changed(_lang: String) -> void:
+	if _edit:
+		_update_info(_edit.text)
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
@@ -93,9 +103,20 @@ func _update_info(value: String) -> void:
 	if not _lbl_info:
 		return
 	if value.is_empty():
-		_lbl_info.text = "Авторежим: кожен рівень має унікальне розміщення на основі його ID."
+		_lbl_info.text = _t("seed.info_auto", {},
+				"Авторежим: кожен рівень має унікальне розміщення на основі його ID.")
 	else:
-		_lbl_info.text = "Seed «%s» → hash %d. Поділіться seed зі іншим гравцем — отримаєте однакові рівні." % [value, hash(value)]
+		_lbl_info.text = _t("seed.info_format",
+				{"seed": value, "hash": hash(value)},
+				"Seed «%s» → hash %d. Поділіться seed зі іншим гравцем — отримаєте однакові рівні." % [value, hash(value)])
+
+
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
 
 # ── Build UI ──────────────────────────────────────────────────────────────────
 
@@ -141,7 +162,7 @@ func _build_ui() -> void:
 	vbox.add_child(hdr)
 
 	var title := Label.new()
-	title.text = "🌱 Seed рівня"
+	title.text = _t("seed.title", {}, "🌱 Seed рівня")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 30)
 	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
@@ -165,18 +186,19 @@ func _build_ui() -> void:
 
 	_edit = LineEdit.new()
 	_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_edit.placeholder_text = "Введіть seed або залиште порожнім…"
+	_edit.placeholder_text = _t("seed.placeholder", {},
+			"Введіть seed або залиште порожнім…")
 	_edit.add_theme_font_size_override("font_size", 22)
 	_edit.text_submitted.connect(func(_t: String) -> void: _apply())
 	row.add_child(_edit)
 
 	var btn_rand := _action_btn("🎲", Color(0.15, 0.15, 0.24))
-	btn_rand.tooltip_text = "Випадковий seed"
+	btn_rand.tooltip_text = _t("seed.tt_random", {}, "Випадковий seed")
 	btn_rand.pressed.connect(_randomize_seed)
 	row.add_child(btn_rand)
 
 	var btn_clear := _action_btn("✕", Color(0.20, 0.10, 0.10))
-	btn_clear.tooltip_text = "Скинути (авторежим)"
+	btn_clear.tooltip_text = _t("seed.tt_clear", {}, "Скинути (авторежим)")
 	btn_clear.pressed.connect(_clear_seed)
 	row.add_child(btn_clear)
 
@@ -185,12 +207,13 @@ func _build_ui() -> void:
 	_lbl_info.add_theme_font_size_override("font_size", 18)
 	_lbl_info.add_theme_color_override("font_color", Color(0.55, 0.53, 0.62))
 	_lbl_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_lbl_info.text = "Авторежим: кожен рівень має унікальне розміщення на основі його ID."
+	_lbl_info.text = _t("seed.info_auto", {},
+			"Авторежим: кожен рівень має унікальне розміщення на основі його ID.")
 	vbox.add_child(_lbl_info)
 
 	# Apply button
 	var btn_apply := Button.new()
-	btn_apply.text = "Застосувати"
+	btn_apply.text = _t("seed.btn_apply", {}, "Застосувати")
 	btn_apply.custom_minimum_size = Vector2(0, 52)
 	btn_apply.add_theme_font_size_override("font_size", 24)
 	btn_apply.add_theme_color_override("font_color", Color(0.90, 0.80, 1.00))

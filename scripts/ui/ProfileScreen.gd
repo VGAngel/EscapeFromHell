@@ -22,6 +22,25 @@ func _ready() -> void:
 	_build_ui()
 	_root.modulate.a = 0.0
 	visible = false
+	# Live-refresh on language switch — open() rebuilds cards each time
+	# so we just need to redraw when the screen is currently visible.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
+
+func _on_language_changed(_lang: String) -> void:
+	# Cards are rebuilt by `_refresh()` — same path used after delete/create.
+	if visible:
+		_refresh()
+
+
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
@@ -158,27 +177,30 @@ func _make_slot_card(info: Dictionary) -> Control:
 
 	if pending_confirm:
 		var lbl_warn := Label.new()
-		lbl_warn.text = "⚠ Натисніть «Видалити» ще раз для підтвердження"
+		lbl_warn.text = _t("profile.warn_delete", {},
+				"⚠ Натисніть «Видалити» ще раз для підтвердження")
 		lbl_warn.add_theme_font_size_override("font_size", 12)
 		lbl_warn.add_theme_color_override("font_color", Color("#FF7766"))
 		lbl_warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		info_col.add_child(lbl_warn)
 	elif exists:
 		var lbl_prog := Label.new()
-		lbl_prog.text = "Рівень %d  •  Душі: %d" % [level, souls]
+		lbl_prog.text = _t("profile.progress_format",
+				{"level": level, "souls": souls},
+				"Рівень %d  •  Душі: %d" % [level, souls])
 		lbl_prog.add_theme_font_size_override("font_size", 13)
 		lbl_prog.add_theme_color_override("font_color", Color(0.60, 0.58, 0.68))
 		info_col.add_child(lbl_prog)
 
 		if SaveManager and SaveManager.get_slot() == slot:
 			var lbl_active := Label.new()
-			lbl_active.text = "● Активний"
+			lbl_active.text = _t("profile.active_marker", {}, "● Активний")
 			lbl_active.add_theme_font_size_override("font_size", 12)
 			lbl_active.add_theme_color_override("font_color", Color("#88DD88"))
 			info_col.add_child(lbl_active)
 	else:
 		var lbl_empty := Label.new()
-		lbl_empty.text = "Порожній слот"
+		lbl_empty.text = _t("profile.empty_slot", {}, "Порожній слот")
 		lbl_empty.add_theme_font_size_override("font_size", 13)
 		lbl_empty.add_theme_color_override("font_color", Color(0.40, 0.38, 0.46))
 		info_col.add_child(lbl_empty)
@@ -190,13 +212,14 @@ func _make_slot_card(info: Dictionary) -> Control:
 		for child in info_col.get_children():
 			child.queue_free()
 		var prompt := Label.new()
-		prompt.text = "Введіть ім'я:"
+		prompt.text = _t("profile.name_prompt", {}, "Введіть ім'я:")
 		prompt.add_theme_font_size_override("font_size", 13)
 		prompt.add_theme_color_override("font_color", Color(0.60, 0.58, 0.68))
 		info_col.add_child(prompt)
 
 		var name_edit := LineEdit.new()
-		name_edit.placeholder_text = "Профіль %d" % (slot + 1)
+		name_edit.placeholder_text = _t("profile.name_placeholder",
+				{"n": slot + 1}, "Профіль %d" % (slot + 1))
 		name_edit.max_length = 24
 		name_edit.text = _name_buffer
 		name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -212,23 +235,30 @@ func _make_slot_card(info: Dictionary) -> Control:
 	hbox.add_child(btns_col)
 
 	if exists:
-		var btn_play := _card_btn("Грати", Color(0.22, 0.16, 0.34), Color("#AA88FF"))
+		var btn_play := _card_btn(
+				_t("profile.btn_play", {}, "Грати"),
+				Color(0.22, 0.16, 0.34), Color("#AA88FF"))
 		btn_play.pressed.connect(func() -> void: _select_slot(slot))
 		btns_col.add_child(btn_play)
 
-		var btn_del := _card_btn(
-			"Видалити" if not pending_confirm else "Підтвердити",
-			Color(0.28, 0.08, 0.08),
-			Color("#FF7766")
-		)
+		var del_text: String
+		if pending_confirm:
+			del_text = _t("profile.btn_confirm", {}, "Підтвердити")
+		else:
+			del_text = _t("profile.btn_delete", {}, "Видалити")
+		var btn_del := _card_btn(del_text, Color(0.28, 0.08, 0.08), Color("#FF7766"))
 		btn_del.pressed.connect(func() -> void: _request_delete(slot))
 		btns_col.add_child(btn_del)
 	elif _creating_slot == slot:
-		var btn_ok := _card_btn("Створити", Color(0.10, 0.18, 0.10), Color("#88DD88"))
+		var btn_ok := _card_btn(
+				_t("profile.btn_create", {}, "Створити"),
+				Color(0.10, 0.18, 0.10), Color("#88DD88"))
 		btn_ok.pressed.connect(func() -> void: _confirm_create(slot))
 		btns_col.add_child(btn_ok)
 
-		var btn_cancel := _card_btn("Скасувати", Color(0.10, 0.10, 0.14), Color(0.7, 0.7, 0.7))
+		var btn_cancel := _card_btn(
+				_t("profile.btn_cancel", {}, "Скасувати"),
+				Color(0.10, 0.10, 0.14), Color(0.7, 0.7, 0.7))
 		btn_cancel.pressed.connect(_cancel_create)
 		btns_col.add_child(btn_cancel)
 	else:
@@ -284,7 +314,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	margin.add_child(hdr)
 
 	var title := Label.new()
-	title.text = "Профілі"
+	title.text = _t("profile.title", {}, "Профілі")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
