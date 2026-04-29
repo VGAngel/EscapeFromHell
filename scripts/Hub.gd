@@ -118,9 +118,19 @@ func _ready() -> void:
 
 func _on_fade_in_done() -> void:
 	if not _prologue_done and _next_level_id == 1:
-		_start_prologue()
+		_show_welcome_then_prologue()
 	else:
 		_show_hub()
+
+
+# Pre-prologue welcome moment: gives the game's name and tagline a
+# proper beat before the dialogue with God starts. Only the first time
+# the player ever opens the Hub. Skippable — once the welcome dismisses
+# (auto or tap), the prologue picks up immediately.
+func _show_welcome_then_prologue() -> void:
+	var welcome := preload("res://scripts/ui/WelcomeCard.gd").new()
+	add_child(welcome)
+	welcome.dismissed.connect(_start_prologue)
 
 # ── Process ───────────────────────────────────────────────────────────────────
 

@@ -191,6 +191,9 @@ const REQUIRED_KEYS := [
 	"title_card.circles.1",
 	"title_card.circles.5",
 	"title_card.circles.10",
+	"welcome_card.title",
+	"welcome_card.tagline",
+	"welcome_card.press_to_start",
 ]
 
 func test_all_required_keys_resolve_in_uk() -> void:

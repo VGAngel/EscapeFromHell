@@ -1796,10 +1796,62 @@ setup overrides circle/level, hold timer advances, dismiss flag,
 double-dismiss safe, reduce-motion default
 
 **Phase 2 ideas (deferred):**
-- Pre-prologue welcome moment (large game title 2с perші 60 секунд)
-- Глоss-jump tutorial з glowing platforms
-- Death-recap після 3+ deaths на одному рівні (C2)
-- Adaptive difficulty (C3)
+- ✅ Pre-prologue welcome moment (`scripts/ui/WelcomeCard.gd`)
+- ✅ First-jump tutorial polish (auto-fire `move` + `jump` hints на level 1)
+- Glowing platforms на level 1 (deferred — потребує процедурного маркера)
+- Death-recap після 3+ deaths на одному рівні (C2 — окремий пункт)
+- Adaptive difficulty (C3 — окремий пункт)
+
+#### Phase 2A: WelcomeCard (`scripts/ui/WelcomeCard.gd`)
+
+Pre-prologue welcome — на саме перше відкриття Hub (не повторюється).
+Layer = 14 (вище TitleCard=12 і всього іншого).
+
+**Layout:**
+```
+        ESCAPE FROM HELL          (DisplayLabel + 10px outline)
+        Священник падає в Лімб.   (BodyLabel)
+
+         Натисни щоб почати       (MutedLabel — pulses)
+```
+
+**Staggered intro sequence (animated path):**
+- Title fade in 0.8 с (TRANS_SINE_OUT)
+- Tagline waits 0.5 с then fades 0.6 с
+- Press-to-start joins after extra 0.6 с і починає infinite alpha
+  pulse (0.45 ↔ 1.0 за 0.7 с each, TRANS_SINE_IN_OUT)
+- Auto-dismiss timer 6.0 с — якщо AFK
+- Будь-який тап після 0.4 с — instant dismiss + fade out 0.5 с
+
+**Tap-too-early guard:** перші 400 мс ігнорують тапи бо «Грати» tap
+з MainMenu міг би одразу закрити welcome.
+
+**Reduce-motion path:** instant alpha 1.0 для всіх labels, без
+staggered fade-in. Auto-dismiss timer працює як зазвичай.
+
+**Dismissed signal** → Hub.gd connects до `_start_prologue()` чим
+ланцюжить welcome → prologue → hub.
+
+#### Phase 2B: First-jump tutorial polish
+
+Auto-fire `move` + `jump` hints на `LevelBase._fire_tutorial_hints()`
+коли `level_id == 1`. Вже існує:
+- `tutorial_config.json` має ці hint'и з icons (input_move,
+  input_jump) і delays (1.5 с)
+- TutorialManager вже built UI render + once-per-save gating
+
+Що додано:
+- Гейтнули `_fire_tutorial_hints()` так щоб level 1 завжди викликав
+  його (раніше тільки якщо `LevelConfig.has_mechanic("tutorial_trigger")`)
+- Move hint fire → 3.5 с timer → jump hint fire (stagger щоб два
+  hints не наклались)
+
+**Тестів:**
+- WelcomeCard: 9 кейсів у `tests/unit/test_welcome_card.gd` —
+  3 labels, layer order, title text, initial alphas zero (animated),
+  dismiss flag, double-dismiss safe, signal emit, tap-too-early
+  ignored, auto-dismiss timer
+- Tutorial trigger: covered by existing TutorialManager gating
 
 ---
 

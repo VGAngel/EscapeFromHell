@@ -71,7 +71,12 @@ func _ready() -> void:
 			_pause_screen.statistics_requested.connect(_on_pause_statistics)
 	_connect_level_complete()
 
-	if LevelConfig and LevelConfig.has_mechanic(level_id, "tutorial_trigger"):
+	# Always fire on level 1 (move + jump nudges). The has_mechanic
+	# gate would skip them on rooms that don't declare a tutorial
+	# trigger, so we route every level through the helper and let it
+	# decide what's relevant.
+	if level_id == 1 or (LevelConfig and LevelConfig.has_mechanic(
+			level_id, "tutorial_trigger")):
 		_fire_tutorial_hints()
 
 	_report_level_diagnostics()
@@ -704,6 +709,17 @@ func _fire_tutorial_hints() -> void:
 			"first_soul":       TutorialManager.show_hint("first_soul")
 			"first_staff":      TutorialManager.show_hint("first_staff")
 			"first_checkpoint": TutorialManager.show_hint("checkpoint")
+	# First-level onboarding nudges: auto-fire the move + jump hints
+	# (config delays them by 1.5 s and a couple seconds after move, so
+	# the player has time to look around first). Each hint is gated by
+	# TutorialManager._is_seen so it only ever appears once per save.
+	if level_id == 1:
+		TutorialManager.show_hint("move")
+		# Stagger the jump hint after move so the two don't pile up.
+		get_tree().create_timer(3.5).timeout.connect(
+			func() -> void:
+				if TutorialManager:
+					TutorialManager.show_hint("jump"))
 
 # ── Boss hook (BossLevel inherits from Level and overrides) ───────────────────
 
