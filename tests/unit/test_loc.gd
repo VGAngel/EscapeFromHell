@@ -60,6 +60,19 @@ const REQUIRED_KEYS := [
 	"router_title.profile",
 	"router_title.seed",
 	"router_title.level_debug",
+	"pause.title",
+	"pause.resume",
+	"pause.settings",
+	"pause.main_menu",
+	"pause.collection",
+	"pause.statistics",
+	"pause.exit_title",
+	"pause.exit_message",
+	"pause.exit_yes",
+	"pause.exit_no",
+	"pause.level_format",
+	"pause.souls_format",
+	"pause.sin_format",
 ]
 
 func test_all_required_keys_resolve_in_uk() -> void:

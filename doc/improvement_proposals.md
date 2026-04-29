@@ -1747,10 +1747,27 @@ particle ambient. Частково є — централізувати.
   t() resolves + params, missing key fallback, **key-audit** (всі
   16 нових ключів існують у UK і EN), UA↔EN round-trip
 
-**Прогрес:** infrastructure ready, 4 компоненти мігровано (HeroCard,
-MainMenu Play, 7 router_titles, Loc signal). Решта екранів (Settings,
-Collection, HUD, Pause тощо) — тримають hardcoded UA до окремих
-комітів. Pattern для нових екранів задокументовано.
+**Прогрес:** infrastructure ready, мігровано:
+- HeroCard
+- MainMenu (dynamic Play CTA)
+- 7 router_titles (Statistics, Collection, Settings, Donate, Profile,
+  SeedDialog, LevelDebugMenu)
+- **PauseScreen** — title, all 5 buttons, exit-confirm, level/souls/
+  sin formats — з live-refresh на `language_changed`
+- **SettingsScreen language toggle** — клік по UA/EN тепер реально
+  викликає `Loc.set_language(code)`. Початковий язик з settings.json
+  застосовується через новий `_apply_language()` у `_apply_all()`.
+
+**EN audit:** `uk.json` має 512 ключів, `en.json` — 312. Розрив у 200
+ключів виключно в секції `souls.*` (lore named souls — 100 named +
+20 hidden, ~200 рядків наративу). Лоре-переклад залишено translator'у
+— pattern працює для всіх UI-секцій.
+
+**Bug fix:** виправлено баг з минулої коміту, де `func _on_language_
+changed` помилково інлайнилось у середині `_ready()` — це робило
+`_apply_banner_space()` нерухомим (4 integration-тести у
+`test_main_menu_layout.gd` падали). Тепер 369 unit + 553 integration
+зелені.
 
 ## 🎯 Топ-5 за ROI
 

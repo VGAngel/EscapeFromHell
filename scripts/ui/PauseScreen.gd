@@ -56,6 +56,39 @@ func _ready() -> void:
 	_root.modulate.a = 0.0
 	visible = false
 	_confirm_panel.visible = false
+	# Live refresh on language switch from Settings.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
+
+func _on_language_changed(_lang: String) -> void:
+	# Re-apply all the dynamic strings; build-once labels are reset below.
+	if _lbl_title:
+		_lbl_title.text = _t("pause.title", {}, "ПАУЗА")
+	if _btn_resume:
+		_btn_resume.text = _t("pause.resume", {}, "Продовжити")
+	if _btn_collection:
+		_btn_collection.text = _t("pause.collection", {}, "Врятовані Душі")
+	if _btn_statistics:
+		_btn_statistics.text = _t("pause.statistics", {}, "📊  Статистика")
+	if _btn_settings:
+		_btn_settings.text = _t("pause.settings", {}, "Налаштування")
+	if _btn_menu:
+		_btn_menu.text = _t("pause.main_menu", {}, "Головне Меню")
+	if _lbl_exit_title:
+		_lbl_exit_title.text = _t("pause.exit_title", {}, "Вийти з рівня?")
+	if _lbl_exit_msg:
+		_lbl_exit_msg.text = _t(
+				"pause.exit_message", {},
+				"Зібрані душі збережені.\nДуша в руках — буде втрачена.")
+	if _btn_exit_yes:
+		_btn_exit_yes.text = _t("pause.exit_yes", {}, "Вийти")
+	if _btn_exit_no:
+		_btn_exit_no.text = _t("pause.exit_no", {}, "Залишитись")
+	# Stat labels refresh every time the screen opens; safe to re-run now too.
+	if _visible_flag:
+		_refresh_stats()
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
@@ -104,10 +137,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _refresh_stats() -> void:
 	var circle := GameManager.current_circle if GameManager else 1
 	var level  := GameManager.current_level_id if GameManager else 1
-	_lbl_level.text = "Коло %d • Рівень %d" % [circle, level]
+	_lbl_level.text = _t("pause.level_format",
+			{"circle": circle, "level": level}, "Коло %d • Рівень %d" % [circle, level])
 
 	var souls := SaveManager.get_total_souls() if SaveManager else 0
-	_lbl_souls.text = "👻 %d / 100" % souls
+	_lbl_souls.text = _t("pause.souls_format",
+			{"found": souls}, "👻 %d / 100" % souls)
 
 	var sin_val := SaveManager.get_sin() if SaveManager else 0.0
 	_set_sin(sin_val)
@@ -116,7 +151,17 @@ func _set_sin(value: float) -> void:
 	var ratio := clampf(value / 100.0, 0.0, 1.0)
 	_sin_bar.size.x = 220.0 * ratio
 	_sin_bar.color = _sin_color(value)
-	_lbl_sin_pct.text = "%.0f%%" % value
+	_lbl_sin_pct.text = _t("pause.sin_format",
+			{"pct": int(value)}, "%.0f%%" % value)
+
+
+# Helper — Loc.t() with a guaranteed fallback so headless tests / boot
+# scenarios without the autoload still render correctly.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
 
 func _sin_color(val: float) -> Color:
 	var col := SIN_COLORS[0]
@@ -220,7 +265,7 @@ func _build_ui() -> void:
 	# Title — DisplayLabel variation (48 px gold + outline).
 	_lbl_title = Label.new()
 	_lbl_title.theme_type_variation = "DisplayLabel"
-	_lbl_title.text = "ПАУЗА"
+	_lbl_title.text = _t("pause.title", {}, "ПАУЗА")
 	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_lbl_title)
 
@@ -264,23 +309,23 @@ func _build_ui() -> void:
 	_add_separator(vbox)
 
 	# Buttons
-	_btn_resume = _make_button("Продовжити", true)
+	_btn_resume = _make_button(_t("pause.resume", {}, "Продовжити"), true)
 	_btn_resume.pressed.connect(_on_resume_pressed)
 	vbox.add_child(_btn_resume)
 
-	_btn_collection = _make_button("Врятовані Душі", false)
+	_btn_collection = _make_button(_t("pause.collection", {}, "Врятовані Душі"), false)
 	_btn_collection.pressed.connect(_on_collection_pressed)
 	vbox.add_child(_btn_collection)
 
-	_btn_statistics = _make_button("📊  Статистика", false)
+	_btn_statistics = _make_button(_t("pause.statistics", {}, "📊  Статистика"), false)
 	_btn_statistics.pressed.connect(_on_statistics_pressed)
 	vbox.add_child(_btn_statistics)
 
-	_btn_settings = _make_button("Налаштування", false)
+	_btn_settings = _make_button(_t("pause.settings", {}, "Налаштування"), false)
 	_btn_settings.pressed.connect(_on_settings_pressed)
 	vbox.add_child(_btn_settings)
 
-	_btn_menu = _make_button("Головне Меню", false, true)
+	_btn_menu = _make_button(_t("pause.main_menu", {}, "Головне Меню"), false, true)
 	_btn_menu.pressed.connect(_on_menu_pressed)
 	vbox.add_child(_btn_menu)
 
@@ -327,14 +372,14 @@ func _build_confirm_panel() -> void:
 
 	_lbl_exit_title = Label.new()
 	_lbl_exit_title.theme_type_variation = "TitleLabel"
-	_lbl_exit_title.text = "Вийти з рівня?"
+	_lbl_exit_title.text = _t("pause.exit_title", {}, "Вийти з рівня?")
 	_lbl_exit_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_exit_title.add_theme_color_override("font_color", Color("#FF6644"))
 	vbox.add_child(_lbl_exit_title)
 
 	_lbl_exit_msg = Label.new()
 	_lbl_exit_msg.theme_type_variation = "BodyLabel"
-	_lbl_exit_msg.text = "Зібрані душі збережені.\nДуша в руках — буде втрачена."
+	_lbl_exit_msg.text = _t("pause.exit_message", {}, "Зібрані душі збережені.\nДуша в руках — буде втрачена.")
 	_lbl_exit_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_lbl_exit_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_lbl_exit_msg)
@@ -344,12 +389,12 @@ func _build_confirm_panel() -> void:
 	btn_row.add_theme_constant_override("separation", 12)
 	vbox.add_child(btn_row)
 
-	_btn_exit_yes = _make_button("Вийти", false, true)
+	_btn_exit_yes = _make_button(_t("pause.exit_yes", {}, "Вийти"), false, true)
 	_btn_exit_yes.custom_minimum_size = Vector2(240, 90)
 	_btn_exit_yes.pressed.connect(_on_exit_yes_pressed)
 	btn_row.add_child(_btn_exit_yes)
 
-	_btn_exit_no = _make_button("Залишитись", true)
+	_btn_exit_no = _make_button(_t("pause.exit_no", {}, "Залишитись"), true)
 	_btn_exit_no.custom_minimum_size = Vector2(240, 90)
 	_btn_exit_no.pressed.connect(_on_exit_no_pressed)
 	btn_row.add_child(_btn_exit_no)

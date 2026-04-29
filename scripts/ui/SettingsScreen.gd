@@ -166,6 +166,13 @@ func _apply_all() -> void:
 	_apply_resolution(_data.get("resolution", "fhd"))
 	_apply_keybindings(_data.get("keybindings", {}))
 	_apply_haptics(_data.get("haptics", true))
+	_apply_language(_data.get("language", "uk"))
+
+
+func _apply_language(code: String) -> void:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("set_language"):
+		loc.set_language(code)
 
 # ── Volume helpers ────────────────────────────────────────────────────────────
 
@@ -239,8 +246,11 @@ func _on_language_pressed(code: String) -> void:
 	for c in _lang_btns:
 		_update_toggle(_lang_btns[c], c == code)
 	_save()
-	# TODO: hook into Loc autoload when implemented
-	# Loc.set_language(code)
+	# Live language switch — Loc emits language_changed which any
+	# subscriber (HeroCard, MainMenu, future TopBar etc.) re-renders on.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("set_language"):
+		loc.set_language(code)
 
 func _on_vsync_pressed() -> void:
 	var enabled: bool = not _data.get("vsync", true)

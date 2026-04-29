@@ -93,10 +93,6 @@ func _ready() -> void:
 	if loc and loc.has_signal("language_changed"):
 		loc.language_changed.connect(_on_language_changed)
 
-
-func _on_language_changed(_lang: String) -> void:
-	_refresh_souls_counter()
-
 	_apply_banner_space()
 	var sa: Node = get_node_or_null("/root/SafeArea")
 	if sa:
@@ -112,6 +108,12 @@ func _on_language_changed(_lang: String) -> void:
 ## Shift ButtonsContainer and VersionLabel up by the reserved ad-banner
 ## height so the bottom banner never overlaps menu content. Re-invoked
 ## when the player buys "no ads" so the layout expands to full height.
+func _on_language_changed(_lang: String) -> void:
+	# Re-render the dynamic Play CTA + souls counter so the menu
+	# updates instantly when Settings switches language.
+	_refresh_souls_counter()
+
+
 func _apply_banner_space() -> void:
 	var banner_h: int = get_banner_height()
 	_version_lbl.offset_top    = -50.0 - float(banner_h)
