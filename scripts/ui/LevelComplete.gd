@@ -44,6 +44,35 @@ func _ready() -> void:
 	_build_ui()
 	_root.modulate.a = 0.0
 	visible    = false
+	# Live refresh on language switch.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
+
+func _on_language_changed(_lang: String) -> void:
+	# Static labels (built once) need a manual reset.
+	if _lbl_title:
+		_lbl_title.text = _t("level_complete.title_done", {}, "РІВЕНЬ ПРОЙДЕНО")
+	if _new_best_badge:
+		_new_best_badge.text = _t(
+				"level_complete.new_best_badge", {}, "✨ НОВИЙ РЕКОРД ✨")
+	if _btn_hub:
+		_btn_hub.text = _t("level_complete.go_to_hub", {}, "Хаб Раю")
+	if _btn_next:
+		_btn_next.text = _t("level_complete.next_level", {}, "Далі →")
+	# Stat labels are re-rendered on every show_results() call, so no
+	# extra refresh needed here — the next open will pick up the new
+	# language.
+
+
+# Loc.t() with explicit fallback so the screen renders correctly when
+# Loc is missing (early boot, headless tests).
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
@@ -63,7 +92,9 @@ func _fill_static(stats: Dictionary) -> void:
 	var sin_d:   float = stats.get("sin_delta",    0.0)
 	var sin_t:   float = stats.get("sin_total",    0.0)
 	var light:   int   = stats.get("light_earned", 0)
-	_lbl_subtitle.text = "Коло %d • Рівень %d" % [circle, level]
+	_lbl_subtitle.text = _t("level_complete.subtitle_format",
+			{"circle": circle, "level": level},
+			"Коло %d • Рівень %d" % [circle, level])
 
 	# Stars — hidden until animation
 	var star_labels: Array = _stars_row.get_children()
@@ -72,24 +103,35 @@ func _fill_static(stats: Dictionary) -> void:
 		star_labels[i].modulate.a = 0.4
 
 	# Stats — hidden until animation
-	_stat_souls.text  = "👻  Душі:    %d / %d" % [found, total]
-	_stat_deaths.text = "💀  Смерті:  %d"      % deaths
+	_stat_souls.text  = _t("level_complete.souls_format",
+			{"found": found, "total": total},
+			"👻  Душі:    %d / %d" % [found, total])
+	_stat_deaths.text = _t("level_complete.deaths_format",
+			{"n": deaths},
+			"💀  Смерті:  %d" % deaths)
 	var sin_sign: String = "+" if sin_d >= 0.0 else ""
-	_stat_sin.text    = "😈  Гріх:    %s%.0f%%  →  %.0f%%" % [sin_sign, sin_d, sin_t]
-	_stat_light.text  = "💡  +%d Світла" % light
+	_stat_sin.text    = _t("level_complete.sin_change_format",
+			{"sign": sin_sign, "delta": "%.0f" % sin_d, "total": "%.0f" % sin_t},
+			"😈  Гріх:    %s%.0f%%  →  %.0f%%" % [sin_sign, sin_d, sin_t])
+	_stat_light.text  = _t("level_complete.light_format",
+			{"n": light}, "💡  +%d Світла" % light)
 
 	# Time + previous best (if any)
 	var elapsed: float = stats.get("time_seconds", 0.0)
-	_stat_time.text    = "⏱  Час:     %s" % _format_time(elapsed)
+	_stat_time.text    = _t("level_complete.time_format",
+			{"time": _format_time(elapsed)},
+			"⏱  Час:     %s" % _format_time(elapsed))
 
 	var prev_best: Dictionary = stats.get("previous_best", {})
 	var new_best:  Dictionary = stats.get("new_best", {})
 	if prev_best.is_empty():
-		_stat_best.text = "🏆  Рекорд:   —"
+		_stat_best.text = _t("level_complete.best_none", {}, "🏆  Рекорд:   —")
 	else:
 		var pb_time:  float = float(prev_best.get("time", 0.0))
 		var pb_stars: int   = int(prev_best.get("stars", 0))
-		_stat_best.text = "🏆  Рекорд:   %s   %s" % [_format_time(pb_time), _stars_str(pb_stars)]
+		_stat_best.text = _t("level_complete.best_format",
+				{"time": _format_time(pb_time), "stars": _stars_str(pb_stars)},
+				"🏆  Рекорд:   %s   %s" % [_format_time(pb_time), _stars_str(pb_stars)])
 
 	if _new_best_badge:
 		_new_best_badge.visible = not new_best.is_empty()
@@ -211,7 +253,7 @@ func _build_ui() -> void:
 func _build_header() -> void:
 	_lbl_title = Label.new()
 	_lbl_title.theme_type_variation = "TitleLabel"
-	_lbl_title.text = "РІВЕНЬ ПРОЙДЕНО"
+	_lbl_title.text = _t("level_complete.title_done", {}, "РІВЕНЬ ПРОЙДЕНО")
 	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_vbox.add_child(_lbl_title)
 
@@ -257,7 +299,7 @@ func _build_stats() -> void:
 	# "NEW BEST!" badge sits next to the stars row, hidden by default.
 	_new_best_badge = Label.new()
 	_new_best_badge.theme_type_variation = "BodyLabel"
-	_new_best_badge.text = "✨ НОВИЙ РЕКОРД ✨"
+	_new_best_badge.text = _t("level_complete.new_best_badge", {}, "✨ НОВИЙ РЕКОРД ✨")
 	_new_best_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# Override BodyLabel grey with celebratory gold + outline.
 	_new_best_badge.add_theme_color_override("font_color", Color("#FFD700"))
@@ -272,8 +314,8 @@ func _build_buttons() -> void:
 	btn_row.add_theme_constant_override("separation", 24)
 	_vbox.add_child(btn_row)
 
-	_btn_hub  = _make_button("Хаб Раю",  false)
-	_btn_next = _make_button("Далі →",   true)
+	_btn_hub  = _make_button(_t("level_complete.go_to_hub", {}, "Хаб Раю"), false)
+	_btn_next = _make_button(_t("level_complete.next_level", {}, "Далі →"), true)
 	_btn_hub.custom_minimum_size  = Vector2(220, 64)
 	_btn_next.custom_minimum_size = Vector2(220, 64)
 

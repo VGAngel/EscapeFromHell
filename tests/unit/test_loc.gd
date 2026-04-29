@@ -73,6 +73,18 @@ const REQUIRED_KEYS := [
 	"pause.level_format",
 	"pause.souls_format",
 	"pause.sin_format",
+	"level_complete.title_done",
+	"level_complete.subtitle_format",
+	"level_complete.new_best_badge",
+	"level_complete.souls_format",
+	"level_complete.deaths_format",
+	"level_complete.time_format",
+	"level_complete.best_none",
+	"level_complete.best_format",
+	"level_complete.sin_change_format",
+	"level_complete.light_format",
+	"level_complete.go_to_hub",
+	"level_complete.next_level",
 ]
 
 func test_all_required_keys_resolve_in_uk() -> void:
