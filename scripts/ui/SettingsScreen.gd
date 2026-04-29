@@ -31,6 +31,7 @@ const DEFAULTS := {
 	"vsync":            true,
 	"resolution":       "fhd",
 	"haptics":          true,
+	"reduce_motion":    false,
 }
 
 # ── State ─────────────────────────────────────────────────────────────────────
@@ -60,6 +61,7 @@ var _lang_btns:     Dictionary     = {}   # code → Button
 
 # Graphics tab widgets
 var _toggle_vsync:       Button         = null
+var _toggle_reduce_motion: Button       = null
 var _resolution_btns:    Dictionary     = {}   # preset → Button
 
 # Keys tab widgets
@@ -175,6 +177,13 @@ func _apply_all() -> void:
 	_apply_keybindings(_data.get("keybindings", {}))
 	_apply_haptics(_data.get("haptics", true))
 	_apply_language(_data.get("language", "uk"))
+	_apply_reduce_motion(_data.get("reduce_motion", false))
+
+
+func _apply_reduce_motion(enabled: bool) -> void:
+	var ms: Node = get_node_or_null("/root/MotionSettings")
+	if ms and ms.has_method("set_enabled"):
+		ms.set_enabled(enabled)
 
 
 func _apply_language(code: String) -> void:
@@ -267,6 +276,13 @@ func _on_vsync_pressed() -> void:
 	_update_toggle(_toggle_vsync, enabled)
 	_save()
 
+func _on_reduce_motion_pressed() -> void:
+	var enabled: bool = not _data.get("reduce_motion", false)
+	_data["reduce_motion"] = enabled
+	_apply_reduce_motion(enabled)
+	_update_toggle(_toggle_reduce_motion, enabled)
+	_save()
+
 func _on_resolution_pressed(preset: String) -> void:
 	_data["resolution"] = preset
 	_apply_resolution(preset)
@@ -296,6 +312,8 @@ func _refresh_widgets() -> void:
 		_update_toggle(_lang_btns[code], code == lang)
 
 	_update_toggle(_toggle_vsync, vsync)
+	if _toggle_reduce_motion:
+		_update_toggle(_toggle_reduce_motion, _data.get("reduce_motion", false))
 
 	for preset in _resolution_btns:
 		_style_choice_btn(_resolution_btns[preset], preset == res)
@@ -556,6 +574,14 @@ func _build_page_graphics() -> Control:
 
 	_toggle_vsync = _add_toggle_row(vbox, _t("settings.vsync", {}, "Вертикальна синхронізація"), _data.get("vsync", true))
 	_toggle_vsync.pressed.connect(_on_vsync_pressed)
+
+	# Reduce motion — accessibility toggle. Disables ambient particles,
+	# parallax drifting, breathing animations etc. Persists to
+	# settings.json and broadcasts via the MotionSettings autoload.
+	_toggle_reduce_motion = _add_toggle_row(vbox,
+			_t("settings.reduce_motion", {}, "Зменшити рух (анімації)"),
+			_data.get("reduce_motion", false))
+	_toggle_reduce_motion.pressed.connect(_on_reduce_motion_pressed)
 
 	var res_lbl := Label.new()
 	res_lbl.text = _t("settings.resolution", {}, "Роздільна здатність")

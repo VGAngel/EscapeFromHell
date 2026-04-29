@@ -1768,9 +1768,36 @@ UI 90/100/110/120%. Множник на font_size override-и.
 ### U27. 🟡 High-contrast тема ⭐⭐
 Для денного світла на телефоні. Перемикач в Settings.
 
-### U28. 🟢 Reduce motion (доробити) ⭐
-Глобальний прапорець вимикає тремтіння камери, параллакс,
-particle ambient. Частково є — централізувати.
+### U28. ✅ Reduce motion toggle
+
+**Реалізовано** — додано accessibility toggle "Зменшити рух (анімації)"
+у Settings → Графіка, з персистентністю в settings.json і
+broadcasting через новий autoload `MotionSettings`.
+
+- **`scripts/managers/MotionSettings.gd`** — autoload, тримає
+  `_enabled: bool`, public API `is_enabled()` / `set_enabled(value)`,
+  signal `changed(reduce_motion: bool)`. No-op при no-change щоб
+  не спамити підписників на повторних `_apply_all()`
+- **SettingsScreen integration:**
+  - `reduce_motion: false` додано до DEFAULTS
+  - `_toggle_reduce_motion` Button у Graphics tab
+  - Boot: `_apply_all()` → `_apply_reduce_motion()` пушить значення
+    у MotionSettings; subscribers re-render
+  - Toggle clicks: persist + push live
+- **Subscribers:**
+  - **MenuAmbient** — `_on_motion_changed()` зупиняє embers/ash,
+    скидає title scale до 1.0; перевіряє MotionSettings першим
+    (legacy SaveManager.get_setting fallback збережено)
+  - **SinVignette** — `_process()` бейлить early коли reduce_motion;
+    pulsing veins зупиняються, але static red ring лишається
+    (інтенсивність читається в `set_sin`)
+- **Localization:** новий ключ `settings.reduce_motion`
+  ("Зменшити рух (анімації)" / "Reduce motion (animations)") в
+  обох UK + EN
+- **Тести:** 5 кейсів у `tests/unit/test_motion_settings.gd` —
+  default disabled, set emits with value, no-op on same value,
+  round-trip emits each flip, MenuAmbient subscribes + freezes
+  emitters live
 
 ### U29. 🟡 Однорукий режим / left-handed ⭐⭐
 Дзеркальне розташування MobileControls + великий «Грати»

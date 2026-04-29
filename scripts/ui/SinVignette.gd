@@ -24,6 +24,7 @@ const PULSE_HZ_MAX := 2.0         # at full sin, panicked pulse
 var _shader_mat: ShaderMaterial = null
 var _t: float = 0.0
 var _sin_pct: float = 0.0
+var _reduce_motion: bool = false
 
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -41,12 +42,28 @@ func _ready() -> void:
 		if gm and gm.has_signal("sin_changed"):
 			gm.sin_changed.connect(_on_sin_changed)
 	_initial_poll()
+	# Reduce-motion: the pulsing veins are exactly the kind of animation
+	# motion-sensitive players want disabled. We freeze the time uniform
+	# (so no pulse) but keep intensity intact (so the static red ring
+	# remains as a visual sin indicator).
+	var ms: Node = get_node_or_null("/root/MotionSettings")
+	if ms and ms.has_signal("changed"):
+		ms.changed.connect(_on_motion_changed)
+	_reduce_motion = (ms and ms.has_method("is_enabled") and ms.is_enabled())
 
 
 func _process(delta: float) -> void:
+	if _reduce_motion:
+		# Freeze time so the pulsing/vein animation stops; the static
+		# red ring stays visible (intensity is set in set_sin).
+		return
 	_t += delta
 	if _shader_mat:
 		_shader_mat.set_shader_parameter("time", _t)
+
+
+func _on_motion_changed(enabled: bool) -> void:
+	_reduce_motion = enabled
 
 
 # ── Public ────────────────────────────────────────────────────────────────────

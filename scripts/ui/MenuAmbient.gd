@@ -100,6 +100,10 @@ func _build() -> void:
 	if _root == null:
 		return
 	_reduce_motion = _read_reduce_motion()
+	# Live-update if the player flips the toggle from Settings.
+	var ms: Node = get_node_or_null("/root/MotionSettings")
+	if ms and ms.has_signal("changed"):
+		ms.changed.connect(_on_motion_changed)
 	if _preset.get("shadows", true):
 		_build_shadows()
 	if _preset.get("flicker", true):
@@ -400,8 +404,26 @@ func _has_save_manager() -> bool:
 # Tries to read settings.json (via SaveManager.get_setting) — falls back to
 # false if the autoload or method is missing.
 func _read_reduce_motion() -> bool:
-	if not _has_save_manager():
-		return false
-	if SaveManager.has_method("get_setting"):
+	# Prefer the live MotionSettings autoload — SettingsScreen.apply_all
+	# pushes the persisted value here on boot, so it's the freshest source.
+	var ms: Node = get_node_or_null("/root/MotionSettings")
+	if ms and ms.has_method("is_enabled"):
+		return bool(ms.is_enabled())
+	# Legacy fallback (kept for tests that stub SaveManager directly).
+	if _has_save_manager() and SaveManager.has_method("get_setting"):
 		return bool(SaveManager.get_setting("reduce_motion", false))
 	return false
+
+
+func _on_motion_changed(enabled: bool) -> void:
+	_reduce_motion = enabled
+	# Particles need to stop/start emitting; the per-frame guards in
+	# _update_* already short-circuit when _reduce_motion is true, so
+	# there's nothing else to do for parallax/flicker/breathing.
+	if _embers:
+		_embers.emitting = not enabled
+	if _ash:
+		_ash.emitting = not enabled
+	# Restore title scale to 1.0 if breathing was paused mid-tween.
+	if enabled and _title:
+		_title.scale = Vector2.ONE

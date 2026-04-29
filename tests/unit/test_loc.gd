@@ -185,6 +185,7 @@ const REQUIRED_KEYS := [
 	"settings.mobile_reset",
 	"settings.mobile_drag_hint",
 	"settings.mobile_drag_done",
+	"settings.reduce_motion",
 ]
 
 func test_all_required_keys_resolve_in_uk() -> void:
