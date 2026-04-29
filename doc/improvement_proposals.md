@@ -1716,8 +1716,37 @@ Statistics і Collection: показувати shimmer-плейсхолдери
 material build, intensity = sin%/100, pulse_hz scales, clamp 0..100,
 time advances
 
-### U22. 🟢 Soul-counter pop-анімація ⭐
-Коли підбираєш душу — лічильник «1/2» пульсує + легкий glow.
+### U22. ✅ Soul-counter pop-анімація
+
+**Реалізовано** — апгрейд існуючого `HUD._pulse_node()` до повноцінного
+«pop» з overshoot + golden glow + concurrent-press protection.
+
+**Зміни:**
+- **Pivot offset** автоматично виставляється у center (`size * 0.5`)
+  щоб bounce виходив навкруги middle, а не з top-left
+- **Scale tween (split-phase):**
+  - Up: 1.00 → 1.32 за 35% duration (TRANS_QUAD-OUT, snappy)
+  - Down: 1.32 → 1.00 за 65% duration (TRANS_BACK-OUT, overshoot
+    → settle) — читається як «+1!»
+- **Color glow (для Label):**
+  - Seed `font_color` override з поточного theme color (без цього
+    Godot читає Nil і property tween silently не стартує)
+  - Up: orig → `Color(1.0, 0.92, 0.45)` warm gold за 30% duration
+  - Down: gold → orig за 70% (TRANS_SINE-IN, тонкий fade)
+- **Concurrent-press safe** — попередній tween на тому ж node
+  kill'ається через meta-stash `hud_pop_tween` (той самий patern як
+  у UIFeedback)
+- **Null safety** — early return на null/invalid node
+- **Non-Label tolerance** — colour-flash branch гейтнутий `if node is Label`
+
+**Куди застосовується** (вже існуючі hookups, тепер з кращим feel):
+- `_souls_level` + `_souls_total` при підборі душі (`_on_player_soul_picked_up`)
+- `_carry_label` при зміні capacity (`_on_carry_changed`)
+- `_light_label` при отриманні світла
+
+**Тестів:** 6 кейсів у `tests/unit/test_hud_pop.gd` —
+pivot centring, meta-tween stash, rapid re-pulse kills previous,
+non-Label не падає, null safe, peak scale > 1.15
 
 ### U23. 🟡 Mini-map / depth-indicator ⭐⭐
 Ліворуч екрану вертикальна шкала: положення на круглі

@@ -380,10 +380,62 @@ func _animate_hearts_pulse() -> void:
 	tw.tween_property(_hearts, "modulate", Color(0.6, 1.0, 0.6), 0.15)
 	tw.tween_property(_hearts, "modulate", Color.WHITE, 0.25)
 
+## Satisfying pop on counter changes (soul collected, light spent, etc).
+## Centres the pivot so the bounce is symmetric, kills any in-flight tween
+## so rapid pickups don't queue up, and flashes the font_color to a
+## golden glow before settling back to the previous tint.
+##
+## Pop scale uses TRANS_BACK on the way down so the counter overshoots
+## slightly and snaps — reads as "+1!" rather than a smooth fade.
+const _POP_SCALE_PEAK := Vector2(1.32, 1.32)
+const _POP_GLOW       := Color(1.0, 0.92, 0.45)   # warm gold
+
 func _pulse_node(node: Control, duration: float) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	# Centre the pivot so the bounce expands around the label's middle
+	# rather than the top-left of its rect.
+	node.pivot_offset = node.size * 0.5
+
+	# Cancel any pop already in flight on this node (same meta-stash
+	# trick UIFeedback uses for buttons).
+	if node.has_meta("hud_pop_tween"):
+		var prev: Variant = node.get_meta("hud_pop_tween")
+		if prev != null and prev is Tween and (prev as Tween).is_valid():
+			(prev as Tween).kill()
+
 	var tw := create_tween()
-	tw.tween_property(node, "scale", Vector2(1.25, 1.25), duration * 0.4)
-	tw.tween_property(node, "scale", Vector2.ONE, duration * 0.6)
+	node.set_meta("hud_pop_tween", tw)
+	tw.set_parallel(true)
+
+	# Scale up + bounce back. The down-phase uses TRANS_BACK_OUT so
+	# the counter slightly overshoots and snaps — reads as "+1!".
+	var up: float = duration * 0.35
+	var down: float = duration * 0.65
+	tw.tween_property(node, "scale", _POP_SCALE_PEAK, up) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(node, "scale", Vector2.ONE, down) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT) \
+		.set_delay(up)
+
+	# Colour glow: flash to gold then ease back to the label's existing
+	# tint. We need a `theme_override_colors/font_color` override in
+	# place BEFORE tweening — without it Godot reads Nil for the
+	# starting value and the property tween silently fails. Read the
+	# colour right now so re-themes (e.g. capacity-warning red) don't
+	# get clobbered by a stale snapshot.
+	if node is Label:
+		var lbl: Label = node
+		var orig_color: Color = lbl.get_theme_color("font_color")
+		# Seed the override so the tween has a typed starting value.
+		lbl.add_theme_color_override("font_color", orig_color)
+		tw.tween_property(lbl, "theme_override_colors/font_color",
+				_POP_GLOW, duration * 0.30) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(lbl, "theme_override_colors/font_color",
+				orig_color, duration * 0.70) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN) \
+			.set_delay(duration * 0.30)
 
 func _flash_screen(color: Color, duration: float) -> void:
 	if not _root:
