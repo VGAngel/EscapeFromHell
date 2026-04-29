@@ -142,6 +142,18 @@ const REQUIRED_KEYS := [
 	"endings.rebel_desc",
 	"soul_reveal.header",
 	"privacy_policy.title",
+	"hud.level_info_format",
+	"hud.sin_toast_format",
+	"hud.sin_cause.staff",
+	"hud.sin_cause.death",
+	"hud.sin_cause.sin_platform",
+	"hud.sin_cause.demon_deal",
+	"hud.sin_cause.sin_aura",
+	"hud.sin_cause.corrupt_soul",
+	"hud.sin_cause.extra_attempt",
+	"hud.sin_cause.cleansing",
+	"hud.sin_cause.confession",
+	"hud.sin_cause.unknown",
 ]
 
 func test_all_required_keys_resolve_in_uk() -> void:

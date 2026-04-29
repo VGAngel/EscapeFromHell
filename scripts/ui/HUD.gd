@@ -118,6 +118,14 @@ const _SIN_CAUSE_LABELS: Dictionary = {
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
+
+
 func _ready() -> void:
 	add_to_group("hud")
 	_build_ui()
@@ -156,7 +164,9 @@ func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
 	_set_souls_level(0, souls_total)
 	_set_light(SaveManager.get_light() if SaveManager else 0)
 
-	_level_label.text = "Коло %d • Рівень %d" % [circle, level]
+	_level_label.text = _t("hud.level_info_format",
+			{"circle": circle, "level": level},
+			"Коло %d • Рівень %d" % [circle, level])
 	_level_label.modulate.a = 1.0
 	_level_info_timer = LEVEL_INFO_TIME
 
@@ -679,9 +689,18 @@ func _spawn_sin_toast(amount: float, cause: String) -> void:
 		_sin_toast_box.get_child(0).queue_free()
 
 	var icon:  String = String(_SIN_CAUSE_ICONS.get(cause, "❓"))
-	var label: String = String(_SIN_CAUSE_LABELS.get(cause, "Інше"))
+	# Pull cause label from Loc; fall back to the local UA dict if Loc is
+	# missing or doesn't have the key for this cause.
+	var label: String = _t(
+			"hud.sin_cause." + cause, {},
+			String(_SIN_CAUSE_LABELS.get(cause, "Інше")))
 	var sign_char: String = "+" if amount >= 0.0 else "−"
-	var text: String = "%s%.0f%% гріх  %s %s" % [sign_char, absf(amount), icon, label]
+	var text: String = _t("hud.sin_toast_format",
+			{"sign": sign_char,
+			 "amount": "%.0f" % absf(amount),
+			 "icon": icon,
+			 "label": label},
+			"%s%.0f%% гріх  %s %s" % [sign_char, absf(amount), icon, label])
 
 	var panel := PanelContainer.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
