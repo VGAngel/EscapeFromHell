@@ -1,7 +1,25 @@
 # Todo — Plan rozrobky «Escape from Hell»
 
-> Ostatnie onovlennya: 2026-04-22  
+> Ostatnie onovlennya: 2026-04-29
 > Status: ✅ Arkhitektura hotova. Pochynaemo rozrobku.
+
+---
+
+## 📌 Release plan
+
+**Повний release roadmap:** [`doc/release_plan.md`](release_plan.md)
+
+9 фаз (A-I) + tech debt (J), ~14 тижнів critical path до Google Play
+/ App Store. Цей файл (`Todo.md`) — детальний tracker per-feature;
+release_plan.md — phase-level огляд + ризики + top-5 next.
+
+### 🎯 Топ-5 наступних задач (з release_plan.md)
+
+1. **A8** — Доставка душі до altar (S, фундамент loop'у) — `LevelBase.gd`
+2. **D1+D2** — Android signed AAB pipeline — keystore + build script
+3. **E1+E2** — Privacy policy hosted + in-game link
+4. **F1** — Crashlytics (Firebase) integration
+5. **A1** — Circle 6 (heresy_cathedral) контент
 
 ---
 
