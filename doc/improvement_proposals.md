@@ -1748,6 +1748,56 @@ migration seeds existing souls
 material build, intensity = sin%/100, pulse_hz scales, clamp 0..100,
 time advances
 
+### B5. ✅ Soul-deliver ritual moment
+
+**Реалізовано** як новий компонент `scripts/DeliveryRitual.gd` (Node)
+що інстанситься з AltarNode коли гравець заходить у area з душею.
+
+Перетворює routine-tap на altar у ceremonial beat — ваш core loop
+підкреслено, не пропустиш.
+
+**Що відбувається в режимі ritual:**
+- `Engine.time_scale → 0.72` (через tween 0.18 с TRANS_SINE_OUT) —
+  рух гравця читається як «considered», камера-follow гнеться
+  weighty
+- Music bus ducks `-6 dB` через окремий tween — світ хушиться,
+  altar SFX лишається на повну (інша шина)
+- На вході — fade-in 0.18 с; на виході (при successful delivery) —
+  faster snap-back 0.18 с щоб light pillar читався як climax;
+  при walk-away — slower 0.30 с для quiet restore
+
+**Lifecycle:**
+- `enter()` — snapshot original `time_scale` + Music bus dB, kick
+  off tweens. No-op якщо вже active (snapshot не overwrite'ить)
+- `exit(delivered: bool)` — restore через tween. `delivered=true`
+  → faster fade
+- `_exit_tree()` — hard restore (`Engine.time_scale = orig`,
+  `set_bus_volume_db` synchronously) на випадок scene change
+  mid-ritual — без цього time_scale 0.72 застрягне намертво
+
+**Triggers (AltarNode):**
+- `_on_body_entered` + carrying soul → `_enter_ritual()`
+- `_on_player_picked_up_in_range` (підбір душі поки вже на altar)
+  → `_enter_ritual()`. Disconnects on `body_exited`
+- `_deliver_soul()` after `player.deliver_soul()` →
+  `_exit_ritual(true)` (snap back для climax)
+- `_on_body_exited` → `_exit_ritual(false)` (slow quiet restore)
+
+**Reduce-motion gate:**
+- `MotionSettings.is_enabled()` → time_scale tween skipped (lишається
+  1.0) — motion-sickness players не страждають
+- Audio duck все ще працює — це не motion trigger
+- Live flip під час ritual → instant restore time_scale до 1.0
+
+**Тестів:** 11 кейсів у `tests/unit/test_delivery_ritual.gd` —
+inactive default, enter sets active, exit sets inactive, double-enter
+no-op (snapshot guard), exit-when-inactive no-op, time-scale tween
+created, reduce-motion skips tween, audio tween created (when bus
+present, else skipped gracefully), tree-exit hard restore, motion
+flip mid-ritual snaps back
+
+---
+
 ### U22. ✅ Soul-counter pop-анімація
 
 **Реалізовано** — апгрейд існуючого `HUD._pulse_node()` до повноцінного

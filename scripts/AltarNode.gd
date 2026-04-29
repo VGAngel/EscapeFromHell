@@ -30,6 +30,7 @@ const TEXT_DELIVER := "[E] Доставити душу"
 var _is_active:       bool                   = false
 var _player_in_range: bool                   = false
 var _player_node:     CharacterBody2D        = null
+var _ritual:          Node                   = null   # DeliveryRitual instance, lazy-built
 
 @onready var _area:   Area2D          = $Area2D          if has_node("Area2D")          else null
 @onready var _anim:   AnimationPlayer = $AnimationPlayer if has_node("AnimationPlayer") else null
@@ -96,6 +97,9 @@ func _deliver_soul() -> void:
 	_play_light_pillar()
 	for sid in ids:
 		soul_delivered_here.emit(String(sid))
+	# Release the ritual with a quick snap-back so the light pillar
+	# reads as the climactic beat, not a dragged-out fade.
+	_exit_ritual(true)
 
 func _play_light_pillar() -> void:
 	# White-gold beam rising from altar center.
@@ -135,14 +139,57 @@ func _on_body_entered(body: Node2D) -> void:
 	_player_node = body as CharacterBody2D
 	_update_prompt()
 	_set_pray_button(true)
+	# Start the ritual ONLY when the player arrives carrying a soul.
+	# A soul-less bind interaction stays mundane; the ritual is reserved
+	# for the actual delivery moment (the core-loop punctuation).
+	if _player_is_carrying_soul():
+		_enter_ritual()
+	# Edge case: player picks up a soul WHILE already standing on the
+	# altar — body_entered won't fire again, so we listen to the signal
+	# directly. Disconnected on body_exited.
+	if _player_node and _player_node.has_signal("soul_picked_up") \
+			and not _player_node.soul_picked_up.is_connected(
+					_on_player_picked_up_in_range):
+		_player_node.soul_picked_up.connect(_on_player_picked_up_in_range)
 
 func _on_body_exited(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
+	if _player_node and _player_node.has_signal("soul_picked_up") \
+			and _player_node.soul_picked_up.is_connected(
+					_on_player_picked_up_in_range):
+		_player_node.soul_picked_up.disconnect(_on_player_picked_up_in_range)
 	_player_in_range = false
 	_player_node = null
 	_update_prompt()
 	_set_pray_button(false)
+	# Player walked away without delivering — quietly restore.
+	_exit_ritual(false)
+
+
+# Soul picked up while already inside the altar area — kick off the
+# ritual now that delivery is possible.
+func _on_player_picked_up_in_range(_soul_id: String) -> void:
+	if _player_in_range and _player_is_carrying_soul():
+		_enter_ritual()
+
+
+# ── Ritual ─────────────────────────────────────────────────────────────────────
+
+# Lazily instantiate DeliveryRitual on first use so it doesn't sit
+# around in altars the player never reaches with a soul in hand.
+func _ensure_ritual() -> Node:
+	if _ritual == null or not is_instance_valid(_ritual):
+		_ritual = preload("res://scripts/DeliveryRitual.gd").new()
+		add_child(_ritual)
+	return _ritual
+
+func _enter_ritual() -> void:
+	_ensure_ritual().enter()
+
+func _exit_ritual(delivered: bool) -> void:
+	if _ritual and is_instance_valid(_ritual):
+		_ritual.exit(delivered)
 
 # ── Prompt ─────────────────────────────────────────────────────────────────────
 
