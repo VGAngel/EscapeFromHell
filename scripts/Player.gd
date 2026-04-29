@@ -7,6 +7,10 @@ signal soul_delivered(soul_id: String)
 signal staff_used
 signal player_died
 signal hp_changed(current: int, maximum: int)
+## Fired the instant the player loses HP. The HUD's DamageFlash
+## listens for this to render a red border vignette; intensity scales
+## with `amount` so a 2-damage hit reads stronger than a 1-damage tick.
+signal damage_taken(amount: int)
 ## Emitted whenever the carried soul count changes (pickup / deliver /
 ## drop / die). Useful for HUD indicators that show "carried / capacity".
 signal carry_changed(carried: int, capacity: int)
@@ -513,6 +517,7 @@ func _take_damage(amount: int) -> void:
 	current_hp -= amount
 	_invincibility_timer = 1.2
 	hp_changed.emit(current_hp, max_hp)
+	damage_taken.emit(amount)
 	if HapticManager:
 		HapticManager.hit()
 	if current_hp <= 0:

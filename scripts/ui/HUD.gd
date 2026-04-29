@@ -132,6 +132,9 @@ func _ready() -> void:
 	# Poison-veins vignette — diegetic full-screen sin indicator that
 	# overlays the existing UI without hiding it.
 	_install_sin_vignette()
+	# Transient red border-flash on player damage. Listens to Player's
+	# damage_taken signal and tweens itself for ~0.3s.
+	_install_damage_flash()
 	# Sin-source toast pipeline. GameManager emits sin_added(amount, cause)
 	# whenever sin moves; we render a transient pop in the bottom-left so
 	# the player can connect each delta to its source.
@@ -151,6 +154,15 @@ func _install_sin_vignette() -> void:
 	# but ABOVE the game viewport.
 	add_child(v)
 	move_child(v, 0)
+
+
+# Same trick as SinVignette — sit just above the SinVignette so the
+# damage punch reads on top of the (subtler, slower) sin pulse.
+func _install_damage_flash() -> void:
+	var df := preload("res://scripts/ui/DamageFlash.gd").new()
+	df.name = "DamageFlash"
+	add_child(df)
+	move_child(df, 1)
 
 func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
 	_max_hp     = max_hp

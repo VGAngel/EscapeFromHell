@@ -1334,6 +1334,7 @@ LevelDebugMenu.
 | Душі рівня | Нижній правий | X / Y на поточному рівні |
 | Шкала гріху | Низ (повна ширина) | Кольорова шкала 0–100% |
 | **Poison-veins vignette** | Повний екран, тільки по краях | Діегетичний red-veins shader (`SinVignette.gd`); alpha + pulse-rate ∝ sin% (0% прозорий → 100% інтенсивна пульсація) |
+| **Damage flash** | Повний екран, по краях | Червоний border ring (`DamageFlash.gd`); sharp attack 0.06 с + slow decay 0.28 с при кожному `Player.damage_taken`. Intensity ∝ amount (1→0.4, 3+→1.0) |
 | Sin-source toasts | Нижній лівий | Stack 3 max — `+1% гріх ⚔ Посох` при кожній зміні |
 
 **Стани бонусів:**

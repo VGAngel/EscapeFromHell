@@ -1723,9 +1723,37 @@ time advances
 Ліворуч екрану вертикальна шкала: положення на круглі
 (altar → bottom). Іконки душ, чекпойнтів, боса.
 
-### U24. 🟢 Damage flash vignette ⭐
-ColorRect з border-vignette шейдером, червоний flash при ударі.
-Tween alpha 0→0.5→0 за 0.25с.
+### U24. ✅ Damage flash vignette
+
+**Реалізовано** як `scripts/ui/DamageFlash.gd` — Control з canvas_item
+шейдером який рендерить solid red ring по краях екрану. Sister of
+SinVignette, але transient: кожен damage_taken event тригерить
+0 → peak → 0 alpha tween за ~0.34 с.
+
+- **Шейдер:** `edge_ring(uv)` — radial smoothstep 0.45 → 1.0,
+  bright at corners, clear in centre. Колір зафіксований
+  `vec3(0.85, 0.10, 0.10)`
+- **Tween:** sharp attack (PEAK_TIME = 0.06 с, TRANS_QUAD-OUT) +
+  slower decay (FADE_TIME = 0.28 с, TRANS_SINE-IN) — читається як
+  "punch" а не fade
+- **Intensity scaling:** `clamp(amount / 3, 0.4, 1.0)`. 1-damage
+  tick — softer, 3+-damage spike — saturated. peak_alpha =
+  MAX_ALPHA × intensity (= 0.55 × intensity)
+- **Concurrent flashes safe** — previous tween kill'ається перед
+  стартом нового через `_current_tween` reference
+- **Player signal wiring:**
+  - Новий `signal damage_taken(amount: int)` у Player.gd, emit'ить
+    в `_take_damage()` поряд з `hp_changed`
+  - DamageFlash шукає Player через `get_first_node_in_group("player")`
+    + слухає `tree.node_added` (з deferred check бо `add_to_group`
+    у Player._ready відбувається після `node_added`)
+- **HUD інтеграція** — `_install_damage_flash()` дзеркалить
+  `_install_sin_vignette()`, кладеться на index 1 (вище sin vignette)
+- **Mouse filter ignore** — таппи проходять до геймплею
+- **Тести:** 8 кейсів у `tests/unit/test_damage_flash.gd` —
+  shader build, initial alpha 0, flash creates tween, intensity
+  scaling math, concurrent kill, FakePlayer connection (already in
+  tree + added later), signal triggers flash
 
 ### U25. 🟡 Контекстні підказки внизу ⭐⭐
 Whisper-style: «Тримай ↓ щоб побачити нижче», «Подвійний тап —
