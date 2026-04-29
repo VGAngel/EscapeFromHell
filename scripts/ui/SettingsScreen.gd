@@ -89,6 +89,14 @@ func _ready() -> void:
 	_root.modulate.a = 0.0
 	visible    = false
 
+
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
+
 ## Snapshot the original key events for every rebindable action so the
 ## "Reset" button can roll back and so we know what the project file
 ## defines vs what the user customised.
@@ -360,7 +368,7 @@ func _build_title_bar(parent: VBoxContainer) -> void:
 	margin.add_child(hdr)
 
 	var title := Label.new()
-	title.text = "Налаштування"
+	title.text = _t("settings.title", {}, "Налаштування")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 44)
 	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.95))
@@ -384,7 +392,11 @@ func _build_tab_bar(parent: VBoxContainer) -> void:
 	bar.add_theme_constant_override("separation", 4)
 	parent.add_child(bar)
 
-	var tabs := [["🔊", "Звук"], ["🌐", "Мова"], ["🖥", "Графіка"], ["⌨", "Клавіші"]]
+	var tabs := [
+			["🔊", _t("settings.tab_sound", {}, "Звук")],
+			["🌐", _t("settings.tab_language", {}, "Мова")],
+			["🖥", _t("settings.tab_graphics", {}, "Графіка")],
+			["⌨", _t("settings.tab_keys", {}, "Клавіші")]]
 	for i in tabs.size():
 		var btn := Button.new()
 		btn.text = "%s  %s" % [tabs[i][0], tabs[i][1]]
@@ -438,22 +450,22 @@ func _build_page_sound() -> Control:
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 28)
 
-	_sl_master = _add_slider_row(vbox, "Загальна гучність", 80)
+	_sl_master = _add_slider_row(vbox, _t("settings.volume_master", {}, "Загальна гучність"), 80)
 	_lbl_master = _get_value_label(vbox)
 	_sl_master.value_changed.connect(_on_master_changed)
 
-	_sl_music = _add_slider_row(vbox, "Музика", 60)
+	_sl_music = _add_slider_row(vbox, _t("settings.volume_music", {}, "Музика"), 60)
 	_lbl_music = _get_value_label(vbox)
 	_sl_music.value_changed.connect(_on_music_changed)
 
-	_sl_sfx = _add_slider_row(vbox, "Звукові ефекти", 90)
+	_sl_sfx = _add_slider_row(vbox, _t("settings.volume_sfx", {}, "Звукові ефекти"), 90)
 	_lbl_sfx = _get_value_label(vbox)
 	_sl_sfx.value_changed.connect(_on_sfx_changed)
 
-	_toggle_mute = _add_toggle_row(vbox, "Вимкнути звук повністю", false)
+	_toggle_mute = _add_toggle_row(vbox, _t("settings.mute_all", {}, "Вимкнути звук повністю"), false)
 	_toggle_mute.pressed.connect(_on_mute_pressed)
 
-	_toggle_haptics = _add_toggle_row(vbox, "Вібрація (mobile)",
+	_toggle_haptics = _add_toggle_row(vbox, _t("settings.haptics", {}, "Вібрація (mobile)"),
 		_data.get("haptics", true))
 	_toggle_haptics.pressed.connect(_on_haptics_pressed)
 
@@ -520,7 +532,7 @@ func _build_page_language() -> Control:
 	vbox.add_theme_constant_override("separation", 18)
 
 	var lbl := Label.new()
-	lbl.text = "Мова гри"
+	lbl.text = _t("settings.language", {}, "Мова гри")
 	lbl.add_theme_font_size_override("font_size", 28)
 	lbl.add_theme_color_override("font_color", Color(0.70, 0.68, 0.76))
 	vbox.add_child(lbl)
@@ -542,11 +554,11 @@ func _build_page_graphics() -> Control:
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 22)
 
-	_toggle_vsync = _add_toggle_row(vbox, "Вертикальна синхронізація", _data.get("vsync", true))
+	_toggle_vsync = _add_toggle_row(vbox, _t("settings.vsync", {}, "Вертикальна синхронізація"), _data.get("vsync", true))
 	_toggle_vsync.pressed.connect(_on_vsync_pressed)
 
 	var res_lbl := Label.new()
-	res_lbl.text = "Роздільна здатність"
+	res_lbl.text = _t("settings.resolution", {}, "Роздільна здатність")
 	res_lbl.add_theme_font_size_override("font_size", 21)
 	res_lbl.add_theme_color_override("font_color", Color(0.70, 0.68, 0.76))
 	vbox.add_child(res_lbl)
@@ -593,7 +605,7 @@ func _update_toggle(btn: Button, active: bool) -> void:
 	_style_toggle(btn, active)
 
 func _style_toggle(btn: Button, active: bool) -> void:
-	btn.text = "ВКЛ" if active else "ВИКЛ"
+	btn.text = _t("settings.toggle_on", {}, "ВКЛ") if active else _t("settings.toggle_off", {}, "ВИКЛ")
 	var s := StyleBoxFlat.new()
 	s.bg_color = Color(0.28, 0.18, 0.42) if active else Color(0.15, 0.14, 0.20)
 	s.corner_radius_top_left    = 8
@@ -658,7 +670,7 @@ func _build_page_keys() -> Control:
 	vbox.add_child(sep)
 
 	var hint := Label.new()
-	hint.text = "Тисни «Призначити» і потім бажану клавішу.\nНа мобільних — клавіатурні бінди не використовуються."
+	hint.text = _t("settings.keys_hint", {}, "Тисни «Призначити» і потім бажану клавішу.\nНа мобільних — клавіатурні бінди не використовуються.")
 	hint.add_theme_font_size_override("font_size", 18)
 	hint.add_theme_color_override("font_color", Color(0.65, 0.62, 0.70))
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -666,12 +678,14 @@ func _build_page_keys() -> Control:
 
 	for entry in REBINDABLE_ACTIONS:
 		var action: String = entry.action
-		var label: String  = entry.label
+		# Pull localised label; UA value in REBINDABLE_ACTIONS is the fallback.
+		var label: String  = _t(
+				"settings.key_label." + action, {}, String(entry.label))
 		vbox.add_child(_build_key_row(action, label))
 
 	# Reset all bindings
 	var reset_btn := Button.new()
-	reset_btn.text = "↺  Скинути всі до стандартних"
+	reset_btn.text = _t("settings.keys_reset_all", {}, "↺  Скинути всі до стандартних")
 	reset_btn.custom_minimum_size = Vector2(0, 60)
 	reset_btn.add_theme_font_size_override("font_size", 22)
 	reset_btn.focus_mode = Control.FOCUS_NONE
@@ -732,7 +746,7 @@ func _key_label_for_action(action: String) -> String:
 func _on_rebind_pressed(action: String) -> void:
 	_binding_action = action
 	if _key_btns.has(action):
-		_key_btns[action].text = "Натисніть клавішу..."
+		_key_btns[action].text = _t("settings.keys_press", {}, "Натисніть клавішу...")
 		_key_btns[action].modulate = Color("#FFD700")
 
 func _input(event: InputEvent) -> void:
@@ -826,7 +840,7 @@ var _edit_overlay:   CanvasLayer = null
 
 func _build_mobile_layout_section(parent: VBoxContainer) -> void:
 	var hdr := Label.new()
-	hdr.text = "📱  Мобільні кнопки"
+	hdr.text = _t("settings.mobile_section", {}, "📱  Мобільні кнопки")
 	hdr.add_theme_font_size_override("font_size", 26)
 	hdr.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
 	parent.add_child(hdr)
@@ -837,7 +851,7 @@ func _build_mobile_layout_section(parent: VBoxContainer) -> void:
 	parent.add_child(size_row)
 
 	var sl_lbl := Label.new()
-	sl_lbl.text = "Розмір"
+	sl_lbl.text = _t("settings.mobile_size", {}, "Розмір")
 	sl_lbl.custom_minimum_size.x = 200
 	sl_lbl.add_theme_font_size_override("font_size", 22)
 	sl_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -866,7 +880,7 @@ func _build_mobile_layout_section(parent: VBoxContainer) -> void:
 
 	# Edit-layout button.
 	_btn_edit_mobile = Button.new()
-	_btn_edit_mobile.text = "✋  Редагувати позиції кнопок"
+	_btn_edit_mobile.text = _t("settings.mobile_edit", {}, "✋  Редагувати позиції кнопок")
 	_btn_edit_mobile.custom_minimum_size = Vector2(0, 60)
 	_btn_edit_mobile.add_theme_font_size_override("font_size", 22)
 	_btn_edit_mobile.focus_mode = Control.FOCUS_NONE
@@ -876,7 +890,7 @@ func _build_mobile_layout_section(parent: VBoxContainer) -> void:
 
 	# Reset.
 	var reset_mc := Button.new()
-	reset_mc.text = "↺  Скинути позиції до стандартних"
+	reset_mc.text = _t("settings.mobile_reset", {}, "↺  Скинути позиції до стандартних")
 	reset_mc.custom_minimum_size = Vector2(0, 60)
 	reset_mc.add_theme_font_size_override("font_size", 22)
 	reset_mc.focus_mode = Control.FOCUS_NONE
@@ -927,7 +941,7 @@ func _show_edit_overlay(mc: Node) -> void:
 	get_tree().root.add_child(_edit_overlay)
 
 	var hint := Label.new()
-	hint.text = "Перетягуй кнопки куди зручно. Натисни ✓ коли готовий."
+	hint.text = _t("settings.mobile_drag_hint", {}, "Перетягуй кнопки куди зручно. Натисни ✓ коли готовий.")
 	hint.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	hint.offset_top    = 100.0
 	hint.offset_bottom = 200.0
@@ -940,7 +954,7 @@ func _show_edit_overlay(mc: Node) -> void:
 	_edit_overlay.add_child(hint)
 
 	var done := Button.new()
-	done.text = "✓ Готово"
+	done.text = _t("settings.mobile_drag_done", {}, "✓ Готово")
 	done.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	done.offset_top = 230.0
 	done.custom_minimum_size = Vector2(220, 88)
