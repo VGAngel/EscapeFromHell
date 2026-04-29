@@ -33,7 +33,11 @@ var _poll_t: float = 0.0
 
 func _ready() -> void:
 	theme_type_variation = "DarkPanel"
-	custom_minimum_size = Vector2(0, 220)
+	# Slimmer than the original 220 px — the card has 5 short rows
+	# and the previous height was overflowing into the ButtonsContainer
+	# which is centred on the viewport. 160 px keeps everything readable
+	# without colliding with the Play CTA below.
+	custom_minimum_size = Vector2(0, 0)
 	_build()
 	refresh()
 	# Re-render labels when the player switches language live.
@@ -173,12 +177,14 @@ func _build() -> void:
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
 	margin.add_theme_constant_override("margin_right", 18)
-	margin.add_theme_constant_override("margin_top", 14)
-	margin.add_theme_constant_override("margin_bottom", 14)
+	# Tighter top/bottom + row separation so the card fits in the
+	# 196 px strip between TitleLabel and ButtonsContainer.
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
 	add_child(margin)
 
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 6)
+	v.add_theme_constant_override("separation", 2)
 	margin.add_child(v)
 
 	# Top row: profile name | Circle/Level (right-aligned)

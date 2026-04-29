@@ -188,18 +188,25 @@ func _loc_t(loc: Node, key: String, params: Dictionary = {}) -> String:
 # HeroCard goes between TitleLabel and ButtonsContainer. We insert it as
 # a top-anchored Control so the existing button vertical centring isn't
 # disturbed.
+#
+# Layout math (1080×1920 portrait):
+#   • TitleLabel ends around y ≈ 230 (offset_top=100, offset_bottom=230)
+#   • ButtonsContainer is centred at viewport mid (y=960) with
+#     offset_top=-485 → top edge ≈ y=475 (or higher when the ad-banner
+#     pushes it up by banner_h/2)
+#   • HeroCard is squeezed into the y=240..435 strip — leaves a 40 px
+#     safety margin before the buttons start, even with a 60 px banner.
 func _install_hero_card() -> void:
 	if has_node("HeroCard"):
 		return
 	var card := preload("res://scripts/ui/HeroCard.gd").new()
 	card.name = "HeroCard"
-	# Anchor: top-wide, sit just below the title.
 	card.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	var vp := get_viewport_rect().size
 	card.offset_left   = vp.x * 0.05
 	card.offset_right  = -vp.x * 0.05
-	card.offset_top    = vp.y * 0.205
-	card.offset_bottom = vp.y * 0.205 + 240
+	card.offset_top    = vp.y * 0.125
+	card.offset_bottom = vp.y * 0.227
 	add_child(card)
 
 func _ensure_seed() -> void:
