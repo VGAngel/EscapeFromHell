@@ -1633,14 +1633,42 @@ UITheme використовує Palette скрізь, тому одна пра�
 
 ## D. Feedback & «feel»
 
-### U16. 🟢 Haptic + sound на кожен button-press ⭐
-HapticManager уже є. Пройтись по всіх Button-ах і
-викликати `HapticManager.tap_light()` (новий метод, 15ms / 0.15)
-+ SoundManager.play("ui_tap").
+### U16. ✅ Haptic + sound на кожен button-press
 
-### U17. 🟢 Tap-grow анімація на всіх кнопках ⭐
-Зробити `_pulse_seed_button` загальним: підключити через
-`button.pressed.connect(UIFeedback.pulse.bind(button))`.
+**Реалізовано** разом з U17 через новий autoload
+`scripts/managers/UIFeedback.gd`. Слухає `tree.node_added` та
+авто-вішає feel-callback на кожен `BaseButton` у грі — minor
+mechanical sweep був не потрібен, працює глобально.
+
+- **Sound** — вже забезпечував SoundManager (auto-wire `ui.button_click`
+  на кожен `pressed`)
+- **Haptic** — новий метод `HapticManager.tap_light()` (15ms / 0.15
+  amplitude — barely-there confirmation), викликається з UIFeedback
+  при натиску
+- **Skip cases:**
+  - `disabled` кнопки → skip обидва (no false signal)
+  - Buttons з meta `feel_disabled = true` → skip (для drag-edit modes)
+
+### U17. ✅ Tap-grow анімація на всіх кнопках
+
+**Реалізовано** як частина того ж UIFeedback autoload.
+
+- **Pulse:** scale tween 1.00 → 1.10 → 1.00 за 0.18 с з easing
+  TRANS_QUAD-OUT (overshoot up) + TRANS_BACK-OUT (settle down) —
+  читається як «satisfying click»
+- **Pivot offset** автоматично виставляється у center (`size * 0.5`)
+  щоб pulse виглядав симетрично незалежно від anchoring
+- **IconButton variation** (✕, 🔙, ⏸) отримує менший amplitude
+  (PULSE_AMP_ICON = 1.06 vs PULSE_AMP_DEFAULT = 1.10) — chrome
+  кнопки не повинні візуально стрибати
+- **Concurrent presses safe:** previous tween на цьому ж button
+  kill'ається перед стартом нового через meta-stash
+- **Idempotent wiring:** `_wired` registry guard + cleanup на
+  `tree_exited` щоб не накопичувати зомбі-IDs
+- **Тести:** 9 кейсів у `tests/unit/test_ui_feedback.gd` —
+  auto-wire on add, auto-wire existing at boot, idempotent re-wire,
+  tree-exit cleanup, pulse tween created, pivot centred, disabled
+  skip, feel_disabled meta skip, IconButton smaller amp
 
 ### U18. 🟡 Skeleton-loader / shimmer ⭐⭐
 Statistics і Collection: показувати shimmer-плейсхолдери

@@ -21,6 +21,7 @@ const _PRESET_PICKUP:     Array = [55,   0.45]
 const _PRESET_DEATH:      Array = [220,  0.85]
 const _PRESET_BOSS_STUN:  Array = [40,   0.55]   # fired three times in sequence
 const _PRESET_DELIVER:    Array = [70,   0.40]
+const _PRESET_TAP_LIGHT:  Array = [15,   0.15]   # UI button — barely-there confirmation
 
 var _enabled: bool = true
 var _is_mobile: bool = false
@@ -71,6 +72,11 @@ func death() -> void:
 
 func deliver() -> void:
 	_vibrate(_PRESET_DELIVER[0], _PRESET_DELIVER[1])
+
+## Light "click confirm" for every UI button. Auto-wired by UIFeedback,
+## so screens don't need to call this manually.
+func tap_light() -> void:
+	_vibrate(_PRESET_TAP_LIGHT[0], _PRESET_TAP_LIGHT[1])
 
 ## Three-burst pattern fits the "boss is stunned, hit window!" beat better
 ## than a single long pulse. Total ≈ 200ms.
