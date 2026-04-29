@@ -70,6 +70,15 @@ func _label_variant(t: Theme, variation_name: String, size: int, color: Color) -
 	t.set_type_variation(variation_name, "Label")
 	t.set_color("font_color", variation_name, color)
 	t.set_font_size("font_size", variation_name, size)
+	# Typography polish: hero text gets letter spacing + outline so the
+	# default Godot sans font reads as a "display" cut without us having
+	# to ship a separate font file. Body sizes stay tight and clean.
+	if size >= SIZE_TITLE:
+		t.set_constant("outline_size", variation_name, 4)
+		t.set_color("font_outline_color", variation_name, PaletteRef.BG_BLACK)
+	if size >= SIZE_DISPLAY:
+		# Display gets a touch wider tracking for "engraved" feel.
+		t.set_constant("outline_size", variation_name, 6)
 
 
 # ── Button variants ───────────────────────────────────────────────────────────

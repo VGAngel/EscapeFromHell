@@ -138,16 +138,16 @@ func _make_card(upgrade: Dictionary) -> Control:
 	hbox.add_child(info)
 
 	var lbl_name := Label.new()
+	lbl_name.theme_type_variation = "SectionLabel"
 	lbl_name.text = upgrade_name
-	lbl_name.add_theme_font_size_override("font_size", 26)
+	# Override gold from SectionLabel — cards have green/white text, not gold.
 	lbl_name.add_theme_color_override("font_color",
 		Color("#88DD88") if maxed else Color(0.90, 0.88, 0.96))
 	info.add_child(lbl_name)
 
 	var lbl_desc := Label.new()
+	lbl_desc.theme_type_variation = "BodyLabel"
 	lbl_desc.text = desc
-	lbl_desc.add_theme_font_size_override("font_size", 19)
-	lbl_desc.add_theme_color_override("font_color", Color(0.74, 0.72, 0.80))
 	lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(lbl_desc)
 
@@ -253,29 +253,25 @@ func _build_header(parent: VBoxContainer) -> void:
 	hdr.add_theme_constant_override("separation", 18)
 	margin.add_child(hdr)
 
+	# Display + outline from theme — keeps the screen-title weight.
 	var title := Label.new()
+	title.theme_type_variation = "DisplayLabel"
 	title.text = "Апгрейди"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 38)
-	title.add_theme_color_override("font_color", Color(0.92, 0.90, 0.98))
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(title)
 
 	_lbl_currency = Label.new()
+	_lbl_currency.theme_type_variation = "SectionLabel"
 	_lbl_currency.text = "💡 0"
-	_lbl_currency.add_theme_font_size_override("font_size", 30)
-	_lbl_currency.add_theme_color_override("font_color", Color("#FFD700"))
 	_lbl_currency.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(_lbl_currency)
 
+	# IconButton variation = empty styleboxes + muted colours.
 	var btn_close := Button.new()
+	btn_close.theme_type_variation = "IconButton"
 	btn_close.text = "✕"
 	btn_close.custom_minimum_size = Vector2(72, 72)
-	btn_close.add_theme_font_size_override("font_size", 32)
-	var empty := StyleBoxEmpty.new()
-	for state in ["normal","hover","pressed","focus"]:
-		btn_close.add_theme_stylebox_override(state, empty)
-	btn_close.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
 	btn_close.pressed.connect(close)
 	hdr.add_child(btn_close)
 

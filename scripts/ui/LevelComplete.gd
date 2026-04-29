@@ -210,17 +210,15 @@ func _build_ui() -> void:
 
 func _build_header() -> void:
 	_lbl_title = Label.new()
+	_lbl_title.theme_type_variation = "TitleLabel"
 	_lbl_title.text = "РІВЕНЬ ПРОЙДЕНО"
 	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_title.add_theme_font_size_override("font_size", 36)
-	_lbl_title.add_theme_color_override("font_color", Color("#FFD700"))
 	_vbox.add_child(_lbl_title)
 
 	_lbl_subtitle = Label.new()
+	_lbl_subtitle.theme_type_variation = "MutedLabel"
 	_lbl_subtitle.text = ""
 	_lbl_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_subtitle.add_theme_font_size_override("font_size", 18)
-	_lbl_subtitle.add_theme_color_override("font_color", Color(0.65, 0.63, 0.68))
 	_vbox.add_child(_lbl_subtitle)
 
 func _build_stars() -> void:
@@ -232,6 +230,7 @@ func _build_stars() -> void:
 	for _i in 3:
 		var lbl := Label.new()
 		lbl.text = STAR_EMPTY
+		# Stars are pictographic — use big DisplayLabel size for impact.
 		lbl.add_theme_font_size_override("font_size", 56)
 		lbl.add_theme_color_override("font_color", Color("#FFD700"))
 		lbl.pivot_offset = Vector2(28, 28)
@@ -257,9 +256,10 @@ func _build_stats() -> void:
 
 	# "NEW BEST!" badge sits next to the stars row, hidden by default.
 	_new_best_badge = Label.new()
+	_new_best_badge.theme_type_variation = "BodyLabel"
 	_new_best_badge.text = "✨ НОВИЙ РЕКОРД ✨"
 	_new_best_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_new_best_badge.add_theme_font_size_override("font_size", 22)
+	# Override BodyLabel grey with celebratory gold + outline.
 	_new_best_badge.add_theme_color_override("font_color", Color("#FFD700"))
 	_new_best_badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
 	_new_best_badge.add_theme_constant_override("outline_size", 4)
@@ -287,15 +287,17 @@ func _build_buttons() -> void:
 
 func _make_stat_label(text: String) -> Label:
 	var lbl := Label.new()
+	lbl.theme_type_variation = "BodyLabel"
 	lbl.text = text
-	lbl.add_theme_font_size_override("font_size", 22)
-	lbl.add_theme_color_override("font_color", Color(0.82, 0.80, 0.84))
+	# BodyLabel ships TEXT_SECONDARY by default — close to the previous tone.
 	return lbl
 
 func _make_button(text: String, primary: bool) -> Button:
 	var btn := Button.new()
 	btn.text = text
 	btn.custom_minimum_size = Vector2(220, 64)
+	# Default Button theme size is SIZE_BODY (18); LevelComplete previously
+	# used 22 — keep the slightly larger feel for the win-screen CTAs.
 	btn.add_theme_font_size_override("font_size", 22)
 
 	var normal := StyleBoxFlat.new()

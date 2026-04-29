@@ -79,6 +79,23 @@ func test_size_constants_form_ascending_scale() -> void:
 func test_default_label_uses_size_body() -> void:
 	assert_eq(t.get_font_size("font_size", "Label"), theme_node.SIZE_BODY)
 
+# ── Display-font typography polish (outline on hero variations) ───────────────
+
+func test_display_label_has_outline() -> void:
+	# DisplayLabel + TitleLabel get an outline_size constant so the
+	# default sans font reads as a "display" cut without a separate
+	# font asset.
+	assert_true(t.has_constant("outline_size", "DisplayLabel"),
+			"DisplayLabel should ship an outline_size constant")
+	assert_gt(t.get_constant("outline_size", "DisplayLabel"), 0)
+	assert_true(t.has_constant("outline_size", "TitleLabel"))
+
+func test_body_label_has_no_outline() -> void:
+	# Body-tier text stays clean — outline would muddy small sizes.
+	assert_false(t.has_constant("outline_size", "BodyLabel"),
+			"BodyLabel should not have an outline")
+	assert_false(t.has_constant("outline_size", "CaptionLabel"))
+
 # ── Palette sanity ────────────────────────────────────────────────────────────
 
 func test_palette_colours_are_distinct() -> void:

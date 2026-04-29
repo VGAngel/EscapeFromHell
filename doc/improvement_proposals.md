@@ -1583,8 +1583,24 @@ Low drone + дальній хор з fade-in/out при переходах.
 - `SIZE_BODY = 18` — основний текст (default Label)
 - `SIZE_CAPTION = 14` — підказки, hint'и
 
-Кожна Label-variation в UITheme використовує одну з констант — ніяких
-магічних чисел в UI-скриптах.
+**Display-font typography polish:** оскільки в проекті немає
+окремого display-font asset'а, hero-варіації (DisplayLabel,
+TitleLabel) отримують `outline_size` constant (4 для TitleLabel,
+6 для DisplayLabel) з кольором BG_BLACK через theme. Це робить
+дефолтний sans-font Godot'а схожим на «engraved» display-cut без
+ассета. BodyLabel/CaptionLabel залишаються чистими — outline
+на маленьких розмірах робить текст бруднішим.
+
+**Прогрес міграції** (`add_theme_font_size_override` → theme variation):
+- ✅ StatisticsScreen — мігровано в комміті U11/U12/U13
+- ✅ PauseScreen — title/sin/exit-confirm/stats мігровано
+- ✅ LevelComplete — header/subtitle/new-best/stats/buttons мігровано
+- ✅ UpgradesScreen — title/cards/currency/close-button мігровано
+- 🟡 Решта 13 файлів (SettingsScreen, CollectionScreen, HUD, ProfileScreen,
+  DonatePanel, SeedDialog, MainMenu, LevelDebugMenu, EndingScreen,
+  SoulRevealPanel, PrivacyPolicy, MobileControls + manager UI scripts)
+  — мігрують поступово при наступних правках (low-risk approach
+  замість одного 800-рядкового sweep'у)
 
 ### U13. ✅ Palette.gd з іменованими кольорами
 

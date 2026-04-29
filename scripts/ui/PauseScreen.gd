@@ -217,12 +217,11 @@ func _build_ui() -> void:
 	vbox.add_theme_constant_override("separation", 22)
 	_panel.add_child(vbox)
 
-	# Title
+	# Title — DisplayLabel variation (48 px gold + outline).
 	_lbl_title = Label.new()
+	_lbl_title.theme_type_variation = "DisplayLabel"
 	_lbl_title.text = "ПАУЗА"
 	_lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_title.add_theme_font_size_override("font_size", 60)
-	_lbl_title.add_theme_color_override("font_color", Color("#FFD700"))
 	vbox.add_child(_lbl_title)
 
 	_add_separator(vbox)
@@ -240,8 +239,8 @@ func _build_ui() -> void:
 	vbox.add_child(sin_row)
 
 	var sin_lbl := Label.new()
+	sin_lbl.theme_type_variation = "TitleLabel"
 	sin_lbl.text = "😈"
-	sin_lbl.add_theme_font_size_override("font_size", 30)
 	sin_row.add_child(sin_lbl)
 
 	_sin_bar_bg = ColorRect.new()
@@ -257,9 +256,8 @@ func _build_ui() -> void:
 	_sin_bar_bg.add_child(_sin_bar)
 
 	_lbl_sin_pct = Label.new()
+	_lbl_sin_pct.theme_type_variation = "SectionLabel"
 	_lbl_sin_pct.text = "0%"
-	_lbl_sin_pct.add_theme_font_size_override("font_size", 26)
-	_lbl_sin_pct.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
 	_lbl_sin_pct.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	sin_row.add_child(_lbl_sin_pct)
 
@@ -328,17 +326,16 @@ func _build_confirm_panel() -> void:
 	_confirm_panel.add_child(vbox)
 
 	_lbl_exit_title = Label.new()
+	_lbl_exit_title.theme_type_variation = "TitleLabel"
 	_lbl_exit_title.text = "Вийти з рівня?"
 	_lbl_exit_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_exit_title.add_theme_font_size_override("font_size", 42)
 	_lbl_exit_title.add_theme_color_override("font_color", Color("#FF6644"))
 	vbox.add_child(_lbl_exit_title)
 
 	_lbl_exit_msg = Label.new()
+	_lbl_exit_msg.theme_type_variation = "BodyLabel"
 	_lbl_exit_msg.text = "Зібрані душі збережені.\nДуша в руках — буде втрачена."
 	_lbl_exit_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_lbl_exit_msg.add_theme_font_size_override("font_size", 28)
-	_lbl_exit_msg.add_theme_color_override("font_color", Color(0.75, 0.72, 0.70))
 	_lbl_exit_msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_lbl_exit_msg)
 
@@ -364,6 +361,8 @@ func _make_button(text: String, primary: bool, danger: bool = false) -> Button:
 	btn.text = text
 	btn.custom_minimum_size = Vector2(540, 96)
 	btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	# Larger CTA size — kept inline because PauseScreen buttons are
+	# physically big touch targets, larger than the standard SIZE_BODY.
 	btn.add_theme_font_size_override("font_size", 32)
 
 	var normal := StyleBoxFlat.new()
@@ -399,9 +398,10 @@ func _make_button(text: String, primary: bool, danger: bool = false) -> Button:
 
 func _make_stat_label(text: String) -> Label:
 	var lbl := Label.new()
+	lbl.theme_type_variation = "SectionLabel"
 	lbl.text = text
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 30)
+	# Override gold from SectionLabel — stats want neutral grey, not accent.
 	lbl.add_theme_color_override("font_color", Color(0.78, 0.76, 0.80))
 	return lbl
 
