@@ -36,6 +36,14 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(0, 220)
 	_build()
 	refresh()
+	# Re-render labels when the player switches language live.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
+
+func _on_language_changed(_new_lang: String) -> void:
+	refresh()
 
 
 func _process(delta: float) -> void:
@@ -50,6 +58,7 @@ func _process(delta: float) -> void:
 # ── Public ────────────────────────────────────────────────────────────────────
 
 func refresh() -> void:
+	var loc: Node = get_node_or_null("/root/Loc")
 	var sm: Node = get_node_or_null("/root/SaveManager")
 	if sm == null:
 		_set_text(_name_lbl,   "—")
@@ -61,7 +70,7 @@ func refresh() -> void:
 		return
 
 	# Name
-	var name_text: String = "Невідомий"
+	var name_text: String = _t(loc, "hero_card.name_unknown")
 	if sm.has_method("get_profile_name"):
 		var pn: String = String(sm.get_profile_name())
 		if not pn.is_empty():
@@ -71,29 +80,38 @@ func refresh() -> void:
 	# Progress
 	var current_level: int = int(sm.get_current_level()) if sm.has_method("get_current_level") else 1
 	var current_circle: int = int(sm.get_current_circle()) if sm.has_method("get_current_circle") else 1
-	_set_text(_circle_lbl, "Коло %d" % current_circle)
-	_set_text(_level_lbl,  "Рівень %d" % current_level)
+	_set_text(_circle_lbl, _t(loc, "hero_card.circle_format", {"n": current_circle}))
+	_set_text(_level_lbl,  _t(loc, "hero_card.level_format",  {"n": current_level}))
 
 	# Souls / hidden / light
 	var souls: int = int(sm.get_total_souls()) if sm.has_method("get_total_souls") else 0
 	var hidden: int = int(sm.get_total_hidden_souls()) if sm.has_method("get_total_hidden_souls") else 0
 	var light: int = int(sm.get_light()) if sm.has_method("get_light") else 0
-	_set_text(_souls_lbl,
-			"👻 %d/100  ·  ✦ %d/20  ·  💡 %d" % [souls, hidden, light])
+	_set_text(_souls_lbl, _t(loc, "hero_card.stats_format",
+			{"souls": souls, "hidden": hidden, "light": light}))
 
 	# Best level — search 1..100, max stars then min time tiebreaker.
-	_set_text(_best_lbl, _format_best(sm))
+	_set_text(_best_lbl, _format_best(sm, loc))
 
 	# Sin
 	if sm.has_method("get_sin"):
 		var sin_pct: int = int(sm.get_sin())
 		_sin_lbl.add_theme_color_override("font_color", _sin_color(sin_pct))
-		_set_text(_sin_lbl, "😈 Гріх %d%%" % sin_pct)
+		_set_text(_sin_lbl, _t(loc, "hero_card.sin_format", {"pct": sin_pct}))
+
+
+# Loc.t() with hardcoded fallback so unit tests without Loc autoload
+# don't crash. Returns the key itself if Loc is missing — test asserts
+# can still match by key prefix.
+func _t(loc: Node, key: String, params: Dictionary = {}) -> String:
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return key
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-func _format_best(sm: Node) -> String:
+func _format_best(sm: Node, loc: Node) -> String:
 	if not sm.has_method("get_level_best"):
 		return ""
 	var best_id: int = -1
@@ -110,10 +128,12 @@ func _format_best(sm: Node) -> String:
 			best_time = t
 			best_id = lid
 	if best_id < 0:
-		return "🏆 Найкращий: —"
-	return "🏆 Найкращий: %s %s (рівень %d)" % [
-		_format_time(best_time), _stars(best_stars), best_id,
-	]
+		return _t(loc, "hero_card.best_none")
+	return _t(loc, "hero_card.best_format", {
+		"time":  _format_time(best_time),
+		"stars": _stars(best_stars),
+		"level": best_id,
+	})
 
 
 func _format_time(seconds: float) -> String:

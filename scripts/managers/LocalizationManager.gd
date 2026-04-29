@@ -3,6 +3,11 @@ extends Node
 # Autoload: add to Project > Project Settings > Autoload as "Loc"
 # Usage: Loc.t("ui.button.continue")
 #        Loc.t("hud.level_info_format", { "circle": 3, "level": 24 })
+#
+# UI screens connect to `language_changed` and re-render themselves to
+# swap labels live without a scene reload.
+
+signal language_changed(new_language: String)
 
 const LOCALIZATION_DIR := "res://localization/"
 const DEFAULT_LANGUAGE := "uk"
@@ -76,3 +81,4 @@ func _load_language(lang: String) -> void:
 	_strings = data
 	_current_language = lang
 	print("Loc: loaded '%s'" % lang)
+	language_changed.emit(lang)

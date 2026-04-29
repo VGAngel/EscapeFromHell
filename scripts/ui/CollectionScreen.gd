@@ -88,6 +88,9 @@ func _load_souls() -> void:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 func router_title() -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t("router_title.collection"))
 	return "Врятовані душі"
 
 func open() -> void:

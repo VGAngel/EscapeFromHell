@@ -87,6 +87,16 @@ func _ready() -> void:
 	# Hero card — player snapshot above the button list.
 	_install_hero_card()
 
+	# Re-render dynamic labels (Play CTA, souls counter) when the
+	# language changes from inside Settings.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
+
+func _on_language_changed(_lang: String) -> void:
+	_refresh_souls_counter()
+
 	_apply_banner_space()
 	var sa: Node = get_node_or_null("/root/SafeArea")
 	if sa:
@@ -144,17 +154,30 @@ func _refresh_souls_counter() -> void:
 func _refresh_play_button() -> void:
 	if _btn_play == null:
 		return
+	var loc: Node = get_node_or_null("/root/Loc")
 	if SaveManager == null:
-		_btn_play.text = "Грати"
+		_btn_play.text = _loc_t(loc, "main_menu_dyn.play_first")
 		return
 	var lvl: int = int(SaveManager.get_current_level())
 	var played_before: bool = false
 	if SaveManager.has_method("get_stat"):
 		played_before = float(SaveManager.get_stat("total_play_seconds", 0.0)) > 0.0
 	if not played_before or lvl <= 1:
-		_btn_play.text = "▶  Грати"
+		_btn_play.text = _loc_t(loc, "main_menu_dyn.play_first")
 	else:
-		_btn_play.text = "▶  Продовжити — рівень %d" % lvl
+		_btn_play.text = _loc_t(loc, "main_menu_dyn.play_continue", {"n": lvl})
+
+
+func _loc_t(loc: Node, key: String, params: Dictionary = {}) -> String:
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	# Fallback when Loc is missing — match previous hardcoded UA strings
+	# so visuals don't regress in early-bootstrap scenarios.
+	if key == "main_menu_dyn.play_first":
+		return "▶  Грати"
+	if key == "main_menu_dyn.play_continue":
+		return "▶  Продовжити — рівень %d" % int(params.get("n", 1))
+	return key
 
 # HeroCard goes between TitleLabel and ButtonsContainer. We insert it as
 # a top-anchored Control so the existing button vertical centring isn't

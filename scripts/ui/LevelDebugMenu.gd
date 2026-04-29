@@ -27,6 +27,9 @@ func _ready() -> void:
 
 
 func router_title() -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t("router_title.level_debug"))
 	return "Рівні (debug)"
 
 func open() -> void:

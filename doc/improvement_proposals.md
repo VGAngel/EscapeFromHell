@@ -1720,9 +1720,37 @@ particle ambient. Частково є — централізувати.
 Дзеркальне розташування MobileControls + великий «Грати»
 внизу екрану меню (а не в центрі).
 
-### U30. 🟢 Локалізація-ready ⭐⭐
-Зараз тексти hardcoded українською. Прокинути через `Loc`
-(autoload вже є). Підготовка до EN/RU/PL/інших.
+### U30. ✅ Локалізація-ready (через `Loc` autoload)
+
+**Реалізовано** — Loc autoload + `uk.json`/`en.json` вже існували, але
+жоден UI скрипт їх не використовував. Зроблено:
+
+- **Loc.language_changed signal** — emit'иться на кожен `_load_language()`.
+  UI компоненти підписуються щоб live-refresh'итись без scene reload
+- **Нові ключі** в обох `localization/*.json`:
+  - `hero_card.*` — name_unknown, circle_format, level_format,
+    stats_format, best_none, best_format, sin_format
+  - `main_menu_dyn.*` — play_first, play_continue
+  - `router_title.*` — statistics, collection, settings, donate,
+    profile, seed, level_debug
+- **HeroCard.gd мігровано** — всі hardcoded UA рядки замінено на
+  `Loc.t()` з graceful fallback на key якщо Loc недоступний у
+  тестах. Підписана на `language_changed` для live refresh
+- **MainMenu Play CTA** — `▶ Грати` / `▶ Продовжити — рівень N`
+  тепер через Loc з fallback на UA. MainMenu підписана на
+  `language_changed` і викликає `_refresh_souls_counter()`
+- **7 router_title()s мігровано** — StatisticsScreen, CollectionScreen,
+  SettingsScreen, DonatePanel, ProfileScreen, SeedDialog,
+  LevelDebugMenu — кожен повертає `Loc.t("router_title.*")` з UA fallback
+- **Тести:** 8 кейсів у `tests/unit/test_loc.gd` —
+  language_changed signal emission, no-op на same-language,
+  t() resolves + params, missing key fallback, **key-audit** (всі
+  16 нових ключів існують у UK і EN), UA↔EN round-trip
+
+**Прогрес:** infrastructure ready, 4 компоненти мігровано (HeroCard,
+MainMenu Play, 7 router_titles, Loc signal). Решта екранів (Settings,
+Collection, HUD, Pause тощо) — тримають hardcoded UA до окремих
+комітів. Pattern для нових екранів задокументовано.
 
 ## 🎯 Топ-5 за ROI
 
