@@ -50,7 +50,10 @@
     "detail_sin_none":      "none",
     "detail_reward_label":  "Reward:",
     "complete_text":        "All 100 souls found",
-    "circle_tab_format":    "Circle {n}"
+    "circle_tab_format":    "Circle {n}",
+    "circle_short":         "C{n}",
+    "filter_not_found":     "Not found",
+    "detail_reward_format": "Reward: {reward}"
   },
 
   "level_complete": {
@@ -369,7 +372,8 @@
 
   "main_menu_dyn": {
     "play_first":     "▶  Play",
-    "play_continue":  "▶  Continue — level {n}"
+    "play_continue":  "▶  Continue — level {n}",
+    "souls_counter":  "Saved Souls  {saved}/100"
   },
 
   "router_title": {
@@ -380,6 +384,12 @@
     "profile":      "Profiles",
     "seed":         "World seed",
     "level_debug":  "Levels (debug)"
+  },
+
+  "level_debug": {
+    "title":            "Levels (debug)",
+    "filter_placeholder":"Filter (id, name, type, circle)",
+    "no_config":        "LevelConfig autoload not available"
   },
 
   "donate": {

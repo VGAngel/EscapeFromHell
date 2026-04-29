@@ -72,6 +72,24 @@ func _ready() -> void:
 	_build_ui()
 	_root.modulate.a = 0.0
 	visible = false
+	# Live-refresh on language switch — full rebuild via open() if visible.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
+
+func _on_language_changed(_lang: String) -> void:
+	if visible:
+		_refresh_counters()
+		_rebuild_grid()
+
+
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
 
 func _load_souls() -> void:
 	var file := FileAccess.open(SOULS_PATH, FileAccess.READ)
@@ -142,8 +160,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _refresh_counters() -> void:
 	var named:  int = SaveManager.get_total_souls()        if SaveManager else 0
 	var hidden: int = SaveManager.get_total_hidden_souls() if SaveManager else 0
-	_lbl_named.text  = "%d / 100" % named
-	_lbl_hidden.text = "✦ %d / 20" % hidden
+	_lbl_named.text  = _t("collection.counter_named", {"saved": named}, "%d / 100" % named)
+	_lbl_hidden.text = _t("collection.counter_hidden", {"saved": hidden}, "✦ %d / 20" % hidden)
 	_lbl_named.add_theme_color_override("font_color",
 		Color("#FFD700") if named >= 100 else Color(0.82, 0.80, 0.86))
 	_refresh_circle_progress()
@@ -198,7 +216,7 @@ func _make_circle_cell(circle: int, found: int, total: int,
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var head := Label.new()
-	head.text = "К%d" % circle
+	head.text = _t("collection.circle_short", {"n": circle}, "К%d" % circle)
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	head.add_theme_font_size_override("font_size", 18)
 	head.add_theme_color_override("font_color",
@@ -293,7 +311,7 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 		lbl.add_theme_color_override("font_color",
 			Color("#FFD700") if is_hidden else Color(0.88, 0.86, 0.92))
 	else:
-		lbl.text = "?"
+		lbl.text = _t("collection.not_found_label", {}, "?")
 		lbl.add_theme_color_override("font_color",
 			Color(0.55, 0.48, 0.22) if is_hidden else Color(0.32, 0.30, 0.38))
 
@@ -387,8 +405,8 @@ func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
 
 	var circle: int = soul.get("circle", 1)
 	var level:  int = soul.get("level",  0)
-	_sheet_loc.text = ("Коло %d • Прихована" % circle) if is_hidden else \
-					  ("Коло %d • Рівень %d" % [circle, level])
+	_sheet_loc.text = _t("collection.detail_location_hidden", {"circle": circle}, "Коло %d • Прихована" % circle) if is_hidden else \
+					  _t("collection.detail_location_common", {"circle": circle, "level": level}, "Коло %d • Рівень %d" % [circle, level])
 	_sheet_loc.visible = true
 	_sheet_sep.visible = true
 
@@ -398,18 +416,18 @@ func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
 
 	if is_hidden:
 		var reward: String = soul.get("reward", "")
-		_sheet_extra.text    = ("Нагорода: %s" % reward) if reward else ""
+		_sheet_extra.text    = _t("collection.detail_reward_format", {"reward": reward}, "Нагорода: %s" % reward) if reward else ""
 		_sheet_extra.add_theme_color_override("font_color", Color("#FFD700"))
 	else:
 		var sin_val: String = soul.get("sin", "none")
-		_sheet_extra.text = ("Гріх: %s" % sin_val) if sin_val != "none" else ""
+		_sheet_extra.text = _t("collection.detail_sin_format", {"sin": sin_val}, "Гріх: %s" % sin_val) if sin_val != "none" else ""
 		_sheet_extra.add_theme_color_override("font_color", Color(0.65, 0.60, 0.72))
 	_sheet_extra.visible = _sheet_extra.text != ""
 
 	_open_sheet()
 
 func _show_sheet_not_found(_soul: Dictionary) -> void:
-	_sheet_name.text = "Душа не знайдена"
+	_sheet_name.text = _t("collection.detail_not_found", {}, "Душа не знайдена")
 	_sheet_name.add_theme_color_override("font_color", Color(0.48, 0.46, 0.54))
 	_sheet_age.visible  = false
 	_sheet_loc.visible  = false
@@ -527,7 +545,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	margin.add_child(hdr)
 
 	var title := Label.new()
-	title.text = "Врятовані Душі"
+	title.text = _t("collection.title", {}, "Врятовані Душі")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", Color("#FFD700"))
@@ -576,13 +594,13 @@ func _build_circle_row(parent: VBoxContainer) -> void:
 	lm.custom_minimum_size.x = 10
 	_circle_row.add_child(lm)
 
-	var btn_all := _filter_btn("Всі", true)
+	var btn_all := _filter_btn(_t("collection.filter_all", {}, "Всі"), true)
 	btn_all.pressed.connect(_on_circle_tab.bind(0))
 	_circle_row.add_child(btn_all)
 	_circle_tabs.append(btn_all)
 
 	for c in range(1, 11):
-		var btn := _filter_btn("Коло %d" % c, false)
+		var btn := _filter_btn(_t("collection.circle_tab_format", {"n": c}, "Коло %d" % c), false)
 		btn.pressed.connect(_on_circle_tab.bind(c))
 		_circle_row.add_child(btn)
 		_circle_tabs.append(btn)
@@ -623,7 +641,7 @@ func _build_type_row(parent: VBoxContainer) -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
 
-	_btn_missing = _filter_btn("Не знайдені", false)
+	_btn_missing = _filter_btn(_t("collection.filter_not_found", {}, "Не знайдені"), false)
 	_btn_missing.pressed.connect(_on_missing_toggle)
 	row.add_child(_btn_missing)
 
@@ -727,7 +745,7 @@ func _build_sheet() -> void:
 
 func _build_completion_label() -> void:
 	_completion_lbl = Label.new()
-	_completion_lbl.text = "Всі 100 душ знайдені"
+	_completion_lbl.text = _t("collection.complete_text", {}, "Всі 100 душ знайдені")
 	_completion_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_completion_lbl.add_theme_font_size_override("font_size", 38)
 	_completion_lbl.add_theme_color_override("font_color", Color("#FFD700"))

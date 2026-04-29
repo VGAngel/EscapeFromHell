@@ -26,6 +26,14 @@ func _ready() -> void:
 	_populate()
 
 
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
+
+
 func router_title() -> String:
 	var loc: Node = get_node_or_null("/root/Loc")
 	if loc and loc.has_method("t"):
@@ -68,7 +76,7 @@ func _build_ui() -> void:
 	_root.add_child(header)
 
 	var title := Label.new()
-	title.text = "Levels (debug)"
+	title.text = _t("level_debug.title", {}, "Levels (debug)")
 	title.add_theme_font_size_override("font_size", 36)
 	title.add_theme_color_override("font_color", Color("#FF8866"))
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -84,7 +92,8 @@ func _build_ui() -> void:
 
 	# Filter input
 	_filter_edit = LineEdit.new()
-	_filter_edit.placeholder_text = "Фільтр (id, назва, type, circle)"
+	_filter_edit.placeholder_text = _t("level_debug.filter_placeholder", {},
+			"Фільтр (id, назва, type, circle)")
 	_filter_edit.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_filter_edit.offset_top = 160.0
 	_filter_edit.offset_left = 40.0
@@ -117,7 +126,7 @@ func _build_ui() -> void:
 func _populate() -> void:
 	if not LevelConfig:
 		var lbl := Label.new()
-		lbl.text = "LevelConfig autoload not available"
+		lbl.text = _t("level_debug.no_config", {}, "LevelConfig autoload not available")
 		_list.add_child(lbl)
 		return
 

@@ -50,7 +50,10 @@
     "detail_sin_none":      "відсутній",
     "detail_reward_label":  "Нагорода:",
     "complete_text":        "Всі 100 душ знайдені",
-    "circle_tab_format":    "Коло {n}"
+    "circle_tab_format":    "Коло {n}",
+    "circle_short":         "К{n}",
+    "filter_not_found":     "Не знайдені",
+    "detail_reward_format": "Нагорода: {reward}"
   },
 
   "settings": {
@@ -583,7 +586,8 @@
 
   "main_menu_dyn": {
     "play_first":     "▶  Грати",
-    "play_continue":  "▶  Продовжити — рівень {n}"
+    "play_continue":  "▶  Продовжити — рівень {n}",
+    "souls_counter":  "Врятовані Душі  {saved}/100"
   },
 
   "router_title": {
@@ -594,6 +598,12 @@
     "profile":      "Профілі",
     "seed":         "Зерно світу",
     "level_debug":  "Рівні (debug)"
+  },
+
+  "level_debug": {
+    "title":            "Levels (debug)",
+    "filter_placeholder":"Фільтр (id, назва, type, circle)",
+    "no_config":        "LevelConfig autoload not available"
   },
 
   "donate": {
