@@ -5,37 +5,26 @@ extends Control
 # matching title + epitaph from the local endings table. Any of the six
 # endings can be shown — the id drives both text and accent colour.
 
-const ENDINGS := {
-	"saint": {
-		"title": "Прощення",
-		"desc":  "Ти повернувся. Не таким як пішов — кращим.",
-		"color": Color("#FFD700"),
-	},
-	"redeemed": {
-		"title": "Другий шанс",
-		"desc":  "Ти отримав те чого просив. Нове життя. Без пам'яті про те що зробив для цього.",
-		"color": Color("#CCCCFF"),
-	},
-	"bound": {
-		"title": "Між світами",
-		"desc":  "Ні пекло ні рай. Ти знаєш чому.",
-		"color": Color("#A088C8"),
-	},
-	"fallen": {
-		"title": "Новий Демон",
-		"desc":  "Люцифер сміється. Ти врятував їх. Але загубив себе.",
-		"color": Color("#CC3322"),
-	},
-	"traitor": {
-		"title": "Угода",
-		"desc":  "Ти залишився. Але не так як планував.",
-		"color": Color("#884466"),
-	},
-	"rebel": {
-		"title": "Третій шлях",
-		"desc":  "Ніхто не чекав цього. Навіть Він.",
-		"color": Color("#66EECC"),
-	},
+# Accent colour per ending — the only piece that doesn't go through Loc.
+# Title/description are pulled from `endings.{id}_title` / `endings.{id}_desc`
+# at render time so they follow the active language.
+const ENDING_COLORS := {
+	"saint":    Color("#FFD700"),
+	"redeemed": Color("#CCCCFF"),
+	"bound":    Color("#A088C8"),
+	"fallen":   Color("#CC3322"),
+	"traitor":  Color("#884466"),
+	"rebel":    Color("#66EECC"),
+}
+
+# UA fallback strings for headless tests / boot before Loc is up.
+const FALLBACK_UA := {
+	"saint":    {"title": "Прощення",    "desc": "Ти повернувся. Не таким як пішов — кращим."},
+	"redeemed": {"title": "Другий шанс", "desc": "Ти отримав те чого просив. Нове життя. Без пам'яті про те що зробив для цього."},
+	"bound":    {"title": "Між світами", "desc": "Ні пекло ні рай. Ти знаєш чому."},
+	"fallen":   {"title": "Новий Демон", "desc": "Люцифер сміється. Ти врятував їх. Але загубив себе."},
+	"traitor":  {"title": "Угода",       "desc": "Ти залишився. Але не так як планував."},
+	"rebel":    {"title": "Третій шлях", "desc": "Ніхто не чекав цього. Навіть Він."},
 }
 
 const FADE_DURATION := 1.2
@@ -51,9 +40,22 @@ func _ready() -> void:
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
 
+
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
+
 func _build_ui() -> void:
-	var data: Dictionary = ENDINGS.get(_ending_id, ENDINGS["saint"])
-	var accent: Color = data.get("color", Color.WHITE)
+	var id: String = _ending_id if ENDING_COLORS.has(_ending_id) else "saint"
+	var accent: Color = ENDING_COLORS.get(id, Color.WHITE)
+	var fallback: Dictionary = FALLBACK_UA.get(id, {"title": "", "desc": ""})
+	var title_text: String = _t(
+			"endings." + id + "_title", {}, fallback.get("title", ""))
+	var desc_text: String = _t(
+			"endings." + id + "_desc", {}, fallback.get("desc", ""))
 
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -78,21 +80,21 @@ func _build_ui() -> void:
 	centerer.add_child(vbox)
 
 	var lbl_pre := Label.new()
-	lbl_pre.text = "— Кінцівка —"
+	lbl_pre.text = _t("endings.preheader", {}, "— Кінцівка —")
 	lbl_pre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_pre.add_theme_font_size_override("font_size", 13)
 	lbl_pre.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
 	vbox.add_child(lbl_pre)
 
 	var lbl_title := Label.new()
-	lbl_title.text = data.get("title", "")
+	lbl_title.text = title_text
 	lbl_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_title.add_theme_font_size_override("font_size", 42)
 	lbl_title.add_theme_color_override("font_color", accent)
 	vbox.add_child(lbl_title)
 
 	var lbl_desc := Label.new()
-	lbl_desc.text = data.get("desc", "")
+	lbl_desc.text = desc_text
 	lbl_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl_desc.add_theme_font_size_override("font_size", 15)
 	lbl_desc.add_theme_color_override("font_color", Color(0.85, 0.82, 0.90))
@@ -105,7 +107,7 @@ func _build_ui() -> void:
 	vbox.add_child(spacer)
 
 	var btn := Button.new()
-	btn.text = "У головне меню"
+	btn.text = _t("endings.btn_main_menu", {}, "У головне меню")
 	btn.custom_minimum_size = Vector2(240, 52)
 	btn.add_theme_font_size_override("font_size", 15)
 	var n := StyleBoxFlat.new()

@@ -21,6 +21,14 @@ func _ready() -> void:
 	visible = false
 	_root.modulate.a = 0.0
 
+
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
+
 func show_soul(data: Dictionary) -> void:
 	var soul_name: String = data.get("name", "")
 	if soul_name == "":
@@ -104,7 +112,7 @@ func _build_ui() -> void:
 	_panel.add_child(vbox)
 
 	var header := Label.new()
-	header.text = "Врятована душа"
+	header.text = _t("soul_reveal.header", {}, "Врятована душа")
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	header.add_theme_font_size_override("font_size", 12)
 	header.add_theme_color_override("font_color", Color(0.62, 0.58, 0.48))

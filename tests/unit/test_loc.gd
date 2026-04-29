@@ -126,6 +126,22 @@ const REQUIRED_KEYS := [
 	"level_debug.title",
 	"level_debug.filter_placeholder",
 	"level_debug.no_config",
+	"endings.preheader",
+	"endings.btn_main_menu",
+	"endings.saint_title",
+	"endings.saint_desc",
+	"endings.redeemed_title",
+	"endings.redeemed_desc",
+	"endings.bound_title",
+	"endings.bound_desc",
+	"endings.fallen_title",
+	"endings.fallen_desc",
+	"endings.traitor_title",
+	"endings.traitor_desc",
+	"endings.rebel_title",
+	"endings.rebel_desc",
+	"soul_reveal.header",
+	"privacy_policy.title",
 ]
 
 func test_all_required_keys_resolve_in_uk() -> void:

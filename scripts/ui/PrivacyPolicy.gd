@@ -47,6 +47,14 @@ func _ready() -> void:
 	visible = false
 	_root.modulate.a = 0.0
 
+
+# Loc.t() with fallback so headless tests / boot without Loc still render.
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
+
 func open() -> void:
 	visible = true
 	var tw := create_tween()
@@ -89,7 +97,7 @@ func _build_ui() -> void:
 	vbox.add_child(hdr)
 
 	var title := Label.new()
-	title.text = "Політика конфіденційності"
+	title.text = _t("privacy_policy.title", {}, "Політика конфіденційності")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 20)
 	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.95))
