@@ -186,12 +186,18 @@ func _set_text(lbl: Label, text: String) -> void:
 # (StyleBoxFlat doesn't support gradients natively).
 func _apply_card_style() -> void:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.03, 0.07, 0.92)
-	style.border_color = Color(1.0, 0.84, 0.30, 0.40)   # gold rim
-	style.border_width_left   = 1
-	style.border_width_right  = 1
-	style.border_width_top    = 1
-	style.border_width_bottom = 1
+	# Bumped from rgba(0.05,0.03,0.07,0.92) → near-opaque rgba(_,_,_,0.98)
+	# and the rim from gold @ 0.40 → 0.65 because the new MJ parallax
+	# silhouette layers sit directly behind the card on the main menu
+	# and were bleeding through the old translucent panel — labels read
+	# muddy on the busy red sky. Slight bg lift (0.05→0.06 etc.) keeps
+	# the deep-purple feel while giving labels firm contrast.
+	style.bg_color = Color(0.06, 0.04, 0.09, 0.98)
+	style.border_color = Color(1.0, 0.84, 0.30, 0.65)   # gold rim
+	style.border_width_left   = 2
+	style.border_width_right  = 2
+	style.border_width_top    = 2
+	style.border_width_bottom = 2
 	style.corner_radius_top_left     = 14
 	style.corner_radius_top_right    = 14
 	style.corner_radius_bottom_left  = 14
