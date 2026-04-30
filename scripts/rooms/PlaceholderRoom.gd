@@ -529,10 +529,12 @@ func _pick_enemy_scene_for(slot_index: int) -> String:
 # ── Soul spawning ─────────────────────────────────────────────────────────────
 
 func _spawn_soul() -> void:
-	# Shaft hosts the whole vertical level: spawn one soul per (room_count - 2)
-	# slots — same density as the legacy "one soul per main room" rule.
+	# Shaft hosts the whole vertical level: count is driven by
+	# levels_config.souls_count so the config is the single source of truth.
 	if room_type == "shaft":
-		var soul_count: int = maxi(1, room_count - 2)
+		var soul_count: int = 1
+		if LevelConfig and level_id > 0:
+			soul_count = maxi(1, LevelConfig.get_souls_count(level_id))
 		_spawn_distributed(soul_count, _spawn_one_soul_at_row)
 		return
 	if room_type != "main":

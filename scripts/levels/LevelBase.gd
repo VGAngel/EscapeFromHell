@@ -167,7 +167,11 @@ func _init_procedural_level(force_procedural: bool = false) -> void:
 		dbg.show_zone(level_id, gen.difficulty_zone, gen.vertical_spacing,
 			gen.platform_type_hint, gen.platform_width)
 
-	_spawn_soul_node(gen)
+	# Vertical shafts spawn primary souls themselves via PlaceholderRoom
+	# (count driven by levels_config souls_count). Horizontal levels still
+	# rely on the legacy single-soul placement here.
+	if _level_type != "vertical":
+		_spawn_soul_node(gen)
 	# Hidden ✦ soul (if this level is one of the 20 hidden-bearing
 	# levels). Spawned BEFORE _discover_souls so it gets picked up by
 	# the in-level soul list and assigned data correctly.
