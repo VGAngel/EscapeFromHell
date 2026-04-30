@@ -103,34 +103,34 @@ func _add_button_variants(t: Theme) -> void:
 
 # Helper: applies styles to a base type or a variation. For variations
 # it also registers the inheritance via set_type_variation.
-func _button_variant(t: Theme, name: String,
+func _button_variant(t: Theme, type_name: String,
 		bg_n: Color, bg_h: Color, bg_p: Color,
 		border_n: Color, border_h: Color, text: Color) -> void:
-	t.set_type_variation(name, "Button")
-	_button_style(t, name, bg_n, bg_h, bg_p, border_n, border_h, text)
+	t.set_type_variation(type_name, "Button")
+	_button_style(t, type_name, bg_n, bg_h, bg_p, border_n, border_h, text)
 
 
-func _button_style(t: Theme, name: String,
+func _button_style(t: Theme, type_name: String,
 		bg_n: Color, bg_h: Color, bg_p: Color,
 		border_n: Color, border_h: Color, text: Color) -> void:
-	t.set_stylebox("normal",  name, _make_box(bg_n, border_n))
-	t.set_stylebox("hover",   name, _make_box(bg_h, border_h))
-	t.set_stylebox("pressed", name, _make_box(bg_p, border_n))
-	t.set_stylebox("focus",   name, _make_box(bg_n, border_n))
-	t.set_color("font_color",       name, text)
-	t.set_color("font_hover_color", name, text.lightened(0.15))
-	t.set_color("font_pressed_color", name, text.darkened(0.10))
-	t.set_font_size("font_size", name, SIZE_BODY)
+	t.set_stylebox("normal",  type_name, _make_box(bg_n, border_n))
+	t.set_stylebox("hover",   type_name, _make_box(bg_h, border_h))
+	t.set_stylebox("pressed", type_name, _make_box(bg_p, border_n))
+	t.set_stylebox("focus",   type_name, _make_box(bg_n, border_n))
+	t.set_color("font_color",       type_name, text)
+	t.set_color("font_hover_color", type_name, text.lightened(0.15))
+	t.set_color("font_pressed_color", type_name, text.darkened(0.10))
+	t.set_font_size("font_size", type_name, SIZE_BODY)
 
 
-func _icon_button(t: Theme, name: String) -> void:
-	t.set_type_variation(name, "Button")
+func _icon_button(t: Theme, type_name: String) -> void:
+	t.set_type_variation(type_name, "Button")
 	var empty := StyleBoxEmpty.new()
 	for state in ["normal", "hover", "pressed", "focus"]:
-		t.set_stylebox(state, name, empty)
-	t.set_color("font_color",       name, PaletteRef.TEXT_MUTED)
-	t.set_color("font_hover_color", name, PaletteRef.TEXT_PRIMARY)
-	t.set_font_size("font_size", name, SIZE_TITLE)
+		t.set_stylebox(state, type_name, empty)
+	t.set_color("font_color",       type_name, PaletteRef.TEXT_MUTED)
+	t.set_color("font_hover_color", type_name, PaletteRef.TEXT_PRIMARY)
+	t.set_font_size("font_size", type_name, SIZE_TITLE)
 
 
 # ── Panels ────────────────────────────────────────────────────────────────────

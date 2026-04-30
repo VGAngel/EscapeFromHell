@@ -16,7 +16,7 @@ extends PanelContainer
 # Pure-code (no .tscn) so MainMenu can drop it in via add_child + setup.
 # Refresh is cheap — call .refresh() after returning from any overlay.
 
-const Palette := preload("res://scripts/ui/Palette.gd")
+const _Pal := preload("res://scripts/ui/_Pal.gd")
 
 const REFRESH_INTERVAL := 1.0   # poll-based refresh while visible
 
@@ -90,10 +90,10 @@ func refresh() -> void:
 
 	# Souls / hidden / light
 	var souls: int = int(sm.get_total_souls()) if sm.has_method("get_total_souls") else 0
-	var hidden: int = int(sm.get_total_hidden_souls()) if sm.has_method("get_total_hidden_souls") else 0
+	var hidden_count: int = int(sm.get_total_hidden_souls()) if sm.has_method("get_total_hidden_souls") else 0
 	var light: int = int(sm.get_light()) if sm.has_method("get_light") else 0
 	_set_text(_souls_lbl, _t(loc, "hero_card.stats_format",
-			{"souls": souls, "hidden": hidden, "light": light}))
+			{"souls": souls, "hidden": hidden_count, "light": light}))
 
 	# Best level — search 1..100, max stars then min time tiebreaker.
 	_set_text(_best_lbl, _format_best(sm, loc))
@@ -163,8 +163,8 @@ func _stars(n: int) -> String:
 func _sin_color(pct: int) -> Color:
 	var p: float = clamp(float(pct) / 100.0, 0.0, 1.0)
 	if p < 0.5:
-		return Palette.SUCCESS.lerp(Palette.WARNING, p * 2.0)
-	return Palette.WARNING.lerp(Palette.SIN_RED, (p - 0.5) * 2.0)
+		return _Pal.SUCCESS.lerp(_Pal.WARNING, p * 2.0)
+	return _Pal.WARNING.lerp(_Pal.SIN_RED, (p - 0.5) * 2.0)
 
 
 func _set_text(lbl: Label, text: String) -> void:

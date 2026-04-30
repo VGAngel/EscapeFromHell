@@ -113,9 +113,21 @@ func _process(delta: float) -> void:
 		_update_hidden_visibility()
 	if _soul_type == "mimic":
 		_update_mimic_highlight()
-	# Manual pickup — player must press [E] while in range.
-	if _player_nearby and Input.is_action_just_pressed("interact"):
-		_do_pickup()
+
+
+# Pickup detection in _unhandled_input (not _process) so AltarNode can
+# `set_input_as_handled()` after a delivery and stop the same [E] press
+# from being interpreted as "pick up the next soul I happen to be standing
+# on" — a stale `_player_nearby` from an Area2D the player has not exited
+# would otherwise trigger an unintended second pickup the moment the
+# altar clears `carried_soul_ids`.
+func _unhandled_input(event: InputEvent) -> void:
+	if not _player_nearby:
+		return
+	if not event.is_action_pressed("interact"):
+		return
+	_do_pickup()
+	get_viewport().set_input_as_handled()
 
 func _do_pickup() -> void:
 	if not is_instance_valid(_player_nearby):

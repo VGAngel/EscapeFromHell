@@ -225,7 +225,7 @@ func _make_slot_card(info: Dictionary) -> Control:
 		name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_edit.add_theme_font_size_override("font_size", 16)
 		name_edit.text_changed.connect(func(t: String) -> void: _name_buffer = t)
-		name_edit.text_submitted.connect(func(_t: String) -> void: _confirm_create(slot))
+		name_edit.text_submitted.connect(func(_ignored: String) -> void: _confirm_create(slot))
 		info_col.add_child(name_edit)
 		name_edit.grab_focus.call_deferred()
 

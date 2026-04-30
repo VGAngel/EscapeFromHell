@@ -189,7 +189,7 @@ func _build_ui() -> void:
 	_edit.placeholder_text = _t("seed.placeholder", {},
 			"Введіть seed або залиште порожнім…")
 	_edit.add_theme_font_size_override("font_size", 22)
-	_edit.text_submitted.connect(func(_t: String) -> void: _apply())
+	_edit.text_submitted.connect(func(_ignored: String) -> void: _apply())
 	row.add_child(_edit)
 
 	var btn_rand := _action_btn("🎲", Color(0.15, 0.15, 0.24))

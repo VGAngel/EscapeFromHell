@@ -61,8 +61,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if _player_is_carrying_soul():
 		_deliver_soul()
+		# Mark the [E] press as consumed. Without this, the same press
+		# would then be picked up by Soul._unhandled_input on a soul whose
+		# Area2D the player hasn't yet exited — credit a phantom unnamed
+		# soul that the player never intentionally collected.
+		get_viewport().set_input_as_handled()
 	elif not _is_active:
 		_activate()
+		get_viewport().set_input_as_handled()
 
 # ── Respawn bind ───────────────────────────────────────────────────────────────
 
@@ -108,6 +114,11 @@ func _play_light_pillar() -> void:
 	beam.size  = Vector2(48, 1000)
 	# Position: centered on altar, extending upward.
 	beam.position = Vector2(-24, -1000)
+	# LevelBase pauses the tree while the soul-delivered popup plays
+	# (~1.8 s). Without PROCESS_MODE_ALWAYS the pillar's tween freezes
+	# and only resumes after the popup ends — climax disconnected from
+	# the delivery beat.
+	beam.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(beam)
 
 	# Glow halo at base of beam.
@@ -115,9 +126,11 @@ func _play_light_pillar() -> void:
 	halo.color = Color(1.0, 0.9, 0.4, 0.5)
 	halo.size  = Vector2(160, 80)
 	halo.position = Vector2(-80, -80)
+	halo.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(halo)
 
 	var tw := create_tween().set_parallel(true)
+	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	# Beam: fade in quickly, hold, then fade out.
 	beam.modulate.a = 0.0
 	tw.tween_property(beam,  "modulate:a", 1.0, 0.25)
@@ -126,9 +139,12 @@ func _play_light_pillar() -> void:
 	# Beam grows slightly upward (scale y 1→1.2) for a "shooting upward" feel.
 	tw.tween_property(beam,  "scale:y",    1.2, 1.0).set_delay(0.1)
 
-	await get_tree().create_timer(1.6).timeout
-	beam.queue_free()
-	halo.queue_free()
+	# `process_always=true` keeps the timer ticking through the popup pause.
+	await get_tree().create_timer(1.6, true).timeout
+	if is_instance_valid(beam):
+		beam.queue_free()
+	if is_instance_valid(halo):
+		halo.queue_free()
 
 # ── Area callbacks ─────────────────────────────────────────────────────────────
 

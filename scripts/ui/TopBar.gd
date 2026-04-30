@@ -17,7 +17,7 @@ extends CanvasLayer
 
 # Preload rather than rely on the editor-registered class_name —
 # headless GUT runs don't always have global classes scanned in time.
-const Palette := preload("res://scripts/ui/Palette.gd")
+const _Pal := preload("res://scripts/ui/_Pal.gd")
 
 const FADE := 0.18
 const POLL_INTERVAL := 1.0
@@ -157,14 +157,14 @@ func _build_ui() -> void:
 	_root.add_child(_bar)
 
 	var bg := ColorRect.new()
-	bg.color = Palette.BG_DARKER
+	bg.color = _Pal.BG_DARKER
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP  # absorb taps so they don't fall through
 	_bar.add_child(bg)
 
 	# Bottom border line.
 	var border := ColorRect.new()
-	border.color = Palette.BORDER_DIM
+	border.color = _Pal.BORDER_DIM
 	border.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	border.offset_top = -1.0
 	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -207,19 +207,19 @@ func _build_ui() -> void:
 
 	_light_lbl = Label.new()
 	_light_lbl.theme_type_variation = "BodyLabel"
-	_light_lbl.add_theme_color_override("font_color", Palette.GOLD)
+	_light_lbl.add_theme_color_override("font_color", _Pal.GOLD)
 	_light_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	res_box.add_child(_light_lbl)
 
 	_souls_lbl = Label.new()
 	_souls_lbl.theme_type_variation = "BodyLabel"
-	_souls_lbl.add_theme_color_override("font_color", Palette.ACCENT_BLUE)
+	_souls_lbl.add_theme_color_override("font_color", _Pal.ACCENT_BLUE)
 	_souls_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	res_box.add_child(_souls_lbl)
 
 	_sin_lbl = Label.new()
 	_sin_lbl.theme_type_variation = "BodyLabel"
-	_sin_lbl.add_theme_color_override("font_color", Palette.SIN_RED)
+	_sin_lbl.add_theme_color_override("font_color", _Pal.SIN_RED)
 	_sin_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	res_box.add_child(_sin_lbl)
 
