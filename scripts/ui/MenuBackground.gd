@@ -160,7 +160,17 @@ void fragment() {
 # isn't present we silently skip — the sky shader alone still looks
 # good enough to ship.
 func _build_silhouette_layer(path: String, label: String, depth: float) -> void:
+	# `ResourceLoader.exists()` returns true as long as the .import
+	# stub is present, even when the imported .ctex binary hasn't
+	# been generated yet (fresh checkout, CI without an --import
+	# pass, MJ-pending placeholder, etc). Use a silent ResourceLoader
+	# .load() so a missing binary skips the layer instead of pushing
+	# an error into GUT's unexpected-errors bucket.
 	if not ResourceLoader.exists(path):
+		return
+	var tex: Resource = ResourceLoader.load(
+			path, "", ResourceLoader.CACHE_MODE_REUSE)
+	if tex == null:
 		return
 	var rect := TextureRect.new()
 	rect.name = label
@@ -168,7 +178,7 @@ func _build_silhouette_layer(path: String, label: String, depth: float) -> void:
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	rect.texture = load(path)
+	rect.texture = tex
 	rect.set_meta("parallax_depth", depth)
 	_root.add_child(rect)
 	if depth >= 1.0:
