@@ -223,6 +223,7 @@ func _ready() -> void:
 		_spawn_bonus()
 		_install_debug_room_marker()
 		_spawn_atmosphere_particles()
+		_spawn_torches()
 		if is_vertical:
 			_log_vertical_layout()
 
@@ -311,6 +312,66 @@ func _make_dust_texture() -> Texture2D:
 			var a: float = clampf(1.0 - d, 0.0, 1.0)
 			img.set_pixel(x, y, Color(1, 1, 1, a))
 	return ImageTexture.create_from_image(img)
+
+# ── Torches ───────────────────────────────────────────────────────────────────
+#
+# Themed torches mounted on the side walls cast circle-coloured pools of
+# light against the dim CanvasModulate ambient set up by AmbientLighting.
+# Vertical shafts get torches every ~480px down both walls (alternating
+# sides so the shaft reads as a chain of beacons rather than a runway).
+# Horizontal rooms get four near the high/low rows so the corners stay
+# legible.
+const TORCH_SCRIPT_PATH := "res://scripts/world/Torch.gd"
+const TORCH_VERTICAL_STEP := 480.0
+const TORCH_VERTICAL_INSET := 240.0     # don't put one right at the entry/exit
+const TORCH_WALL_OFFSET := 24.0         # x-distance from inside face of wall
+
+func _spawn_torches() -> void:
+	if Engine.is_editor_hint():
+		return
+	if circle <= 0:
+		return
+	var torch_script: Script = load(TORCH_SCRIPT_PATH) as Script
+	if torch_script == null:
+		return
+	var x_left: float = max(_side_wall_w + TORCH_WALL_OFFSET, TORCH_WALL_OFFSET)
+	var x_right: float = room_width - x_left
+	if is_vertical:
+		_spawn_torches_vertical(torch_script, x_left, x_right)
+	else:
+		_spawn_torches_horizontal(torch_script, x_left, x_right)
+
+
+func _spawn_torches_vertical(torch_script: Script, x_left: float, x_right: float) -> void:
+	# Alternate left/right so adjacent torches don't end up wall-to-wall.
+	var y: float = TORCH_VERTICAL_INSET
+	var on_left := true
+	while y < room_height - TORCH_VERTICAL_INSET * 0.5:
+		var torch: Node2D = torch_script.new()
+		torch.set("circle", circle)
+		torch.position = Vector2(x_left if on_left else x_right, y)
+		add_child(torch)
+		on_left = not on_left
+		y += TORCH_VERTICAL_STEP
+
+
+func _spawn_torches_horizontal(torch_script: Script, x_left: float, x_right: float) -> void:
+	# Use the precomputed _row_high/_row_low rails when they're set, otherwise
+	# fall back to thirds of the room — _init_zone() only fills _row_* for
+	# layouts that drive _add_main_platforms(), so handcrafted rooms still
+	# get sane torch placement.
+	var y_top: float = _row_high if _row_high > 0.0 else room_height * 0.30
+	var y_bot: float = _row_low if _row_low > 0.0 else room_height * 0.75
+	for spot in [
+			Vector2(x_left,  y_top),
+			Vector2(x_right, y_top),
+			Vector2(x_left,  y_bot),
+			Vector2(x_right, y_bot)]:
+		var torch: Node2D = torch_script.new()
+		torch.set("circle", circle)
+		torch.position = spot
+		add_child(torch)
+
 
 # Dev-only diagnostic: print the generated row Y/X positions and the largest
 # gap so it's obvious which room produced an unreachable hole. Disabled in

@@ -48,6 +48,14 @@ func _ready() -> void:
 	if level_id == 1 and GameManager and GameManager.current_level_id > 1:
 		level_id = GameManager.current_level_id
 
+	# Dim the world before any rooms or the player spawn so PointLight2Ds
+	# (player flame + torches) actually have headroom to reveal silhouettes.
+	# Without this CanvasModulate the scene is fully lit and lighting adds
+	# nothing visible.
+	var ambient_script: Script = load("res://scripts/world/AmbientLighting.gd")
+	if ambient_script:
+		ambient_script.apply_to_level(self)
+
 	_level_type = LevelConfig.get_level_type(level_id) if LevelConfig else "platformer"
 
 	if force_static or (LevelGenerator and LevelGenerator.is_static(level_id)):

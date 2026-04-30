@@ -150,8 +150,25 @@ func _ready() -> void:
 	_staff_area.monitoring = false
 	_setup_sin_shader()
 	_load_player_frames()
+	_attach_soul_flame_light()
 	# LevelCamera (attached to the Camera2D child) calls make_current() in
 	# its own _ready, so no manual takeover needed here.
+
+
+# Attach a warm "soul flame" PointLight2D so the player is always visible
+# in the dim ambient. Skipped in headless tests/editor where the lighting
+# rig isn't part of the assertion surface and would just leak Tweens.
+func _attach_soul_flame_light() -> void:
+	if Engine.is_editor_hint():
+		return
+	if get_node_or_null("PlayerLight") != null:
+		return
+	var ambient_script: Script = load("res://scripts/world/AmbientLighting.gd")
+	if ambient_script == null:
+		return
+	var light: PointLight2D = ambient_script.make_player_light()
+	if light:
+		add_child(light)
 
 func _setup_sin_shader() -> void:
 	for path in SIN_TEXTURES:
