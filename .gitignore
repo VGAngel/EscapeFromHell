@@ -10,7 +10,14 @@
 # Build artifacts
 *.apk
 *.apk.idsig
+*.aab
+*.idsig
 /build/
+
+# Signing — secrets/ has its own .gitignore that whitelists only
+# the env example + READMEs, but belt-and-braces here too.
+secrets/*.keystore
+secrets/keystore.env
 
 # Claude worktrees (each agent session creates one — never commit)
 .claude/worktrees/
