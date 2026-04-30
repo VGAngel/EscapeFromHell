@@ -108,23 +108,35 @@ func _make_card(upgrade: Dictionary) -> Control:
 	var maxed:     bool   = cur_level >= max_level
 	var can_buy:   bool   = not maxed and light >= cost
 
-	# Card container
+	# Card container — bumped contrast vs the screen's dark root so
+	# cards read clearly. Old values (bg 0.12/0.10/0.16 on root
+	# 0.05/0.04/0.08) only had ~0.07 lightness delta and the border
+	# was muted purple — the entire upgrade list looked "smudged".
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(0, 140)
+	card.custom_minimum_size = Vector2(0, 150)
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.10, 0.16) if not maxed else Color(0.10, 0.12, 0.10)
-	style.border_width_left   = 1
-	style.border_width_right  = 1
-	style.border_width_top    = 1
-	style.border_width_bottom = 1
-	style.border_color = Color(0.45, 0.35, 0.60) if not maxed else Color(0.28, 0.48, 0.28)
-	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
-		style.set("corner_radius_" + corner, 10)
+	# Brighter bg + warmer tint so each card pops off the dark menu.
+	style.bg_color = Color(0.18, 0.14, 0.22) if not maxed else Color(0.13, 0.18, 0.14)
+	# 2 px border in stronger purple/green so the card boundary is
+	# unambiguous even on small phones.
+	style.border_width_left   = 2
+	style.border_width_right  = 2
+	style.border_width_top    = 2
+	style.border_width_bottom = 2
+	style.border_color = (
+			Color(0.62, 0.48, 0.86) if not maxed else Color(0.42, 0.78, 0.42))
+	for corner in ["top_left", "top_right", "bottom_left", "bottom_right"]:
+		style.set("corner_radius_" + corner, 12)
 	style.content_margin_left   = 22.0
 	style.content_margin_right  = 22.0
 	style.content_margin_top    = 16.0
 	style.content_margin_bottom = 16.0
+	# Soft drop shadow so each card reads as elevated above the
+	# scroll bg — same treatment HeroCard got.
+	style.shadow_color  = Color(0.0, 0.0, 0.0, 0.4)
+	style.shadow_size   = 5
+	style.shadow_offset = Vector2(0, 2)
 	card.add_theme_stylebox_override("panel", style)
 
 	var hbox := HBoxContainer.new()
@@ -140,15 +152,24 @@ func _make_card(upgrade: Dictionary) -> Control:
 	var lbl_name := Label.new()
 	lbl_name.theme_type_variation = "SectionLabel"
 	lbl_name.text = upgrade_name
-	# Override gold from SectionLabel — cards have green/white text, not gold.
+	# Override gold from SectionLabel — bright white-purple for unmaxed,
+	# bright green for maxed, both with a subtle outline for legibility.
 	lbl_name.add_theme_color_override("font_color",
-		Color("#88DD88") if maxed else Color(0.90, 0.88, 0.96))
+		Color("#88FF88") if maxed else Color(1.0, 0.98, 1.0))
+	lbl_name.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
+	lbl_name.add_theme_constant_override("outline_size", 3)
 	info.add_child(lbl_name)
 
+	# Description — was using BodyLabel (TEXT_SECONDARY) which read OK
+	# on the lighter card bg before but now needs explicit brightness
+	# bump + outline so the text doesn't smudge into the bg.
 	var lbl_desc := Label.new()
 	lbl_desc.theme_type_variation = "BodyLabel"
 	lbl_desc.text = desc
 	lbl_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl_desc.add_theme_color_override("font_color", Color(0.92, 0.88, 0.96))
+	lbl_desc.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.5))
+	lbl_desc.add_theme_constant_override("outline_size", 2)
 	info.add_child(lbl_desc)
 
 	# Level dots (for multi-level upgrades)
@@ -158,8 +179,12 @@ func _make_card(upgrade: Dictionary) -> Control:
 		info.add_child(dots_row)
 		for i in max_level:
 			var dot := ColorRect.new()
-			dot.custom_minimum_size = Vector2(16, 16)
-			dot.color = Color("#88DD88") if i < cur_level else Color(0.28, 0.26, 0.35)
+			dot.custom_minimum_size = Vector2(18, 18)
+			# Bright green for filled, brighter empty so the level
+			# indicator is unambiguous at-a-glance.
+			dot.color = (
+					Color("#A0FF80") if i < cur_level
+					else Color(0.42, 0.38, 0.50))
 			dots_row.add_child(dot)
 
 	# Right: buy button
@@ -183,16 +208,22 @@ func _make_buy_btn(id: String, cost: int, cur_level: int, max_level: int,
 
 	if maxed:
 		btn.text = "МАКС"
-		s.bg_color = Color(0.14, 0.22, 0.14)
-		btn.add_theme_color_override("font_color", Color("#66BB66"))
+		s.bg_color = Color(0.18, 0.30, 0.18)
+		s.border_color = Color(0.42, 0.78, 0.42)
+		s.border_width_left = 2; s.border_width_right = 2
+		s.border_width_top  = 2; s.border_width_bottom = 2
+		btn.add_theme_color_override("font_color", Color("#88FF88"))
 		btn.disabled = true
 	elif can_buy:
 		btn.text = "💡 %d\nКупити" % cost
-		s.bg_color = Color(0.22, 0.16, 0.34)
-		s.border_color = Color(0.55, 0.38, 0.78)
-		s.border_width_left   = 1; s.border_width_right  = 1
-		s.border_width_top    = 1; s.border_width_bottom = 1
-		btn.add_theme_color_override("font_color", Color(0.90, 0.80, 1.00))
+		# Bright affordable-purple — clearly differentiates from the
+		# darker disabled state below. 2 px border for parity with the
+		# card's own border weight.
+		s.bg_color = Color(0.32, 0.22, 0.48)
+		s.border_color = Color(0.82, 0.60, 1.0)
+		s.border_width_left   = 2; s.border_width_right  = 2
+		s.border_width_top    = 2; s.border_width_bottom = 2
+		btn.add_theme_color_override("font_color", Color(1.0, 0.92, 1.0))
 		btn.pressed.connect(_on_buy.bind(id, cost, cur_level, max_level))
 	else:
 		btn.text = "💡 %d" % cost
