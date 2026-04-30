@@ -690,7 +690,9 @@
     "donate":       "Підтримати",
     "profile":      "Профілі",
     "seed":         "Зерно світу",
-    "level_debug":  "Рівні (debug)"
+    "level_debug":  "Рівні (debug)",
+    "play":         "Грати",
+    "level_select": "Рівні"
   },
 
   "endings": {
@@ -722,6 +724,23 @@
     "title":            "Levels (debug)",
     "filter_placeholder":"Фільтр (id, назва, type, circle)",
     "no_config":        "LevelConfig autoload not available"
+  },
+
+  "play_submenu": {
+    "title":            "Грати",
+    "continue_format":  "▶  Продовжити — рівень {n}",
+    "continue_first":   "▶  Грати",
+    "levels":           "📜  Рівні",
+    "levels_debug":     "🔧  Levels (debug)",
+    "profile_format":   "👤  Профіль: {name}",
+    "profile_unknown":  "Невідомий",
+    "seed_format":      "🌱  Seed: {seed}",
+    "seed_auto":        "(авто)",
+    "back":             "✕  Назад"
+  },
+
+  "level_select": {
+    "title":            "Рівні"
   },
 
   "donate": {

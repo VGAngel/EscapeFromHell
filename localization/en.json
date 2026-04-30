@@ -419,7 +419,9 @@
     "donate":       "Donate",
     "profile":      "Profiles",
     "seed":         "World seed",
-    "level_debug":  "Levels (debug)"
+    "level_debug":  "Levels (debug)",
+    "play":         "Play",
+    "level_select": "Levels"
   },
 
   "tutorial": {
@@ -508,6 +510,23 @@
     "title":            "Levels (debug)",
     "filter_placeholder":"Filter (id, name, type, circle)",
     "no_config":        "LevelConfig autoload not available"
+  },
+
+  "play_submenu": {
+    "title":            "Play",
+    "continue_format":  "▶  Continue — level {n}",
+    "continue_first":   "▶  Play",
+    "levels":           "📜  Levels",
+    "levels_debug":     "🔧  Levels (debug)",
+    "profile_format":   "👤  Profile: {name}",
+    "profile_unknown":  "Unknown",
+    "seed_format":      "🌱  Seed: {seed}",
+    "seed_auto":        "(auto)",
+    "back":             "✕  Back"
+  },
+
+  "level_select": {
+    "title":            "Levels"
   },
 
   "donate": {

@@ -67,6 +67,14 @@ func _ready() -> void:
 	if _level_debug:
 		_level_debug.closed.connect(_on_overlay_closed)
 
+	# Hide three buttons that now live inside PlaySubmenu (Профіль /
+	# Levels-debug / Seed). Their .pressed signals stay connected so
+	# the submenu can forward presses to them rather than wiring its
+	# own handlers.
+	for moved in [_btn_profile, _btn_levels, _btn_seed]:
+		if moved:
+			moved.visible = false
+
 	_ensure_seed()
 	_refresh_buttons()
 	_refresh_souls_counter()
@@ -252,8 +260,8 @@ func _install_hero_card() -> void:
 	var vp := get_viewport_rect().size
 	card.offset_left   = vp.x * 0.05
 	card.offset_right  = -vp.x * 0.05
-	card.offset_top    = vp.y * 0.125
-	card.offset_bottom = vp.y * 0.219
+	card.offset_top    = vp.y * 0.140
+	card.offset_bottom = vp.y * 0.230
 	add_child(card)
 
 func _ensure_seed() -> void:
@@ -280,8 +288,64 @@ func _refresh_seed_label() -> void:
 # ── Navigation ────────────────────────────────────────────────────────────────
 
 func _on_play() -> void:
+	# Опен a Play submenu instead of jumping straight to the Hub.
+	# Submenu lets the player pick: Continue (default), Levels (only
+	# unlocked), Levels-debug (all 100), Profile, Seed.
+	_open_play_submenu()
+
+
+# Lazy-construct the PlaySubmenu the first time the player taps Грати,
+# then reuse the instance on every subsequent open. Forwarding the
+# hidden Profile/Levels/Seed buttons via signal emit keeps the
+# original handlers intact — submenu doesn't need to know about
+# ProfileScreen/LevelDebugMenu/SeedDialog plumbing.
+func _open_play_submenu() -> void:
+	var sub: CanvasLayer = get_node_or_null("PlaySubmenu")
+	if sub == null:
+		sub = preload("res://scripts/ui/PlaySubmenu.gd").new()
+		sub.name = "PlaySubmenu"
+		add_child(sub)
+		sub.continue_pressed.connect(_on_submenu_continue)
+		sub.levels_pressed.connect(_on_submenu_levels)
+		sub.levels_debug_pressed.connect(_on_submenu_levels_debug)
+		sub.profile_pressed.connect(_on_submenu_profile)
+		sub.seed_pressed.connect(_on_submenu_seed)
+		sub.closed.connect(_on_overlay_closed)
+	_open_via_router(sub)
+
+
+func _on_submenu_continue() -> void:
+	# Standard "go to hub → continue level N" path.
 	_set_interactive(false)
 	_fade_to(SCENE_HUB)
+
+
+func _on_submenu_levels() -> void:
+	# Player-facing level select (only unlocked levels, with stars).
+	var ls: CanvasLayer = get_node_or_null("LevelSelect")
+	if ls == null:
+		ls = preload("res://scripts/ui/LevelSelect.gd").new()
+		ls.name = "LevelSelect"
+		add_child(ls)
+		if ls.has_signal("closed"):
+			ls.closed.connect(_on_overlay_closed)
+	_open_via_router(ls)
+
+
+func _on_submenu_levels_debug() -> void:
+	if _btn_levels:
+		_btn_levels.pressed.emit()
+
+
+func _on_submenu_profile() -> void:
+	if _btn_profile:
+		_btn_profile.pressed.emit()
+
+
+func _on_submenu_seed() -> void:
+	if _btn_seed:
+		_btn_seed.pressed.emit()
+
 
 func _fade_to(scene_path: String) -> void:
 	var tw := create_tween()
@@ -289,6 +353,7 @@ func _fade_to(scene_path: String) -> void:
 	tw.tween_callback(func() -> void:
 		get_tree().change_scene_to_file(scene_path)
 	)
+
 
 func _on_collection() -> void:
 	_open_via_router(_collection)
