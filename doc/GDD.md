@@ -1564,9 +1564,9 @@ Auto-refresh раз на секунду.
   Якість Low/Medium/High, V-Sync, FHD/HD preset toggle
 - **⌨ Клавіші:**
   - **📱 Мобільні кнопки** (зверху таба): slider розміру 60-140%,
-    "✋ Редагувати позиції кнопок" → drag-mode overlay, "↺ Скинути позиції".
+	"✋ Редагувати позиції кнопок" → drag-mode overlay, "↺ Скинути позиції".
   - Перепризначення 7 keyboard actions (`move_left`, `move_right`,
-    `jump`, `action`, `interact`, `look_down`, `pray`). Натиск кнопки →
+	`jump`, `action`, `interact`, `look_down`, `pray`). Натиск кнопки →
 	"Натисніть клавішу..." → наступний key стає biding'ом. **Esc** скасовує.
 	Кнопка "↺ Скинути всі" повертає до snapshot з project.godot.
 	Зберігається у `keybindings: { action: physical_keycode }` дикті.
