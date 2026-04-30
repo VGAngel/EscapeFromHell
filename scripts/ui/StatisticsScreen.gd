@@ -6,7 +6,9 @@ extends CanvasLayer
 #
 # Open via .open() / closes itself via ✕ button or Esc.
 
-const Palette := preload("res://scripts/ui/Palette.gd")
+# Palette is a global class_name (scripts/ui/Palette.gd) — reference it
+# directly via `Palette.X`. A `const Palette := preload(...)` shadows
+# the global and Godot 4.6 warns SHADOWED_GLOBAL_IDENTIFIER.
 
 signal closed
 
