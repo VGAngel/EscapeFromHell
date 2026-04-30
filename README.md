@@ -43,6 +43,45 @@ GODOT_BIN=/path/to/godot ./tests/run_unit.sh
 
 ---
 
+## Build & Release (Android)
+
+Повна інструкція — `docs/ANDROID_BUILD.md`. Коротко:
+
+```bash
+# One-time (per machine):
+./scripts/build/create_keystore.sh             # генерує debug + release keystores
+cp secrets/keystore.env.example secrets/keystore.env   # вписати release пароль
+# Потім у редакторі: Project → Install Android Build Template…
+
+# Кожен реліз:
+./scripts/build/bump_version.sh patch          # 0.1.0 → 0.1.1 (+ versionCode)
+./scripts/build/build_android.sh               # signed AAB у build/
+```
+
+Усе в `secrets/` (keystores + паролі) gitignored. `bump_version.sh`
+тримає `project.godot` і `export_presets.cfg` синхронними — Play Console
+відхиляє upload з не-монотонним `versionCode`.
+
+### Debug vs Release UI
+
+`BuildConfig` autoload — єдине джерело істини "це debug-білд?". Ховає
+debug-only UI (Levels(debug), Seed, F3 DebugOverlay) у release-білдах.
+Перемикання — через `application/config/debug_ui_mode` в
+`project.godot` (`auto` / `force_on` / `force_off`) або через додавання
+`release` feature tag у export preset.
+
+### CI (GitHub Actions)
+
+- `.github/workflows/tests.yml` — GUT suite на push/PR в main
+- `.github/workflows/android.yml` — AAB build на tag `v*` push або
+  manual dispatch; артефакт + GitHub Release на тег
+
+Активувати Android CI — додати три repo secrets:
+`EFH_RELEASE_KEYSTORE_BASE64` (`base64 -i secrets/release.keystore`),
+`EFH_RELEASE_KEYSTORE_PASS`, `EFH_RELEASE_KEYSTORE_USER`.
+
+---
+
 ## Обробка ассетів
 
 ### Видалення фону (`tools/bg_remove.py`)

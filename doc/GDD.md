@@ -1,6 +1,6 @@
 # Game Design Document — Escape from Hell
 
-**Версія:** 1.7  
+**Версія:** 1.8  
 **Движок:** Godot 4  
 **Платформа:** Android (Google Play)  
 **Жанр:** 2D Platformer  
@@ -32,6 +32,14 @@
 > death/deliver/boss_stun з toggle у Settings. Налаштовувані позиції
 > та розмір кнопок MobileControls — drag-to-move + 60-140% slider,
 > persisted у `mobile_layout` save bucket.
+>
+> Зміни 1.7 → 1.8: MainMenu рефактор — Play тепер відкриває проміжне
+> підменю (Continue / 📜 Рівні / 🔧 Levels(debug) / 👤 Профіль /
+> 🌱 Seed) замість прямого jump-to-Hub. Новий player-facing
+> LevelSelect показує лише розблоковані рівні з ★/⏱/👤 best-run.
+> BuildConfig autoload централізує debug/release-перемикач —
+> Levels(debug), Seed, F3 DebugOverlay автоматично ховаються у
+> release-білдах через `application/config/debug_ui_mode`.
 
 ---
 
@@ -1300,6 +1308,96 @@ quit, що небажано при відкритому Settings.
 
 **MainMenu** використовує єдиний хелпер `_open_via_router(screen)`
 замість прямих `.open()` викликів.
+
+### Головне меню (MainMenu)
+
+**Сцена:** `scenes/ui/MainMenu.tscn`
+**Скрипт:** `scripts/ui/MainMenu.gd`
+
+Головний хаб поза грою. Тапаючи будь-яку кнопку — гравець пушиться
+через UIRouter в overlay, або стартується перехід у Hub.
+
+**Видимі кнопки** (зверху-вниз):
+- **▶ Грати** — відкриває PlaySubmenu (див. нижче)
+- **Профіль** *(прихована)* — джерело сигналу для submenu, тримається
+  для зворотньої сумісності
+- **Врятовані Душі N/100** — CollectionScreen
+- **Налаштування** — SettingsScreen
+- **Levels (debug)** *(прихована)* — джерело для submenu
+- **🌱 Seed** *(прихована)* — джерело для submenu
+- **Прибрати рекламу** — IAP no-ads
+- **Підтримати** — DonatePanel
+- **Вихід** — `get_tree().quit()`
+
+Прихованих 3 кнопки (Profile/Levels/Seed) залишаються в дереві
+як "джерела сигналів": PlaySubmenu емітить `*_pressed`, MainMenu
+форвардить через `_btn_*.pressed.emit()` — оригінальні handlers
+(LevelDebugMenu, ProfileScreen, seed-randomization) працюють без змін.
+
+### PlaySubmenu
+
+**Скрипт:** `scripts/ui/PlaySubmenu.gd` (CanvasLayer overlay, layer=10)
+
+Проміжне меню що відкривається з MainMenu → ▶ Грати. Замість того
+щоб одразу скакати в Hub — пропонує гілки входу в спуск:
+
+- **▶ Продовжити — рівень N** — стандартний flow (fade → Hub.tscn).
+  На першому проходженні: «▶ Грати» без номеру
+- **📜 Рівні** — player-facing LevelSelect
+- **🔧 Levels (debug)** — повний LevelDebugMenu *(release: ховається)*
+- **👤 Профіль: \<name\>** — ProfileScreen, ім'я активного профілю inline
+- **🌱 Seed: \<code\>** — поточний world seed, тап = randomize
+  *(release: ховається)*
+- **✕ Назад** — закрити підменю
+
+Inline-лейбли (рівень N, ім'я профілю, seed-код) рефрешаться при
+кожному `open()` і на signal `Loc.language_changed`.
+
+**Сигнали:** `closed`, `continue_pressed`, `levels_pressed`,
+`levels_debug_pressed`, `profile_pressed`, `seed_pressed`. MainMenu
+підписаний на всі п'ять.
+
+### LevelSelect (player-facing)
+
+**Скрипт:** `scripts/ui/LevelSelect.gd` (CanvasLayer overlay, layer=10)
+
+На відміну від `LevelDebugMenu` (експонує **всі** 100 рівнів для
+тестування) — цей екран показує лише ті, до яких гравець дійшов.
+
+**Розблокованість:** `lvl_id <= SaveManager.get_current_level()`
+
+| Стан | Рендер |
+|------|--------|
+| Розблокований | `#N  Назва    ★★☆    ⏱ 1:23    👤 3` — з `get_level_best(id)` |
+| Заблокований  | `🔒  #N  Назва`  — disabled, gray |
+
+Тап розблокованого ряду → `SaveManager.set_current_level(id)` +
+`GameManager.start_level(id)`. Esc / ✕ — закрити overlay.
+
+### BuildConfig (debug/release gate)
+
+**Autoload:** `scripts/managers/BuildConfig.gd`
+
+Єдине джерело істини "це debug-білд?". Викликається кожною UI-поверхнею
+яка має зникати у shipped-білдах: PlaySubmenu (Levels(debug) + Seed
+рядки), DebugOverlay (F3 on-screen log), майбутні дев-cheats.
+
+**API:**
+- `show_debug_ui() -> bool` — true в editor/debug, false в release
+- `is_debug_build() -> bool` — alias (зарезервовано на майбутнє
+  розщеплення UI vs логіки)
+- `set_override(Mode.AUTO|FORCE_ON|FORCE_OFF)` — runtime override
+  для тестів
+
+**Резолюція** (першим виграє):
+1. Runtime override → вище
+2. ProjectSetting `application/config/debug_ui_mode` — `auto` (default)
+   / `force_on` / `force_off`. Override per-export-preset
+3. `OS.has_feature("release")` — true якщо в preset додано `release`
+   feature tag
+
+Шипити release: або `debug_ui_mode="force_off"` в overrides preset,
+або додати `release` feature tag у Project → Export → Features.
 
 ### TopBar (persistent header)
 
