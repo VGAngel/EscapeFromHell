@@ -255,53 +255,197 @@ func _on_debug_room_body_entered(body: Node) -> void:
 	if dbg and dbg.has_method("set_active_room"):
 		dbg.set_active_room(room_index)
 
-# ── Atmosphere particles (Phase 2 backdrop) ──────────────────────────────────
+# ── Atmosphere particles ──────────────────────────────────────────────────────
 #
-# Sparse pale motes drifting upward through vertical shafts — adds the GDD's
-# "ghostly butterflies dissolving upward" feel without burning a sprite asset.
-# Implemented programmatically so we don't ship a .tscn for one effect; the
-# texture is also generated in code (a soft 8×8 disc) so there's no PNG to
-# import. Skipped on horizontal rooms and in the editor.
+# Per-circle ambient particle layer that gives each circle of Hell a distinct
+# atmospheric feel without shipping any particle .tscn or PNG assets.
+# Every circle has its own colour palette, direction (rising vs falling) and
+# speed, driven by _atmosphere_config(). A second "secondary" layer is spawned
+# for fire circles (circle 3) to add falling ash on top of rising embers.
+#
+# Both vertical shafts and horizontal rooms are covered — horizontal rooms use
+# a lighter density (HORIZ_AMOUNT_RATIO) since they're much shorter.
+const HORIZ_AMOUNT_RATIO: float = 0.45
+
 func _spawn_atmosphere_particles() -> void:
-	if not is_vertical:
-		return
+	var cfg: Dictionary = _atmosphere_config()
+	_build_particle_layer("AtmosphereParticles", cfg)
+	# Circle 3 (fire): second falling-ash layer on top of rising embers.
+	if circle == 3:
+		var ash_cfg := {
+			"color_a": Color(0.35, 0.30, 0.28, 0.0),
+			"color_b": Color(0.50, 0.45, 0.40, 0.30),
+			"color_c": Color(0.55, 0.50, 0.45, 0.25),
+			"dir_y": 1.0, "spread": 30.0,
+			"vel_min": 6.0, "vel_max": 18.0,
+			"amount": 40, "gravity_y": 8.0,
+			"scale_min": 0.3, "scale_max": 0.9,
+		}
+		_build_particle_layer("AshParticles", ash_cfg)
+
+
+# Returns per-circle particle parameters used by _build_particle_layer().
+# Keys: color_a/b/c (Color, a=fade-in-start/end, b=peak, c=hold),
+#       dir_y (float, -1=up, +1=down), spread (deg), vel_min/max (px/s),
+#       amount (int), gravity_y (px/s²), scale_min/max (float).
+func _atmosphere_config() -> Dictionary:
+	match circle:
+		1:  # void purple — cold pale-lavender motes drifting up
+			return {
+				"color_a": Color(0.78, 0.70, 0.95, 0.0),
+				"color_b": Color(0.85, 0.78, 1.00, 0.45),
+				"color_c": Color(0.92, 0.85, 1.00, 0.40),
+				"dir_y": -1.0, "spread": 15.0,
+				"vel_min": 8.0, "vel_max": 22.0,
+				"amount": 80, "gravity_y": 0.0,
+				"scale_min": 0.4, "scale_max": 1.4,
+			}
+		2:  # deep blue — slow-rising teal bubbles
+			return {
+				"color_a": Color(0.30, 0.50, 1.00, 0.0),
+				"color_b": Color(0.40, 0.65, 1.00, 0.35),
+				"color_c": Color(0.50, 0.70, 1.00, 0.30),
+				"dir_y": -1.0, "spread": 10.0,
+				"vel_min": 5.0, "vel_max": 14.0,
+				"amount": 60, "gravity_y": 0.0,
+				"scale_min": 0.5, "scale_max": 1.6,
+			}
+		3:  # charred red / fire — hot orange-red embers rising fast
+			return {
+				"color_a": Color(1.00, 0.40, 0.10, 0.0),
+				"color_b": Color(1.00, 0.60, 0.20, 0.55),
+				"color_c": Color(1.00, 0.75, 0.35, 0.45),
+				"dir_y": -1.0, "spread": 28.0,
+				"vel_min": 18.0, "vel_max": 48.0,
+				"amount": 100, "gravity_y": -15.0,
+				"scale_min": 0.3, "scale_max": 1.2,
+			}
+		4:  # swamp green — lazy yellow-green spores drifting up
+			return {
+				"color_a": Color(0.40, 0.80, 0.35, 0.0),
+				"color_b": Color(0.55, 0.90, 0.45, 0.40),
+				"color_c": Color(0.60, 0.95, 0.50, 0.35),
+				"dir_y": -1.0, "spread": 20.0,
+				"vel_min": 4.0, "vel_max": 12.0,
+				"amount": 70, "gravity_y": 0.0,
+				"scale_min": 0.4, "scale_max": 1.5,
+			}
+		5:  # gold dust — golden sparkles floating gently up
+			return {
+				"color_a": Color(1.00, 0.85, 0.30, 0.0),
+				"color_b": Color(1.00, 0.92, 0.55, 0.50),
+				"color_c": Color(1.00, 0.96, 0.65, 0.40),
+				"dir_y": -1.0, "spread": 18.0,
+				"vel_min": 6.0, "vel_max": 18.0,
+				"amount": 75, "gravity_y": 0.0,
+				"scale_min": 0.3, "scale_max": 1.0,
+			}
+		6:  # icy teal — white snowflakes drifting down softly
+			return {
+				"color_a": Color(0.80, 0.95, 1.00, 0.0),
+				"color_b": Color(0.90, 0.98, 1.00, 0.45),
+				"color_c": Color(0.96, 1.00, 1.00, 0.40),
+				"dir_y": 1.0, "spread": 25.0,
+				"vel_min": 10.0, "vel_max": 28.0,
+				"amount": 90, "gravity_y": 12.0,
+				"scale_min": 0.4, "scale_max": 1.3,
+			}
+		7:  # crimson dusk — wind-blown dark-red motes rising at wide spread
+			return {
+				"color_a": Color(0.90, 0.20, 0.30, 0.0),
+				"color_b": Color(1.00, 0.32, 0.42, 0.50),
+				"color_c": Color(1.00, 0.42, 0.52, 0.40),
+				"dir_y": -1.0, "spread": 38.0,
+				"vel_min": 20.0, "vel_max": 50.0,
+				"amount": 85, "gravity_y": 8.0,
+				"scale_min": 0.3, "scale_max": 1.1,
+			}
+		8:  # iron rust — brown-orange dust falling slowly
+			return {
+				"color_a": Color(0.70, 0.40, 0.20, 0.0),
+				"color_b": Color(0.82, 0.52, 0.28, 0.35),
+				"color_c": Color(0.88, 0.58, 0.32, 0.30),
+				"dir_y": 1.0, "spread": 15.0,
+				"vel_min": 8.0, "vel_max": 20.0,
+				"amount": 65, "gravity_y": 18.0,
+				"scale_min": 0.4, "scale_max": 1.2,
+			}
+		9:  # ashen grey — pale grey ash falling gently
+			return {
+				"color_a": Color(0.75, 0.75, 0.75, 0.0),
+				"color_b": Color(0.86, 0.86, 0.86, 0.38),
+				"color_c": Color(0.92, 0.92, 0.92, 0.32),
+				"dir_y": 1.0, "spread": 22.0,
+				"vel_min": 6.0, "vel_max": 16.0,
+				"amount": 70, "gravity_y": 10.0,
+				"scale_min": 0.4, "scale_max": 1.4,
+			}
+		10:  # blood red — dark red drops falling in tight streaks
+			return {
+				"color_a": Color(0.80, 0.05, 0.05, 0.0),
+				"color_b": Color(0.96, 0.12, 0.12, 0.52),
+				"color_c": Color(1.00, 0.18, 0.18, 0.46),
+				"dir_y": 1.0, "spread": 8.0,
+				"vel_min": 22.0, "vel_max": 55.0,
+				"amount": 80, "gravity_y": 28.0,
+				"scale_min": 0.3, "scale_max": 0.9,
+			}
+		_:  # fallback: generic pale-lavender motes up
+			return {
+				"color_a": Color(0.78, 0.70, 0.95, 0.0),
+				"color_b": Color(0.85, 0.78, 1.00, 0.45),
+				"color_c": Color(0.92, 0.85, 1.00, 0.40),
+				"dir_y": -1.0, "spread": 15.0,
+				"vel_min": 8.0, "vel_max": 22.0,
+				"amount": 80, "gravity_y": 0.0,
+				"scale_min": 0.4, "scale_max": 1.4,
+			}
+
+
+func _build_particle_layer(node_name: String, cfg: Dictionary) -> void:
+	var raw_amount: int = cfg.get("amount", 80) as int
+	var amount: int = raw_amount if is_vertical \
+			else maxi(1, int(float(raw_amount) * HORIZ_AMOUNT_RATIO))
+
 	var particles := GPUParticles2D.new()
-	particles.name = "AtmosphereParticles"
-	particles.amount = 80
+	particles.name = node_name
+	particles.amount = amount
 	particles.lifetime = 30.0
-	# Pre-warm so motes are mid-drift the moment the level loads instead of
-	# all spawning bunched at the emission box edge.
+	# Pre-warm: fill the emission volume so motes are mid-drift on level load
+	# instead of all starting at the same edge at frame 0.
 	particles.preprocess = 30.0
 	particles.position = Vector2(room_width / 2.0, room_height / 2.0)
 	particles.texture = _make_dust_texture()
-	particles.z_index = -1   # behind walls/platforms but above the backdrop fill
+	particles.z_index = -1   # behind walls/platforms, above backdrop fill
 
 	var mat := ParticleProcessMaterial.new()
 	mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	# Emit across the playable interior (between the side walls) for the full
-	# shaft height — particles already populate the whole column at all times.
 	var inner_w: float = maxf(room_width - _side_wall_w * 2.0, 1.0)
 	mat.emission_box_extents = Vector3(inner_w / 2.0, room_height / 2.0, 0.0)
-	mat.direction = Vector3(0.0, -1.0, 0.0)
-	mat.spread = 15.0
-	mat.initial_velocity_min = 8.0
-	mat.initial_velocity_max = 22.0
-	mat.gravity = Vector3.ZERO
-	mat.scale_min = 0.4
-	mat.scale_max = 1.4
+	mat.direction = Vector3(0.0, cfg.get("dir_y", -1.0) as float, 0.0)
+	mat.spread = cfg.get("spread", 15.0) as float
+	mat.initial_velocity_min = cfg.get("vel_min", 8.0) as float
+	mat.initial_velocity_max = cfg.get("vel_max", 22.0) as float
+	mat.gravity = Vector3(0.0, cfg.get("gravity_y", 0.0) as float, 0.0)
+	mat.scale_min = cfg.get("scale_min", 0.4) as float
+	mat.scale_max = cfg.get("scale_max", 1.4) as float
 
-	# Alpha ramp: fade in, hold, fade out — soft ghostly presence.
+	# Alpha ramp: transparent → peak at 20 % → sustain at 80 % → transparent.
+	var ca: Color = cfg.get("color_a", Color(0.78, 0.70, 0.95, 0.0)) as Color
+	var cb: Color = cfg.get("color_b", Color(0.85, 0.78, 1.00, 0.45)) as Color
+	var cc: Color = cfg.get("color_c", Color(0.92, 0.85, 1.00, 0.40)) as Color
 	var grad := Gradient.new()
-	grad.set_color(0, Color(0.78, 0.70, 0.95, 0.0))
-	grad.add_point(0.2, Color(0.85, 0.78, 1.0, 0.45))
-	grad.add_point(0.8, Color(0.92, 0.85, 1.0, 0.40))
-	grad.set_color(1, Color(0.78, 0.70, 0.95, 0.0))
+	grad.set_color(0, ca)
+	grad.add_point(0.2, cb)
+	grad.add_point(0.8, cc)
+	grad.set_color(1, Color(ca.r, ca.g, ca.b, 0.0))
 	var ramp := GradientTexture1D.new()
 	ramp.gradient = grad
 	mat.color_ramp = ramp
 
 	particles.process_material = mat
 	add_child(particles)
+
 
 func _make_dust_texture() -> Texture2D:
 	var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)

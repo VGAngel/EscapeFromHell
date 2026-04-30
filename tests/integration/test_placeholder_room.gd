@@ -295,3 +295,109 @@ func test_section_profile_widths_and_types_are_well_formed() -> void:
 				total += float(entry[1])
 			assert_gt(total, 0.0,
 				"'%s'.%s weights must sum > 0" % [section_name, bag_key])
+
+# ── Atmosphere particles ───────────────────────────────────────────────────────
+
+func _make_room_with_circle(c: int, vert: bool = true) -> Node2D:
+	var room: Node2D = Node2D.new()
+	room.set_script(RoomScript)
+	room.set("room_type",  "main")
+	room.set("room_index", 1)
+	room.set("circle",     c)
+	room.set("is_vertical", vert)
+	add_child_autofree(room)
+	return room
+
+
+func test_atmosphere_particles_spawned_for_vertical_room() -> void:
+	var room := _make_room_with_circle(1, true)
+	var found := room.get_node_or_null("AtmosphereParticles")
+	assert_not_null(found, "vertical room must have an AtmosphereParticles child")
+	assert_true(found is GPUParticles2D)
+
+
+func test_atmosphere_particles_spawned_for_horizontal_room() -> void:
+	# Horizontal rooms also get ambient particles (lighter density).
+	var room := _make_room_with_circle(1, false)
+	var found := room.get_node_or_null("AtmosphereParticles")
+	assert_not_null(found, "horizontal room must have an AtmosphereParticles child")
+
+
+func test_atmosphere_horizontal_amount_is_less_than_vertical() -> void:
+	var vert := _make_room_with_circle(1, true)
+	var horiz := _make_room_with_circle(1, false)
+	var amount_v: int = (vert.get_node("AtmosphereParticles") as GPUParticles2D).amount
+	var amount_h: int = (horiz.get_node("AtmosphereParticles") as GPUParticles2D).amount
+	assert_lt(amount_h, amount_v,
+		"horizontal rooms must use fewer particles than vertical shafts")
+
+
+func test_atmosphere_fire_circle_has_ash_secondary_layer() -> void:
+	# Circle 3 (fire) gets a second GPUParticles2D for falling ash.
+	var room := _make_room_with_circle(3, true)
+	var ash := room.get_node_or_null("AshParticles")
+	assert_not_null(ash, "circle 3 must have an AshParticles child")
+	assert_true(ash is GPUParticles2D)
+
+
+func test_atmosphere_non_fire_circle_has_no_ash_layer() -> void:
+	# Only circle 3 has the second layer.
+	var room := _make_room_with_circle(1, true)
+	var ash := room.get_node_or_null("AshParticles")
+	assert_null(ash, "circle 1 must not have an AshParticles child")
+
+
+func test_atmosphere_config_circle1_rises_upward() -> void:
+	var room: Node2D = autofree(RoomScript.new())
+	room.set("circle", 1)
+	var cfg: Dictionary = room._atmosphere_config()
+	assert_lt(cfg.get("dir_y", 0.0) as float, 0.0,
+		"circle 1 particles should rise (dir_y < 0)")
+
+
+func test_atmosphere_config_circle6_falls_downward() -> void:
+	var room: Node2D = autofree(RoomScript.new())
+	room.set("circle", 6)
+	var cfg: Dictionary = room._atmosphere_config()
+	assert_gt(cfg.get("dir_y", 0.0) as float, 0.0,
+		"circle 6 (snow) particles should fall (dir_y > 0)")
+
+
+func test_atmosphere_config_circle10_falls_downward() -> void:
+	var room: Node2D = autofree(RoomScript.new())
+	room.set("circle", 10)
+	var cfg: Dictionary = room._atmosphere_config()
+	assert_gt(cfg.get("dir_y", 0.0) as float, 0.0,
+		"circle 10 (blood) particles should fall (dir_y > 0)")
+
+
+func test_atmosphere_config_all_circles_have_required_keys() -> void:
+	var required: Array[String] = [
+		"color_a", "color_b", "color_c",
+		"dir_y", "spread", "vel_min", "vel_max",
+		"amount", "gravity_y",
+	]
+	for c in range(1, 11):
+		var room: Node2D = autofree(RoomScript.new())
+		room.set("circle", c)
+		var cfg: Dictionary = room._atmosphere_config()
+		for key in required:
+			assert_true(cfg.has(key),
+				"circle %d _atmosphere_config missing key '%s'" % [c, key])
+
+
+func test_atmosphere_config_circles_produce_distinct_colors() -> void:
+	# Smoke-test that at least some circles differ — guards accidental
+	# copy-paste where two circles got the same RGB values.
+	var room1: Node2D = autofree(RoomScript.new())
+	room1.set("circle", 1)
+	var room3: Node2D = autofree(RoomScript.new())
+	room3.set("circle", 3)
+	var room6: Node2D = autofree(RoomScript.new())
+	room6.set("circle", 6)
+	var cb1: Color = room1._atmosphere_config().get("color_b") as Color
+	var cb3: Color = room3._atmosphere_config().get("color_b") as Color
+	var cb6: Color = room6._atmosphere_config().get("color_b") as Color
+	assert_ne(cb1, cb3, "circle 1 and 3 must have different peak colours")
+	assert_ne(cb3, cb6, "circle 3 and 6 must have different peak colours")
+	assert_ne(cb1, cb6, "circle 1 and 6 must have different peak colours")
