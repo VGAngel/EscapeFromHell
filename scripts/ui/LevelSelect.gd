@@ -215,6 +215,7 @@ func _format_time(t: float) -> String:
 	if t <= 0.0:
 		return "—:—"
 	var total := int(t)
+	@warning_ignore("integer_division")
 	var m: int = total / 60
 	var s: int = total % 60
 	return "%d:%02d" % [m, s]
