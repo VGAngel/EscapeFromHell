@@ -32,12 +32,13 @@ var _poll_t: float = 0.0
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
-	theme_type_variation = "DarkPanel"
-	# Slimmer than the original 220 px — the card has 5 short rows
-	# and the previous height was overflowing into the ButtonsContainer
-	# which is centred on the viewport. 160 px keeps everything readable
-	# without colliding with the Play CTA below.
+	# Custom card styling — flat DarkPanel was a black-on-black box
+	# that disappeared into the menu background. We replace it with a
+	# layered look: drop shadow underneath, gold-rim StyleBoxFlat,
+	# vertical gradient inside, and a soft top-edge glow that gives
+	# the card its "elevated reliquary" feel.
 	custom_minimum_size = Vector2(0, 0)
+	_apply_card_style()
 	_build()
 	refresh()
 	# Re-render labels when the player switches language live.
@@ -171,9 +172,98 @@ func _set_text(lbl: Label, text: String) -> void:
 		lbl.text = text
 
 
+# ── Card chrome ───────────────────────────────────────────────────────────────
+
+# Override the default DarkPanel theme variation with a custom
+# StyleBoxFlat: deep purple-black bg, thin gold rim at alpha 0.35,
+# 14 px corner radius, drop shadow underneath. The vertical gradient
+# itself rides on a separate ColorRect inserted below the layout
+# (StyleBoxFlat doesn't support gradients natively).
+func _apply_card_style() -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.03, 0.07, 0.92)
+	style.border_color = Color(1.0, 0.84, 0.30, 0.40)   # gold rim
+	style.border_width_left   = 1
+	style.border_width_right  = 1
+	style.border_width_top    = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left     = 14
+	style.corner_radius_top_right    = 14
+	style.corner_radius_bottom_left  = 14
+	style.corner_radius_bottom_right = 14
+	style.content_margin_left   = 18.0
+	style.content_margin_right  = 18.0
+	style.content_margin_top    = 10.0
+	style.content_margin_bottom = 10.0
+	# Drop shadow — gives the card its "elevated reliquary" levitation.
+	style.shadow_color  = Color(0.0, 0.0, 0.0, 0.55)
+	style.shadow_size   = 14
+	style.shadow_offset = Vector2(0, 4)
+	add_theme_stylebox_override("panel", style)
+
+
+# Adds a top-edge inner glow + procedural noise overlay so the
+# rectangle reads as a piece of weathered material instead of a
+# flat shape. Invoked from _build() AFTER the children exist so
+# we can move it to the bottom of the z-order.
+func _install_gradient_layer() -> void:
+	# Top inner glow — soft gold band fading down ~80 px. Sits inside
+	# the panel, BELOW the text layout so labels stay legible.
+	var glow := ColorRect.new()
+	glow.name = "TopGlow"
+	glow.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	glow.offset_top    = 0.0
+	glow.offset_bottom = 80.0
+	glow.mouse_filter  = Control.MOUSE_FILTER_IGNORE
+	var glow_sh := Shader.new()
+	glow_sh.code = """
+shader_type canvas_item;
+void fragment() {
+	float v = pow(1.0 - UV.y, 2.5) * 0.18;
+	COLOR = vec4(1.0, 0.85, 0.40, v);
+}
+"""
+	var glow_mat := ShaderMaterial.new()
+	glow_mat.shader = glow_sh
+	glow.material = glow_mat
+	add_child(glow)
+	move_child(glow, 0)
+
+	# Subtle parchment noise overlay — covers the whole card. Very
+	# low alpha (3-5%) so it just adds tactile texture, not pattern.
+	var noise := ColorRect.new()
+	noise.name = "ParchmentNoise"
+	noise.set_anchors_preset(Control.PRESET_FULL_RECT)
+	noise.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var noise_sh := Shader.new()
+	noise_sh.code = """
+shader_type canvas_item;
+// Hash-based pseudo-noise — no texture asset needed.
+float hash(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+void fragment() {
+	float n = hash(floor(UV * 240.0));
+	// Vignette: stronger at the edges so the centre reads cleanly.
+	vec2 d = UV - vec2(0.5);
+	float vign = smoothstep(0.30, 0.85, length(d));
+	float a = (n - 0.5) * 0.06 + vign * 0.05;
+	COLOR = vec4(0.0, 0.0, 0.0, a);
+}
+"""
+	var noise_mat := ShaderMaterial.new()
+	noise_mat.shader = noise_sh
+	noise.material = noise_mat
+	add_child(noise)
+	move_child(noise, 1)
+
+
 # ── Build ─────────────────────────────────────────────────────────────────────
 
 func _build() -> void:
+	# Decorative layers go in first so MarginContainer ends up on top.
+	_install_gradient_layer()
+
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
 	margin.add_theme_constant_override("margin_right", 18)
