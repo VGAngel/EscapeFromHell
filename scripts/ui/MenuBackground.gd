@@ -56,13 +56,23 @@ func _build() -> void:
 	if _root == null:
 		return
 	_reduce_motion = _read_reduce_motion()
-	_build_sky()
+	# When the .tscn already provides a static Background TextureRect
+	# with a full hellscape image (Background_01/02.png), DON'T fight
+	# it — let the static art read as the primary backdrop and only
+	# add the optional silhouette layers + parallax tilt drift on top.
+	# Skip the procedural sky shader entirely in that case.
+	#
+	# When there's no static texture (e.g. someone removed it from
+	# the .tscn), fall back to building the FBM red-sky shader so
+	# the menu still has a backdrop.
+	var has_static_bg: bool = _root.has_node("Background") \
+			and (_root.get_node("Background") as Control).visible
+	if not has_static_bg:
+		_build_sky()
 	_build_silhouette_layer(MID_TEX_PATH,  "MidSilhouette",  0.5)
 	_build_silhouette_layer(NEAR_TEX_PATH, "NearSilhouette", 1.0)
 	# Insert above the existing static Background (so it covers it
-	# fully) but below all interactive controls. Background is
-	# usually child index 0; we drop ourselves at 1, 2, 3 so the
-	# title/buttons stay on top.
+	# fully) but below all interactive controls.
 	if _root.has_node("Background"):
 		var bg_idx: int = _root.get_node("Background").get_index()
 		var ordered := [_sky, _mid, _near]
@@ -71,12 +81,6 @@ func _build() -> void:
 			if child and child.is_inside_tree():
 				_root.move_child(child, bg_idx + i)
 				i += 1
-	# Hide the legacy static texture — our sky shader takes over.
-	# (Keeping the node around so .tscn-driven workflows still work
-	# if someone re-enables it later.)
-	var legacy: Node = _root.get_node_or_null("Background")
-	if legacy and legacy is Control:
-		(legacy as Control).visible = false
 	set_process(true)
 
 
@@ -194,7 +198,13 @@ func _update_parallax(delta: float) -> void:
 		var mp := _root.get_local_mouse_position()
 		target = Vector2(clamp(mp.x / size.x * 2.0 - 1.0, -1.0, 1.0), 0.0)
 	_tilt = _tilt.lerp(target, clamp(delta * PARALLAX_SMOOTH, 0.0, 1.0))
-	# Sky drifts at quarter speed (the deepest layer barely shifts).
+	# Static Background TextureRect drifts at quarter speed too —
+	# subtle "the wall is breathing" feel without showing the edges.
+	var legacy_bg: Node = _root.get_node_or_null("Background")
+	if legacy_bg and legacy_bg is Control:
+		(legacy_bg as Control).position.x = (
+				-_tilt.x * PARALLAX_STRENGTH.x * 0.25)
+	# Sky shader (when active — only when no static bg).
 	if _sky:
 		_sky.position.x = -_tilt.x * PARALLAX_STRENGTH.x * 0.25
 	# Silhouettes drift at depth-weighted speeds.

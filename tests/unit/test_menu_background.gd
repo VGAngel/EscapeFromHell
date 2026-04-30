@@ -59,10 +59,11 @@ func test_missing_silhouette_assets_skip_silently() -> void:
 
 # ── Legacy Background hidden ──────────────────────────────────────────────────
 
-func test_existing_background_node_is_hidden_when_present() -> void:
-	# Re-stand up with a Background TextureRect already in tree to
-	# verify MenuBackground hides it (so the static texture doesn't
-	# fight the new shader).
+func test_existing_background_kept_visible_skips_sky_shader() -> void:
+	# When the .tscn supplies a static Background TextureRect (the
+	# Background_02.png hellscape art) MenuBackground must NOT fight
+	# it — leave the static art visible AND skip building the
+	# procedural sky shader on top.
 	var root2 := Control.new()
 	root2.size = Vector2(1080, 1920)
 	add_child_autofree(root2)
@@ -72,6 +73,43 @@ func test_existing_background_node_is_hidden_when_present() -> void:
 	var bg2: Node = MenuBackgroundScript.new()
 	root2.add_child(bg2)
 	bg2.setup(root2)
-	assert_false(legacy.visible,
-			"legacy Background TextureRect must be hidden once " +
-			"MenuBackground takes over")
+	assert_true(legacy.visible,
+			"static Background must stay visible when MenuBackground " +
+			"detects it on init")
+	assert_null(bg2._sky_mat,
+			"sky shader must be skipped when static bg exists")
+
+
+func test_no_existing_background_falls_back_to_sky_shader() -> void:
+	# Without a static Background node, MenuBackground builds the
+	# procedural FBM sky shader as a fallback so the menu always
+	# has a backdrop.
+	var root3 := Control.new()
+	root3.size = Vector2(1080, 1920)
+	add_child_autofree(root3)
+	var bg3: Node = MenuBackgroundScript.new()
+	root3.add_child(bg3)
+	bg3.setup(root3)
+	assert_not_null(bg3._sky_mat,
+			"sky shader must build when no static Background is present")
+	assert_true(root3.has_node("AnimatedSky"))
+
+
+func test_static_bg_drifts_with_tilt() -> void:
+	# The static Background TextureRect should also pick up the
+	# parallax drift so it doesn't sit dead-still while the
+	# silhouettes (when present) move on top.
+	var root4 := Control.new()
+	root4.size = Vector2(1080, 1920)
+	add_child_autofree(root4)
+	var legacy := TextureRect.new()
+	legacy.name = "Background"
+	root4.add_child(legacy)
+	var bg4: Node = MenuBackgroundScript.new()
+	root4.add_child(bg4)
+	bg4.setup(root4)
+	# Force a non-zero tilt and one process tick.
+	bg4._tilt = Vector2(1.0, 0.0)
+	bg4._update_parallax(0.016)
+	assert_ne(legacy.position.x, 0.0,
+			"static Background must drift when tilt is non-zero")
