@@ -195,10 +195,15 @@ func _apply_card_style() -> void:
 	style.content_margin_right  = 18.0
 	style.content_margin_top    = 10.0
 	style.content_margin_bottom = 10.0
-	# Drop shadow — gives the card its "elevated reliquary" levitation.
-	style.shadow_color  = Color(0.0, 0.0, 0.0, 0.55)
-	style.shadow_size   = 14
-	style.shadow_offset = Vector2(0, 4)
+	# Drop shadow — gives the card its "elevated" feel without
+	# leaking into the Play button below. Earlier values (size 14,
+	# offset y=4) extended ~18 px beneath the card edge and ate the
+	# 9-30 px gap to ButtonsContainer (worse with the ad banner
+	# active). Tighter values keep the lift but stay within the
+	# rect's natural footprint.
+	style.shadow_color  = Color(0.0, 0.0, 0.0, 0.45)
+	style.shadow_size   = 6
+	style.shadow_offset = Vector2(0, 2)
 	add_theme_stylebox_override("panel", style)
 
 

@@ -193,9 +193,10 @@ func _loc_t(loc: Node, key: String, params: Dictionary = {}) -> String:
 #   • TitleLabel ends around y ≈ 230 (offset_top=100, offset_bottom=230)
 #   • ButtonsContainer is centred at viewport mid (y=960) with
 #     offset_top=-485 → top edge ≈ y=475 (or higher when the ad-banner
-#     pushes it up by banner_h/2)
-#   • HeroCard is squeezed into the y=240..435 strip — leaves a 40 px
-#     safety margin before the buttons start, even with a 60 px banner.
+#     pushes it up by banner_h/2 — down to ≈445 with a 60 px banner)
+#   • HeroCard sits in the y=240..420 strip + the StyleBoxFlat shadow
+#     extends ~8 px below that = ~y=428. Even with the banner shift
+#     (buttons top ≈ y=445) this leaves ~17 px clearance.
 func _install_hero_card() -> void:
 	if has_node("HeroCard"):
 		return
@@ -206,7 +207,7 @@ func _install_hero_card() -> void:
 	card.offset_left   = vp.x * 0.05
 	card.offset_right  = -vp.x * 0.05
 	card.offset_top    = vp.y * 0.125
-	card.offset_bottom = vp.y * 0.227
+	card.offset_bottom = vp.y * 0.219
 	add_child(card)
 
 func _ensure_seed() -> void:
