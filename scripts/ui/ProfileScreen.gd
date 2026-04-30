@@ -104,14 +104,21 @@ func _begin_create(slot: int) -> void:
 	_refresh()
 
 ## Confirm new-profile creation: load the slot, persist the name, close.
+## Falls back to a sensible default when the name fails validation
+## (legacy create-from-slot UI doesn't have a hint label like
+## ProfileCreateScreen does, so silently substituting is the least
+## confusing option).
 func _confirm_create(slot: int) -> void:
-	if SaveManager:
-		SaveManager.load_slot(slot)
-		var nm: String = _name_buffer.strip_edges()
-		if nm.is_empty():
-			nm = "Профіль %d" % (slot + 1)
-		if SaveManager.has_method("set_profile_name"):
-			SaveManager.set_profile_name(nm)
+	if SaveManager == null:
+		close()
+		return
+	var nm: String = _name_buffer.strip_edges()
+	if not SaveManager.is_valid_profile_name(nm):
+		nm = "Профіль %d" % (slot + 1)
+	# create_profile() persists the name + emits profile_created /
+	# profile_switched in one shot, replacing the old load_slot +
+	# set_profile_name pair.
+	SaveManager.create_profile(slot, nm)
 	close()
 
 func _cancel_create() -> void:

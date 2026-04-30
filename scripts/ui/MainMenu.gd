@@ -128,6 +128,19 @@ func _ready() -> void:
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 1.0, FADE_DURATION)
 
+	# First-launch onboarding: if no profile exists, force the player
+	# through ProfileCreateScreen before they can interact with anything
+	# else. The screen is opaque + blocks Esc so MainMenu happily renders
+	# underneath. Also re-fires whenever the active profile is deleted
+	# and no others remain, via SaveManager.profile_deleted.
+	_check_first_launch_onboarding()
+	var sm: Node = get_node_or_null("/root/SaveManager")
+	if sm:
+		if sm.has_signal("profile_switched"):
+			sm.profile_switched.connect(_on_profile_switched)
+		if sm.has_signal("profile_deleted"):
+			sm.profile_deleted.connect(_on_profile_deleted)
+
 ## Shift ButtonsContainer and VersionLabel up by the reserved ad-banner
 ## height so the bottom banner never overlaps menu content. Re-invoked
 ## when the player buys "no ads" so the layout expands to full height.
@@ -135,6 +148,51 @@ func _on_language_changed(_lang: String) -> void:
 	# Re-render the dynamic Play CTA + souls counter so the menu
 	# updates instantly when Settings switches language.
 	_refresh_souls_counter()
+
+
+# ── Profile lifecycle ────────────────────────────────────────────────────────
+
+# Show ProfileCreateScreen as a modal opaque overlay if no profile
+# exists. Connected once at boot; called again from _on_profile_deleted
+# if the player deletes their last profile from ProfileScreen.
+func _check_first_launch_onboarding() -> void:
+	var sm: Node = get_node_or_null("/root/SaveManager")
+	if sm == null or sm.has_any_profiles():
+		return
+	var screen: CanvasLayer = get_node_or_null("ProfileCreateScreen")
+	if screen == null:
+		screen = preload("res://scripts/ui/ProfileCreateScreen.gd").new()
+		screen.name = "ProfileCreateScreen"
+		add_child(screen)
+		screen.created.connect(_on_profile_created)
+	screen.open()
+	_set_interactive(false)
+
+
+func _on_profile_created(_slot: int, _name: String) -> void:
+	# Profile is now persisted + active. Refresh the menu and re-enable
+	# the buttons. SaveManager has already emitted profile_switched, so
+	# HeroCard / PlaySubmenu picked up the name change automatically.
+	_set_interactive(true)
+	_refresh_buttons()
+	_refresh_souls_counter()
+
+
+func _on_profile_switched(_slot: int) -> void:
+	# A different profile is now active (either through ProfileScreen's
+	# "Грати за цим" or after deleting the active one). Mirror what
+	# _on_overlay_closed does so the menu reflects the new save data.
+	_refresh_buttons()
+	_refresh_souls_counter()
+	_refresh_seed_label()
+
+
+func _on_profile_deleted(_slot: int) -> void:
+	# If that was the last one, kick back to the create screen so the
+	# game never sits in a "no profile" state.
+	var sm: Node = get_node_or_null("/root/SaveManager")
+	if sm and not sm.has_any_profiles():
+		_check_first_launch_onboarding()
 
 
 func _apply_banner_space() -> void:

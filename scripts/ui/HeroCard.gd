@@ -45,6 +45,11 @@ func _ready() -> void:
 	var loc: Node = get_node_or_null("/root/Loc")
 	if loc and loc.has_signal("language_changed"):
 		loc.language_changed.connect(_on_language_changed)
+	# Re-render when the active profile changes (create / switch / delete-fallback)
+	# so name + per-slot stats refresh without polling.
+	var sm: Node = get_node_or_null("/root/SaveManager")
+	if sm and sm.has_signal("profile_switched"):
+		sm.profile_switched.connect(func(_s: int) -> void: refresh())
 
 
 func _on_language_changed(_new_lang: String) -> void:

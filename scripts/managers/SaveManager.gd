@@ -9,6 +9,23 @@ const SAVE_DIR     := "user://saves/"
 const SAVE_VERSION := 2
 const MAX_SLOTS    := 3
 const CLOUD_ENABLED := false
+# Cross-slot pointer: which slot is currently active. Lives outside the
+# slot files so switching profiles can't accidentally orphan it. If the
+# file is missing or unreadable we fall back to the first existing
+# slot — keeps existing players upgrading from pre-profiles builds happy.
+const ACTIVE_SLOT_PATH := "user://active_slot.json"
+
+# Profile name rules — kept here so UI and SaveManager validate identically.
+# Cyrillic + Latin + digits + spaces; trim before storing; 3-20 chars.
+const PROFILE_NAME_MIN := 3
+const PROFILE_NAME_MAX := 20
+
+# Profile lifecycle. UIs that show profile data (HeroCard, PlaySubmenu's
+# inline name row, MainMenu) subscribe to keep their views in sync without
+# polling.
+signal profile_switched(slot: int)
+signal profile_created(slot: int, name: String)
+signal profile_deleted(slot: int)
 
 var _slot: int = 0
 var data: Dictionary = {}   # public for debug inspection; use methods to mutate
@@ -18,6 +35,25 @@ var data: Dictionary = {}   # public for debug inspection; use methods to mutate
 func _ready() -> void:
 	_ensure_dir()
 	_reset()
+	# Boot ordering: try to restore the previously active slot, then
+	# any existing slot, else leave slot 0 reset and unloaded — that's
+	# the signal to MainMenu to launch the first-run profile-create
+	# flow. Only the autoload instance restores from disk; ad-hoc
+	# instances that GUT spawns under a test scene get pristine state
+	# (otherwise leftover save files bleed into unrelated tests).
+	if get_parent() == get_tree().root:
+		_boot_restore()
+
+
+func _boot_restore() -> void:
+	var restored: int = _read_active_slot()
+	if restored >= 0 and has_save(restored):
+		_slot = restored
+		_load()
+	elif has_any_profiles():
+		_slot = first_existing_slot()
+		_load()
+		_write_active_slot(_slot)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST:
@@ -30,7 +66,89 @@ func get_slot() -> int:
 
 func load_slot(slot: int) -> bool:
 	_slot = clampi(slot, 0, MAX_SLOTS - 1)
-	return _load()
+	var ok: bool = _load()
+	_write_active_slot(_slot)
+	profile_switched.emit(_slot)
+	return ok
+
+
+# True iff at least one slot has a saved file. Used by the boot router
+# to decide between MainMenu (existing player) and ProfileCreateScreen
+# (first launch / all profiles deleted).
+func has_any_profiles() -> bool:
+	for i in MAX_SLOTS:
+		if FileAccess.file_exists(_save_path(i)):
+			return true
+	return false
+
+
+# Returns the lowest slot index that actually has a save. -1 if none.
+# Used as a fallback when active_slot.json is missing or stale.
+func first_existing_slot() -> int:
+	for i in MAX_SLOTS:
+		if FileAccess.file_exists(_save_path(i)):
+			return i
+	return -1
+
+
+# Active-slot pointer (read at boot, written on every load_slot).
+# Stored outside the slot files so its lifecycle is global, not per-save.
+func get_active_slot() -> int:
+	return _slot
+
+
+# Create a profile in a specific slot in one shot: validate name, write,
+# flush, and emit profile_created. Returns false if the name is invalid
+# or the slot already has a save (caller should delete first).
+func create_profile(slot: int, raw_name: String) -> bool:
+	if not is_valid_profile_name(raw_name):
+		return false
+	if slot < 0 or slot >= MAX_SLOTS:
+		return false
+	if has_save(slot):
+		return false
+	_slot = slot
+	_reset()
+	data["profile_name"] = raw_name.strip_edges()
+	_flush()
+	_write_active_slot(_slot)
+	profile_created.emit(_slot, data["profile_name"])
+	# Emit profile_switched too so generic listeners (HeroCard etc.) just
+	# subscribe to one signal and get the right behaviour for both
+	# create-and-go and switch-existing flows.
+	profile_switched.emit(_slot)
+	return true
+
+
+# Trim, then check that what's left only contains letters / digits / spaces
+# (Cyrillic is included via the Unicode classification). Length 3-20 after
+# trim. Empty / whitespace-only / oversized strings rejected.
+func is_valid_profile_name(raw: String) -> bool:
+	var s: String = raw.strip_edges()
+	if s.length() < PROFILE_NAME_MIN or s.length() > PROFILE_NAME_MAX:
+		return false
+	for c in s:
+		if not (c.is_valid_int() or _is_letter(c) or c == " "):
+			return false
+	return true
+
+
+# Cyrillic + Latin letter check. is_subsequence_ofn() doesn't help us
+# here; we use the unicode_at()-based ranges. Keeps the logic explicit
+# and dependency-free.
+func _is_letter(c: String) -> bool:
+	if c.length() == 0:
+		return false
+	var u: int = c.unicode_at(0)
+	# Latin A-Z, a-z
+	if (u >= 0x41 and u <= 0x5A) or (u >= 0x61 and u <= 0x7A):
+		return true
+	# Cyrillic basic (А-я, Ё, ё) + Ukrainian-specific Є/є/І/і/Ї/ї/Ґ/ґ.
+	if (u >= 0x0410 and u <= 0x044F) or u == 0x0401 or u == 0x0451:
+		return true
+	if u in [0x0404, 0x0454, 0x0406, 0x0456, 0x0407, 0x0457, 0x0490, 0x0491]:
+		return true
+	return false
 
 func has_save(slot: int = -1) -> bool:
 	var s: int = slot if slot >= 0 else _slot
@@ -61,8 +179,22 @@ func delete_slot(slot: int) -> void:
 	for path in [_save_path(slot), _backup_path(slot)]:
 		if FileAccess.file_exists(path):
 			DirAccess.remove_absolute(path)
+	profile_deleted.emit(slot)
 	if slot == _slot:
-		_reset()
+		# Active profile gone — try to fall back to the next remaining
+		# slot so existing UIs still have data. If no profiles are left,
+		# clear active_slot.json and reset; the boot/main-menu code is
+		# responsible for sending the player back to ProfileCreateScreen.
+		var next_slot: int = first_existing_slot()
+		if next_slot >= 0:
+			_slot = next_slot
+			_load()
+			_write_active_slot(_slot)
+			profile_switched.emit(_slot)
+		else:
+			_reset()
+			if FileAccess.file_exists(ACTIVE_SLOT_PATH):
+				DirAccess.remove_absolute(ACTIVE_SLOT_PATH)
 
 # ── Explicit save ─────────────────────────────────────────────────────────────
 
@@ -468,6 +600,38 @@ func _save_path(slot: int) -> String:
 
 func _backup_path(slot: int) -> String:
 	return SAVE_DIR + "save_%d_backup.json" % slot
+
+# ── Active-slot pointer ───────────────────────────────────────────────────────
+#
+# Tiny JSON {"active_slot": N} living next to the slot files. Read once
+# at boot to remember which profile the player was using; rewritten on
+# every load_slot/create_profile/recovery-after-delete. Kept separate
+# from the slot data so a corrupted slot can't take the pointer with it.
+
+func _read_active_slot() -> int:
+	if not FileAccess.file_exists(ACTIVE_SLOT_PATH):
+		return -1
+	var f := FileAccess.open(ACTIVE_SLOT_PATH, FileAccess.READ)
+	if f == null:
+		return -1
+	var raw: String = f.get_as_text()
+	f.close()
+	var parsed: Variant = JSON.parse_string(raw)
+	if not (parsed is Dictionary):
+		return -1
+	var s: int = int((parsed as Dictionary).get("active_slot", -1))
+	if s < 0 or s >= MAX_SLOTS:
+		return -1
+	return s
+
+
+func _write_active_slot(slot: int) -> void:
+	var f := FileAccess.open(ACTIVE_SLOT_PATH, FileAccess.WRITE)
+	if f == null:
+		push_warning("SaveManager: could not write %s" % ACTIVE_SLOT_PATH)
+		return
+	f.store_string(JSON.stringify({"active_slot": slot, "version": 1}))
+	f.close()
 
 # ── Cloud stubs ───────────────────────────────────────────────────────────────
 
