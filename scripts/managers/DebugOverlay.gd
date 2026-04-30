@@ -58,8 +58,14 @@ var _zone_state := {
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	# Release builds: log to stdout only, skip UI.
-	if OS.has_feature("release"):
+	# Release builds: log to stdout only, skip UI. BuildConfig is the
+	# single source of truth so the Levels(debug)/Seed rows and this
+	# overlay can't drift apart.
+	var bc: Node = get_node_or_null("/root/BuildConfig")
+	var show_ui: bool = (bc and bc.has_method("show_debug_ui")
+			and bool(bc.show_debug_ui())) \
+			or (bc == null and not OS.has_feature("release"))
+	if not show_ui:
 		_overlay_visible = false
 		return
 	_build_ui()

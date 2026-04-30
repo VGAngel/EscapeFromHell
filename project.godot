@@ -15,10 +15,12 @@ config/version="0.1.0"
 run/main_scene="res://scenes/ui/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
+config/debug_ui_mode="auto"
 
 [autoload]
 
 PhantomCameraManager="*uid://duq6jhf6unyis"
+BuildConfig="*res://scripts/managers/BuildConfig.gd"
 DisplaySettings="*res://scripts/managers/DisplaySettings.gd"
 GameManager="*res://scripts/managers/GameManager.gd"
 SaveManager="*res://scripts/managers/SaveManager.gd"
