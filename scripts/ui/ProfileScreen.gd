@@ -188,33 +188,32 @@ func _make_slot_card(info: Dictionary) -> Control:
 	hbox.add_child(info_col)
 
 	var lbl_name := Label.new()
+	lbl_name.theme_type_variation = "ValueLabel"
 	lbl_name.text = name_s if not name_s.is_empty() else "Профіль %d" % (slot + 1)
-	lbl_name.add_theme_font_size_override("font_size", 18)
-	lbl_name.add_theme_color_override("font_color",
-			Color(0.70, 0.95, 0.70) if is_active else Color(0.90, 0.88, 0.96))
+	# Active profile gets a green tint; inactive uses the variation default.
+	if is_active:
+		lbl_name.add_theme_color_override("font_color", Color(0.70, 0.95, 0.70))
 	info_col.add_child(lbl_name)
 
 	if pending_confirm:
 		var lbl_warn := Label.new()
+		lbl_warn.theme_type_variation = "CaptionLabel"
 		lbl_warn.text = _t("profile.warn_delete", {},
 				"⚠ Натисніть «Видалити» ще раз для підтвердження")
-		lbl_warn.add_theme_font_size_override("font_size", 12)
 		lbl_warn.add_theme_color_override("font_color", Color("#FF7766"))
 		lbl_warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		info_col.add_child(lbl_warn)
 	elif exists:
 		var lbl_prog := Label.new()
+		lbl_prog.theme_type_variation = "CaptionLabel"
 		lbl_prog.text = _t("profile.progress_format",
 				{"level": level, "souls": souls},
 				"Рівень %d  •  Душі: %d" % [level, souls])
-		lbl_prog.add_theme_font_size_override("font_size", 13)
-		lbl_prog.add_theme_color_override("font_color", Color(0.60, 0.58, 0.68))
 		info_col.add_child(lbl_prog)
 	else:
 		var lbl_empty := Label.new()
+		lbl_empty.theme_type_variation = "MutedLabel"
 		lbl_empty.text = _t("profile.empty_slot", {}, "Порожній слот")
-		lbl_empty.add_theme_font_size_override("font_size", 13)
-		lbl_empty.add_theme_color_override("font_color", Color(0.40, 0.38, 0.46))
 		info_col.add_child(lbl_empty)
 
 	# Empty slot in name-entry mode: replace the info column with a LineEdit
@@ -224,9 +223,8 @@ func _make_slot_card(info: Dictionary) -> Control:
 		for child in info_col.get_children():
 			child.queue_free()
 		var prompt := Label.new()
+		prompt.theme_type_variation = "CaptionLabel"
 		prompt.text = _t("profile.name_prompt", {}, "Введіть ім'я:")
-		prompt.add_theme_font_size_override("font_size", 13)
-		prompt.add_theme_color_override("font_color", Color(0.60, 0.58, 0.68))
 		info_col.add_child(prompt)
 
 		var name_edit := LineEdit.new()
@@ -336,10 +334,9 @@ func _build_header(parent: VBoxContainer) -> void:
 	margin.add_child(hdr)
 
 	var title := Label.new()
+	title.theme_type_variation = "SectionLabel"
 	title.text = _t("profile.title", {}, "Профілі")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(title)
 

@@ -199,10 +199,9 @@ func _build_ui() -> void:
 
 	# Header
 	var header := Label.new()
+	header.theme_type_variation = "TitleLabel"
 	header.text = _t("play_submenu.title", {}, "Грати")
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 32)
-	header.add_theme_color_override("font_color", PAL.GOLD)
 	_vbox.add_child(header)
 
 	var sep := HSeparator.new()

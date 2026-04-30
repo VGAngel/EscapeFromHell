@@ -171,19 +171,17 @@ func _build_ui() -> void:
 	panel.add_child(vbox)
 
 	var header := Label.new()
+	header.theme_type_variation = "TitleLabel"
 	header.text = _t("profile_create.title", {}, "👤  Створити профіль")
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 32)
-	header.add_theme_color_override("font_color", PAL.GOLD)
 	vbox.add_child(header)
 
 	var sub := Label.new()
+	sub.theme_type_variation = "BodyLabel"
 	sub.text = _t("profile_create.subtitle", {},
 			"Введи ім'я — цей профіль збереже твій прогрес.")
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	sub.add_theme_font_size_override("font_size", 16)
-	sub.add_theme_color_override("font_color", PAL.TEXT_SECONDARY)
 	vbox.add_child(sub)
 
 	_name_edit = LineEdit.new()
