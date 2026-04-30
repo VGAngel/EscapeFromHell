@@ -18,13 +18,6 @@ var _settings:  Dictionary = {}
 # ── State ─────────────────────────────────────────────────────────────────────
 var _active_id: String = ""
 var _is_showing: bool  = false
-# Wall-clock when the current hint started showing. Used for a grace
-# period so the very inputs that the hint is teaching about (↑ to
-# jump, ⚔ to swing) don't dismiss the hint instantly. Without this,
-# the player presses ↑ on instinct and the tutorial vanishes before
-# they read it.
-var _shown_at_ms: int = 0
-const _DISMISS_GRACE_MS := 2500   # 2.5 s read-only before taps dismiss
 var _queue:      Array = []        # Array[String] — pending hint ids
 
 # ── UI refs ───────────────────────────────────────────────────────────────────
@@ -79,26 +72,16 @@ func reset_all() -> void:
 
 # ── Input: any game action or touch dismisses ─────────────────────────────────
 
-func _input(event: InputEvent) -> void:
-	if not _is_showing:
-		return
-	# Grace period — first 2.5 s ignore taps so the player has time
-	# to read the hint. Otherwise pressing ↑ to jump (which is what
-	# the hint just told them to do) instantly dismissed the hint
-	# before they finished reading.
-	var elapsed_ms: int = Time.get_ticks_msec() - _shown_at_ms
-	if elapsed_ms < _DISMISS_GRACE_MS:
-		return
-	var dismiss := false
-	if event is InputEventScreenTouch and event.pressed:
-		dismiss = true
-	elif event is InputEventKey and event.pressed and not event.echo:
-		dismiss = true
-	elif event is InputEventJoypadButton and event.pressed:
-		dismiss = true
-	if dismiss:
-		_do_dismiss()
-		get_viewport().set_input_as_handled()
+func _input(_event: InputEvent) -> void:
+	# Tutorial hints used to dismiss on ANY key/tap, which broke the
+	# flow whenever the player was mid-fight or running from enemies
+	# — every gameplay input killed the hint they hadn't read yet.
+	#
+	# We now let hints play out their adaptive duration in full
+	# (5-12 s scaled by word count). Code paths that need to force
+	# an early hide call `dismiss_current()` directly (e.g. scene
+	# transitions, pause overlay opening).
+	pass
 
 ## UA fallback strings used when Loc.t() returns the key itself
 ## (= entry missing from localization/uk.json). Keeps the tutorial
@@ -174,7 +157,6 @@ func _display(hint_id: String) -> void:
 
 	_active_id  = hint_id
 	_is_showing = true
-	_shown_at_ms = Time.get_ticks_msec()
 	_label.text = text
 	_root.modulate.a = 0.0
 	_layer.visible   = true
