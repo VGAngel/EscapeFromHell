@@ -715,17 +715,22 @@ func _build_sin_bar() -> void:
 # ── Sin-source toast (S1) ────────────────────────────────────────────────────
 
 func _build_sin_toast_box() -> void:
-	# Bottom-left, sitting just above the sin bar / mobile controls.
-	# Anchor to BOTTOM_LEFT so it stays put as toasts stack upwards.
+	# Top-center, just under the level info label ("Коло X • Рівень Y").
+	# Players already train their eyes on this strip during pickup events
+	# (👻 N/M, hp updates), so sin-source feedback lands where it can
+	# actually be read — bottom-left was hidden behind mobile controls
+	# and the sin bar, defeating the entire feedback loop.
+	#
+	# TOP_WIDE anchor with a centred VBox so toasts stack downward.
 	_sin_toast_box = VBoxContainer.new()
 	_sin_toast_box.name = "SinToastBox"
-	_sin_toast_box.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_sin_toast_box.offset_left   = 24.0
-	_sin_toast_box.offset_top    = -380.0   # above mobile controls + sin bar
-	_sin_toast_box.offset_right  = 600.0
-	_sin_toast_box.offset_bottom = -200.0
+	_sin_toast_box.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_sin_toast_box.offset_top    = 110.0   # below the level info row (~y=70-100)
+	_sin_toast_box.offset_bottom = 360.0   # leaves room for ~3 stacked toasts
+	_sin_toast_box.offset_left   = 0.0
+	_sin_toast_box.offset_right  = 0.0
 	_sin_toast_box.add_theme_constant_override("separation", 6)
-	_sin_toast_box.alignment = BoxContainer.ALIGNMENT_END
+	_sin_toast_box.alignment = BoxContainer.ALIGNMENT_BEGIN   # top-down stack
 	_sin_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_sin_toast_box)
 
@@ -786,9 +791,14 @@ func _spawn_sin_toast(amount: float, cause: String) -> void:
 	style.content_margin_top    = 8.0
 	style.content_margin_bottom = 8.0
 	panel.add_theme_stylebox_override("panel", style)
+	# Center each toast horizontally inside the top-wide VBox so the
+	# stack reads as a tidy column under the level info instead of
+	# left-aligning into the corner.
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var lbl := Label.new()
 	lbl.text = text
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", 22)
 	lbl.add_theme_color_override("font_color",
 		Color("#FFE4D0") if amount >= 0.0 else Color("#D6FFE0"))
