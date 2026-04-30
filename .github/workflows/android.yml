@@ -1,0 +1,174 @@
+# Build a signed Android AAB from CI.
+#
+# Triggers:
+#   * push of a tag starting with `v` (e.g. v0.2.0) → release build
+#   * manual `workflow_dispatch` → release build with optional flag
+#
+# Required GitHub Actions secrets (Settings → Secrets → Actions):
+#   EFH_RELEASE_KEYSTORE_BASE64   base64-encoded release.keystore
+#                                  produce locally with:
+#                                    base64 -i secrets/release.keystore | pbcopy
+#   EFH_RELEASE_KEYSTORE_PASS     keystore password
+#   EFH_RELEASE_KEYSTORE_USER     keystore alias  (e.g. escape_from_hell)
+#
+# Output: an .aab attached as an artifact to the workflow run, plus
+# (on tag push) attached to a GitHub Release with the same tag.
+
+name: Android AAB
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Build mode"
+        type: choice
+        options: [release, debug]
+        default: release
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build AAB
+    runs-on: ubuntu-22.04
+    env:
+      GODOT_VERSION: "4.6.1"
+      GODOT_STATUS: "stable"
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Godot 4 needs the export templates AND the Android build template.
+      # Both are linked to the engine version, so we cache them together.
+      - name: Cache Godot + templates
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/godot/${{ env.GODOT_VERSION }}
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.${{ env.GODOT_STATUS }}
+          key: godot-android-${{ runner.os }}-${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}
+
+      - name: Install Godot + export templates
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_STATUS}"
+          mkdir -p ~/.cache/godot/${GODOT_VERSION}
+          curl -L -o /tmp/godot.zip "$base/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip"
+          unzip -p /tmp/godot.zip > ~/.cache/godot/${GODOT_VERSION}/godot
+          chmod +x ~/.cache/godot/${GODOT_VERSION}/godot
+
+          # Export templates contain the prebuilt Android template + AAB plumbing.
+          tpl_dir="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
+          mkdir -p "$tpl_dir"
+          curl -L -o /tmp/templates.tpz "$base/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz"
+          unzip -j /tmp/templates.tpz "templates/*" -d "$tpl_dir"
+
+      - name: Symlink godot to PATH
+        run: |
+          sudo ln -sf "$HOME/.cache/godot/${GODOT_VERSION}/godot" /usr/local/bin/godot
+          godot --version
+
+      # The Android template ships in the export templates, but the
+      # gradle source tree (./android/build/) has to be installed
+      # into the project. Godot's CLI doesn't expose a flag for it,
+      # so we run a one-shot import which triggers template install.
+      - name: Install Android build template
+        run: |
+          set -euo pipefail
+          godot --headless --path . --install-android-build-template || true
+          # Fallback: copy from export_templates if the flag didn't work.
+          if [[ ! -d android/build ]]; then
+            tpl_dir="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
+            mkdir -p android/build
+            unzip -o "$tpl_dir/android_source.zip" -d android/build
+          fi
+          ls android/build/build.gradle >/dev/null
+
+      - name: Restore release keystore
+        env:
+          KS_B64: ${{ secrets.EFH_RELEASE_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.EFH_RELEASE_KEYSTORE_PASS }}
+          KS_USER: ${{ secrets.EFH_RELEASE_KEYSTORE_USER }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${KS_B64}" || -z "${KS_PASS}" || -z "${KS_USER}" ]]; then
+            echo "::error::Missing one of EFH_RELEASE_KEYSTORE_{BASE64,PASS,USER} secrets"
+            exit 1
+          fi
+          mkdir -p secrets
+          echo "$KS_B64" | base64 --decode > secrets/release.keystore
+          chmod 600 secrets/release.keystore
+          cat > secrets/keystore.env <<EOF
+          EFH_RELEASE_KEYSTORE_PATH="secrets/release.keystore"
+          EFH_RELEASE_KEYSTORE_USER="${KS_USER}"
+          EFH_RELEASE_KEYSTORE_PASS="${KS_PASS}"
+          EFH_DEBUG_KEYSTORE_PATH="secrets/release.keystore"
+          EFH_DEBUG_KEYSTORE_USER="${KS_USER}"
+          EFH_DEBUG_KEYSTORE_PASS="${KS_PASS}"
+          EOF
+          chmod 600 secrets/keystore.env
+
+      - name: Validate build setup
+        run: ./scripts/build/build_android.sh --validate-only
+
+      - name: Import project
+        run: godot --headless --path . --import || true
+
+      - name: Build AAB
+        env:
+          MODE: ${{ inputs.mode || 'release' }}
+        run: |
+          if [[ "$MODE" == "debug" ]]; then
+            ./scripts/build/build_android.sh --debug
+          else
+            ./scripts/build/build_android.sh --release
+          fi
+
+      - name: Audit manifest (if aapt available)
+        run: |
+          set +e
+          # Try aapt2 from build-tools — Action runners have it preinstalled.
+          for v in 35.0.0 34.0.0; do
+            cand="$ANDROID_HOME/build-tools/$v/aapt"
+            [[ -x "$cand" ]] && export AAPT_BIN="$cand" && break
+          done
+          aab="$(ls -t build/*.aab 2>/dev/null | head -1)"
+          [[ -n "$aab" ]] && AAPT_BIN="${AAPT_BIN:-aapt}" ./scripts/build/audit_manifest.sh "$aab" || true
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: escape-from-hell-aab
+          path: |
+            build/*.aab
+            build/*.apk
+          retention-days: 30
+
+      - name: Attach AAB to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/*.aab
+            build/*.apk
+          generate_release_notes: true
+
+      - name: Wipe secrets (defense in depth)
+        if: always()
+        run: |
+          rm -f secrets/release.keystore secrets/keystore.env

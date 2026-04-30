@@ -1,0 +1,78 @@
+# Run the GUT unit/integration test suite on every push and PR.
+# Catches regressions before they reach `main`. ~3 min cold, ~1 min
+# warm thanks to the Godot binary cache.
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gut:
+    name: GUT (Godot ${{ env.GODOT_VERSION }})
+    runs-on: ubuntu-22.04
+    env:
+      GODOT_VERSION: "4.6.1"
+      GODOT_STATUS: "stable"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false
+
+      # Cache the Godot binary across runs — saves ~30s per build.
+      - name: Cache Godot binary
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/godot/${{ env.GODOT_VERSION }}
+          key: godot-${{ runner.os }}-${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}
+
+      - name: Install Godot ${{ env.GODOT_VERSION }} headless
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.cache/godot/${GODOT_VERSION}
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_STATUS}/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip"
+          curl -L -o /tmp/godot.zip "$url"
+          unzip -p /tmp/godot.zip > ~/.cache/godot/${GODOT_VERSION}/godot
+          chmod +x ~/.cache/godot/${GODOT_VERSION}/godot
+
+      - name: Symlink godot to PATH
+        run: |
+          sudo ln -sf "$HOME/.cache/godot/${GODOT_VERSION}/godot" /usr/local/bin/godot
+          godot --version
+
+      # First headless launch lets Godot import every resource into
+      # .godot/. GUT then runs against an already-imported project.
+      - name: Import project (warm cache)
+        run: |
+          godot --headless --path . --import || true
+
+      - name: Run GUT
+        run: |
+          godot --headless --path . \
+            -s addons/gut/gut_cmdln.gd \
+            -gdir=res://tests \
+            -gexit \
+            2>&1 | tee gut.log
+          # gut_cmdln returns 0 even on failures — grep the report.
+          if grep -qE "Failing[[:space:]]+Tests[[:space:]]+[1-9]" gut.log; then
+            echo "::error::GUT reported failing tests"; exit 1
+          fi
+
+      - name: Upload GUT log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gut-log
+          path: gut.log
+          retention-days: 14
