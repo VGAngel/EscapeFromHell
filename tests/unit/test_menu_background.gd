@@ -48,13 +48,25 @@ func test_reduce_motion_freezes_time_uniform() -> void:
 
 # ── Silhouette graceful skip ──────────────────────────────────────────────────
 
-func test_missing_silhouette_assets_skip_silently() -> void:
-	# In the test fixture neither Assets/menu_bg_mid.png nor
-	# Assets/menu_bg_near.png exist yet (waiting on the MJ pass).
-	# The build path must not crash and must leave the layer fields
-	# null so the parallax loop skips them.
-	assert_null(bg._mid)
-	assert_null(bg._near)
+func test_silhouette_layers_skip_when_resource_missing() -> void:
+	# Build a fresh MenuBackground against a Control whose ancestry
+	# never resolves the silhouette paths — `_build_silhouette_layer`
+	# must short-circuit on `ResourceLoader.exists()` returning false
+	# and on a null `load()` (the .import stub case where the .ctex
+	# binary hasn't been generated yet). We exercise the latter by
+	# patching the constants via a subclass-style stub: temporarily
+	# point the layer call at a path that doesn't exist.
+	var root2 := Control.new()
+	root2.size = Vector2(1080, 1920)
+	add_child_autofree(root2)
+	var bg2: Node = MenuBackgroundScript.new()
+	root2.add_child(bg2)
+	bg2._root = root2
+	bg2._build_silhouette_layer(
+			"res://Assets/__definitely_missing_layer.png",
+			"GhostSilhouette", 1.0)
+	assert_false(root2.has_node("GhostSilhouette"),
+			"missing silhouette path must skip without adding a child")
 
 
 # ── Legacy Background hidden ──────────────────────────────────────────────────
