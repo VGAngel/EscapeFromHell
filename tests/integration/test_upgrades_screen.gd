@@ -140,16 +140,16 @@ func test_level_dots_count_matches_max_level() -> void:
 func test_level_dots_all_inactive_at_level_zero() -> void:
 	var dots: HBoxContainer = _dots_row(1)
 	for i in 3:
-		assert_eq(dots.get_child(i).color, Color(0.42, 0.38, 0.50))
+		assert_eq(dots.get_child(i).color, Color(0.28, 0.26, 0.35))
 
 func test_level_dots_reflect_current_level_two() -> void:
 	SaveManager.set_upgrade_level("multi_up", 2)
 	screen._switch_category(0)
 	await get_tree().process_frame
 	var dots: HBoxContainer = _dots_row(1)
-	assert_eq(dots.get_child(0).color, Color("#A0FF80"))
-	assert_eq(dots.get_child(1).color, Color("#A0FF80"))
-	assert_eq(dots.get_child(2).color, Color(0.42, 0.38, 0.50))
+	assert_eq(dots.get_child(0).color, Color("#88DD88"))
+	assert_eq(dots.get_child(1).color, Color("#88DD88"))
+	assert_eq(dots.get_child(2).color, Color(0.28, 0.26, 0.35))
 
 # ── Purchase flow ─────────────────────────────────────────────────────────────
 
@@ -216,15 +216,15 @@ func test_third_dot_inactive_when_level_is_two() -> void:
 	screen._switch_category(0)
 	await get_tree().process_frame
 	var dots: HBoxContainer = _dots_row(1)
-	assert_eq(dots.get_child(2).color, Color(0.42, 0.38, 0.50))
+	assert_eq(dots.get_child(2).color, Color(0.28, 0.26, 0.35))
 
 func test_first_dot_active_after_one_purchase() -> void:
 	SaveManager.set_upgrade_level("multi_up", 1)
 	screen._switch_category(0)
 	await get_tree().process_frame
 	var dots: HBoxContainer = _dots_row(1)
-	assert_eq(dots.get_child(0).color, Color("#A0FF80"))
-	assert_eq(dots.get_child(1).color, Color(0.42, 0.38, 0.50))
+	assert_eq(dots.get_child(0).color, Color("#88DD88"))
+	assert_eq(dots.get_child(1).color, Color(0.28, 0.26, 0.35))
 
 # ── Header ────────────────────────────────────────────────────────────────────
 
