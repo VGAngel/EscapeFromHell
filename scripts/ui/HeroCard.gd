@@ -16,7 +16,7 @@ extends PanelContainer
 # Pure-code (no .tscn) so MainMenu can drop it in via add_child + setup.
 # Refresh is cheap — call .refresh() after returning from any overlay.
 
-const _Pal := preload("res://scripts/ui/_Pal.gd")
+const PAL := preload("res://scripts/ui/PAL.gd")
 
 const REFRESH_INTERVAL := 1.0   # poll-based refresh while visible
 
@@ -163,8 +163,8 @@ func _stars(n: int) -> String:
 func _sin_color(pct: int) -> Color:
 	var p: float = clamp(float(pct) / 100.0, 0.0, 1.0)
 	if p < 0.5:
-		return _Pal.SUCCESS.lerp(_Pal.WARNING, p * 2.0)
-	return _Pal.WARNING.lerp(_Pal.SIN_RED, (p - 0.5) * 2.0)
+		return PAL.SUCCESS.lerp(PAL.WARNING, p * 2.0)
+	return PAL.WARNING.lerp(PAL.SIN_RED, (p - 0.5) * 2.0)
 
 
 func _set_text(lbl: Label, text: String) -> void:
