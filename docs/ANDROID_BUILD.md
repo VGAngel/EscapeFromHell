@@ -85,10 +85,39 @@ After the export, `audit_manifest.sh` runs automatically and verifies:
 
 ## Releasing
 
-1. Bump `config/version` in `project.godot` and `version/code` in
-   `export_presets.cfg`. (D6 will automate this — until then it's
-   manual and they MUST move in lockstep — Play Console rejects a
-   build whose `versionCode` ≤ a previously uploaded build.)
-2. `./scripts/build/build_android.sh`
-3. Upload the AAB to Play Console → Internal Testing track first.
-4. Tag the release: `git tag -a v0.1.0 -m "v0.1.0" && git push --tags`.
+```bash
+# 1. Bump versions in lockstep (project.godot + export_presets.cfg).
+./scripts/build/bump_version.sh patch          # 0.1.0 → 0.1.1
+# or:
+./scripts/build/bump_version.sh minor          # 0.1.3 → 0.2.0
+./scripts/build/bump_version.sh 0.5.0 --tag    # explicit + commit + tag
+
+# 2. Build locally OR push the tag and let CI build it.
+./scripts/build/build_android.sh
+
+# Or, for a tagged release:
+git push origin main && git push origin v0.1.1
+# → triggers .github/workflows/android.yml, which builds the AAB
+#   and attaches it to the GitHub Release for that tag.
+
+# 3. Upload the AAB to Play Console → Internal Testing track first.
+```
+
+`versionCode` auto-increments on every `bump_version.sh` run. Play
+Console rejects a build whose code is not strictly greater than the
+last uploaded one, so never edit `version/code` by hand.
+
+## CI
+
+Two GitHub Actions workflows live in `.github/workflows/`:
+
+- **`tests.yml`** — runs the GUT suite on every push and PR to
+  `main`. Cached Godot binary keeps each run ~1 min.
+- **`android.yml`** — builds a signed AAB on `v*` tag push (or
+  manual dispatch). Requires three repo secrets:
+  - `EFH_RELEASE_KEYSTORE_BASE64` — `base64 -i secrets/release.keystore`
+  - `EFH_RELEASE_KEYSTORE_PASS`   — the password
+  - `EFH_RELEASE_KEYSTORE_USER`   — alias (`escape_from_hell`)
+
+  Output AAB is attached to the workflow run as an artifact and
+  (on tag push) to the GitHub Release for that tag.
