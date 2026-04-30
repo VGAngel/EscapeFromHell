@@ -17,7 +17,7 @@ extends CanvasLayer
 
 # Preload rather than rely on the editor-registered class_name —
 # headless GUT runs don't always have global classes scanned in time.
-const PAL := preload("res://scripts/ui/PAL.gd")
+const PAL := preload("res://scripts/ui/Palette.gd")
 
 const FADE := 0.18
 const POLL_INTERVAL := 1.0

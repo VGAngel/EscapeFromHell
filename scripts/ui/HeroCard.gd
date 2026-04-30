@@ -16,7 +16,7 @@ extends PanelContainer
 # Pure-code (no .tscn) so MainMenu can drop it in via add_child + setup.
 # Refresh is cheap — call .refresh() after returning from any overlay.
 
-const PAL := preload("res://scripts/ui/PAL.gd")
+const PAL := preload("res://scripts/ui/Palette.gd")
 
 const REFRESH_INTERVAL := 1.0   # poll-based refresh while visible
 
