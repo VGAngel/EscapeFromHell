@@ -87,6 +87,12 @@ func _ready() -> void:
 	# Hero card — player snapshot above the button list.
 	_install_hero_card()
 
+	# Subtle idle pulse on every menu button so the screen reads as
+	# "alive, not a static mockup". Range is conservative (0.92 ↔ 1.0)
+	# and each button gets a random initial alpha + period so they
+	# don't synchronise into a flicker.
+	_start_idle_pulses()
+
 	# Re-render dynamic labels (Play CTA, souls counter) when the
 	# language changes from inside Settings.
 	var loc: Node = get_node_or_null("/root/Loc")
@@ -197,6 +203,37 @@ func _loc_t(loc: Node, key: String, params: Dictionary = {}) -> String:
 #   • HeroCard sits in the y=240..420 strip + the StyleBoxFlat shadow
 #     extends ~8 px below that = ~y=428. Even with the banner shift
 #     (buttons top ≈ y=445) this leaves ~17 px clearance.
+# ── Idle pulse (E) ────────────────────────────────────────────────────────────
+
+# Subtle infinite alpha tween on every visible Button inside
+# ButtonsContainer. The pulse is gentle (0.92 ↔ 1.0) and randomised
+# per-button so the menu reads as alive without distracting the eye.
+# Reduce-motion gate: skipped entirely when MotionSettings is enabled.
+func _start_idle_pulses() -> void:
+	var ms: Node = get_node_or_null("/root/MotionSettings")
+	if ms and ms.has_method("is_enabled") and ms.is_enabled():
+		return
+	if not has_node("ButtonsContainer"):
+		return
+	for child in $ButtonsContainer.get_children():
+		if child is Button and (child as Button).visible:
+			_pulse_modulate(child)
+
+
+func _pulse_modulate(btn: Button) -> void:
+	# Random period 2.2–3.0 s so neighbouring buttons drift apart
+	# instead of locking into a synchronous flicker.
+	var period: float = randf_range(2.2, 3.0)
+	# Random initial alpha gives each button its own phase.
+	btn.modulate.a = randf_range(0.93, 1.0)
+	var tw := btn.create_tween()
+	tw.set_loops()
+	tw.tween_property(btn, "modulate:a", 0.92, period * 0.5) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(btn, "modulate:a", 1.0, period * 0.5) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
 func _install_hero_card() -> void:
 	if has_node("HeroCard"):
 		return
