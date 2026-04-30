@@ -21,6 +21,40 @@ var _visual: Node2D
 
 func _ready() -> void:
 	_rebuild()
+	if not Engine.is_editor_hint():
+		_register_discovery()
+
+
+# Map platform_type → (discovery key, tutorial Loc-key). Only entries
+# in this dict trigger a discovery hint; plain "stone" platforms stay
+# silent. Picked the platform types that have non-obvious behaviour
+# (a player can't infer "this one crumbles" by looking at it).
+const _DISCOVERY_MAP: Dictionary = {
+	"one_way":       ["plat_one_way",     "tutorial.one_way"],
+	"crumbling":     ["plat_crumbling",   "tutorial.crumbling"],
+	"bounce":        ["plat_bounce",      "tutorial.plat_bounce"],
+	"faith":         ["plat_faith",       "tutorial.faith_platform"],
+	"sin":           ["plat_sin",         "tutorial.plat_sin"],
+	"illusory":      ["plat_illusory",    "tutorial.plat_illusory"],
+	"soul_bridge":   ["plat_soul_bridge", "tutorial.soul_bridge"],
+	"ash":           ["plat_ash",         "tutorial.plat_ash"],
+	"ice":           ["plat_ice",         "tutorial.plat_ice"],
+	"mud":           ["plat_mud",         "tutorial.plat_mud"],
+}
+
+
+func _register_discovery() -> void:
+	if not _DISCOVERY_MAP.has(platform_type):
+		return
+	var dh: Node = get_node_or_null("/root/DiscoveryHints")
+	if dh == null or not dh.has_method("register"):
+		return
+	var pair: Array = _DISCOVERY_MAP[platform_type]
+	# Distance is a bit larger than the bonus default — platforms are
+	# horizontal hazards / mechanics, players will walk past them
+	# instead of standing on top, so 180 px gives a more reliable
+	# "first encounter" trigger.
+	dh.register(self, String(pair[0]), String(pair[1]), 180.0)
 
 func _rebuild() -> void:
 	_rebuild_collision()

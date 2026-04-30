@@ -36,6 +36,25 @@ func _ready() -> void:
 	body_exited.connect(_on_body_exited)
 	_start_pulse()
 	_build_prompt()
+	# Discovery hints — defer one frame so set_hidden() / set_soul_type()
+	# from the spawner has a chance to run BEFORE we register. Otherwise
+	# every soul looks like a plain "innocent" at _ready time.
+	call_deferred("_register_discovery")
+
+
+func _register_discovery() -> void:
+	var dh: Node = get_node_or_null("/root/DiscoveryHints")
+	if dh == null or not dh.has_method("register"):
+		return
+	if _is_hidden:
+		dh.register(self, "soul_hidden", "tutorial.hidden_souls", 180.0)
+	elif _soul_type == "mimic":
+		dh.register(self, "soul_mimic", "tutorial.mimic_warning", 180.0)
+	elif _soul_type == "sleeping":
+		dh.register(self, "soul_sleeping", "tutorial.sleeping_soul", 180.0)
+	# "innocent" souls don't get a discovery hint — that's the default
+	# and the player already gets the basic "tutorial.soul_pickup" on
+	# level 1 from the auto-fire path.
 
 func _apply_size() -> void:
 	var col := $CollisionShape2D

@@ -122,6 +122,15 @@ const _FALLBACK_TEXT := {
 	"tutorial.bonus_angel_feather":  "🪶 Янгольське перо — подвійний стрибок на 30 секунд",
 	"tutorial.bonus_manna":          "✨ Манна — відновлює 1 серце",
 	"tutorial.bonus_torch":          "🔦 Факел Надії — освітлює темряву",
+	# Discoverable platforms not already covered by the hand-tuned
+	# tutorial.* set above. Triggered when one comes within ~180 px
+	# of the player on first encounter.
+	"tutorial.plat_bounce":     "Платформа-пружина підкине тебе високо вгору",
+	"tutorial.plat_sin":        "Гріховна платформа — стояти на ній додає гріх",
+	"tutorial.plat_illusory":   "Ілюзорна платформа зникає під ногами через мить",
+	"tutorial.plat_ash":        "Попіл — поверхня слизька, не зупинишся одразу",
+	"tutorial.plat_ice":        "Лід — ще слизькіше, інерція велика",
+	"tutorial.plat_mud":        "Багно сповільнює рух",
 }
 
 
