@@ -48,7 +48,14 @@ func _load_config() -> void:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 func show_hint(hint_id: String) -> void:
-	if not _triggers.has(hint_id):
+	# Two valid hint id shapes:
+	#   1. Configured trigger (in tutorial_config.json) — uses the
+	#      config's text/text_key/duration/icon.
+	#   2. Loc-key passthrough — hint_id starts with "tutorial." and
+	#      _display() resolves it through Loc.t() + the fallback
+	#      dict. Lets DiscoveryHints fire on ad-hoc keys without
+	#      requiring a config entry per pickup type.
+	if not _triggers.has(hint_id) and not hint_id.begins_with("tutorial."):
 		return
 	if _is_seen(hint_id) and not _always_show(hint_id):
 		return
@@ -108,6 +115,13 @@ const _FALLBACK_TEXT := {
 	"tutorial.minigame_watch_icon": "Дивись на іконку — вона показує коли натиснути",
 	"tutorial.mimic_warning": "Не всі душі справжні. Деякі — це міміки.",
 	"tutorial.mimic_exorcism":"Бий посохом по міміку щоб вигнати",
+	# Bonus pickups — fired by DiscoveryHints when one comes within
+	# 150 px of the player for the first time on this save.
+	"tutorial.bonus_holy_water":     "💧 Свята вода — невразливість 5 секунд",
+	"tutorial.bonus_prayer_stone":   "🪨 Молитовний камінь — заморожує ворогів 8 секунд",
+	"tutorial.bonus_angel_feather":  "🪶 Янгольське перо — подвійний стрибок на 30 секунд",
+	"tutorial.bonus_manna":          "✨ Манна — відновлює 1 серце",
+	"tutorial.bonus_torch":          "🔦 Факел Надії — освітлює темряву",
 }
 
 
@@ -119,6 +133,12 @@ func _fallback_for(key: String) -> String:
 
 func _display(hint_id: String) -> void:
 	var cfg: Dictionary = _triggers.get(hint_id, {})
+	# Ad-hoc passthrough: if no trigger config exists but the id is
+	# a Loc key (starts with "tutorial."), treat the id itself as
+	# the text_key so DiscoveryHints / arbitrary callers can show a
+	# hint without registering a config entry.
+	if cfg.is_empty() and hint_id.begins_with("tutorial."):
+		cfg = {"text_key": hint_id}
 	# Resolve display text. The config supports two shapes:
 	#   • "text"      → direct Ukrainian fallback (legacy)
 	#   • "text_key"  → dot-notation Loc key, e.g. "tutorial.move"

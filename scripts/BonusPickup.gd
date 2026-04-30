@@ -47,6 +47,31 @@ func _ready() -> void:
 	add_to_group("bonus")
 	_label.text = NAMES[bonus_type]
 	body_entered.connect(_on_body_entered)
+	# Discovery hint — first time this bonus type comes within 150 px
+	# of the player, fire a tutorial popup explaining what it does
+	# and pulse a gold halo around the pickup so the player can
+	# associate the text with the actual object.
+	_register_discovery()
+
+
+# Bonus-type → discovery key/hint pairs. Reusing the same key for
+# every pickup of the same type so DiscoveryHints can mark the
+# entire type as seen on the first encounter.
+func _register_discovery() -> void:
+	var dh: Node = get_node_or_null("/root/DiscoveryHints")
+	if dh == null or not dh.has_method("register"):
+		return
+	var type_key: String = _DISCOVERY_KEYS[bonus_type]
+	dh.register(self, type_key, "tutorial.bonus_" + type_key)
+
+
+const _DISCOVERY_KEYS: Array[String] = [
+	"holy_water",     # HOLY_WATER
+	"prayer_stone",   # PRAYER_STONE
+	"angel_feather",  # ANGEL_FEATHER
+	"manna",          # MANNA
+	"torch",          # TORCH
+]
 
 func _apply_size() -> void:
 	var col := $CollisionShape2D
