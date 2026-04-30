@@ -73,6 +73,15 @@ func _ready() -> void:
 	_refresh_seed_label()
 	_version_lbl.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0.1")
 
+	# Animated parallax background — replaces the static
+	# Background_01.png with a layered red-sky shader + optional
+	# silhouette TextureRects (loaded from Assets/menu_bg_*.png if
+	# the MJ assets are present, gracefully skipped otherwise).
+	# Inserted BEFORE the ambient layer so embers/ash render on top.
+	var bg := preload("res://scripts/ui/MenuBackground.gd").new()
+	add_child(bg)
+	bg.setup(self)
+
 	# Atmospheric layer — embers, ash, flicker, sin-tint, parallax.
 	# Built in code so the .tscn can stay slim.
 	var title_node: Label = get_node_or_null("TitleLabel")
