@@ -145,18 +145,29 @@ func _make_slot_card(info: Dictionary) -> Control:
 	var souls:  int    = info.get("total_souls", 0)
 	var name_s: String = info.get("name",        "")
 	var pending_confirm: bool = (_confirm_slot == slot)
+	# True only when this slot holds the currently loaded profile.
+	var is_active: bool = (
+			SaveManager != null
+			and exists
+			and SaveManager.get_active_slot() == slot)
 
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(0, 130)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10, 0.08, 0.14) if not pending_confirm else Color(0.20, 0.06, 0.06)
+	style.bg_color = (
+			Color(0.20, 0.06, 0.06) if pending_confirm
+			else Color(0.08, 0.12, 0.08) if is_active
+			else Color(0.10, 0.08, 0.14))
 	style.border_width_left   = 1
 	style.border_width_right  = 1
 	style.border_width_top    = 1
 	style.border_width_bottom = 1
-	style.border_color = Color(0.55, 0.20, 0.20) if pending_confirm else Color(0.35, 0.28, 0.50)
+	style.border_color = (
+			Color(0.55, 0.20, 0.20) if pending_confirm
+			else Color(0.30, 0.65, 0.30) if is_active
+			else Color(0.35, 0.28, 0.50))
 	for corner in ["top_left", "top_right", "bottom_left", "bottom_right"]:
 		style.set("corner_radius_" + corner, 12)
 	style.content_margin_left   = 16.0
@@ -179,7 +190,8 @@ func _make_slot_card(info: Dictionary) -> Control:
 	var lbl_name := Label.new()
 	lbl_name.text = name_s if not name_s.is_empty() else "Профіль %d" % (slot + 1)
 	lbl_name.add_theme_font_size_override("font_size", 18)
-	lbl_name.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
+	lbl_name.add_theme_color_override("font_color",
+			Color(0.70, 0.95, 0.70) if is_active else Color(0.90, 0.88, 0.96))
 	info_col.add_child(lbl_name)
 
 	if pending_confirm:
@@ -198,13 +210,6 @@ func _make_slot_card(info: Dictionary) -> Control:
 		lbl_prog.add_theme_font_size_override("font_size", 13)
 		lbl_prog.add_theme_color_override("font_color", Color(0.60, 0.58, 0.68))
 		info_col.add_child(lbl_prog)
-
-		if SaveManager and SaveManager.get_slot() == slot:
-			var lbl_active := Label.new()
-			lbl_active.text = _t("profile.active_marker", {}, "● Активний")
-			lbl_active.add_theme_font_size_override("font_size", 12)
-			lbl_active.add_theme_color_override("font_color", Color("#88DD88"))
-			info_col.add_child(lbl_active)
 	else:
 		var lbl_empty := Label.new()
 		lbl_empty.text = _t("profile.empty_slot", {}, "Порожній слот")
@@ -242,17 +247,25 @@ func _make_slot_card(info: Dictionary) -> Control:
 	hbox.add_child(btns_col)
 
 	if exists:
-		var btn_play := _card_btn(
-				_t("profile.btn_play", {}, "Грати"),
-				Color(0.22, 0.16, 0.34), Color("#AA88FF"))
-		btn_play.pressed.connect(func() -> void: _select_slot(slot))
-		btns_col.add_child(btn_play)
-
-		var del_text: String
-		if pending_confirm:
-			del_text = _t("profile.btn_confirm", {}, "Підтвердити")
+		if is_active:
+			# Active profile — primary action disabled; label serves as indicator.
+			var btn_active := _card_btn(
+					_t("profile.btn_active", {}, "✓  Активний"),
+					Color(0.10, 0.20, 0.10), Color("#88DD88"))
+			btn_active.disabled = true
+			btns_col.add_child(btn_active)
 		else:
-			del_text = _t("profile.btn_delete", {}, "Видалити")
+			# Inactive existing profile — offer to switch into it.
+			var btn_switch := _card_btn(
+					_t("profile.btn_switch", {}, "▶  Грати за цим"),
+					Color(0.22, 0.16, 0.34), Color("#AA88FF"))
+			btn_switch.pressed.connect(func() -> void: _select_slot(slot))
+			btns_col.add_child(btn_switch)
+
+		var del_text: String = (
+				_t("profile.btn_confirm_delete", {}, "⚠  Підтвердити")
+				if pending_confirm
+				else _t("profile.btn_delete", {}, "🗑  Видалити"))
 		var btn_del := _card_btn(del_text, Color(0.28, 0.08, 0.08), Color("#FF7766"))
 		btn_del.pressed.connect(func() -> void: _request_delete(slot))
 		btns_col.add_child(btn_del)
@@ -269,7 +282,9 @@ func _make_slot_card(info: Dictionary) -> Control:
 		btn_cancel.pressed.connect(_cancel_create)
 		btns_col.add_child(btn_cancel)
 	else:
-		var btn_new := _card_btn("Новий\nПрофіль", Color(0.10, 0.18, 0.10), Color("#88DD88"))
+		var btn_new := _card_btn(
+				_t("profile.btn_new", {}, "➕  Новий\nПрофіль"),
+				Color(0.10, 0.18, 0.10), Color("#88DD88"))
 		btn_new.pressed.connect(func() -> void: _begin_create(slot))
 		btns_col.add_child(btn_new)
 
