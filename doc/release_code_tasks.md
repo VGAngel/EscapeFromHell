@@ -27,7 +27,6 @@
 
 | ID | Задача | Розмір | Тип |
 |---|---|---|---|
-| A9 | 🔥 **Demon deal UI + logic** — DemonDealPanel + DemonNPC + spawn integration + 6 boon types + accept/refuse persistence | M | new feature |
 | A10 | 🟠 **Boss intro/outro cutscenes** — loading flow + 10 boss-specific scenes/triggers | M | new feature |
 | A12 | 🟠 **Milestone narrative events** — рівні 50, 75, 99, 100 з narrative trigger + scenes | S | new feature |
 | A15 | 🟠 **God messages** при відкритті нового кола — hook у `Hub._show_hub` коли `current_circle` зростає | S | new feature |
@@ -61,7 +60,7 @@
 |---|---|---|---|
 | F1 | 🔥 Crashlytics (Firebase) integration — Godot Android plugin + smoke test (handled exception) | M | new feature |
 | F2 | 🔥 Crash reporting verified end-to-end (intentional crash → Firebase dashboard) | S | QA |
-| F3 | 🟠 Funnel analytics events — `level_started`, `level_completed`, `soul_collected`, `demon_deal_{accepted/refused}`, `death_cause`, `circle_unlocked` | M | new feature |
+| F3 | 🟠 Funnel analytics events — `level_started`, `level_completed`, `soul_collected`, `death_cause`, `circle_unlocked` | M | new feature |
 | F4 | 🟠 Privacy/Analytics opt-in toggle — Settings → новий Privacy tab з 2 toggles (analytics ON/OFF, crash reports ON/OFF) | S | new feature |
 | F5 | 🟡 Anonymized session metrics — average FPS, peak memory, session length — sent on app close | S | new feature |
 
@@ -119,7 +118,6 @@
 - F3, F4 (funnel + opt-in)
 
 **Тиждень 4-5: Gameplay completion + GDPR**
-- A9 (demon deal — найбільший залишковий feature)
 - A10, A12, A15 (cutscenes + milestone events + god messages)
 - E3 (GDPR consent)
 
@@ -149,13 +147,13 @@
 1. **D1+D2** — Android signed AAB pipeline (без цього не можемо build на real device)
 2. **E1+E2** — hosted privacy policy + in-game body (Google Play blocker)
 3. **F1** — Crashlytics integration (без crash reports реліз сліпий)
-4. **A9** — Demon deal mechanic (найбільший залишковий gameplay feature)
-5. **G5** — performance profile на min-spec
-6. **E3** — GDPR consent dialog (EU release blocker)
-7. **G8** — save corruption stress test (data integrity blocker)
-8. **A10** — boss cutscenes (10 cinematic beats)
-9. **C3** — death-recap (anti-frustration impact на retention)
-10. **D7** — GitHub Actions CI (kicks off after D1-D2)
+4. **G5** — performance profile на min-spec
+5. **E3** — GDPR consent dialog (EU release blocker)
+6. **G8** — save corruption stress test (data integrity blocker)
+7. **A10** — boss cutscenes (10 cinematic beats)
+8. **C3** — death-recap (anti-frustration impact на retention)
+9. **D7** — GitHub Actions CI (kicks off after D1-D2)
+10. **C4** — adaptive difficulty silent assist (after 5+ deaths)
 
 ---
 

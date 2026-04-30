@@ -21,8 +21,9 @@ release_plan.md — phase-level огляд + ризики + top-5 next.
 4. **F1** — Crashlytics (Firebase) integration
 5. **A1** — Circle 6 (heresy_cathedral) контент
 
-**Новий пріоритет #1:** **A9** — Угоди з демонами UI + логіка (M, sin-механіка
-ще без UI). A11 (hidden souls placement) — ✅ зроблено.
+**Новий пріоритет #1:** **A10** (boss cutscenes), **C3** (death-recap),
+або **G8** (save corruption test). A9 видалено з плану.
+A11 (hidden souls placement) — ✅ зроблено.
 
 ---
 
@@ -203,7 +204,7 @@ release_plan.md — phase-level огляд + ризики + top-5 next.
 | 5.1 | Sin tracking в GameManager | `scripts/managers/GameManager.gd` | ✅ |
 | 5.2 | Sin → зміна кольору HUD bar | `scripts/ui/HUD.gd` | ✅ |
 | 5.3 | High-sin: faith_platforms зникають (circle_6) | `scripts/platforms/FaithPlatform.gd` | ✅ |
-| 5.4 | Угоди з демонами: UI, логіка, +sin | `scripts/ui/DemonDealPanel.gd` | ⬜ |
+| 5.4 | ~~Угоди з демонами~~ | — | ❌ видалено з плану 2026-04-30 |
 | 5.5 | `temptation_resist` прапорець на Player | `scripts/Player.gd` | ✅ (очікує DemonDealPanel) |
 | 5.6 | `cleansing` апгрейд: знижує гріх після рівня | `scripts/managers/GameManager.gd` | ✅ |
 | 5.7 | Milestone рівень 50: наративна подія | `scenes/levels/level_50.tscn` | ⬜ |
