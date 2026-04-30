@@ -18,6 +18,13 @@ var _settings:  Dictionary = {}
 # ── State ─────────────────────────────────────────────────────────────────────
 var _active_id: String = ""
 var _is_showing: bool  = false
+# Wall-clock when the current hint started showing. Used for a grace
+# period so the very inputs that the hint is teaching about (↑ to
+# jump, ⚔ to swing) don't dismiss the hint instantly. Without this,
+# the player presses ↑ on instinct and the tutorial vanishes before
+# they read it.
+var _shown_at_ms: int = 0
+const _DISMISS_GRACE_MS := 2500   # 2.5 s read-only before taps dismiss
 var _queue:      Array = []        # Array[String] — pending hint ids
 
 # ── UI refs ───────────────────────────────────────────────────────────────────
@@ -74,6 +81,13 @@ func reset_all() -> void:
 
 func _input(event: InputEvent) -> void:
 	if not _is_showing:
+		return
+	# Grace period — first 2.5 s ignore taps so the player has time
+	# to read the hint. Otherwise pressing ↑ to jump (which is what
+	# the hint just told them to do) instantly dismissed the hint
+	# before they finished reading.
+	var elapsed_ms: int = Time.get_ticks_msec() - _shown_at_ms
+	if elapsed_ms < _DISMISS_GRACE_MS:
 		return
 	var dismiss := false
 	if event is InputEventScreenTouch and event.pressed:
@@ -146,13 +160,21 @@ func _display(hint_id: String) -> void:
 	else:
 		text = hint_id
 
-	var dur: float      = float(cfg.get("duration",
-		_settings.get("hint_display_duration", 4.0)))
+	# Adaptive duration: longer hints get more reading time. Average
+	# reader does ~3 words/sec including comprehension, so a 16-word
+	# sin-bar hint needs ~5-6 s, not the legacy 4 s default. Min 5 s
+	# even for very short hints so the player has time to look up.
+	var base_dur: float = float(cfg.get("duration",
+		_settings.get("hint_display_duration", 5.0)))
+	var word_count: int = text.split(" ", false).size()
+	var reading_dur: float = clamp(float(word_count) * 0.45, 5.0, 12.0)
+	var dur: float = maxf(base_dur, reading_dur)
 	var fade_in: float  = float(_settings.get("hint_fade_in",  0.3))
 	var fade_out: float = float(_settings.get("hint_fade_out", 0.5))
 
 	_active_id  = hint_id
 	_is_showing = true
+	_shown_at_ms = Time.get_ticks_msec()
 	_label.text = text
 	_root.modulate.a = 0.0
 	_layer.visible   = true
