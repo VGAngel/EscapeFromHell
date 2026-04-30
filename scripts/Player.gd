@@ -450,6 +450,13 @@ func _handle_staff() -> void:
 	staff_used.emit()
 
 func _apply_staff_hit() -> bool:
+	# Defensive guard: between _handle_staff() flipping monitoring on and
+	# this call (after a 0.15s await), an interrupting state change —
+	# damage taken, death, respawn — may have already turned monitoring
+	# back off elsewhere. Querying overlaps with monitoring=false logs a
+	# C++ engine error per swing, so bail out quietly when that happens.
+	if not _staff_area.monitoring:
+		return false
 	var hit := false
 	for body in _staff_area.get_overlapping_bodies():
 		if body.is_in_group("enemy"):

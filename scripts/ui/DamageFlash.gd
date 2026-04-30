@@ -57,11 +57,21 @@ func _on_node_added(node: Node) -> void:
 		call_deferred("_late_check_player", node)
 
 
-func _late_check_player(node: Node) -> void:
+# `node` is intentionally untyped: between this method being queued via
+# call_deferred and the actual dispatch, the queued node may have been
+# freed (e.g. transient particle / light children added during another
+# node's _ready). Godot 4 refuses to cast a freed Object back to `Node`
+# and prints "Cannot convert argument 1 from Object to Object" — typing
+# the param as Variant lets the engine deliver the (possibly invalid)
+# reference and we filter it out via is_instance_valid below.
+func _late_check_player(node: Variant) -> void:
 	if _player != null or not is_instance_valid(node):
 		return
-	if node.is_in_group("player") or node.has_signal("damage_taken"):
-		_player = node
+	var n: Node = node as Node
+	if n == null:
+		return
+	if n.is_in_group("player") or n.has_signal("damage_taken"):
+		_player = n
 		_connect_player()
 
 
