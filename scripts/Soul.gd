@@ -46,12 +46,14 @@ func _register_discovery() -> void:
 	var dh: Node = get_node_or_null("/root/DiscoveryHints")
 	if dh == null or not dh.has_method("register"):
 		return
+	# Use the autoload's default radius (200 px). Was 180 — bumped
+	# to match the global rule the user set after the first pass.
 	if _is_hidden:
-		dh.register(self, "soul_hidden", "tutorial.hidden_souls", 180.0)
+		dh.register(self, "soul_hidden", "tutorial.hidden_souls")
 	elif _soul_type == "mimic":
-		dh.register(self, "soul_mimic", "tutorial.mimic_warning", 180.0)
+		dh.register(self, "soul_mimic", "tutorial.mimic_warning")
 	elif _soul_type == "sleeping":
-		dh.register(self, "soul_sleeping", "tutorial.sleeping_soul", 180.0)
+		dh.register(self, "soul_sleeping", "tutorial.sleeping_soul")
 	# "innocent" souls don't get a discovery hint — that's the default
 	# and the player already gets the basic "tutorial.soul_pickup" on
 	# level 1 from the auto-fire path.

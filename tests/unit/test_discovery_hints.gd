@@ -117,6 +117,41 @@ func test_first_fire_clears_other_same_type_entries() -> void:
 
 # ── DiscoveryHighlight ────────────────────────────────────────────────────────
 
+func test_default_radius_is_200() -> void:
+	# User-set rule: 200 px is the canonical proximity threshold.
+	# Lowering it would make hints fire only when basically on top
+	# of the object; raising it leaks into adjacent rooms.
+	assert_eq(dh.DEFAULT_RADIUS, 200.0)
+
+
+func test_cooldown_blocks_second_fire_within_window() -> void:
+	# Two different-type entries both inside radius — only the first
+	# should fire on this poll. The second stays pending so it can
+	# light up later once the cooldown expires.
+	var player := FakePlayer.new()
+	player.global_position = Vector2(0, 0)
+	add_child_autofree(player)
+	var item_a := Node2D.new()
+	item_a.global_position = Vector2(50, 0)
+	add_child_autofree(item_a)
+	var item_b := Node2D.new()
+	item_b.global_position = Vector2(60, 0)
+	add_child_autofree(item_b)
+	var key_a := _ukey("type_a")
+	var key_b := _ukey("type_b")
+	dh.register(item_a, key_a, "tutorial.bonus_manna")
+	dh.register(item_b, key_b, "tutorial.bonus_holy_water")
+	watch_signals(dh)
+	# First poll fires one.
+	dh._check_proximity()
+	# Second poll within the cooldown window should NOT fire the
+	# second entry — _last_fire_ms gates the whole pass.
+	dh._check_proximity()
+	# Exactly one `discovered` signal should have been emitted.
+	assert_eq(get_signal_emit_count(dh, "discovered"), 1,
+			"second hint must wait for the cooldown to expire")
+
+
 func test_highlight_self_frees_after_lifetime() -> void:
 	# We can't easily await tweens in GUT, but we can verify the
 	# script construction + that ring child is built.

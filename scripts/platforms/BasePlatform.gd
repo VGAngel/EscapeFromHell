@@ -50,11 +50,10 @@ func _register_discovery() -> void:
 	if dh == null or not dh.has_method("register"):
 		return
 	var pair: Array = _DISCOVERY_MAP[platform_type]
-	# Distance is a bit larger than the bonus default — platforms are
-	# horizontal hazards / mechanics, players will walk past them
-	# instead of standing on top, so 180 px gives a more reliable
-	# "first encounter" trigger.
-	dh.register(self, String(pair[0]), String(pair[1]), 180.0)
+	# Use the autoload's default radius (200 px) — same value the
+	# user dialed in across all discoverables. Passing the constant
+	# would mean drift if it changes again, so we just omit the arg.
+	dh.register(self, String(pair[0]), String(pair[1]))
 
 func _rebuild() -> void:
 	_rebuild_collision()

@@ -27,14 +27,20 @@ extends Node
 signal discovered(type_key: String)
 
 const POLL_S := 0.25
-const DEFAULT_RADIUS := 150.0
+const DEFAULT_RADIUS := 200.0
 const HIGHLIGHT_DURATION := 6.0
+# Minimum gap between two consecutive discovery hints. Without this,
+# a player walking into a room with 4 different platform types would
+# get a 30-second wall of stacked tutorials. Triggers stay pending —
+# they just retry on the next poll once the cooldown clears.
+const FIRE_COOLDOWN_S := 6.0
 
 
 # Pending entry: { node: Node2D, type_key: String, hint_id: String,
 #                  radius: float, radius_sq: float, fired: bool }
 var _pending: Array[Dictionary] = []
 var _poll_t: float = 0.0
+var _last_fire_ms: int = -100000   # so the very first fire isn't gated
 
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -114,8 +120,17 @@ func _check_proximity() -> void:
 	var player: Node = get_tree().get_first_node_in_group("player")
 	if player == null or not is_instance_valid(player):
 		return
+	# Anti-spam: only fire one hint per FIRE_COOLDOWN_S window. The
+	# pending list is preserved, so an in-radius entry that gets
+	# skipped now will fire on the next poll once the cooldown
+	# expires (and the player is presumably still near it).
+	var now_ms: int = Time.get_ticks_msec()
+	if now_ms - _last_fire_ms < int(FIRE_COOLDOWN_S * 1000):
+		return
 	var p_pos: Vector2 = (player as Node2D).global_position
 	# Iterate a snapshot so handlers can mutate _pending safely.
+	# At most ONE fire per call so two simultaneously-in-range items
+	# can't both pop on the same poll.
 	for entry in _pending.duplicate():
 		var node: Node2D = entry.node
 		if node == null or not is_instance_valid(node):
@@ -126,10 +141,12 @@ func _check_proximity() -> void:
 		var d_sq: float = node.global_position.distance_squared_to(p_pos)
 		if d_sq <= entry.radius_sq:
 			_fire(entry)
+			return
 
 
 func _fire(entry: Dictionary) -> void:
 	entry.fired = true
+	_last_fire_ms = Time.get_ticks_msec()
 	var type_key: String = String(entry.type_key)
 	# Mark first so concurrent registrations of the same type don't
 	# double-fire (e.g. two MANNA pickups in the same room).
