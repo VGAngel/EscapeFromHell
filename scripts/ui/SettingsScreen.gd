@@ -940,31 +940,52 @@ func _on_mobile_size_changed(value: float) -> void:
 	if mc and mc.has_method("set_size_scale"):
 		mc.set_size_scale(value)
 		mc.save_layout()
+	else:
+		# No active HUD/level — persist size directly via SaveManager so the
+		# change takes effect when MobileControls is next instantiated.
+		if SaveManager:
+			var layout: Dictionary = SaveManager.get_mobile_layout()
+			layout["size_scale"] = value
+			SaveManager.set_mobile_layout(layout)
 
 func _on_reset_mobile_pressed() -> void:
 	var mc: Node = _find_mobile_controls()
 	if mc and mc.has_method("reset_layout"):
 		mc.reset_layout()
+	else:
+		if SaveManager:
+			SaveManager.set_mobile_layout({})
 	if _size_slider:
 		_size_slider.value = 1.0   # triggers _on_mobile_size_changed
 
 func _on_edit_mobile_pressed() -> void:
 	var mc: Node = _find_mobile_controls()
-	if not mc or not mc.has_method("set_edit_mode"):
-		return
-	# Close settings so the player can see the controls behind it; show a
-	# floating "Done" overlay that exits edit mode and saves.
+	var owns_mc: bool = false
+	if not mc:
+		# No active level/HUD — create a temporary MobileControls for the
+		# edit session. It loads the persisted layout itself, lets the player
+		# drag buttons around, and saves on Done. Freed when Done is pressed.
+		var mc_script: Script = load("res://scripts/ui/MobileControls.gd")
+		if not mc_script:
+			return
+		mc = mc_script.new()
+		owns_mc = true
 	close()
 	mc.set_edit_mode(true)
-	_show_edit_overlay(mc)
+	_show_edit_overlay(mc, owns_mc)
 
-func _show_edit_overlay(mc: Node) -> void:
+func _show_edit_overlay(mc: Node, owns_mc: bool = false) -> void:
 	if _edit_overlay and is_instance_valid(_edit_overlay):
 		_edit_overlay.queue_free()
 	_edit_overlay = CanvasLayer.new()
 	_edit_overlay.layer = 50
 	_edit_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().root.add_child(_edit_overlay)
+
+	# If we own the mc (no HUD), parent it inside the overlay so it's
+	# visible and receives touch input during the edit session.
+	if owns_mc:
+		_edit_overlay.add_child(mc)
 
 	var hint := Label.new()
 	hint.text = _t("settings.mobile_drag_hint", {}, "Перетягуй кнопки куди зручно. Натисни ✓ коли готовий.")
@@ -1008,16 +1029,15 @@ func _on_edit_done(mc: Node) -> void:
 		_edit_overlay = null
 
 func _find_mobile_controls() -> Node:
-	# MobileControls is built inside HUD which is in any active level.
+	# First look inside the active HUD (in-game context).
 	var hud: Node = get_tree().get_first_node_in_group("hud") if get_tree() else null
-	if not hud:
-		return null
-	# Walk children to find the MobileControls Control by class/property.
-	for child in hud.get_children():
-		if child is Control and child.has_method("set_edit_mode"):
-			return child
-		# Recurse one level — HUD nests it in _root.
-		for grand in child.get_children():
-			if grand is Control and grand.has_method("set_edit_mode"):
-				return grand
+	if hud:
+		for child in hud.get_children():
+			if child is Control and child.has_method("set_edit_mode"):
+				return child
+			# Recurse one level — HUD nests MobileControls inside _root.
+			for grand in child.get_children():
+				if grand is Control and grand.has_method("set_edit_mode"):
+					return grand
+	# Not in a level — return null so the caller can spin up a temp instance.
 	return null
