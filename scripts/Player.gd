@@ -435,18 +435,20 @@ func _handle_staff() -> void:
 		Engine.time_scale = 0.0
 		await get_tree().create_timer(0.08, true, false, true).timeout
 		Engine.time_scale = 1.0
+		# Sin is only added when the staff connects with an enemy — swinging
+		# through the air costs nothing.
+		if not _upgrade_staff_purity:
+			# Route through GameManager so the HUD toast + sin_changed signal
+			# fire — direct SaveManager.add_sin would skip the source pipeline.
+			if GameManager:
+				GameManager.add_sin(staff_sin_cost, "staff")
+			else:
+				SaveManager.add_sin(staff_sin_cost)
 
 	await _anim.animation_finished
 	if state == State.STAFF_SWING:
 		state = State.IDLE
 
-	if not _upgrade_staff_purity:
-		# Route through GameManager so the HUD toast + sin_changed signal
-		# fire — direct SaveManager.add_sin would skip the source pipeline.
-		if GameManager:
-			GameManager.add_sin(staff_sin_cost, "staff")
-		else:
-			SaveManager.add_sin(staff_sin_cost)
 	staff_used.emit()
 
 func _apply_staff_hit() -> bool:

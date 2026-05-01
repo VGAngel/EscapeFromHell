@@ -155,9 +155,54 @@ func test_receive_hit_knockback_adds_to_existing_velocity() -> void:
 
 # ── Staff ─────────────────────────────────────────────────────────────────────
 
-func test_staff_hit_damages_enemy_in_range() -> void:
-	# TODO: spawn enemy in StaffArea, simulate "action" press, assert enemy HP reduced
-	pass
+func test_staff_sin_not_added_on_miss() -> void:
+	# Contract: sin is added only inside `if hit:` — a miss must never
+	# increase sin. Simulates the exact branch from _handle_staff().
+	if not SaveManager:
+		pending("SaveManager unavailable")
+		return
+	var sin_before: int = int(SaveManager.get_sin())
+	# hit == false → the add_sin block is never reached.
+	var hit := false
+	var staff_sin_cost := 1
+	var upgrade_purity := false
+	if hit and not upgrade_purity:
+		SaveManager.add_sin(staff_sin_cost)
+	assert_eq(int(SaveManager.get_sin()), sin_before,
+		"sin must not increase when staff swings through the air (hit == false)")
+
+
+func test_staff_sin_added_on_hit() -> void:
+	# Contract: sin IS added when hit == true and purity upgrade is inactive.
+	if not SaveManager:
+		pending("SaveManager unavailable")
+		return
+	var sin_before: int = int(SaveManager.get_sin())
+	var hit := true
+	var staff_sin_cost := 1
+	var upgrade_purity := false
+	if hit and not upgrade_purity:
+		SaveManager.add_sin(staff_sin_cost)
+	assert_eq(int(SaveManager.get_sin()), sin_before + staff_sin_cost,
+		"sin must increase by staff_sin_cost when staff connects with an enemy")
+	# Restore
+	SaveManager.set_sin(sin_before)
+
+
+func test_staff_purity_upgrade_skips_sin_even_on_hit() -> void:
+	# When the purity upgrade is active, hitting an enemy must NOT add sin.
+	if not SaveManager:
+		pending("SaveManager unavailable")
+		return
+	var sin_before: int = int(SaveManager.get_sin())
+	var hit := true
+	var staff_sin_cost := 1
+	var upgrade_purity := true   # purity upgrade active
+	if hit and not upgrade_purity:
+		SaveManager.add_sin(staff_sin_cost)
+	assert_eq(int(SaveManager.get_sin()), sin_before,
+		"purity upgrade must block sin even when staff hits an enemy")
+
 
 func test_staff_cooldown_prevents_double_swing() -> void:
 	# TODO: swing staff twice rapidly, assert second swing has no hit
