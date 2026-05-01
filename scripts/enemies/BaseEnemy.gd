@@ -16,11 +16,11 @@ var state: State = State.PATROL
 @export var chase_duration:    float = 6.0
 @export var alert_duration:    float = 1.0
 @export var patrol_distance:   float = 120.0
-## Vertical sight clamp — player on a different platform row (|dy| beyond
-## this) is invisible even within detection_range. Without it a ground enemy
-## would "see" the player two platforms above and trigger an unwinnable chase.
+## Vertical sight clamp — player beyond this vertical distance is invisible
+## even within detection_range. Sized to one jump height (≈235 px) so the
+## enemy can chase the player one platform above but not two.
 ## Set to 0 to disable (e.g. for flying enemies authored later).
-@export var max_vertical_sight: float = 100.0
+@export var max_vertical_sight: float = 250.0
 
 # ── Contact damage ────────────────────────────────────────────────────────────
 @export var contact_damage:    int   = 1
@@ -238,14 +238,17 @@ func _do_chase(_delta: float) -> void:
 	var dir: float = sign(_player.global_position.x - global_position.x)
 	velocity.x = move_speed * chase_speed_mult * dir
 
-	# Jump toward player only when they are stably on a higher platform AND
-	# there is actually a solid surface above us to land on.
+	# Jump toward player when they are on a higher platform within reach.
+	# dy = how far above the player is (positive = player higher).
+	# We skip the straight-up platform raycast — it failed for horizontally
+	# offset platforms. Instead we bound-check: JUMP_VELOCITY (-650) clears
+	# ≈235 px, so any gap > 260 px is physically unreachable this frame.
+	# Lower bound (40 px) avoids micro-hops on the same-row surface.
 	if is_on_floor() and _jump_cooldown <= 0.0:
-		var player_stable: bool = absf(_player.velocity.y) < 50.0
-		if player_stable and _player.global_position.y < global_position.y - 60.0:
-			if _platform_exists_above(_player.global_position.y):
-				velocity.y = JUMP_VELOCITY
-				_jump_cooldown = 1.5
+		var dy: float = global_position.y - _player.global_position.y
+		if dy > 40.0 and dy < 260.0:
+			velocity.y = JUMP_VELOCITY
+			_jump_cooldown = 0.9
 
 	# Stop horizontal movement when hitting a wall — but only while grounded
 	# (velocity.y >= 0). During a jump (velocity.y < 0) keep momentum so the
