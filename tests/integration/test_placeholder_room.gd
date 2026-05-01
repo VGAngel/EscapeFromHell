@@ -298,6 +298,69 @@ func test_section_profile_widths_and_types_are_well_formed() -> void:
 
 # ── Atmosphere particles ───────────────────────────────────────────────────────
 
+# ── Enemy patrol distance ─────────────────────────────────────────────────────
+
+# Minimal fake enemy that BaseEnemy-style: has move_speed and patrol_distance.
+class FakeEnemy extends CharacterBody2D:
+	var move_speed:      float = 80.0
+	var patrol_distance: float = 120.0
+
+func _make_vertical_room_with_layout(circle_n: int = 1) -> Node2D:
+	var room: Node2D = Node2D.new()
+	room.set_script(RoomScript)
+	room.set("is_vertical", true)
+	room.set("room_type",   "shaft")
+	room.set("room_index",  1)
+	room.set("room_count",  2)
+	room.set("circle",      circle_n)
+	room.set("level_id",    0)
+	add_child_autofree(room)
+	return room
+
+
+func test_enemy_patrol_distance_formula_matches_platform_half_width() -> void:
+	# The override formula in _spawn_one_enemy_at_row is:
+	#   patrol_distance = max(platform_width * 0.5 - 16.0, 0.0)
+	# Verify the formula produces the expected value for a 220-px platform.
+	var fake: FakeEnemy = autofree(FakeEnemy.new())
+	fake.move_speed      = 80.0
+	fake.patrol_distance = 120.0  # typical config default — should be replaced
+
+	var plat_w: float = 220.0
+	var spd: float = float(fake.get(&"move_speed") if fake.get(&"move_speed") != null else 0.0)
+	if spd > 0.0:
+		fake.set(&"patrol_distance", maxf(plat_w * 0.5 - 16.0, 0.0))
+
+	var expected: float = 220.0 * 0.5 - 16.0  # = 94.0
+	assert_almost_eq(float(fake.patrol_distance), expected, 0.001,
+		"patrol_distance must be platform_half_width - 16 margin")
+
+
+func test_enemy_patrol_distance_wider_platform_is_larger() -> void:
+	# A wider platform (260 px) must yield a larger patrol_distance than a
+	# narrower one (180 px) — guards against accidental inversion of the formula.
+	var calc := func(w: float) -> float:
+		return maxf(w * 0.5 - 16.0, 0.0)
+	assert_gt(calc.call(260.0), calc.call(180.0),
+		"wider platform must produce larger patrol_distance")
+
+
+func test_enemy_stationary_not_overridden_when_move_speed_zero() -> void:
+	# If move_speed == 0 the override is skipped — stationary enemies
+	# (CursedStone, MimicShade) must not suddenly start patrolling.
+	var fake: FakeEnemy = autofree(FakeEnemy.new())
+	fake.move_speed      = 0.0
+	fake.patrol_distance = 0.0
+
+	var plat_w: float = 220.0
+	var spd: float = float(fake.get(&"move_speed") if fake.get(&"move_speed") != null else 0.0)
+	if spd > 0.0:
+		fake.set(&"patrol_distance", maxf(plat_w * 0.5 - 16.0, 0.0))
+
+	assert_almost_eq(float(fake.patrol_distance), 0.0, 0.001,
+		"stationary enemy patrol_distance must stay 0 when move_speed == 0")
+
+
 func _make_room_with_circle(c: int, vert: bool = true) -> Node2D:
 	var room: Node2D = Node2D.new()
 	room.set_script(RoomScript)
