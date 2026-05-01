@@ -318,31 +318,30 @@ func _make_vertical_room_with_layout(circle_n: int = 1) -> Node2D:
 	return room
 
 
-func test_enemy_patrol_distance_formula_matches_platform_half_width() -> void:
-	# The override formula in _spawn_one_enemy_at_row is:
-	#   patrol_distance = max(platform_width * 0.5 - 16.0, 0.0)
-	# Verify the formula produces the expected value for a 220-px platform.
+func test_enemy_patrol_distance_set_to_inf_for_mobile_enemy() -> void:
+	# _spawn_one_enemy_at_row sets patrol_distance = INF for mobile enemies so
+	# the distance-from-origin check never fires and only edge raycasts control
+	# reversal. This makes patrol correct on ANY platform the enemy lands on,
+	# including after a chase that moved it to a different (narrower/wider) shelf.
 	var fake: FakeEnemy = autofree(FakeEnemy.new())
 	fake.move_speed      = 80.0
-	fake.patrol_distance = 120.0  # typical config default — should be replaced
+	fake.patrol_distance = 120.0  # typical config default — must be replaced
 
-	var plat_w: float = 220.0
 	var spd: float = float(fake.get(&"move_speed") if fake.get(&"move_speed") != null else 0.0)
 	if spd > 0.0:
-		fake.set(&"patrol_distance", maxf(plat_w * 0.5 - 16.0, 0.0))
+		fake.set(&"patrol_distance", INF)
 
-	var expected: float = 220.0 * 0.5 - 16.0  # = 94.0
-	assert_almost_eq(float(fake.patrol_distance), expected, 0.001,
-		"patrol_distance must be platform_half_width - 16 margin")
+	assert_true(is_inf(float(fake.patrol_distance)),
+		"mobile enemy patrol_distance must be INF so edge raycasts control patrol")
 
 
-func test_enemy_patrol_distance_wider_platform_is_larger() -> void:
-	# A wider platform (260 px) must yield a larger patrol_distance than a
-	# narrower one (180 px) — guards against accidental inversion of the formula.
-	var calc := func(w: float) -> float:
-		return maxf(w * 0.5 - 16.0, 0.0)
-	assert_gt(calc.call(260.0), calc.call(180.0),
-		"wider platform must produce larger patrol_distance")
+func test_enemy_patrol_inf_distance_never_triggers_reversal() -> void:
+	# Verify the patrol loop condition: absf(dist) >= INF is always false for
+	# any finite position, so only wall/edge triggers cause reversal.
+	var dist_values: Array[float] = [0.0, 50.0, 500.0, 9999.0]
+	for dist in dist_values:
+		assert_false(absf(dist) >= INF,
+			"patrol_distance=INF must never trigger reversal at dist=%d" % int(dist))
 
 
 func test_enemy_stationary_not_overridden_when_move_speed_zero() -> void:
@@ -352,10 +351,9 @@ func test_enemy_stationary_not_overridden_when_move_speed_zero() -> void:
 	fake.move_speed      = 0.0
 	fake.patrol_distance = 0.0
 
-	var plat_w: float = 220.0
 	var spd: float = float(fake.get(&"move_speed") if fake.get(&"move_speed") != null else 0.0)
 	if spd > 0.0:
-		fake.set(&"patrol_distance", maxf(plat_w * 0.5 - 16.0, 0.0))
+		fake.set(&"patrol_distance", INF)
 
 	assert_almost_eq(float(fake.patrol_distance), 0.0, 0.001,
 		"stationary enemy patrol_distance must stay 0 when move_speed == 0")

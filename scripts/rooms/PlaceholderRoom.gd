@@ -714,17 +714,17 @@ func _spawn_one_enemy_at_row(row_idx: int) -> void:
 		y_pos = room_height - WALL_T - 40.0
 	enemy.position = Vector2(x_pos, y_pos)
 	add_child(enemy)
-	# Override patrol_distance so the enemy walks the full length of its
-	# platform rather than the shorter config default (100–300 px).
-	# We do this AFTER add_child so _ready has already loaded the enemy
-	# config (and set move_speed), letting us skip stationary enemies.
-	# A 16 px margin keeps the enemy body clear of the platform edge pixel;
-	# the existing edge raycasts are the final safety net if we're off.
-	if is_vertical and row_idx >= 0 and row_idx < _vert_layout.size():
-		var plat_w: float = float(_vert_layout[row_idx].get("width", _platform_width))
-		var spd: float = float(enemy.get(&"move_speed") if enemy.get(&"move_speed") != null else 0.0)
-		if spd > 0.0:
-			enemy.set(&"patrol_distance", maxf(plat_w * 0.5 - 16.0, 0.0))
+	# Disable the fixed patrol_distance for all mobile enemies spawned here.
+	# Setting INF means the distance-from-origin check in _do_patrol / patrol_action
+	# never fires, so the ONLY reversal triggers are:
+	#   • is_on_wall()          — solid wall ahead
+	#   • edge raycast miss     — no floor under the leading foot
+	# This works correctly on ANY platform the enemy lands on — including after
+	# a chase jump that places the enemy on a different (wider or narrower) shelf.
+	# Stationary enemies (move_speed == 0) are skipped; they never move anyway.
+	var spd: float = float(enemy.get(&"move_speed") if enemy.get(&"move_speed") != null else 0.0)
+	if spd > 0.0:
+		enemy.set(&"patrol_distance", INF)
 
 # Picks an enemy scene path. The `slot_index` rotates through the configured
 # enemy list so a single shaft showcases the whole circle's bestiary.
