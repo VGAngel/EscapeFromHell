@@ -23,8 +23,19 @@ var _queue:      Array = []        # Array[String] — pending hint ids
 # ── UI refs ───────────────────────────────────────────────────────────────────
 var _layer:    CanvasLayer = null
 var _root:     Control     = null   # tweened for modulate (CanvasLayer has none)
+var _panel:    PanelContainer = null   # repositioned each frame to dodge player
 var _label:    Label       = null
 var _tween:    Tween       = null
+
+# Default top-zone placement (just below the level info row).
+const _PANEL_HEIGHT := 120.0
+const _DEFAULT_TOP    := 170.0
+const _DEFAULT_BOTTOM := _DEFAULT_TOP + _PANEL_HEIGHT
+# Mobile builds dock the action buttons in the bottom ~180 px of the
+# viewport — keep the panel above that band when we flip it down.
+const _MOBILE_HUD_BOTTOM_RESERVE := 200.0
+# Vertical clearance we want around the player sprite (~64 px tall).
+const _PLAYER_PAD := 70.0
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -99,22 +110,25 @@ const _FALLBACK_TEXT := {
 	"tutorial.jump":          "Натисни ↑ щоб стрибнути",
 	"tutorial.variable_jump": "Тримай ↑ довше — стрибнеш вище",
 	"tutorial.look_down":     "Затисни ↓ — камера покаже що внизу",
-	"tutorial.staff":         "Натисни ⚔ щоб ударити посохом",
-	"tutorial.staff_sin":     "Кожен удар посохом додає гріх. Користуйся обережно.",
+	"tutorial.staff":         "⚔ Натисни щоб ударити посохом. Перевіряй гріх — кожен удар його піднімає.",
+	"tutorial.staff_sin":     "Кожен удар посохом додає гріх. Високий гріх змінює фінал — користуйся обережно.",
 	"tutorial.sin_bar":       "Гріх — чорна частина тебе. Накопичується від ударів, смертей, угод. Високий гріх змінює кінцівку.",
-	"tutorial.soul_pickup":   "Підійди до душі і натисни E щоб підняти",
-	"tutorial.carry_to_exit": "Неси душу до вівтаря зверху рівня",
-	"tutorial.enemy_avoid":   "Ворог поряд — обходь або бий посохом",
-	"tutorial.enemy_gives_up":"Якщо тікаєш достатньо довго — ворог здається",
-	"tutorial.one_way":       "Платформа дозволяє стрибнути ВВЕРХ крізь себе. Натисни ↓ щоб впасти крізь.",
-	"tutorial.crumbling":     "Ця платформа розкришиться через секунду після приземлення",
-	"tutorial.faith_platform":"Тримай 🙏 щоб платформа стала твердою. Витрачає віру.",
-	"tutorial.soul_bridge":   "Душа в руках стає мостом. Кинь її щоб перейти прірву.",
-	"tutorial.hidden_souls":  "✦ Приховані душі — шукай уважніше у тіні платформ",
-	"tutorial.sleeping_soul": "Сплячі душі мають мінігру. Уважно дивись на іконку.",
-	"tutorial.minigame_watch_icon": "Дивись на іконку — вона показує коли натиснути",
-	"tutorial.mimic_warning": "Не всі душі справжні. Деякі — це міміки.",
-	"tutorial.mimic_exorcism":"Бий посохом по міміку щоб вигнати",
+	# Soul pickup is the moment players need to know about the staff
+	# lockout — once a soul is in hand, ⚔ stops working until you
+	# either deliver it to the altar or drop it.
+	"tutorial.soul_pickup":   "Натисни E щоб підняти душу. Поки несеш душу — ⚔ посох не працює; донеси її до вівтаря або кинь, щоб знову битися.",
+	"tutorial.carry_to_exit": "Неси душу до вівтаря зверху рівня. По дорозі: ⚔ посох заблоковано, тому уникай ворогів або стрибай через них.",
+	"tutorial.enemy_avoid":   "Ворог поряд. Обходь, перестрибуй або бий ⚔ посохом — але удар додасть гріх.",
+	"tutorial.enemy_gives_up":"Якщо тікаєш достатньо довго — ворог здається і повертається на свій маршрут.",
+	"tutorial.one_way":       "Платформа однонаправлена: стрибай ↑ крізь неї знизу. Натисни ↓ щоб впасти крізь, коли стоїш зверху.",
+	"tutorial.crumbling":     "Платформа розкришиться через секунду після приземлення — не затримуйся, шукай наступну точку.",
+	"tutorial.faith_platform":"Тримай 🙏 щоб ця платформа стала твердою. Витрачає віру — слідкуй за лічильником.",
+	"tutorial.soul_bridge":   "Душа в руках перетворюється на міст. Кинь її через прірву — пройдеш по ній.",
+	"tutorial.hidden_souls":  "✦ Приховані душі — напівпрозорі, шукай у тіні платформ. Куплене вміння Чуття Душ підсвічує їх.",
+	"tutorial.sleeping_soul": "Спляча душа — натисни E щоб почати мінігру. Уважно дивись на іконку, вона підкаже коли діяти.",
+	"tutorial.minigame_watch_icon": "Дивись на іконку у центрі мінігри — вона показує коли і яку клавішу натиснути.",
+	"tutorial.mimic_warning": "Не всі душі справжні. Деякі — міміки: вдарять, як тільки доторкнешся. Уважно дивись на форму.",
+	"tutorial.mimic_exorcism":"Удар ⚔ посохом по міміку вигоняє його. Гріх це не додає — це праведна дія.",
 	# Bonus pickups — fired by DiscoveryHints when one comes within
 	# 150 px of the player for the first time on this save.
 	"tutorial.bonus_holy_water":     "💧 Свята вода — невразливість 5 секунд",
@@ -189,6 +203,7 @@ func _display(hint_id: String) -> void:
 	_label.text = text
 	_root.modulate.a = 0.0
 	_layer.visible   = true
+	_reposition_panel()
 
 	_mark_seen(hint_id)
 	hint_shown.emit(hint_id)
@@ -210,6 +225,61 @@ func _do_dismiss() -> void:
 	_tween = create_tween()
 	_tween.tween_property(_root, "modulate:a", 0.0, fade_out * 0.5)
 	_tween.tween_callback(_on_finished)
+
+# Per-frame nudge so the panel keeps dodging the player as they move
+# (e.g. hint shows mid-jump → player lands inside the top band).
+func _process(_delta: float) -> void:
+	if _is_showing:
+		_reposition_panel()
+
+
+# Choose a top-zone or bottom-zone Y for the hint panel based on the
+# player's current screen position. Default is the existing top band
+# (170-290 px below the level info row). If the player's screen-Y
+# enters that band ± _PLAYER_PAD, slide the panel BELOW the player.
+# If even the below-player slot would overlap the mobile control HUD
+# at the bottom, fall back to a position ABOVE the player. Worst case
+# (player fills the whole viewport — shouldn't happen in normal play)
+# we keep the default and accept the overlap rather than hide off-screen.
+func _reposition_panel() -> void:
+	if _panel == null or _root == null or not _root.is_inside_tree():
+		return
+	var top := _DEFAULT_TOP
+	var bottom := _DEFAULT_BOTTOM
+	var player := _find_player()
+	if player != null:
+		var vp_size: Vector2 = _root.get_viewport_rect().size
+		var player_y: float = player.get_global_transform_with_canvas().origin.y
+		var collides_top := player_y > (top - _PLAYER_PAD) \
+				and player_y < (bottom + _PLAYER_PAD)
+		if collides_top:
+			# Try below-player first.
+			var below_top: float = player_y + _PLAYER_PAD
+			var below_bottom: float = below_top + _PANEL_HEIGHT
+			if below_bottom <= vp_size.y - _MOBILE_HUD_BOTTOM_RESERVE:
+				top = below_top
+				bottom = below_bottom
+			else:
+				# Below would clip into the mobile controls — go above.
+				bottom = max(player_y - _PLAYER_PAD, _PANEL_HEIGHT + 20.0)
+				top = bottom - _PANEL_HEIGHT
+				if top < 20.0:
+					top = _DEFAULT_TOP
+					bottom = _DEFAULT_BOTTOM
+	_panel.offset_top    = top
+	_panel.offset_bottom = bottom
+
+
+func _find_player() -> Node2D:
+	var tree := get_tree()
+	if tree == null:
+		return null
+	var nodes: Array = tree.get_nodes_in_group("player")
+	for n in nodes:
+		if n is Node2D:
+			return n as Node2D
+	return null
+
 
 func _on_finished() -> void:
 	_layer.visible = false
@@ -284,6 +354,7 @@ func _build_ui() -> void:
 	style.content_margin_bottom = 10.0
 	panel.add_theme_stylebox_override("panel", style)
 	_root.add_child(panel)
+	_panel = panel
 
 	_label = Label.new()
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
