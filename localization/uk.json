@@ -22,7 +22,7 @@
   "hud": {
     "sin_bar_tooltip":      "Рівень гріха",
     "souls_level_format":   "{found} / {total}",
-    "souls_total_format":   "{saved} / 100",
+    "souls_total_format":   "{saved} / {total}",
     "level_info_format":    "Коло {circle} • Рівень {level}",
     "ability_used":         "Використано",
     "bonus_expiring":       "Закінчується...",
@@ -43,7 +43,7 @@
 
   "collection": {
     "title":                "Врятовані Душі",
-    "counter_named":        "{saved} / 100",
+    "counter_named":        "{saved} / {total}",
     "counter_hidden":       "✦ {saved} / 20",
     "counter_hidden_tooltip": "Приховані душі — шукай уважніше на кожному рівні",
     "filter_all":           "Всі",
@@ -62,7 +62,7 @@
     "detail_sin_format":    "Гріх: {sin}",
     "detail_sin_none":      "відсутній",
     "detail_reward_label":  "Нагорода:",
-    "complete_text":        "Всі 100 душ знайдені",
+    "complete_text":        "Всі {total} душ знайдені",
     "side_placeholder":     "Натисни на душу щоб побачити її історію",
     "circle_tab_format":    "Коло {n}",
     "circle_short":         "К{n}",
@@ -147,7 +147,7 @@
     "collection":       "Врятовані Душі",
     "statistics":       "📊  Статистика",
     "level_format":     "Коло {circle} • Рівень {level}",
-    "souls_format":     "👻 {found} / 100",
+    "souls_format":     "👻 {found} / {total}",
     "sin_format":       "{pct}%"
   },
 
@@ -635,7 +635,7 @@
     "name_unknown":   "Невідомий",
     "circle_format":  "Коло {n}",
     "level_format":   "Рівень {n}",
-    "stats_format":   "👻 {souls}/100  ·  ✦ {hidden}/20  ·  💡 {light}",
+    "stats_format":   "👻 {souls}/{souls_total}  ·  ✦ {hidden}/{hidden_total}  ·  💡 {light}",
     "best_none":      "🏆 Найкращий: —",
     "best_format":    "🏆 Найкращий: {time} {stars} (рівень {level})",
     "sin_format":     "😈 Гріх {pct}%"
@@ -644,7 +644,7 @@
   "main_menu_dyn": {
     "play_first":     "▶  Грати",
     "play_continue":  "▶  Продовжити — рівень {n}",
-    "souls_counter":  "Врятовані Душі  {saved}/100"
+    "souls_counter":  "Врятовані Душі  {saved}/{total}"
   },
 
   "router_title": {

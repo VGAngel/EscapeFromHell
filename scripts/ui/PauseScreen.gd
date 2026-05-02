@@ -141,8 +141,9 @@ func _refresh_stats() -> void:
 			{"circle": circle, "level": level}, "Коло %d • Рівень %d" % [circle, level])
 
 	var souls := SaveManager.get_total_souls() if SaveManager else 0
+	var target := SaveManager.get_named_souls_target() if SaveManager else 100
 	_lbl_souls.text = _t("pause.souls_format",
-			{"found": souls}, "👻 %d / 100" % souls)
+			{"found": souls, "total": target}, "👻 %d / %d" % [souls, target])
 
 	var sin_val := SaveManager.get_sin() if SaveManager else 0.0
 	_set_sin(sin_val)

@@ -228,9 +228,10 @@ func _refresh_buttons() -> void:
 
 func _refresh_souls_counter() -> void:
 	var saved: int = SaveManager.get_total_souls() if SaveManager else 0
+	var target: int = SaveManager.get_named_souls_target() if SaveManager else 100
 	var loc: Node = get_node_or_null("/root/Loc")
 	_btn_collect.text = _loc_t(loc, "main_menu_dyn.souls_counter",
-			{"saved": saved})
+			{"saved": saved, "total": target})
 	_refresh_play_button()
 
 # Dynamic label on the primary CTA — first run shows "Грати", later
@@ -263,7 +264,10 @@ func _loc_t(loc: Node, key: String, params: Dictionary = {}) -> String:
 	if key == "main_menu_dyn.play_continue":
 		return "▶  Продовжити — рівень %d" % int(params.get("n", 1))
 	if key == "main_menu_dyn.souls_counter":
-		return "Врятовані Душі  %d/100" % int(params.get("saved", 0))
+		return "Врятовані Душі  %d/%d" % [
+			int(params.get("saved", 0)),
+			int(params.get("total", 100)),
+		]
 	return key
 
 # HeroCard goes between TitleLabel and ButtonsContainer. We insert it as

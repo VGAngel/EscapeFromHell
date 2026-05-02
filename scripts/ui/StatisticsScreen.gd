@@ -91,8 +91,10 @@ func _refresh() -> void:
 
 	# ── Душі ────────────────────────────────────────────────────────────────
 	_section("👻  Душі")
-	_line("Звичайних врятовано", "%d / 100" % SaveManager.get_total_souls())
-	_line("Прихованих знайдено", "%d / 20"  % SaveManager.get_total_hidden_souls())
+	_line("Звичайних врятовано", "%d / %d" % [SaveManager.get_total_souls(),
+		SaveManager.get_named_souls_target()])
+	_line("Прихованих знайдено", "%d / %d" % [SaveManager.get_total_hidden_souls(),
+		SaveManager.get_hidden_souls_target()])
 
 	# ── Смерті ──────────────────────────────────────────────────────────────
 	_section("💀  Смерті")

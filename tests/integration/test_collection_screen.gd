@@ -317,14 +317,18 @@ func test_notify_hidden_soul_added_refreshes_counter() -> void:
 
 # ── Completion label ───────────────────────────────────────────────────────────
 
-func test_completion_label_shown_at_100_souls() -> void:
-	for i in range(1, 101):
+func test_completion_label_shown_when_pool_complete() -> void:
+	# Save IDs up to the dynamic pool target so this test stays valid as
+	# the souls_collection.json grows beyond 100.
+	var target: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	for i in range(1, target + 1):
 		SaveManager.add_soul(i)
 	screen.notify_soul_added(1)
 	assert_true(screen._completion_lbl.visible)
 
-func test_lbl_named_turns_gold_at_100_souls() -> void:
-	for i in range(1, 101):
+func test_lbl_named_turns_gold_when_pool_complete() -> void:
+	var target: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	for i in range(1, target + 1):
 		SaveManager.add_soul(i)
 	screen.open()
 	assert_eq(screen._lbl_named.get_theme_color("font_color"), Color("#FFD700"))
@@ -356,15 +360,19 @@ func test_missing_btn_dimmed_when_inactive() -> void:
 
 # ── Real config integration ────────────────────────────────────────────────────
 
-func test_real_config_loads_100_named_souls() -> void:
+func test_real_config_loads_named_souls_matching_target() -> void:
+	# Pool size is now dynamic — assert it matches the JSON's declared
+	# total_named via SaveManager.get_named_souls_target().
 	var real: Node = preload("res://scripts/ui/CollectionScreen.gd").new()
 	add_child_autofree(real)
-	assert_eq(real._named_souls.size(), 100)
+	var expected: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	assert_eq(real._named_souls.size(), expected)
 
-func test_real_config_loads_20_hidden_souls() -> void:
+func test_real_config_loads_hidden_souls_matching_target() -> void:
 	var real: Node = preload("res://scripts/ui/CollectionScreen.gd").new()
 	add_child_autofree(real)
-	assert_eq(real._hidden_souls.size(), 20)
+	var expected: int = SaveManager.get_hidden_souls_target() if SaveManager else 20
+	assert_eq(real._hidden_souls.size(), expected)
 
 # ── Wide layout (split view: grid + side panel) ───────────────────────────────
 
