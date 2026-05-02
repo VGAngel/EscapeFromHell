@@ -35,6 +35,13 @@ var _filter_circle:  int    = 0
 var _filter_type:    String = "all"
 var _filter_missing: bool   = false
 
+# Sort + search state. Sort mode is one of "id" (declared order, default),
+# "name" (alphabetical), "circle" (Лімб → Трон), "type" (innocent →
+# broken → sleeping). Search query is a case-insensitive substring
+# matched against soul name AND epitaph/full_story.
+var _sort_mode:    String = "id"
+var _search_query: String = ""
+
 # ── Cell node map: soul_id (int or String) → Button ──────────────────────────
 var _cell_nodes: Dictionary = {}
 
@@ -60,6 +67,12 @@ var _circle_tabs:   Array           = []   # Array[Button], index 0 = "Всі"
 # Filters – row 2: type buttons + missing toggle
 var _type_btns:    Dictionary    = {}
 var _btn_missing:  Button        = null
+
+# Filters – row 3: search input + sort cycle button
+var _search_input: LineEdit      = null
+var _btn_sort:     Button        = null
+# Display order of sort modes for the cycle button.
+const SORT_MODES: Array[String] = ["id", "name", "circle", "type"]
 
 # Grid
 var _grid_scroll:  ScrollContainer = null
@@ -423,7 +436,7 @@ func _rebuild_grid() -> void:
 	var saved_ids:  Array = SaveManager.get_saved_soul_ids()   if SaveManager else []
 	var hidden_ids: Array = SaveManager.get_hidden_soul_ids()  if SaveManager else []
 
-	for soul in _named_souls:
+	for soul in _sort_souls(_named_souls):
 		if not _passes_filter(soul, false):
 			continue
 		var id: int   = soul.get("id", 0)
@@ -434,6 +447,8 @@ func _rebuild_grid() -> void:
 		_grid.add_child(cell)
 		_cell_nodes[id] = cell
 
+	# Hidden souls are appended after named ones regardless of sort mode —
+	# they're a distinct tier, the player expects them grouped at the end.
 	for soul in _hidden_souls:
 		if not _passes_filter(soul, true):
 			continue
@@ -445,6 +460,40 @@ func _rebuild_grid() -> void:
 		_grid.add_child(cell)
 		_cell_nodes[id] = cell
 
+
+# Returns a copy of `souls` ordered by the current _sort_mode. Stable
+# secondary sort by id so identical primary keys (same circle, same
+# type) keep a deterministic order between rebuilds.
+func _sort_souls(souls: Array) -> Array:
+	var out: Array = souls.duplicate()
+	match _sort_mode:
+		"name":
+			out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+				var na: String = String(a.get("name", "")).to_lower()
+				var nb: String = String(b.get("name", "")).to_lower()
+				if na == nb:
+					return int(a.get("id", 0)) < int(b.get("id", 0))
+				return na < nb)
+		"circle":
+			out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+				var ca: int = int(a.get("circle", 0))
+				var cb: int = int(b.get("circle", 0))
+				if ca == cb:
+					return int(a.get("id", 0)) < int(b.get("id", 0))
+				return ca < cb)
+		"type":
+			# Stable order: innocent → broken → sleeping → other.
+			const TYPE_RANK := {"innocent": 0, "broken": 1, "sleeping": 2}
+			out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+				var ra: int = int(TYPE_RANK.get(String(a.get("type", "")), 99))
+				var rb: int = int(TYPE_RANK.get(String(b.get("type", "")), 99))
+				if ra == rb:
+					return int(a.get("id", 0)) < int(b.get("id", 0))
+				return ra < rb)
+		_:
+			pass  # "id" — already in declared order
+	return out
+
 func _passes_filter(soul: Dictionary, is_hidden: bool) -> bool:
 	if _filter_circle > 0 and soul.get("circle", 0) != _filter_circle:
 		return false
@@ -454,6 +503,16 @@ func _passes_filter(soul: Dictionary, is_hidden: bool) -> bool:
 	if _filter_type != "all" and not is_hidden \
 			and soul.get("type", "") != _filter_type:
 		return false
+	# Search query — case-insensitive substring against name AND
+	# epitaph/full_story so the player can find a soul by half-remembered
+	# story details, not just the name.
+	if not _search_query.is_empty():
+		var q: String = _search_query.to_lower()
+		var hay: String = String(soul.get("name", "")).to_lower() \
+			+ " " + String(soul.get("epitaph", "")).to_lower() \
+			+ " " + String(soul.get("full_story", "")).to_lower()
+		if not hay.contains(q):
+			return false
 	return true
 
 func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
@@ -461,6 +520,19 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 	btn.custom_minimum_size = CELL_SIZE
 	btn.clip_contents = true
 	btn.focus_mode    = Control.FOCUS_NONE
+
+	# Tooltip preview — Godot's built-in tooltip fires on hover (desktop)
+	# and long-press (mobile, ~600 ms hold), so a player can scan a soul
+	# without committing to opening the full detail panel. Saved souls
+	# show name + epitaph; undiscovered souls keep their secret.
+	if saved:
+		var nm: String = String(soul.get("name", "?"))
+		var epi: String = String(soul.get("full_story",
+			soul.get("epitaph", "")))
+		btn.tooltip_text = nm + "\n\n" + epi if not epi.is_empty() else nm
+	else:
+		btn.tooltip_text = _t("collection.not_found_tooltip", {},
+			"Прихована душа — шукай уважніше")
 
 	var normal := StyleBoxFlat.new()
 	var hover  := StyleBoxFlat.new()
@@ -861,7 +933,72 @@ func _build_ui() -> void:
 	_build_circle_progress(vbox)
 	_build_circle_row(vbox)
 	_build_type_row(vbox)
+	_build_search_sort_row(vbox)
 	_build_grid_area(vbox)
+
+
+# Search input + sort cycle button on a single row. Sits right above the
+# grid so changes to either control immediately reflow what's beneath.
+func _build_search_sort_row(parent: VBoxContainer) -> void:
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left",  18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top",    4)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	parent.add_child(margin)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	margin.add_child(row)
+
+	# Search input — full width minus the sort button. Reuses the same
+	# rebuild path as filters, so typing immediately reflows the grid.
+	_search_input = LineEdit.new()
+	_search_input.placeholder_text = _t("collection.search_placeholder",
+		{}, "🔍  Пошук за іменем або історією")
+	_search_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_search_input.add_theme_font_size_override("font_size", 22)
+	_search_input.clear_button_enabled = true
+	_search_input.text_changed.connect(_on_search_text_changed)
+	row.add_child(_search_input)
+
+	# Sort cycle button — single tap advances to the next mode. Compact
+	# (~140 px) so it doesn't steal too much from the search input.
+	_btn_sort = _filter_btn(_sort_label_for(_sort_mode), false)
+	_btn_sort.custom_minimum_size = Vector2(180, 0)
+	_btn_sort.modulate = Color.WHITE  # always "active"-tinted
+	_btn_sort.pressed.connect(_on_sort_cycle_pressed)
+	row.add_child(_btn_sort)
+
+
+func _sort_label_for(mode: String) -> String:
+	# Compact label so it fits the small button. Localised through
+	# collection.sort_label_<mode>; UA fallback keeps the screen
+	# functional during boot.
+	const FALLBACKS := {
+		"id":     "↕  За ID",
+		"name":   "↕  За ім'ям",
+		"circle": "↕  За колом",
+		"type":   "↕  За типом",
+	}
+	return _t("collection.sort_label_" + mode, {},
+		String(FALLBACKS.get(mode, "↕  Сортувати")))
+
+
+func _on_search_text_changed(new_text: String) -> void:
+	_search_query = new_text.strip_edges()
+	_close_sheet_instant()
+	_rebuild_grid()
+
+
+func _on_sort_cycle_pressed() -> void:
+	var idx: int = SORT_MODES.find(_sort_mode)
+	idx = (idx + 1) % SORT_MODES.size()
+	_sort_mode = SORT_MODES[idx]
+	if _btn_sort:
+		_btn_sort.text = _sort_label_for(_sort_mode)
+	_close_sheet_instant()
+	_rebuild_grid()
 
 
 # Compact per-type stats strip ("🔥 24/40 • 💀 18/35 • 😴 8/25"). Sits

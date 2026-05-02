@@ -143,27 +143,42 @@ func _refresh() -> void:
 # ── UI helpers ────────────────────────────────────────────────────────────────
 
 func _section(title: String) -> void:
-	# SectionLabel theme-variation: 24px gold from UITheme.
+	# Bumped from theme's 24 px to 32 px — the screen reads as a list of
+	# numbers and the player needs to scan section headers fast.
 	var lbl := Label.new()
 	lbl.theme_type_variation = "SectionLabel"
 	lbl.text = title
+	lbl.add_theme_font_size_override("font_size", 32)
+	# Top spacer above each section so the header doesn't crowd the
+	# previous row's value.
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 12)
+	_vbox.add_child(spacer)
 	_vbox.add_child(lbl)
-	# GoldSeparator variation provides the dim-gold tint by default.
 	var sep := HSeparator.new()
 	sep.theme_type_variation = "GoldSeparator"
 	_vbox.add_child(sep)
 
 func _line(label: String, value: String) -> void:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
+	row.add_theme_constant_override("separation", 24)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
 	var l := Label.new()
 	l.theme_type_variation = "BodyLabel"
 	l.text = label
+	# Theme defaults to 18 px which is unreadable at typical viewing
+	# distances on phone or large monitor; bump to 24 for the stats
+	# screen specifically without changing the global theme.
+	l.add_theme_font_size_override("font_size", 24)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	row.add_child(l)
+
 	var v := Label.new()
 	v.theme_type_variation = "ValueLabel"
 	v.text = value
+	v.add_theme_font_size_override("font_size", 26)
 	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(v)
 	_vbox.add_child(row)
@@ -251,17 +266,28 @@ func _build_header(parent: VBoxContainer) -> void:
 
 func _build_body(parent: VBoxContainer) -> void:
 	_scroll = ScrollContainer.new()
-	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	parent.add_child(_scroll)
 
+	# On wide displays the screen could otherwise stretch a single row of
+	# "Label ........ Value" across 1920+ px which is hard to read. Cap
+	# the content column at a comfortable reading width and center it.
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(center)
+
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",  24)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_top",    8)
+	margin.custom_minimum_size = Vector2(900, 0)
+	margin.add_theme_constant_override("margin_left",  32)
+	margin.add_theme_constant_override("margin_right", 32)
+	margin.add_theme_constant_override("margin_top",   16)
 	margin.add_theme_constant_override("margin_bottom", 90)
-	_scroll.add_child(margin)
+	center.add_child(margin)
 
 	_vbox = VBoxContainer.new()
-	_vbox.add_theme_constant_override("separation", 10)
+	_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_vbox.add_theme_constant_override("separation", 14)
 	margin.add_child(_vbox)
