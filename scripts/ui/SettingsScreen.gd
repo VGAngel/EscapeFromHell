@@ -415,13 +415,22 @@ func _build_tab_bar(parent: VBoxContainer) -> void:
 			["🌐", _t("settings.tab_language", {}, "Мова")],
 			["🖥", _t("settings.tab_graphics", {}, "Графіка")],
 			["⌨", _t("settings.tab_keys", {}, "Клавіші")]]
+	# On narrow viewports (phone portrait) drop the text label and keep
+	# just the emoji so all four tabs fit comfortably without truncating.
+	# 600 px gives each tab roughly the same touch area as 540/4 ≈ 135px.
+	var vp_w: float = get_viewport().get_visible_rect().size.x
+	var compact: bool = vp_w < 600.0
 	for i in tabs.size():
 		var btn := Button.new()
-		btn.text = "%s  %s" % [tabs[i][0], tabs[i][1]]
+		if compact:
+			btn.text = String(tabs[i][0])  # emoji only
+		else:
+			btn.text = "%s  %s" % [tabs[i][0], tabs[i][1]]
+		btn.tooltip_text = String(tabs[i][1])  # full name on hover/long-press
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.custom_minimum_size.y = 76
 		btn.focus_mode = Control.FOCUS_NONE
-		btn.add_theme_font_size_override("font_size", 28)
+		btn.add_theme_font_size_override("font_size", 32 if compact else 28)
 
 		var n := StyleBoxFlat.new()
 		n.bg_color = Color(0.12, 0.11, 0.16)
@@ -709,12 +718,15 @@ func _build_page_keys() -> Control:
 				"settings.key_label." + action, {}, String(entry.label))
 		vbox.add_child(_build_key_row(action, label))
 
-	# Reset all bindings
-	var reset_btn := Button.new()
-	reset_btn.text = _t("settings.keys_reset_all", {}, "↺  Скинути всі до стандартних")
-	reset_btn.custom_minimum_size = Vector2(0, 60)
-	reset_btn.add_theme_font_size_override("font_size", 22)
-	reset_btn.focus_mode = Control.FOCUS_NONE
+	# Reset all bindings — two-stage confirmation: first press arms (text
+	# turns into a "press again" prompt); second press within 4 seconds
+	# actually resets. Avoids accidental wipe of custom bindings on a
+	# misclick without spawning a full modal dialog.
+	_reset_btn = Button.new()
+	_reset_btn.text = _t("settings.keys_reset_all", {}, "↺  Скинути всі до стандартних")
+	_reset_btn.custom_minimum_size = Vector2(0, 60)
+	_reset_btn.add_theme_font_size_override("font_size", 22)
+	_reset_btn.focus_mode = Control.FOCUS_NONE
 	var rs := StyleBoxFlat.new()
 	rs.bg_color = Color(0.16, 0.10, 0.10)
 	rs.border_color = Color(0.55, 0.30, 0.30)
@@ -723,10 +735,10 @@ func _build_page_keys() -> Control:
 	for c in ["top_left","top_right","bottom_left","bottom_right"]:
 		rs.set("corner_radius_" + c, 8)
 	for state in ["normal","hover","pressed","focus"]:
-		reset_btn.add_theme_stylebox_override(state, rs)
-	reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
-	reset_btn.pressed.connect(_on_reset_keys_pressed)
-	vbox.add_child(reset_btn)
+		_reset_btn.add_theme_stylebox_override(state, rs)
+	_reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
+	_reset_btn.pressed.connect(_on_reset_keys_pressed)
+	vbox.add_child(_reset_btn)
 
 	return vbox
 
@@ -848,7 +860,37 @@ func _set_binding_silent(action: String, physical_keycode: int) -> void:
 	InputMap.action_add_event(action, new_ev)
 
 ## Reset every rebindable action to the events captured at boot.
+var _reset_btn:        Button = null
+var _reset_armed:      bool   = false
+var _reset_disarm_at:  float  = 0.0
+
+
 func _on_reset_keys_pressed() -> void:
+	# Two-stage flow: first press arms; second press within 4 s commits.
+	if not _reset_armed:
+		_reset_armed = true
+		_reset_disarm_at = Time.get_ticks_msec() / 1000.0 + 4.0
+		if _reset_btn:
+			_reset_btn.text = _t("settings.keys_reset_confirm", {},
+				"⚠  Натисни ще раз для підтвердження")
+			_reset_btn.add_theme_color_override("font_color", Color("#FFD700"))
+		# Schedule disarm — if the player walks away, the button reverts.
+		await get_tree().create_timer(4.0, true, false, true).timeout
+		var now: float = Time.get_ticks_msec() / 1000.0
+		if _reset_armed and now >= _reset_disarm_at - 0.05:
+			_reset_armed = false
+			if _reset_btn:
+				_reset_btn.text = _t("settings.keys_reset_all",
+					{}, "↺  Скинути всі до стандартних")
+				_reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
+		return
+
+	# Armed → execute the wipe.
+	_reset_armed = false
+	if _reset_btn:
+		_reset_btn.text = _t("settings.keys_reset_all",
+			{}, "↺  Скинути всі до стандартних")
+		_reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
 	for action in _default_key_events.keys():
 		InputMap.action_erase_events(action)
 		for ev in _default_key_events[action]:
