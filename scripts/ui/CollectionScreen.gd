@@ -530,8 +530,13 @@ func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
 
 	var circle: int = soul.get("circle", 1)
 	var level:  int = soul.get("level",  0)
-	_sheet_loc.text = _t("collection.detail_location_hidden", {"circle": circle}, "Коло %d • Прихована" % circle) if is_hidden else \
-					  _t("collection.detail_location_common", {"circle": circle, "level": level}, "Коло %d • Рівень %d" % [circle, level])
+	if is_hidden:
+		_sheet_loc.text = _t("collection.detail_location_hidden",
+			{"circle": circle}, "Коло %d • Прихована" % circle)
+	else:
+		_sheet_loc.text = _t("collection.detail_location_common",
+			{"circle": circle, "level": level},
+			"Коло %d • Рівень %d" % [circle, level])
 	_sheet_loc.visible = true
 	_sheet_sep.visible = true
 
@@ -541,11 +546,16 @@ func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
 
 	if is_hidden:
 		var reward: String = soul.get("reward", "")
-		_sheet_extra.text    = _t("collection.detail_reward_format", {"reward": reward}, "Нагорода: %s" % reward) if reward else ""
+		_sheet_extra.text = _t("collection.detail_reward_format",
+			{"reward": reward}, "Нагорода: %s" % reward) if reward else ""
 		_sheet_extra.add_theme_color_override("font_color", Color("#FFD700"))
 	else:
 		var sin_val: String = soul.get("sin", "none")
-		_sheet_extra.text = _t("collection.detail_sin_format", {"sin": sin_val}, "Гріх: %s" % sin_val) if sin_val != "none" else ""
+		if sin_val != "none":
+			_sheet_extra.text = _t("collection.detail_sin_format",
+				{"sin": sin_val}, "Гріх: %s" % sin_val)
+		else:
+			_sheet_extra.text = ""
 		_sheet_extra.add_theme_color_override("font_color", Color(0.65, 0.60, 0.72))
 	_sheet_extra.visible = _sheet_extra.text != ""
 
