@@ -112,6 +112,14 @@ var _souls: Dictionary = {}
 var _static_levels: Array = []
 var _hidden_soul_levels: Dictionary = {}     # level_id → named soul data (legacy field name; really for primary souls placed by `level` key)
 var _hidden_soul_per_level: Dictionary = {}  # level_id → hidden ✦ soul data (H1..H20)
+
+# Per-playthrough soul → level distribution. Built lazily by
+# _ensure_distribution() and rebuilt whenever the world seed changes,
+# so each soul appears on exactly ONE level per playthrough (no repeats
+# between levels in the same Circle). Different seed = different layout.
+# Shape: { level_id (int): [soul_dict, soul_dict, …] }
+var _distribution: Dictionary  = {}
+var _distribution_seed: String = "<unbuilt>"
 # Tracks which (circle, type) fallbacks we've already logged this session,
 # so the warning fires once per missing room family instead of per room.
 var _fallback_logged: Dictionary = {}
@@ -353,46 +361,85 @@ func _pick_unique_room_index(used: Array, pool_size: int) -> int:
 # ── Soul placement ────────────────────────────────────────────────────────────
 
 func _soul_for_level(level_id: int, circle: int) -> Dictionary:
-	# Named soul assigned directly to this level
+	# Legacy path: souls with explicit `level: N` in JSON win. After the
+	# 2026 unpinning all 100 originals were set to level=0, so this is
+	# normally empty — kept so future hand-pinned souls still work.
 	if _hidden_soul_levels.has(level_id):
 		return _hidden_soul_levels[level_id]
 
-	# Fallback: pick any unassigned soul from the circle's pool
-	var candidates: Array = []
-	for soul: Dictionary in _souls.get("named_souls", []):
-		if soul.get("circle", 0) == circle and soul.get("level", 0) == 0:
-			candidates.append(soul)
-	if candidates.is_empty():
+	_ensure_distribution()
+	var assigned: Array = _distribution.get(level_id, [])
+	if assigned.is_empty():
 		return {}
-	return candidates[randi() % candidates.size()]
+	return assigned[0]
 
-# Pick `count` distinct named souls for this level — primary first, then
-# extras drawn from the circle's unassigned pool. Within a level no two
-# returned dicts share an id, so the player meets unique souls each run.
-func _souls_for_level(level_id: int, circle: int, count: int) -> Array:
-	var picked: Array = []
-	var primary: Dictionary = _soul_for_level(level_id, circle)
-	if not primary.is_empty():
-		picked.append(primary)
 
-	var primary_id: int = int(primary.get("id", 0))
-	var pool: Array = []
-	for soul: Dictionary in _souls.get("named_souls", []):
-		if soul.get("circle", 0) != circle:
-			continue
-		if int(soul.get("level", 0)) not in [0, level_id]:
-			continue  # owned by another specific level
-		if int(soul.get("id", 0)) == primary_id:
-			continue
-		pool.append(soul)
+# Returns up to `count` souls assigned to this level by the per-playthrough
+# distribution. Each soul appears on exactly ONE level per playthrough, so
+# the player never meets the same soul twice in a single run.
+func _souls_for_level(level_id: int, _circle: int, count: int) -> Array:
+	_ensure_distribution()
+	var assigned: Array = _distribution.get(level_id, []).duplicate()
+	while assigned.size() > count:
+		assigned.pop_back()
+	return assigned
 
-	# Shuffle deterministically — caller seeded the global RNG already.
-	pool.shuffle()
-	for soul in pool:
-		if picked.size() >= count:
-			break
-		picked.append(soul)
-	return picked
+
+# Build (or rebuild after seed change) the per-circle distribution. Each
+# circle's pool is shuffled with a circle-specific seed derived from the
+# world seed, then handed out to that circle's levels in declaration
+# order — taking souls_count souls per level. With pool size matching
+# total spawn slots, every soul gets a level and no level shares a soul
+# with another.
+func _ensure_distribution() -> void:
+	var current_seed: String = ""
+	if SaveManager and SaveManager.has_method("get_world_seed_str"):
+		current_seed = String(SaveManager.get_world_seed_str())
+	if current_seed == _distribution_seed and not _distribution.is_empty():
+		return
+	_build_distribution(current_seed)
+	_distribution_seed = current_seed
+
+
+func _build_distribution(seed_str: String) -> void:
+	_distribution.clear()
+	if not LevelConfig:
+		return
+	var base_seed: int = hash(seed_str) if not seed_str.is_empty() else 0
+
+	for circle in range(1, 11):
+		# All pool souls in this circle (pinned ones — level > 0 — already
+		# handled via _hidden_soul_levels and aren't in the distribution).
+		var pool: Array = []
+		for soul: Dictionary in _souls.get("named_souls", []):
+			if int(soul.get("circle", 0)) == circle and int(soul.get("level", 0)) == 0:
+				pool.append(soul)
+
+		# Fisher-Yates shuffle with an explicit per-circle RNG so different
+		# circles aren't correlated with each other and the layout reproduces
+		# from world_seed alone.
+		var rng := RandomNumberGenerator.new()
+		rng.seed = base_seed ^ (circle * 0x9E3779B1)
+		for i in range(pool.size() - 1, 0, -1):
+			var j: int = rng.randi_range(0, i)
+			var tmp: Dictionary = pool[i]
+			pool[i] = pool[j]
+			pool[j] = tmp
+
+		# Walk this circle's levels in config-declaration order, taking
+		# souls_count souls per level from the front of the shuffled pool.
+		var level_ids: Array = LevelConfig.get_levels_in_circle(circle)
+		var idx: int = 0
+		for lvl_id_v in level_ids:
+			var lvl_id: int = int(lvl_id_v)
+			var n: int = max(1, LevelConfig.get_souls_count(lvl_id))
+			var assigned: Array = []
+			for _k in n:
+				if idx >= pool.size():
+					break  # pool exhausted — extra slots stay empty
+				assigned.append(pool[idx])
+				idx += 1
+			_distribution[lvl_id] = assigned
 
 # ── Difficulty ────────────────────────────────────────────────────────────────
 
