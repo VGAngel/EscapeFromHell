@@ -26,6 +26,9 @@ var _panel:         PanelContainer = null
 var _lbl_title:     Label       = null
 var _lbl_level:     Label       = null
 var _lbl_souls:     Label       = null
+# Compact "🔥 X/Y • 💀 X/Y • 😴 X/Y" strip mirroring the collection
+# screen, so the player gets the type breakdown without leaving pause.
+var _lbl_type_strip: Label      = null
 var _sin_bar_bg:    ColorRect   = null
 var _sin_bar:       ColorRect   = null
 var _lbl_sin_pct:   Label       = null
@@ -140,13 +143,58 @@ func _refresh_stats() -> void:
 	_lbl_level.text = _t("pause.level_format",
 			{"circle": circle, "level": level}, "Коло %d • Рівень %d" % [circle, level])
 
-	var souls := SaveManager.get_total_souls() if SaveManager else 0
-	var target := SaveManager.get_named_souls_target() if SaveManager else 100
-	_lbl_souls.text = _t("pause.souls_format",
-			{"found": souls, "total": target}, "👻 %d / %d" % [souls, target])
+	var souls:    int = SaveManager.get_total_souls()         if SaveManager else 0
+	var target:   int = SaveManager.get_named_souls_target()  if SaveManager else 100
+	var hidden:   int = SaveManager.get_total_hidden_souls()  if SaveManager else 0
+	var h_target: int = SaveManager.get_hidden_souls_target() if SaveManager else 20
+
+	# Combined progress line: named + hidden + grand total, all on one
+	# row so the player sees full standing without leaving pause.
+	_lbl_souls.text = _t("pause.souls_format", {
+		"found": souls, "total": target,
+		"hidden": hidden, "hidden_total": h_target,
+		"grand": souls + hidden, "grand_total": target + h_target,
+	}, "👻 %d/%d  •  ✦ %d/%d  •  ∑ %d/%d" % [
+		souls, target, hidden, h_target, souls + hidden, target + h_target,
+	])
+
+	_refresh_type_strip()
 
 	var sin_val := SaveManager.get_sin() if SaveManager else 0.0
 	_set_sin(sin_val)
+
+
+# Build "🔥 24/40  •  💀 18/35  •  😴 8/25" from the LevelGenerator's
+# loaded named-soul list. Categories with zero total are skipped so the
+# strip stays compact when the JSON is sparse / under test.
+func _refresh_type_strip() -> void:
+	if not _lbl_type_strip:
+		return
+	var lg: Node = get_node_or_null("/root/LevelGenerator")
+	if not lg or not lg.has_method("get_named_souls"):
+		_lbl_type_strip.text = ""
+		return
+	var named: Array = lg.get_named_souls()
+	var saved_ids: Array = SaveManager.get_saved_soul_ids() if SaveManager else []
+
+	var totals: Dictionary = {"innocent": 0, "broken": 0, "sleeping": 0}
+	var saved:  Dictionary = {"innocent": 0, "broken": 0, "sleeping": 0}
+	for soul: Dictionary in named:
+		var t: String = String(soul.get("type", ""))
+		if not totals.has(t):
+			continue
+		totals[t] = int(totals[t]) + 1
+		if int(soul.get("id", 0)) in saved_ids:
+			saved[t] = int(saved[t]) + 1
+
+	var icons: Dictionary = {"innocent": "🔥", "broken": "💀", "sleeping": "😴"}
+	var parts: PackedStringArray = []
+	for k in ["innocent", "broken", "sleeping"]:
+		var tot: int = int(totals[k])
+		if tot <= 0:
+			continue
+		parts.append("%s %d/%d" % [icons[k], int(saved[k]), tot])
+	_lbl_type_strip.text = "  •  ".join(parts)
 
 func _set_sin(value: float) -> void:
 	var ratio := clampf(value / 100.0, 0.0, 1.0)
@@ -279,6 +327,16 @@ func _build_ui() -> void:
 	_lbl_souls = _make_stat_label("")
 	vbox.add_child(_lbl_souls)
 
+	# Per-type breakdown — quieter font, sits just below the main souls
+	# line. Mirrors the strip in CollectionScreen so the visual language
+	# stays consistent across screens.
+	_lbl_type_strip = Label.new()
+	_lbl_type_strip.text = ""
+	_lbl_type_strip.add_theme_font_size_override("font_size", 22)
+	_lbl_type_strip.add_theme_color_override("font_color", Color(0.72, 0.70, 0.78))
+	_lbl_type_strip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(_lbl_type_strip)
+
 	# Mini sin bar
 	var sin_row := HBoxContainer.new()
 	sin_row.add_theme_constant_override("separation", 8)
@@ -405,11 +463,19 @@ func _build_confirm_panel() -> void:
 func _make_button(text: String, primary: bool, danger: bool = false) -> Button:
 	var btn := Button.new()
 	btn.text = text
-	btn.custom_minimum_size = Vector2(540, 96)
 	btn.process_mode = Node.PROCESS_MODE_ALWAYS
-	# Larger CTA size — kept inline because PauseScreen buttons are
-	# physically big touch targets, larger than the standard SIZE_BODY.
-	btn.add_theme_font_size_override("font_size", 32)
+	# Adaptive size: on narrow viewports (<700px = phone portrait) the
+	# panel is constrained, so shrink the touch target and font so all
+	# five buttons fit without overflowing the screen.
+	var vp_w: float = get_viewport().get_visible_rect().size.x
+	if vp_w < 700.0:
+		btn.custom_minimum_size = Vector2(420, 78)
+		btn.add_theme_font_size_override("font_size", 26)
+	else:
+		btn.custom_minimum_size = Vector2(540, 96)
+		btn.add_theme_font_size_override("font_size", 32)
+	btn.clip_text = true
+	btn.autowrap_mode = TextServer.AUTOWRAP_OFF
 
 	var normal := StyleBoxFlat.new()
 	var hover  := StyleBoxFlat.new()
