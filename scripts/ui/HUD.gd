@@ -52,6 +52,9 @@ var _pause_btn:    Button           = null
 
 # Mobile on-screen controls (Android)
 var _mobile_controls: Control       = null
+# Cached lazily by _update_staff_cooldown() — found via the "player"
+# group once the level is spawned.
+var _player_ref: Node = null
 
 # ── Runtime state ─────────────────────────────────────────────────────────────
 var _hp:           int   = 3
@@ -308,6 +311,11 @@ func _process(delta: float) -> void:
 				lbl.add_theme_color_override("font_color", Color("#FF4444"))
 		if tl <= 0.0:
 			_despawn_bonus_icon(bid)
+
+	# Staff cooldown indicator. Without this the ⚔ button looks
+	# identical whether the staff is ready or recharging — players
+	# spam the action button wondering why nothing happens.
+	_update_staff_cooldown()
 
 	# Escape timer
 	if _escape_active and _escape_duration > 0.0:
@@ -687,6 +695,27 @@ func _build_pause_button() -> void:
 
 func _on_pause_btn_pressed() -> void:
 	pause_requested.emit()
+
+func _update_staff_cooldown() -> void:
+	if _mobile_controls == null:
+		return
+	if not _mobile_controls.has_method("set_staff_cooldown"):
+		return
+	# Lazily resolve the player via the "player" group. We re-resolve
+	# until we get one (level might be mid-spawn) but stop polling once
+	# found so we don't pay the get_nodes_in_group() cost every frame.
+	if _player_ref == null or not is_instance_valid(_player_ref):
+		var nodes: Array = get_tree().get_nodes_in_group("player")
+		_player_ref = nodes[0] if nodes.size() > 0 else null
+	if _player_ref == null:
+		return
+	if not _player_ref.has_method("get_staff_cooldown_ratio"):
+		return
+	var ratio: float = float(_player_ref.get_staff_cooldown_ratio())
+	var total_cd: float = float(_player_ref.get("staff_cooldown")) \
+			if "staff_cooldown" in _player_ref else 0.0
+	_mobile_controls.set_staff_cooldown(ratio, total_cd)
+
 
 func show_pray_button(value: bool) -> void:
 	if _mobile_controls:

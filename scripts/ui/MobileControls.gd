@@ -31,6 +31,16 @@ var btn_staff:  Panel = null
 var btn_pray:   Panel = null
 var btn_pickup: Panel = null
 
+# Staff cooldown UI: a vertical fill that grows back as the cooldown
+# elapses, plus a small numeric countdown ("3s") that replaces the ⚔
+# glyph while recharging. Without this the staff button looked the
+# same whether ready or on a 4.5 s cooldown — players were spamming
+# the action button wondering why nothing happened.
+var _staff_cooldown_fill: ColorRect = null
+var _staff_label:         Label    = null
+var _staff_cooldown_ratio: float   = 1.0
+var _staff_total_cd:       float   = 0.0   # latest known seconds, for countdown
+
 # ── Internal ──────────────────────────────────────────────────────────────────
 # Map finger_index → action currently held by that finger.
 var _finger_actions: Dictionary = {}
@@ -98,6 +108,7 @@ func _build() -> void:
 	btn_pray   = _make_btn("🙏", "pray",       SIZE_MEDIUM)
 	btn_pickup.visible = false
 	btn_pray.visible   = false
+	_install_staff_cooldown_overlay()
 
 # ── Layout ────────────────────────────────────────────────────────────────────
 func _apply_safe_area() -> void:
@@ -160,6 +171,70 @@ func _apply_size_scale() -> void:
 		_refresh_btn_style(btn as Panel)
 
 # ── Public API ────────────────────────────────────────────────────────────────
+# ── Staff cooldown overlay ────────────────────────────────────────────────────
+func _install_staff_cooldown_overlay() -> void:
+	if btn_staff == null:
+		return
+	# Cache the existing label (built by _make_btn — it's the only Label
+	# child) so we can swap "⚔" ↔ "3s" without rebuilding it.
+	for child in btn_staff.get_children():
+		if child is Label:
+			_staff_label = child as Label
+			break
+	# Vertical fill that sits BEHIND the label and grows from bottom up
+	# as the cooldown ticks. We render it as a child of the button so
+	# rounded corners on the button mask it; that means the fill will
+	# overflow the rounded base by a hair, but at the alpha we use the
+	# corners stay readable.
+	_staff_cooldown_fill = ColorRect.new()
+	_staff_cooldown_fill.name = "StaffCooldownFill"
+	_staff_cooldown_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_staff_cooldown_fill.color = Color(0.05, 0.05, 0.08, 0.55)
+	_staff_cooldown_fill.size = Vector2(btn_staff.size.x, 0.0)
+	_staff_cooldown_fill.position = Vector2(0.0, btn_staff.size.y)
+	# Insert below the label so the ⚔/countdown stays on top.
+	btn_staff.add_child(_staff_cooldown_fill)
+	if _staff_label:
+		btn_staff.move_child(_staff_label, btn_staff.get_child_count() - 1)
+	_apply_staff_cooldown_visual()
+
+
+## Public: drive the cooldown overlay from HUD._process.
+##   ratio    = 0.0 just-fired, 1.0 ready
+##   total_cd = current staff_cooldown seconds (used for the countdown
+##              digit; we recompute remaining = total_cd * (1 - ratio))
+func set_staff_cooldown(ratio: float, total_cd: float) -> void:
+	var r: float = clampf(ratio, 0.0, 1.0)
+	if absf(r - _staff_cooldown_ratio) < 0.005 \
+			and absf(total_cd - _staff_total_cd) < 0.01:
+		return
+	_staff_cooldown_ratio = r
+	_staff_total_cd = total_cd
+	_apply_staff_cooldown_visual()
+
+
+func _apply_staff_cooldown_visual() -> void:
+	if btn_staff == null or _staff_cooldown_fill == null:
+		return
+	# Fill height: ratio=0 → full button covered, ratio=1 → 0 px.
+	var w: float = btn_staff.size.x
+	var h: float = btn_staff.size.y
+	var fill_h: float = h * (1.0 - _staff_cooldown_ratio)
+	_staff_cooldown_fill.size = Vector2(w, fill_h)
+	_staff_cooldown_fill.position = Vector2(0.0, h - fill_h)
+	# Dim the whole button while not ready.
+	btn_staff.modulate.a = 1.0 if _staff_cooldown_ratio >= 0.999 else 0.55
+	# Swap the glyph for a numeric countdown when on cooldown so the
+	# player has a clear "X seconds" affordance, not just a fading bar.
+	if _staff_label:
+		if _staff_cooldown_ratio >= 0.999:
+			_staff_label.text = "⚔"
+		else:
+			var remaining: float = maxf(_staff_total_cd
+					* (1.0 - _staff_cooldown_ratio), 0.1)
+			_staff_label.text = "%ds" % int(ceilf(remaining))
+
+
 func show_pray_button(value: bool) -> void:
 	if btn_pray:
 		btn_pray.visible = value
