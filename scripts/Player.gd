@@ -444,6 +444,12 @@ func _handle_staff() -> void:
 				GameManager.add_sin(staff_sin_cost, "staff")
 			else:
 				SaveManager.add_sin(staff_sin_cost)
+			# First sin-bearing swing — fire the staff-sin-warning + sin-bar
+			# explainers. The config wired these to "after_first_staff_use" /
+			# "after_first_sin_gain" but no code was actually emitting the
+			# triggers, so the player never saw why the bar moved.
+			_tutorial_hint("staff_sin_warning")
+			_tutorial_hint("sin_bar")
 
 	await _anim.animation_finished
 	if state == State.STAFF_SWING:
@@ -546,6 +552,10 @@ func _take_damage(amount: int) -> void:
 	damage_taken.emit(amount)
 	if HapticManager:
 		HapticManager.hit()
+	# First-hit tutorial — explain the heart strip + what death will
+	# mean for carried souls. Keyed via the "tutorial." prefix so
+	# TutorialManager accepts the ad-hoc id without a config trigger.
+	_tutorial_hint("tutorial.damage")
 	if current_hp <= 0:
 		_die()
 	else:
@@ -618,6 +628,13 @@ func _finish_pickup() -> void:
 	carry_changed.emit(carried_soul_ids.size(), soul_capacity())
 	if HapticManager:
 		HapticManager.pickup()
+	# First-pickup tutorial chain. tutorial_config.json wires
+	# `carry_to_exit` to "after_first_soul_pickup" but nothing was
+	# actually emitting it, so players were never told the soul has to
+	# reach the altar (and the staff is locked while carrying). Fire it
+	# here once per save — TutorialManager dedupes via SaveManager hint
+	# state so it won't repeat.
+	_tutorial_hint("carry_to_exit")
 	if _upgrade_soul_shield:
 		_soul_shield_timer = 3.0
 
@@ -772,6 +789,10 @@ func respawn(spawn_position: Vector2) -> void:
 	_spawn_fx("respawn", global_position)
 	if SoundManager:
 		SoundManager.play_sfx("player", "respawn")
+	# First-respawn tutorial — explains where you came back, what you
+	# kept (collected souls, sin) and what you lost (the soul that was
+	# in your hands at death). Fires once per save.
+	_tutorial_hint("tutorial.checkpoint")
 
 func _spawn_fx(preset: String, at: Vector2, facing_right: bool = true) -> void:
 	if not is_inside_tree():

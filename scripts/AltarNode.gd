@@ -155,6 +155,18 @@ func _on_body_entered(body: Node2D) -> void:
 	_player_node = body as CharacterBody2D
 	_update_prompt()
 	_set_pray_button(true)
+	# First-altar discovery hint. Fires once per save (TutorialManager
+	# dedupes via SaveManager hint state). Without this, brand-new
+	# players who picked up a soul still didn't know that this glowing
+	# stone IS the delivery point — the carry_to_exit text says "altar"
+	# but the level art doesn't always read as one.
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("show_hint"):
+		# Use the "tutorial." prefix so TutorialManager accepts the id
+		# even though there's no entry for "altar" in the legacy
+		# tutorial_config.json triggers section. The fallback dict +
+		# localization JSON resolve the text directly from the key.
+		tm.show_hint("tutorial.altar")
 	# Start the ritual ONLY when the player arrives carrying a soul.
 	# A soul-less bind interaction stays mundane; the ritual is reserved
 	# for the actual delivery moment (the core-loop punctuation).

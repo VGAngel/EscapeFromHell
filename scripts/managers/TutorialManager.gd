@@ -129,6 +129,14 @@ const _FALLBACK_TEXT := {
 	"tutorial.minigame_watch_icon": "Дивись на іконку у центрі мінігри — вона показує коли і яку клавішу натиснути.",
 	"tutorial.mimic_warning": "Не всі душі справжні. Деякі — міміки: вдарять, як тільки доторкнешся. Уважно дивись на форму.",
 	"tutorial.mimic_exorcism":"Удар ⚔ посохом по міміку вигоняє його. Гріх це не додає — це праведна дія.",
+	# Altar — fires on first proximity to AltarNode. Without this many
+	# new players carry the soul to the visible "exit door" art and
+	# don't realise the glowing stone IS the delivery point.
+	"tutorial.altar":         "🕊 Вівтар. Підійди з душею в руках і натисни E щоб віддати її — рівень завершиться. Сюди ж відродишся після смерті.",
+	# Damage / death — fired by Player on first hurt (see _take_damage).
+	"tutorial.damage":        "💔 Серця знизу. Вмираєш — повертаєшся на вівтар, душа в руках падає поруч. Не втрачаєш зібраних, тільки одну в руках.",
+	# Checkpoint / respawn — fired on first death.
+	"tutorial.checkpoint":    "✝ Відродився на вівтарі. Зібрані душі лишаються в скрині, гріх теж не зникає.",
 	# Bonus pickups — fired by DiscoveryHints when one comes within
 	# 150 px of the player for the first time on this save.
 	"tutorial.bonus_holy_water":     "💧 Свята вода — невразливість 5 секунд",
