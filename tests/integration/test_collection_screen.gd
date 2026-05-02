@@ -88,12 +88,14 @@ func test_unsaved_soul_cell_shows_question_mark() -> void:
 	assert_eq(lbl.text, "?")
 
 func test_saved_soul_cell_shows_name() -> void:
+	# Cells now show the FULL name (no more substr to 5 chars), with
+	# autowrap + dynamic font size handling overflow inside the cell.
 	SaveManager.add_soul(1)
 	screen._rebuild_grid()
 	await get_tree().process_frame
 	var cell: Button = screen._cell_nodes[1]
 	var lbl: Label = cell.get_child(0)
-	assert_eq(lbl.text, "Іван".substr(0, 5))
+	assert_eq(lbl.text, "Іван")
 
 func test_hidden_soul_cell_has_badge() -> void:
 	# Hidden cell has: Label (main) + Label (badge ✦) = 2 children
@@ -196,6 +198,18 @@ func test_show_sheet_sets_name() -> void:
 func test_show_sheet_sets_age() -> void:
 	screen._show_sheet(TEST_NAMED[0], false)
 	assert_eq(screen._sheet_age.text, "25 років")
+
+# Soul id 100 ("Безіменний") stores age as the string "?" rather than an
+# int. Earlier `"%d років" % age` would crash on a string. Sheet must
+# render it gracefully.
+func test_show_sheet_handles_string_age_question_mark() -> void:
+	var anon: Dictionary = {
+		"id": 100, "name": "Безіменний", "circle": 10, "type": "sleeping",
+		"age": "?", "level": 95, "sin": "unknown", "full_story": "тест",
+	}
+	screen._show_sheet(anon, false)
+	assert_true(screen._sheet_age.text.contains("?"),
+		"age label should contain '?' when soul.age is the string '?'")
 
 func test_show_sheet_sets_location_named() -> void:
 	screen._show_sheet(TEST_NAMED[0], false)

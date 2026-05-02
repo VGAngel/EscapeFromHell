@@ -9,10 +9,18 @@ signal closed
 # ── Constants ─────────────────────────────────────────────────────────────────
 const SOULS_PATH    := "res://souls_collection.json"
 const FADE_DURATION := 0.35
-const COLS          := 6
-const CELL_SIZE     := Vector2(100, 100)
-const CELL_GAP      := 8
-const DETAIL_W      := 320
+# Grid is now adaptive: cols computed from viewport width, clamped to
+# [MIN_COLS, MAX_COLS]. CELL_TARGET_W is the per-cell footprint used to
+# decide how many columns fit.
+const MIN_COLS         := 3
+const MAX_COLS         := 8
+const CELL_TARGET_W    := 140
+const CELL_SIZE        := Vector2(130, 110)
+const CELL_GAP         := 10
+const DETAIL_W         := 320
+# Bottom sheet caps at this fraction of viewport height; content scrolls
+# inside if a hidden soul's full_story exceeds the cap.
+const SHEET_MAX_H_FRAC := 0.62
 
 # ── Soul data ─────────────────────────────────────────────────────────────────
 var _named_souls:  Array = []
@@ -50,6 +58,7 @@ var _grid_scroll:  ScrollContainer = null
 var _grid:         GridContainer   = null
 
 # Detail bottom sheet
+var _sheet_backdrop: Button       = null  # tap-outside-to-close, hidden when sheet closed
 var _sheet:        PanelContainer  = null
 var _sheet_tween:  Tween           = null
 var _sheet_name:   Label           = null
@@ -76,6 +85,32 @@ func _ready() -> void:
 	var loc: Node = get_node_or_null("/root/Loc")
 	if loc and loc.has_signal("language_changed"):
 		loc.language_changed.connect(_on_language_changed)
+	# Live-relayout on rotation / window resize so columns adapt.
+	get_viewport().size_changed.connect(_on_viewport_resized)
+
+
+# Recompute grid columns based on current viewport width and rebuild the
+# grid so cells reflow. Cheap when collection isn't visible; we still
+# rebuild because a future open() would otherwise show the old col count
+# for one frame.
+func _on_viewport_resized() -> void:
+	if not _grid:
+		return
+	var cols := _compute_cols()
+	if _grid.columns != cols:
+		_grid.columns = cols
+	if visible:
+		_rebuild_grid()
+
+
+func _compute_cols() -> int:
+	var w: float = get_viewport().get_visible_rect().size.x
+	# Subtract horizontal margins (18 left + 18 right) and a soft buffer
+	# so the rightmost cell never clips against the scrollbar.
+	var usable: float = max(0.0, w - 56.0)
+	var per_cell: float = float(CELL_TARGET_W + CELL_GAP)
+	var cols: int = int(floor(usable / per_cell))
+	return clamp(cols, MIN_COLS, MAX_COLS)
 
 
 func _on_language_changed(_lang: String) -> void:
@@ -298,19 +333,31 @@ func _make_cell(soul: Dictionary, is_hidden: bool, saved: bool) -> Control:
 	btn.add_theme_stylebox_override("pressed", normal)
 	btn.add_theme_stylebox_override("focus",   normal)
 
-	# Main label
+	# Main label — full name, autowrap so longer names like "Безіменний"
+	# or "Горислава" stay readable instead of getting chopped to 5 chars.
 	var lbl := Label.new()
 	lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	lbl.offset_left   = 6
+	lbl.offset_right  = -6
+	lbl.offset_top    = 6
+	lbl.offset_bottom = -6
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 24)
-	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.autowrap_mode        = TextServer.AUTOWRAP_WORD_SMART
+	lbl.clip_text            = true
+	lbl.mouse_filter         = Control.MOUSE_FILTER_IGNORE
 
 	if saved:
-		lbl.text = soul.get("name", "?").substr(0, 5)
+		var raw_name: String = String(soul.get("name", "?"))
+		# Long names get a smaller font so they fit the cell without
+		# overflowing into the corner badges.
+		var fs: int = 20 if raw_name.length() <= 8 else (17 if raw_name.length() <= 12 else 15)
+		lbl.add_theme_font_size_override("font_size", fs)
+		lbl.text = raw_name
 		lbl.add_theme_color_override("font_color",
 			Color("#FFD700") if is_hidden else Color(0.88, 0.86, 0.92))
 	else:
+		lbl.add_theme_font_size_override("font_size", 28)
 		lbl.text = _t("collection.not_found_label", {}, "?")
 		lbl.add_theme_color_override("font_color",
 			Color(0.55, 0.48, 0.22) if is_hidden else Color(0.32, 0.30, 0.38))
@@ -473,7 +520,12 @@ func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
 	_sheet_name.add_theme_color_override("font_color",
 		Color("#FFD700") if is_hidden else Color(0.92, 0.90, 0.96))
 
-	_sheet_age.text    = "%d років" % soul.get("age", 0)
+	# Age can be int OR the string "?" (used by soul id 100, "Безіменний").
+	# %d would crash on a string, and the literal "років" was hardcoded
+	# even in English. Route through Loc with a robust string param.
+	var age_v: Variant = soul.get("age", 0)
+	var age_s: String  = str(age_v) if typeof(age_v) == TYPE_STRING else str(int(age_v))
+	_sheet_age.text    = _t("collection.detail_age_format", {"age": age_s}, "%s років" % age_s)
 	_sheet_age.visible = true
 
 	var circle: int = soul.get("circle", 1)
@@ -505,7 +557,8 @@ func _show_sheet_not_found(_soul: Dictionary) -> void:
 	_sheet_age.visible  = false
 	_sheet_loc.visible  = false
 	_sheet_sep.visible  = false
-	_sheet_text.text    = "Продовжуй шукати в цьому Колі"
+	_sheet_text.text    = _t("collection.detail_not_found_hint", {},
+		"Продовжуй шукати в цьому Колі")
 	_sheet_text.visible = true
 	_sheet_extra.visible = false
 	_open_sheet()
@@ -513,6 +566,8 @@ func _show_sheet_not_found(_soul: Dictionary) -> void:
 func _open_sheet() -> void:
 	_sheet_open = true
 	_sheet.visible = true
+	if _sheet_backdrop:
+		_sheet_backdrop.visible = true
 	if _sheet_tween:
 		_sheet_tween.kill()
 	_sheet_tween = create_tween()
@@ -531,7 +586,11 @@ func _close_sheet() -> void:
 	_sheet_tween = create_tween()
 	var vp_h: float = get_viewport().get_visible_rect().size.y
 	_sheet_tween.tween_property(_sheet, "position:y", vp_h + 100.0, 0.18)
-	_sheet_tween.tween_callback(func() -> void: _sheet.visible = false)
+	_sheet_tween.tween_callback(func() -> void:
+		_sheet.visible = false
+		if _sheet_backdrop:
+			_sheet_backdrop.visible = false
+	)
 
 func _close_sheet_instant() -> void:
 	_sheet_open = false
@@ -540,6 +599,8 @@ func _close_sheet_instant() -> void:
 	var vp_h: float = get_viewport().get_visible_rect().size.y
 	_sheet.position.y = vp_h + 100.0
 	_sheet.visible = false
+	if _sheet_backdrop:
+		_sheet_backdrop.visible = false
 
 # ── Filter callbacks ──────────────────────────────────────────────────────────
 
@@ -698,11 +759,14 @@ func _build_type_row(parent: VBoxContainer) -> void:
 	parent.add_child(margin)
 	margin.add_child(row)
 
+	# Type filter labels live in localization — keys exist in both uk/en
+	# locales as collection.filter_type_*. Hardcoded fallbacks are kept
+	# in case Loc isn't available yet (boot / headless tests).
 	var types: Dictionary = {
-		"all": "Всі типи",
-		"innocent": "Невинні",
-		"broken": "Зламані",
-		"sleeping": "Сплячі",
+		"all":      _t("collection.filter_type_all",      {}, "Всі типи"),
+		"innocent": _t("collection.filter_type_innocent", {}, "Невинні"),
+		"broken":   _t("collection.filter_type_broken",   {}, "Зламані"),
+		"sleeping": _t("collection.filter_type_sleeping", {}, "Сплячі"),
 	}
 	for key in types:
 		var btn := _filter_btn(types[key], key == "all")
@@ -734,12 +798,28 @@ func _build_grid_area(parent: VBoxContainer) -> void:
 	_grid_scroll.add_child(margin)
 
 	_grid = GridContainer.new()
-	_grid.columns = COLS
+	_grid.columns = _compute_cols()
 	_grid.add_theme_constant_override("h_separation", CELL_GAP)
 	_grid.add_theme_constant_override("v_separation", CELL_GAP)
 	margin.add_child(_grid)
 
 func _build_sheet() -> void:
+	# Backdrop sits BEHIND the sheet, fills the whole screen, captures
+	# any tap outside the sheet to close. Hidden whenever sheet is closed
+	# so it never blocks the underlying grid.
+	_sheet_backdrop = Button.new()
+	_sheet_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_sheet_backdrop.focus_mode = Control.FOCUS_NONE
+	_sheet_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	var bd_style := StyleBoxFlat.new()
+	bd_style.bg_color = Color(0, 0, 0, 0.35)
+	_sheet_backdrop.add_theme_stylebox_override("normal", bd_style)
+	_sheet_backdrop.add_theme_stylebox_override("hover",  bd_style)
+	_sheet_backdrop.add_theme_stylebox_override("pressed", bd_style)
+	_sheet_backdrop.pressed.connect(_close_sheet)
+	_sheet_backdrop.visible = false
+	_root.add_child(_sheet_backdrop)
+
 	# Slides up from bottom on cell tap
 	_sheet = PanelContainer.new()
 	_sheet.custom_minimum_size = Vector2(0, 0)
@@ -761,16 +841,33 @@ func _build_sheet() -> void:
 	_sheet.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_root.add_child(_sheet)
 
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
-	_sheet.add_child(vbox)
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 10)
+	_sheet.add_child(outer)
 
-	# Drag handle
+	# Drag handle stays outside the scroll so it always sits at the very
+	# top of the sheet even when content is long enough to scroll.
 	var handle := ColorRect.new()
 	handle.color = Color(0.38, 0.35, 0.48)
 	handle.custom_minimum_size = Vector2(64, 6)
 	handle.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	vbox.add_child(handle)
+	outer.add_child(handle)
+
+	# Scrollable content region — caps sheet height at SHEET_MAX_H_FRAC
+	# of viewport, content scrolls inside if the full_story is long.
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode   = ScrollContainer.SCROLL_MODE_AUTO
+	var vp_h: float = get_viewport().get_visible_rect().size.y
+	scroll.custom_minimum_size.y = vp_h * SHEET_MAX_H_FRAC
+	outer.add_child(scroll)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(vbox)
 
 	_sheet_name = Label.new()
 	_sheet_name.add_theme_font_size_override("font_size", 42)
@@ -796,25 +893,23 @@ func _build_sheet() -> void:
 	vbox.add_child(_sheet_sep)
 
 	_sheet_text = Label.new()
-	_sheet_text.add_theme_font_size_override("font_size", 28)
+	_sheet_text.add_theme_font_size_override("font_size", 26)
 	_sheet_text.add_theme_color_override("font_color", Color(0.84, 0.82, 0.88))
 	_sheet_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_sheet_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_child(_sheet_text)
 
 	_sheet_extra = Label.new()
-	_sheet_extra.add_theme_font_size_override("font_size", 26)
+	_sheet_extra.add_theme_font_size_override("font_size", 24)
 	_sheet_extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_sheet_extra.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_child(_sheet_extra)
 
-	# Tap anywhere on sheet to close
-	var close_btn := Button.new()
-	close_btn.set_anchors_preset(Control.PRESET_FULL_RECT)
-	close_btn.mouse_filter = Control.MOUSE_FILTER_PASS
-	var invisible := StyleBoxEmpty.new()
-	close_btn.add_theme_stylebox_override("normal", invisible)
-	close_btn.add_theme_stylebox_override("hover",  invisible)
-	close_btn.pressed.connect(_close_sheet)
-	_sheet.add_child(close_btn)
+	# Note: previously a full-rect invisible button was layered over the
+	# sheet to "tap anywhere to close". That swallows scroll gestures
+	# inside the new ScrollContainer, so it's been removed. Closing now:
+	#   * Esc / ui_cancel (handled in _unhandled_input)
+	#   * Tap the backdrop outside the sheet (built in _build_backdrop)
 
 func _build_completion_label() -> void:
 	_completion_lbl = Label.new()
