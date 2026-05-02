@@ -13,10 +13,19 @@ func before_each() -> void:
 # ── _speaker_label ────────────────────────────────────────────────────────────
 
 func test_speaker_label_god() -> void:
-	assert_eq(hub._speaker_label("god"), "Бог")
+	# Pulled from prologue.speaker_god in localization (uk → "Бог", en →
+	# "God"). Either is fine — just assert it's non-empty and not the
+	# raw key, so we know Loc resolved.
+	var s: String = hub._speaker_label("god")
+	assert_true(s.length() > 0)
+	assert_false(s.contains("speaker_god"), "label should resolve, not echo the key")
 
-func test_speaker_label_player() -> void:
-	assert_eq(hub._speaker_label("player"), "Данило")
+func test_speaker_label_player_returns_hilarion() -> void:
+	# Hero was renamed Данило → Іларіон in the 2026 prologue rewrite.
+	# Whichever locale is loaded, "Данило" must NOT appear.
+	var s: String = hub._speaker_label("player")
+	assert_true(s.length() > 0)
+	assert_false(s.contains("Данило"), "player label should no longer be Данило")
 
 func test_speaker_label_narration_empty() -> void:
 	assert_eq(hub._speaker_label("narration"), "")
@@ -26,6 +35,26 @@ func test_speaker_label_unknown_empty() -> void:
 
 func test_speaker_label_empty_string() -> void:
 	assert_eq(hub._speaker_label(""), "")
+
+# ── Prologue + god messages locale wiring ─────────────────────────────────────
+
+func test_prologue_lines_are_locale_keys() -> void:
+	# Sanity-check the new contract: PROLOGUE entries now hold locale
+	# keys (text fetched at display time), not literal text.
+	for line in hub.PROLOGUE:
+		var loc_key: String = String(line[1])
+		assert_true(loc_key.begins_with("prologue."),
+			"PROLOGUE entry should reference a prologue.* locale key, got: %s" % loc_key)
+
+func test_pick_god_message_no_longer_contains_old_hero_name() -> void:
+	# Regression: the old hardcoded dialogue called the player "Данило".
+	# Sin > 70 used to trigger that line — make sure the resolved Loc
+	# value also got renamed.
+	SaveManager.set_sin(75.0)
+	hub._next_level_id = 1
+	var msg: Dictionary = hub._pick_god_message()
+	assert_false(String(msg.get("text", "")).contains("Данило"),
+		"high-sin warning must not say Данило anymore (renamed to Іларіон)")
 
 # ── _pick_god_message ─────────────────────────────────────────────────────────
 
