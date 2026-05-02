@@ -73,6 +73,19 @@ func test_souls_displayed_on_open() -> void:
 	ps.open()
 	assert_true(ps._lbl_souls.text.contains("5"))
 
+func test_souls_label_includes_hidden_and_grand_total() -> void:
+	# New combined format: "👻 X/Y  •  ✦ A/B  •  ∑ X+A/Y+B".
+	# Just check the markers are present so the format can evolve.
+	ps.open()
+	var txt: String = ps._lbl_souls.text
+	assert_true(txt.contains("👻"), "souls line should contain 👻 marker")
+	assert_true(txt.contains("✦"),  "souls line should contain ✦ hidden marker")
+	assert_true(txt.contains("∑"),  "souls line should contain ∑ grand-total marker")
+
+func test_type_strip_label_built() -> void:
+	assert_not_null(ps._lbl_type_strip,
+		"per-type strip label should exist after _build_ui")
+
 func test_level_label_not_empty_on_open() -> void:
 	ps.open()
 	assert_true(ps._lbl_level.text.length() > 0)

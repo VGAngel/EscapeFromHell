@@ -199,6 +199,18 @@ func get_total_hidden_count() -> int:
 	return arr.size() if not arr.is_empty() else 20
 
 
+# Read-only access to the loaded named-soul list. Kept as a method (not a
+# public field) so callers don't accidentally mutate the autoload's
+# internal state. Used by PauseScreen / Hub stats to compute per-type
+# breakdowns without each screen reloading souls_collection.json.
+func get_named_souls() -> Array:
+	return _souls.get("named_souls", [])
+
+
+func get_hidden_souls() -> Array:
+	return _souls.get("hidden_souls", [])
+
+
 # Returns GeneratedLevel. For static levels room_scenes will be empty —
 # the caller loads the hand-made scene directly via LevelConfig.
 func generate(level_id: int) -> GeneratedLevel:
