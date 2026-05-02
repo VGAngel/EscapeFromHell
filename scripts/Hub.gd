@@ -36,24 +36,29 @@ const MSG_COLORS := {
 	"silent":    Color("#FFFFFF"),
 }
 
-# Prologue lines: [speaker, text, pause_after]
+# Prologue lines: [speaker, locale_key, pause_after]. Text comes from
+# localization (prologue.scene_*) at display time so the dialogue stays
+# in sync with the rest of the UI — earlier the text was hardcoded UA
+# here AND in localization, so renaming Данило → Іларіон only fixed
+# half the surface, leaving the prologue still calling the player by
+# the wrong name.
 const PROLOGUE := [
-	["narration", "Ти падав довго. Довше ніж здавалось можливим.\nВнизу не було нічого. Тільки тепло.\nІ голос.", 3.5],
-	["god",    "Отче Данило.", 1.5],
-	["god",    "Так. Я знаю що ти зробив. І знаю чому.", 0.8],
-	["god",    "Ти зневірився. Це не найгірший гріх зі всіх що я бачив тут.", 0.8],
-	["god",    "Але ти священник. Від тебе очікували більшого. Від тебе очікував більшого ти сам.", 1.2],
-	["god",    "В пеклі є 100 душ що потрапили туди помилково. Бюрократія — навіть тут вона існує.", 0.8],
-	["god",    "Я міг би виправити це сам. Але не виправлю.", 1.5],
-	["god",    "Ти підеш замість мене.", 1.2],
-	["player", "Я не переживу там і хвилини.", 0.8],
-	["god",    "Знаю.", 1.8],
-	["god",    "Тому я дам тобі те що потрібно щоб вижити. Але попереджаю — це буде боляче носити в собі.", 1.2],
-	["god",    "Частина пекла тепер в тобі. Ти відчуєш це. Ти будеш хотіти використати це.", 0.8],
-	["god",    "Не забувай хто ти є. Був. Хочеш бути знову.", 1.2],
-	["player", "А якщо я знайду всіх 100?", 0.8],
-	["god",    "Тоді подивимось що залишилось від священника Данила.", 2.0],
-	["god",    "Йди. Вони чекають.", 0.8],
+	["narration", "prologue.scene_fall",   3.5],
+	["god",       "prologue.scene_god_1",  1.5],
+	["god",       "prologue.scene_god_2",  0.8],
+	["god",       "prologue.scene_god_3",  0.8],
+	["god",       "prologue.scene_god_4",  1.2],
+	["god",       "prologue.scene_god_5",  0.8],
+	["god",       "prologue.scene_god_6",  1.5],
+	["god",       "prologue.scene_god_7",  1.2],
+	["player",    "prologue.scene_player_1", 0.8],
+	["god",       "prologue.scene_god_8",  1.8],
+	["god",       "prologue.scene_god_9",  1.2],
+	["god",       "prologue.scene_god_10", 0.8],
+	["god",       "prologue.scene_god_11", 1.2],
+	["player",    "prologue.scene_player_2", 0.8],
+	["god",       "prologue.scene_god_12", 2.0],
+	["god",       "prologue.scene_god_13", 0.8],
 ]
 
 # ── Child nodes ───────────────────────────────────────────────────────────────
@@ -234,52 +239,55 @@ func _pick_god_message() -> Dictionary:
 
 	var sin_val: float = SaveManager.get_sin()
 	var souls: int     = SaveManager.get_total_souls()
-	var level: int   = _next_level_id
+	var level: int     = _next_level_id
 
-	# Conditional checks (priority order)
+	# Conditional checks (priority order). Text comes from
+	# god_messages.* locale keys; style stays code-side because it drives
+	# colour/animation, not copy.
 	if SaveManager.get_demon_deals_accepted() > SaveManager.get_deals_refused():
-		return {"text": "Я бачив. Нічого не кажу. Просто бачив.", "style": "quiet"}
+		return _msg("god_messages.demon_deal_accepted", "quiet")
 	if sin_val > 70.0:
-		return {"text": "Данило. Я ще тут. Але ти йдеш не в той бік.", "style": "warning"}
+		return _msg("god_messages.sin_critical", "warning")
 	if souls == 99:
-		return {"text": "Одна залишилась. Остання завжди найважча. Не через пекло — через тебе.", "style": "solemn"}
+		return _msg("god_messages.last_soul", "solemn")
 
-	# Soul milestones
+	# Soul-count milestones — fired once each via SaveManager hint flags.
+	# Only the milestones that actually have a god_messages.souls_X key
+	# in localization are listed; adding a new tier = adding two lines.
+	const MILESTONE_STYLES := {
+		10: "warm",  25: "personal", 50: "solemn",
+		75: "surprised", 99: "solemn",
+	}
 	for milestone in [99, 75, 50, 25, 10]:
 		if souls >= milestone:
-			var milestone_msgs := {
-				10:  {"text": "Десять. Вони вже у безпеці. Продовжуй.",         "style": "warm"},
-				25:  {"text": "Чверть шляху. Пам'ятаєш їхні імена?",            "style": "personal"},
-				50:  {"text": "Половина. Вони чекали на тебе довго.",            "style": "solemn"},
-				75:  {"text": "75 душ. Я не очікував що ти зайдеш так далеко.", "style": "surprised"},
-				99:  {"text": "Одна залишилась. Остання завжди найважча.",       "style": "solemn"},
-			}
 			if SaveManager.is_hint_seen("soul_milestone_%d" % milestone):
 				continue
 			SaveManager.mark_hint_seen("soul_milestone_%d" % milestone)
-			return milestone_msgs[milestone]
+			return _msg("god_messages.souls_%d" % milestone,
+				String(MILESTONE_STYLES.get(milestone, "calm")))
 
-	# By level (exact match)
-	var level_msgs := {
-		1:   {"text": "Передпокій. Тут ще є тиша. Скористайся цим — далі її не буде.",                             "style": "calm"},
-		2:   {"text": "Ти вже знаєш як падати. Тепер навчись зупинятись вчасно.",                                  "style": "calm"},
-		5:   {"text": "Перша втеча. Не соромно тікати від того що сильніше. Соромно не повернутись.",               "style": "calm"},
-		10:  {"text": "Перший охоронець позаду. Попереду гірше. Але ти вже знаєш що гірше — не значить неможливо.", "style": "solemn"},
-		11:  {"text": "Болота. Тут гинуть не від болю — від непевності. Кожен крок перевіряй.",                     "style": "calm"},
-		20:  {"text": "Друге Коло пройдено. Ти змінився трохи. Я бачу. Не кажу чи на краще.",                      "style": "observing"},
-		25:  {"text": "Чверть шляху. Вони вже у безпеці. Данило — ти пам'ятаєш їхні імена?",                       "style": "personal"},
-		30:  {"text": "Третє Коло позаду. Вогонь більше не лякає тебе так як раніше. Це добре. І погано.",          "style": "observing"},
-		50:  {"text": "Половина. Подивись на себе. Пам'ятаєш яким ти був коли падав?",                             "style": "personal"},
-		75:  {"text": "75 душ. Три чверті. Я не очікував що ти зайдеш так далеко.",                                "style": "surprised"},
-		90:  {"text": "Дев'яте Коло позаду. Данило... я пишаюсь. Хоча й не повинен цього казати.",                 "style": "warm"},
-		91:  {"text": "Трон попереду. Він знає що ти тут. Він чекав когось такого як ти.",                          "style": "warning"},
-		99:  {"text": "Остання кімната перед ним. Що б не сталось далі — ти вже зробив більше ніж я просив.",       "style": "warm"},
-		100: {"text": "Я більше нічого не скажу. Це твій момент. Не мій.",                                         "style": "silent"},
+	# Per-level lines. Style table mirrors the previous hardcoded dict.
+	const LEVEL_STYLES := {
+		1: "calm",   2: "calm",  5: "calm",
+		10: "solemn", 11: "calm",
+		20: "observing", 25: "personal",
+		30: "observing", 50: "personal",
+		75: "surprised", 90: "warm",
+		91: "warning", 99: "warm",
+		100: "silent",
 	}
-	if level_msgs.has(level):
-		return level_msgs[level]
+	if LEVEL_STYLES.has(level):
+		return _msg("god_messages.level_%d" % level,
+			String(LEVEL_STYLES[level]))
 
 	return {}
+
+
+# Build a {text, style} dict by resolving the given Loc key with the
+# named-soul target as a {total} param (used by milestone wording).
+func _msg(loc_key: String, style: String) -> Dictionary:
+	var n_target: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	return {"text": _t(loc_key, {"total": n_target}), "style": style}
 
 # ── Message display ───────────────────────────────────────────────────────────
 
@@ -305,10 +313,21 @@ func _hide_message() -> void:
 	tw.tween_callback(func() -> void: _msg_box.visible = false)
 
 func _speaker_label(speaker: String) -> String:
+	# Speaker labels live in localization too, so the player name (Іларіон
+	# in canon) updates everywhere from one place.
 	match speaker:
-		"god":    return "Бог"
-		"player": return "Данило"
+		"god":    return _t("prologue.speaker_god",    {}, "Бог")
+		"player": return _t("prologue.speaker_player", {}, "Іларіон")
 	return ""
+
+
+# Loc.t() with fallback so the hub still renders if Loc isn't loaded
+# (early boot, headless tests).
+func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_method("t"):
+		return String(loc.t(key, params))
+	return fallback if not fallback.is_empty() else key
 
 # ── Prologue ──────────────────────────────────────────────────────────────────
 
@@ -331,8 +350,13 @@ func _advance_prologue() -> void:
 
 	var line: Array = PROLOGUE[_prologue_step]
 	var speaker: String = line[0]
-	var text:    String = line[1]
+	var loc_key: String = line[1]
 	var pause:   float  = line[2]
+	# {total} resolves to the named-soul pool size so the prologue scales
+	# automatically when souls_collection.json grows. Lines that don't
+	# use the placeholder simply ignore it.
+	var n_target: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	var text: String  = _t(loc_key, {"total": n_target})
 	_prologue_step += 1
 
 	# Fade in background on second line
