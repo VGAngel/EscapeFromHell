@@ -498,6 +498,80 @@ func test_hidden_soul_passes_type_filter_when_specific_type_selected() -> void:
 	assert_true(screen._cell_nodes.has("h1"),
 		"hidden soul cell should remain visible under non-'all' type filter")
 
+# ── Sort, search, tooltip ─────────────────────────────────────────────────────
+
+func test_sort_by_name_orders_alphabetically() -> void:
+	# TEST_NAMED ids in name order: Іван (1), Марія (2), Петро (3).
+	# But sort is alphabetical, so the order should be Іван < Марія < Петро.
+	screen._sort_mode = "name"
+	var sorted: Array = screen._sort_souls(screen._named_souls)
+	assert_eq(String(sorted[0]["name"]), "Іван")
+	assert_eq(String(sorted[1]["name"]), "Марія")
+	assert_eq(String(sorted[2]["name"]), "Петро")
+
+func test_sort_by_circle_groups_by_circle_then_id() -> void:
+	# TEST_NAMED: id=1 c=1, id=2 c=2, id=3 c=1. Expect c=1 first (1, 3),
+	# then c=2 (2).
+	screen._sort_mode = "circle"
+	var sorted: Array = screen._sort_souls(screen._named_souls)
+	var ids: Array = []
+	for s: Dictionary in sorted:
+		ids.append(int(s["id"]))
+	assert_eq(ids, [1, 3, 2])
+
+func test_search_query_filters_by_name() -> void:
+	screen._search_query = "марі"  # matches Марія only
+	screen._rebuild_grid()
+	await get_tree().process_frame
+	# id=1 (Іван), id=3 (Петро) should be filtered out; id=2 (Марія) stays.
+	assert_false(screen._cell_nodes.has(1), "Іван should be filtered out")
+	assert_true(screen._cell_nodes.has(2),  "Марія should match the query")
+	assert_false(screen._cell_nodes.has(3), "Петро should be filtered out")
+
+func test_search_query_filters_by_epitaph_text() -> void:
+	# TEST_NAMED entries have full_story like "Тест 2" — search on "2"
+	# should match only that one.
+	screen._search_query = "тест 2"
+	screen._rebuild_grid()
+	await get_tree().process_frame
+	assert_true(screen._cell_nodes.has(2),
+		"soul whose story contains 'тест 2' should pass the search")
+
+func test_search_empty_query_shows_all() -> void:
+	screen._search_query = ""
+	screen._rebuild_grid()
+	await get_tree().process_frame
+	# 3 named + 1 hidden = 4
+	assert_eq(screen._cell_nodes.size(), 4)
+
+func test_sort_button_cycles_modes() -> void:
+	# Sort button rotates through SORT_MODES. Starting at "id", one
+	# press should land on "name".
+	screen._sort_mode = "id"
+	screen._on_sort_cycle_pressed()
+	assert_eq(screen._sort_mode, "name")
+	screen._on_sort_cycle_pressed()
+	assert_eq(screen._sort_mode, "circle")
+
+func test_saved_cell_has_tooltip_with_epitaph() -> void:
+	# Long-press / hover preview is the cell's tooltip_text. For saved
+	# souls it must include both the name and the epitaph snippet.
+	SaveManager.add_soul(1)
+	screen._rebuild_grid()
+	await get_tree().process_frame
+	var cell: Button = screen._cell_nodes[1]
+	assert_true(cell.tooltip_text.contains("Іван"),
+		"tooltip should include the soul name")
+	assert_true(cell.tooltip_text.contains("Тест"),
+		"tooltip should include the epitaph/story text")
+
+func test_unsaved_cell_tooltip_is_generic() -> void:
+	# Undiscovered souls keep their secret — tooltip should NOT echo the
+	# real name/story.
+	var cell: Button = screen._cell_nodes[1]  # id=1 unsaved by default
+	assert_false(cell.tooltip_text.contains("Іван"),
+		"undiscovered soul tooltip should not leak the name")
+
 # ── TODO ──────────────────────────────────────────────────────────────────────
 
 func test_close_emits_signal() -> void:
