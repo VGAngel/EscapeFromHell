@@ -44,6 +44,7 @@ var _root:       ColorRect       = null
 # Header
 var _lbl_named:  Label           = null
 var _lbl_hidden: Label           = null
+var _lbl_total:  Label           = null  # combined named+hidden grand total
 # Per-type stats strip (sits between header and circle progress).
 # "🔥 24/40  •  💀 18/35  •  😴 8/25" — refreshed in _refresh_counters.
 var _lbl_type_stats: Label       = null
@@ -272,19 +273,34 @@ func _refresh_counters() -> void:
 		{"saved": hidden, "total": h_target}, "✦ %d / %d" % [hidden, h_target])
 	_lbl_named.add_theme_color_override("font_color",
 		Color("#FFD700") if named >= n_target else Color(0.82, 0.80, 0.86))
+
+	# Grand total — named + hidden against the combined target. Localised
+	# via collection.counter_total with a fallback that matches the format.
+	if _lbl_total:
+		var grand: int        = named + hidden
+		var grand_target: int = n_target + h_target
+		_lbl_total.text = _t("collection.counter_total",
+			{"saved": grand, "total": grand_target},
+			"∑ %d / %d" % [grand, grand_target])
+		_lbl_total.add_theme_color_override("font_color",
+			Color("#FFD700") if grand_target > 0 and grand >= grand_target
+				else Color(0.62, 0.60, 0.68))
+
 	_refresh_type_stats()
 	_refresh_circle_progress()
 
 
 # Tally per-type totals from the loaded named-soul list against the
 # SaveManager's saved IDs and render them as a single emoji strip:
-#   "🔥 24/40  •  💀 18/35  •  😴 8/25"
-# Hidden souls aren't included here — they have their own ✦ counter.
-# Types with zero total are skipped so the strip stays compact.
+#   "🔥 24/40  •  💀 18/35  •  😴 8/25  •  ✦ 12/20"
+# Hidden souls now appear as their own ✦ entry so the player sees all
+# four progress dimensions in one glance. Categories with zero total
+# are skipped so the strip stays compact when the JSON is sparse.
 func _refresh_type_stats() -> void:
 	if not _lbl_type_stats:
 		return
-	var saved_ids: Array = SaveManager.get_saved_soul_ids() if SaveManager else []
+	var saved_ids:  Array = SaveManager.get_saved_soul_ids()  if SaveManager else []
+	var hidden_ids: Array = SaveManager.get_hidden_soul_ids() if SaveManager else []
 
 	var totals: Dictionary = {"innocent": 0, "broken": 0, "sleeping": 0}
 	var saved:  Dictionary = {"innocent": 0, "broken": 0, "sleeping": 0}
@@ -307,6 +323,16 @@ func _refresh_type_stats() -> void:
 		if tot <= 0:
 			continue
 		parts.append("%s %d/%d" % [icons[k], int(saved[k]), tot])
+
+	# Hidden souls — separate "tier" rendered alongside the type counts.
+	var h_total: int = _hidden_souls.size()
+	if h_total > 0:
+		var h_found: int = 0
+		for soul in _hidden_souls:
+			if str(soul.get("id", "")) in hidden_ids:
+				h_found += 1
+		parts.append("✦ %d/%d" % [h_found, h_total])
+
 	_lbl_type_stats.text = "  •  ".join(parts)
 
 ## Compute per-circle (1..10) counts from the loaded named/hidden lists and
@@ -419,10 +445,14 @@ func _rebuild_grid() -> void:
 		_grid.add_child(cell)
 		_cell_nodes[id] = cell
 
-func _passes_filter(soul: Dictionary, _is_hidden: bool) -> bool:
+func _passes_filter(soul: Dictionary, is_hidden: bool) -> bool:
 	if _filter_circle > 0 and soul.get("circle", 0) != _filter_circle:
 		return false
-	if _filter_type != "all" and soul.get("type", "") != _filter_type:
+	# Hidden souls don't carry a `type` field — they're their own category.
+	# Without this guard, picking "Innocent" / "Broken" / "Sleeping" filtered
+	# them all out, hiding the ✦ ones from the grid entirely.
+	if _filter_type != "all" and not is_hidden \
+			and soul.get("type", "") != _filter_type:
 		return false
 	return true
 
@@ -903,6 +933,16 @@ func _build_header(parent: VBoxContainer) -> void:
 	_lbl_hidden.add_theme_color_override("font_color", Color("#A07820"))
 	_lbl_hidden.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hdr.add_child(_lbl_hidden)
+
+	# Combined grand total: named + hidden out of (named_target + hidden_target).
+	# Sits as a quieter third counter so the player gets the full picture
+	# without the named/hidden labels having to do double duty.
+	_lbl_total = Label.new()
+	_lbl_total.text = ""  # populated by _refresh_counters()
+	_lbl_total.add_theme_font_size_override("font_size", 26)
+	_lbl_total.add_theme_color_override("font_color", Color(0.62, 0.60, 0.68))
+	_lbl_total.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hdr.add_child(_lbl_total)
 
 	var btn_close := Button.new()
 	btn_close.text = "✕"
