@@ -72,6 +72,7 @@ var _grid:         GridContainer   = null
 var _sheet_backdrop: Button       = null  # tap-outside-to-close, hidden when sheet closed
 var _sheet:        PanelContainer  = null
 var _sheet_tween:  Tween           = null
+var _sheet_portrait: TextureRect   = null
 var _sheet_name:   Label           = null
 var _sheet_age:    Label           = null
 var _sheet_loc:    Label           = null
@@ -82,6 +83,7 @@ var _sheet_open:   bool            = false
 
 # Side panel (wide layout only). Mirrors the sheet's structure 1:1.
 var _side_panel:    PanelContainer  = null
+var _side_portrait: TextureRect    = null
 var _side_name:     Label           = null
 var _side_age:      Label           = null
 var _side_loc:      Label           = null
@@ -219,10 +221,17 @@ func open() -> void:
 				lbl.visible = false
 		if _side_sep:
 			_side_sep.visible = false
+		if _side_portrait:
+			_side_portrait.visible = false
 	var tw := create_tween()
 	tw.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
 
 func close() -> void:
+	# Free the portrait texture cache (~13MB at full collection size) so
+	# a long session doesn't pin all generated portraits in memory.
+	var spg: Node = get_node_or_null("/root/SoulPortraitGenerator")
+	if spg and spg.has_method("clear_cache"):
+		spg.clear_cache()
 	var tw := create_tween()
 	tw.tween_property(_root, "modulate:a", 0.0, FADE_DURATION)
 	tw.tween_callback(func() -> void:
@@ -631,14 +640,28 @@ func _active_refs() -> Dictionary:
 		return {
 			"name": _side_name, "age": _side_age, "loc": _side_loc,
 			"sep":  _side_sep,  "text": _side_text, "extra": _side_extra,
+			"portrait": _side_portrait,
 		}
 	return {
 		"name": _sheet_name, "age": _sheet_age, "loc": _sheet_loc,
 		"sep":  _sheet_sep,  "text": _sheet_text, "extra": _sheet_extra,
+		"portrait": _sheet_portrait,
 	}
 
 
 func _populate_detail(refs: Dictionary, soul: Dictionary, is_hidden: bool) -> void:
+	# Procedural pixel-art portrait via SoulPortraitGenerator. Generator
+	# is autoloaded; the get_node_or_null guard keeps unit tests happy
+	# when running without the autoload bootstrap.
+	var portrait_rect: TextureRect = refs.get("portrait")
+	if portrait_rect:
+		var spg: Node = get_node_or_null("/root/SoulPortraitGenerator")
+		if spg and spg.has_method("get_portrait"):
+			portrait_rect.texture = spg.get_portrait(soul)
+			portrait_rect.visible = true
+		else:
+			portrait_rect.visible = false
+
 	var name_lbl: Label = refs["name"]
 	name_lbl.text = soul.get("name", "?")
 	name_lbl.add_theme_color_override("font_color",
@@ -690,6 +713,11 @@ func _populate_detail(refs: Dictionary, soul: Dictionary, is_hidden: bool) -> vo
 
 
 func _populate_detail_not_found(refs: Dictionary) -> void:
+	# Hide portrait — undiscovered souls keep their face hidden too.
+	var portrait_rect: TextureRect = refs.get("portrait")
+	if portrait_rect:
+		portrait_rect.visible = false
+
 	var name_lbl: Label = refs["name"]
 	name_lbl.text = _t("collection.detail_not_found", {}, "Душа не знайдена")
 	name_lbl.add_theme_color_override("font_color", Color(0.48, 0.46, 0.54))
@@ -1062,6 +1090,18 @@ func _build_side_panel(parent: HBoxContainer) -> void:
 	_side_placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_side_placeholder)
 
+	# Procedural pixel-art portrait — generated deterministically per soul
+	# via SoulPortraitGenerator. NEAREST filter preserves the pixel feel
+	# when scaled up; we render the 96×96 source at ~3x in the panel.
+	_side_portrait = TextureRect.new()
+	_side_portrait.custom_minimum_size = Vector2(192, 192)
+	_side_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_side_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_side_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_side_portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_side_portrait.visible = false
+	vbox.add_child(_side_portrait)
+
 	_side_name = Label.new()
 	_side_name.add_theme_font_size_override("font_size", 36)
 	_side_name.add_theme_color_override("font_color", Color(0.92, 0.90, 0.96))
@@ -1181,6 +1221,18 @@ func _build_sheet() -> void:
 	vbox.add_theme_constant_override("separation", 12)
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(vbox)
+
+	# Procedural pixel-art portrait — same generator as the side panel,
+	# rendered slightly larger here (3x scale) since the bottom sheet has
+	# more vertical room than the desktop side panel.
+	_sheet_portrait = TextureRect.new()
+	_sheet_portrait.custom_minimum_size = Vector2(192, 192)
+	_sheet_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_sheet_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_sheet_portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sheet_portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_sheet_portrait.visible = false
+	vbox.add_child(_sheet_portrait)
 
 	_sheet_name = Label.new()
 	_sheet_name.add_theme_font_size_override("font_size", 42)
