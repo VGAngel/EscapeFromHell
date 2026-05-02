@@ -93,12 +93,18 @@ func refresh() -> void:
 	_set_text(_circle_lbl, _t(loc, "hero_card.circle_format", {"n": current_circle}))
 	_set_text(_level_lbl,  _t(loc, "hero_card.level_format",  {"n": current_level}))
 
-	# Souls / hidden / light
+	# Souls / hidden / light. Pool sizes come from SaveManager which reads
+	# souls_collection.json so the card scales when more souls are added.
 	var souls: int = int(sm.get_total_souls()) if sm.has_method("get_total_souls") else 0
 	var hidden_count: int = int(sm.get_total_hidden_souls()) if sm.has_method("get_total_hidden_souls") else 0
 	var light: int = int(sm.get_light()) if sm.has_method("get_light") else 0
-	_set_text(_souls_lbl, _t(loc, "hero_card.stats_format",
-			{"souls": souls, "hidden": hidden_count, "light": light}))
+	var s_total: int = int(sm.get_named_souls_target()) if sm.has_method("get_named_souls_target") else 100
+	var h_total: int = int(sm.get_hidden_souls_target()) if sm.has_method("get_hidden_souls_target") else 20
+	_set_text(_souls_lbl, _t(loc, "hero_card.stats_format", {
+		"souls": souls, "souls_total": s_total,
+		"hidden": hidden_count, "hidden_total": h_total,
+		"light": light,
+	}))
 
 	# Best level — search 1..100, max stars then min time tiebreaker.
 	_set_text(_best_lbl, _format_best(sm, loc))

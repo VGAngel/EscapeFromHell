@@ -123,7 +123,8 @@ func _refresh_resources() -> void:
 	if sm.has_method("get_light"):
 		_light_lbl.text = "💡 %d" % int(sm.get_light())
 	if sm.has_method("get_total_souls"):
-		_souls_lbl.text = "👻 %d/100" % int(sm.get_total_souls())
+		var target: int = int(sm.get_named_souls_target()) if sm.has_method("get_named_souls_target") else 100
+		_souls_lbl.text = "👻 %d/%d" % [int(sm.get_total_souls()), target]
 	if sm.has_method("get_sin"):
 		_sin_lbl.text = "😈 %d%%" % int(sm.get_sin())
 

@@ -236,8 +236,10 @@ func notify_soul_added(soul_id: int) -> void:
 	# Animate the matching cell if visible
 	if _cell_nodes.has(soul_id):
 		_animate_new_soul_cell(_cell_nodes[soul_id])
-	# 100/100 completion
-	if SaveManager and SaveManager.get_total_souls() >= 100:
+	# Full-collection completion fanfare. Target read from the souls JSON
+	# via SaveManager so adding more souls to the pool just works.
+	var target: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	if SaveManager and SaveManager.get_total_souls() >= target:
 		_animate_completion()
 
 func notify_hidden_soul_added(soul_id: String) -> void:
@@ -260,12 +262,16 @@ func _unhandled_input(event: InputEvent) -> void:
 # ── Counters ──────────────────────────────────────────────────────────────────
 
 func _refresh_counters() -> void:
-	var named:  int = SaveManager.get_total_souls()        if SaveManager else 0
-	var hidden: int = SaveManager.get_total_hidden_souls() if SaveManager else 0
-	_lbl_named.text  = _t("collection.counter_named", {"saved": named}, "%d / 100" % named)
-	_lbl_hidden.text = _t("collection.counter_hidden", {"saved": hidden}, "✦ %d / 20" % hidden)
+	var named:  int = SaveManager.get_total_souls()         if SaveManager else 0
+	var hidden: int = SaveManager.get_total_hidden_souls()  if SaveManager else 0
+	var n_target: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	var h_target: int = SaveManager.get_hidden_souls_target() if SaveManager else 20
+	_lbl_named.text  = _t("collection.counter_named",
+		{"saved": named, "total": n_target}, "%d / %d" % [named, n_target])
+	_lbl_hidden.text = _t("collection.counter_hidden",
+		{"saved": hidden, "total": h_target}, "✦ %d / %d" % [hidden, h_target])
 	_lbl_named.add_theme_color_override("font_color",
-		Color("#FFD700") if named >= 100 else Color(0.82, 0.80, 0.86))
+		Color("#FFD700") if named >= n_target else Color(0.82, 0.80, 0.86))
 	_refresh_type_stats()
 	_refresh_circle_progress()
 
@@ -885,7 +891,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	hdr.add_child(title)
 
 	_lbl_named = Label.new()
-	_lbl_named.text = "0 / 100"
+	_lbl_named.text = ""  # populated by _refresh_counters() at open time
 	_lbl_named.add_theme_font_size_override("font_size", 30)
 	_lbl_named.add_theme_color_override("font_color", Color(0.80, 0.78, 0.84))
 	_lbl_named.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1220,7 +1226,9 @@ func _build_sheet() -> void:
 
 func _build_completion_label() -> void:
 	_completion_lbl = Label.new()
-	_completion_lbl.text = _t("collection.complete_text", {}, "Всі 100 душ знайдені")
+	var n_target: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	_completion_lbl.text = _t("collection.complete_text",
+		{"total": n_target}, "Всі %d душ знайдені" % n_target)
 	_completion_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_completion_lbl.add_theme_font_size_override("font_size", 38)
 	_completion_lbl.add_theme_color_override("font_color", Color("#FFD700"))

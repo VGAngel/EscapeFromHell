@@ -22,7 +22,7 @@
   "hud": {
     "sin_bar_tooltip":      "Sin level",
     "souls_level_format":   "{found} / {total}",
-    "souls_total_format":   "{saved} / 100",
+    "souls_total_format":   "{saved} / {total}",
     "level_info_format":    "Circle {circle} • Level {level}",
     "ability_used":         "Used",
     "bonus_expiring":       "Expiring...",
@@ -43,7 +43,7 @@
 
   "collection": {
     "title":                "Saved Souls",
-    "counter_named":        "{saved} / 100",
+    "counter_named":        "{saved} / {total}",
     "counter_hidden":       "✦ {saved} / 20",
     "counter_hidden_tooltip": "Hidden souls — look more carefully on each level",
     "filter_all":           "All",
@@ -62,7 +62,7 @@
     "detail_sin_format":    "Sin: {sin}",
     "detail_sin_none":      "none",
     "detail_reward_label":  "Reward:",
-    "complete_text":        "All 100 souls found",
+    "complete_text":        "All {total} souls found",
     "side_placeholder":     "Tap a soul to see its story",
     "circle_tab_format":    "Circle {n}",
     "circle_short":         "C{n}",
@@ -105,7 +105,7 @@
     "collection":       "Saved Souls",
     "statistics":       "📊  Statistics",
     "level_format":     "Circle {circle} • Level {level}",
-    "souls_format":     "👻 {found} / 100",
+    "souls_format":     "👻 {found} / {total}",
     "sin_format":       "{pct}%"
   },
 
@@ -364,7 +364,7 @@
     "name_unknown":   "Unknown",
     "circle_format":  "Circle {n}",
     "level_format":   "Level {n}",
-    "stats_format":   "👻 {souls}/100  ·  ✦ {hidden}/20  ·  💡 {light}",
+    "stats_format":   "👻 {souls}/{souls_total}  ·  ✦ {hidden}/{hidden_total}  ·  💡 {light}",
     "best_none":      "🏆 Best: —",
     "best_format":    "🏆 Best: {time} {stars} (level {level})",
     "sin_format":     "😈 Sin {pct}%"
@@ -373,7 +373,7 @@
   "main_menu_dyn": {
     "play_first":     "▶  Play",
     "play_continue":  "▶  Continue — level {n}",
-    "souls_counter":  "Saved Souls  {saved}/100"
+    "souls_counter":  "Saved Souls  {saved}/{total}"
   },
 
   "router_title": {

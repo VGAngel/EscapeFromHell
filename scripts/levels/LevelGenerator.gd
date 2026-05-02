@@ -173,6 +173,24 @@ func _load_souls() -> void:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+# Total named soul targets the player can collect, derived from the loaded
+# souls_collection.json. UI uses this for "X / N" counters so the UI scales
+# automatically when the named-soul pool grows. Falls back to the JSON's
+# explicit `total_named` field, then to the array length, then to 100.
+func get_total_named_count() -> int:
+	if _souls.has("total_named"):
+		return int(_souls["total_named"])
+	var arr: Array = _souls.get("named_souls", [])
+	return arr.size() if not arr.is_empty() else 100
+
+
+func get_total_hidden_count() -> int:
+	if _souls.has("total_hidden"):
+		return int(_souls["total_hidden"])
+	var arr: Array = _souls.get("hidden_souls", [])
+	return arr.size() if not arr.is_empty() else 20
+
+
 # Returns GeneratedLevel. For static levels room_scenes will be empty —
 # the caller loads the hand-made scene directly via LevelConfig.
 func generate(level_id: int) -> GeneratedLevel:

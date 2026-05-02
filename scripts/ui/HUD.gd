@@ -348,7 +348,10 @@ func _set_sin(value: float) -> void:
 		_sin_was_high = false
 
 func _set_souls_total(total: int) -> void:
-	_souls_total.text = "👻 %d / 100" % total
+	# Target read from the souls JSON via SaveManager so the HUD scales
+	# automatically when more souls are added to the pool.
+	var target: int = SaveManager.get_named_souls_target() if SaveManager else 100
+	_souls_total.text = "👻 %d / %d" % [total, target]
 
 func _set_souls_level(found: int, total: int) -> void:
 	_souls_level.text = "👻 %d / %d" % [found, total]
@@ -604,7 +607,7 @@ func _build_top_row() -> void:
 	top.add_child(right_col)
 
 	_souls_total = Label.new()
-	_souls_total.text = "👻 0 / 100"
+	_souls_total.text = ""  # populated by _set_souls_total() at first refresh
 	_souls_total.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_souls_total.add_theme_font_size_override("font_size", 21)
 	right_col.add_child(_souls_total)

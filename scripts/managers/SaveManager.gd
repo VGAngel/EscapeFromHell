@@ -251,6 +251,24 @@ func spend_light(amount: int) -> bool:
 func get_total_souls() -> int:
 	return data.get("total_souls", 0)
 
+
+# Total named souls in the pool — used by every "X / N" counter so the UI
+# scales automatically when more souls are added to souls_collection.json.
+# Reads from LevelGenerator (which already loads the JSON at boot); falls
+# back to the historical 100 when the autoload isn't available (tests).
+func get_named_souls_target() -> int:
+	var lg: Node = Engine.get_main_loop().root.get_node_or_null("LevelGenerator") if Engine.get_main_loop() else null
+	if lg and lg.has_method("get_total_named_count"):
+		return int(lg.get_total_named_count())
+	return 100
+
+
+func get_hidden_souls_target() -> int:
+	var lg: Node = Engine.get_main_loop().root.get_node_or_null("LevelGenerator") if Engine.get_main_loop() else null
+	if lg and lg.has_method("get_total_hidden_count"):
+		return int(lg.get_total_hidden_count())
+	return 20
+
 func get_saved_soul_ids() -> Array:
 	return data.get("saved_soul_ids", [])
 
