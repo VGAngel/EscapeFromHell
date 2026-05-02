@@ -221,22 +221,83 @@ func test_soul_for_level_returns_empty_when_no_souls() -> void:
 	var soul: Dictionary = lg._soul_for_level(3, 1)
 	assert_true(soul.is_empty())
 
-func test_soul_for_level_fallback_picks_from_circle_pool() -> void:
-	lg._souls = {"named_souls": [
-		{"id": 7, "name": "Іван", "circle": 2, "level": 0},
-	]}
+func test_soul_for_level_returns_distributed_soul() -> void:
+	# Distribution maps level → assigned souls. Pre-set it so this unit
+	# test doesn't depend on LevelConfig's full level catalogue.
+	lg._distribution = {12: [{"id": 7, "name": "Іван", "circle": 2, "level": 0}]}
+	lg._distribution_seed = "test_seed"  # prevents rebuild
 	lg._hidden_soul_levels = {}
-	seed(1)
-	var soul: Dictionary = lg._soul_for_level(12, 2)  # circle 2, no direct assign
+	var soul: Dictionary = lg._soul_for_level(12, 2)
 	assert_eq(soul.get("id"), 7)
 
-func test_soul_for_level_ignores_souls_from_other_circles() -> void:
-	lg._souls = {"named_souls": [
-		{"id": 9, "name": "Петро", "circle": 3, "level": 0},
-	]}
+func test_soul_for_level_returns_empty_when_level_not_in_distribution() -> void:
+	lg._distribution = {12: [{"id": 7, "circle": 2, "level": 0}]}
+	lg._distribution_seed = "test_seed"
 	lg._hidden_soul_levels = {}
-	var soul: Dictionary = lg._soul_for_level(12, 2)  # circle 2, soul is circle 3
+	var soul: Dictionary = lg._soul_for_level(99, 2)  # not in distribution
 	assert_true(soul.is_empty())
+
+# ── Distribution: 1-to-1 per playthrough ──────────────────────────────────────
+
+func test_souls_for_level_returns_all_assigned_when_count_matches() -> void:
+	lg._distribution = {5: [
+		{"id": 1, "circle": 1, "level": 0},
+		{"id": 2, "circle": 1, "level": 0},
+	]}
+	lg._distribution_seed = "test_seed"
+	var souls: Array = lg._souls_for_level(5, 1, 2)
+	assert_eq(souls.size(), 2)
+
+func test_souls_for_level_trims_excess_when_count_smaller_than_assigned() -> void:
+	lg._distribution = {5: [
+		{"id": 1, "circle": 1, "level": 0},
+		{"id": 2, "circle": 1, "level": 0},
+		{"id": 3, "circle": 1, "level": 0},
+	]}
+	lg._distribution_seed = "test_seed"
+	var souls: Array = lg._souls_for_level(5, 1, 1)
+	assert_eq(souls.size(), 1)
+
+func test_distribution_assigns_unique_souls_across_levels() -> void:
+	# When the pool size matches total spawn slots, no soul should appear
+	# on two different levels in the same playthrough.
+	lg._souls = {"named_souls": [
+		{"id": 1, "circle": 1, "level": 0},
+		{"id": 2, "circle": 1, "level": 0},
+		{"id": 3, "circle": 1, "level": 0},
+	]}
+	lg._distribution.clear()
+	lg._distribution_seed = "<unbuilt>"
+	# Force rebuild by calling _build_distribution directly with a real seed.
+	lg._build_distribution("playthrough-123")
+	# Collect every assigned soul id across all levels in the distribution.
+	var seen_ids: Array = []
+	for lvl_id in lg._distribution.keys():
+		for soul: Dictionary in lg._distribution[lvl_id]:
+			var sid: int = int(soul.get("id", 0))
+			assert_false(sid in seen_ids,
+				"soul id %d appeared on more than one level" % sid)
+			seen_ids.append(sid)
+
+func test_distribution_seed_changes_layout() -> void:
+	# Different world seeds should produce different (or at least
+	# possibly different) layouts. We just check the dicts aren't
+	# byte-identical when the seed differs.
+	lg._souls = {"named_souls": [
+		{"id": 1, "circle": 1, "level": 0},
+		{"id": 2, "circle": 1, "level": 0},
+		{"id": 3, "circle": 1, "level": 0},
+		{"id": 4, "circle": 1, "level": 0},
+		{"id": 5, "circle": 1, "level": 0},
+	]}
+	lg._build_distribution("seed-A")
+	var layout_a: Dictionary = lg._distribution.duplicate(true)
+	lg._build_distribution("seed-B-very-different-string")
+	var layout_b: Dictionary = lg._distribution.duplicate(true)
+	# Even with shuffles, a 5-soul pool has 5! = 120 permutations — two
+	# distinct seeds collide < 1% of the time. Failing this is suspicious.
+	assert_ne(layout_a, layout_b,
+		"different world seeds should usually produce different layouts")
 
 # ── _circle_style ─────────────────────────────────────────────────────────────
 
