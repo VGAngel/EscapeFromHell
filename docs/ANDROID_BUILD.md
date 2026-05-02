@@ -10,7 +10,7 @@ Store. One-time setup is ~15 min; subsequent builds are one command.
 ```bash
 brew install openjdk@17
 sudo ln -sfn $(brew --prefix)/opt/openjdk@17/libexec/openjdk.jdk \
-            /Library/Java/JavaVirtualMachines/openjdk-17.jdk
+			/Library/Java/JavaVirtualMachines/openjdk-17.jdk
 ```
 
 ### 2. Install Android SDK build-tools (for `aapt` audit)
