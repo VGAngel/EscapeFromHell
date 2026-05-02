@@ -439,8 +439,10 @@ func test_type_stats_skips_zero_total_categories() -> void:
 	# Stub a list with only innocent souls — broken/sleeping should
 	# not appear in the strip at all.
 	screen._named_souls = [
-		{"id": 11, "name": "А", "circle": 1, "type": "innocent",
-		 "age": 1, "level": 1, "sin": "none", "full_story": ""},
+		{
+			"id": 11, "name": "А", "circle": 1, "type": "innocent",
+			"age": 1, "level": 1, "sin": "none", "full_story": "",
+		},
 	]
 	screen._refresh_counters()
 	assert_false(screen._lbl_type_stats.text.contains("💀"),
