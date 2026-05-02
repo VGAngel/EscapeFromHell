@@ -205,7 +205,14 @@ func _install_staff_cooldown_overlay() -> void:
 ##              digit; we recompute remaining = total_cd * (1 - ratio))
 func set_staff_cooldown(ratio: float, total_cd: float) -> void:
 	var r: float = clampf(ratio, 0.0, 1.0)
-	if absf(r - _staff_cooldown_ratio) < 0.005 \
+	# Always commit transitions across the "ready" boundary so the
+	# countdown text actually flips from "1s" → ⚔. The delta-throttle
+	# below was eating the final frame's 0.996 → 1.0 step (Δ≈0.004 <
+	# 0.005) which left the label stuck on "1s" until the player
+	# re-fired and forced a new cycle.
+	var crossed_ready: bool = (r >= 0.999) != (_staff_cooldown_ratio >= 0.999)
+	if not crossed_ready \
+			and absf(r - _staff_cooldown_ratio) < 0.005 \
 			and absf(total_cd - _staff_total_cd) < 0.01:
 		return
 	_staff_cooldown_ratio = r
