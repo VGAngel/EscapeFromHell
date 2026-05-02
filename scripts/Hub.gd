@@ -110,6 +110,13 @@ func _ready() -> void:
 	_refresh_currency()
 	_build_skip_indicator()
 
+	# Live-refresh both labels on language switch so the bottom bar (and
+	# the BtnSouls scene-default "Врятовані\nДуші") translates without
+	# requiring the player to leave the hub.
+	var loc: Node = get_node_or_null("/root/Loc")
+	if loc and loc.has_signal("language_changed"):
+		loc.language_changed.connect(_on_language_changed)
+
 	# Atmospheric ambient layer (lighter "hub" preset — shadows + flicker
 	# + embers + sin-tint, no ash/parallax/breathing).
 	var amb := preload("res://scripts/ui/MenuAmbient.gd").new()
@@ -200,7 +207,12 @@ func _show_hub() -> void:
 
 func _setup_continue_label() -> void:
 	var circle: int = ceili(float(_next_level_id) / 10.0)
-	var lines: Array[String] = ["Далі →", "Коло %d • Рівень %d" % [circle, _next_level_id]]
+	var lines: Array[String] = [
+		_t("hub.btn_continue_next", {}, "Далі →"),
+		_t("hub.btn_continue_level",
+			{"circle": circle, "level": _next_level_id},
+			"Коло %d • Рівень %d" % [circle, _next_level_id]),
+	]
 	# If the player has played this level before, surface their best run on
 	# the button so they know what they're chasing.
 	if SaveManager and SaveManager.has_method("get_level_best"):
@@ -209,7 +221,10 @@ func _setup_continue_label() -> void:
 			var t: int = int(best.get("time", 0.0))
 			var stars: int = int(best.get("stars", 0))
 			@warning_ignore("integer_division")
-			lines.append("🏆 %d:%02d  %s" % [t / 60, t % 60, _stars_str(stars)])
+			var time_str: String = "%d:%02d" % [t / 60, t % 60]
+			lines.append(_t("hub.btn_continue_best",
+				{"time": time_str, "stars": _stars_str(stars)},
+				"🏆 %s  %s" % [time_str, _stars_str(stars)]))
 	_btn_continue.text = "\n".join(lines)
 
 func _stars_str(n: int) -> String:
@@ -220,9 +235,20 @@ func _stars_str(n: int) -> String:
 		out += FULL if i < n else EMPTY
 	return out
 
+func _on_language_changed(_lang: String) -> void:
+	_setup_continue_label()
+	_refresh_currency()
+
+
 func _refresh_currency() -> void:
 	var light: int = SaveManager.get_light() if SaveManager else 0
-	_btn_upgrades.text = "💡 %d\nАпгрейди" % light
+	_btn_upgrades.text = _t("hub.btn_upgrades",
+		{"light": light}, "💡 %d\nАпгрейди" % light)
+	# BtnSouls text comes from a static scene default ("Врятовані\nДуші")
+	# that isn't translated when the player switches language. Re-apply
+	# from Loc on every refresh so the EN/UA toggle reaches it.
+	if _btn_souls:
+		_btn_souls.text = _t("hub.btn_souls", {}, "Врятовані\nДуші")
 
 # ── God message selection ─────────────────────────────────────────────────────
 
