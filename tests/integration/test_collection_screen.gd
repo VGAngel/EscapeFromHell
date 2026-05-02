@@ -24,6 +24,10 @@ var screen: Node
 func before_each() -> void:
 	screen = preload("res://scripts/ui/CollectionScreen.gd").new()
 	add_child_autofree(screen)
+	# Pin layout to narrow so existing assertions (_sheet_open,
+	# _sheet_*.text) stay deterministic regardless of test viewport size.
+	# Wide-layout routing has its own dedicated tests below.
+	screen._force_layout = "narrow"
 	if SaveManager:
 		SaveManager._reset()
 	screen._named_souls  = TEST_NAMED.duplicate(true)
@@ -31,6 +35,7 @@ func before_each() -> void:
 	screen._filter_circle  = 0
 	screen._filter_type    = "all"
 	screen._filter_missing = false
+	screen._apply_layout_mode()
 	screen._rebuild_grid()
 	await get_tree().process_frame
 
@@ -360,6 +365,88 @@ func test_real_config_loads_20_hidden_souls() -> void:
 	var real: Node = preload("res://scripts/ui/CollectionScreen.gd").new()
 	add_child_autofree(real)
 	assert_eq(real._hidden_souls.size(), 20)
+
+# ── Wide layout (split view: grid + side panel) ───────────────────────────────
+
+func test_side_panel_hidden_in_narrow_mode() -> void:
+	screen._force_layout = "narrow"
+	screen._apply_layout_mode()
+	assert_false(screen._side_panel.visible)
+
+func test_side_panel_visible_in_wide_mode() -> void:
+	screen._force_layout = "wide"
+	screen._apply_layout_mode()
+	assert_true(screen._side_panel.visible)
+
+func test_show_detail_in_wide_mode_does_not_open_sheet() -> void:
+	screen._force_layout = "wide"
+	screen._apply_layout_mode()
+	SaveManager.add_soul(1)
+	screen._show_detail(TEST_NAMED[0], false)
+	assert_false(screen._sheet_open,
+		"sheet must stay closed when wide-layout side panel is the target")
+
+func test_show_detail_in_wide_mode_populates_side_panel() -> void:
+	screen._force_layout = "wide"
+	screen._apply_layout_mode()
+	screen._show_detail(TEST_NAMED[0], false)
+	assert_eq(screen._side_name.text, "Іван")
+	assert_true(screen._side_text.text.contains("Тест"))
+
+func test_show_detail_in_wide_mode_hides_placeholder() -> void:
+	screen._force_layout = "wide"
+	screen._apply_layout_mode()
+	screen._show_detail(TEST_NAMED[0], false)
+	assert_false(screen._side_placeholder.visible)
+
+func test_open_resets_side_panel_to_placeholder() -> void:
+	screen._force_layout = "wide"
+	screen._apply_layout_mode()
+	screen._show_detail(TEST_NAMED[0], false)
+	screen.open()
+	assert_true(screen._side_placeholder.visible)
+	assert_false(screen._side_name.visible)
+
+func test_show_detail_in_narrow_mode_opens_sheet() -> void:
+	screen._force_layout = "narrow"
+	screen._apply_layout_mode()
+	screen._show_detail(TEST_NAMED[0], false)
+	assert_true(screen._sheet_open)
+
+# ── Per-type stats (J) ────────────────────────────────────────────────────────
+
+func test_type_stats_strip_built() -> void:
+	assert_not_null(screen._lbl_type_stats,
+		"type stats label should exist")
+
+func test_type_stats_format_contains_innocent_count() -> void:
+	# TEST_NAMED has: 1 innocent + 1 broken + 1 sleeping.
+	# With nothing saved: "🔥 0/1  •  💀 0/1  •  😴 0/1"
+	screen._refresh_counters()
+	assert_true(screen._lbl_type_stats.text.contains("0/1"),
+		"stats should show 0/1 per category before any saves")
+	assert_true(screen._lbl_type_stats.text.contains("🔥"))
+	assert_true(screen._lbl_type_stats.text.contains("💀"))
+	assert_true(screen._lbl_type_stats.text.contains("😴"))
+
+func test_type_stats_updates_after_saving_innocent_soul() -> void:
+	SaveManager.add_soul(1)  # id=1 is innocent in TEST_NAMED
+	screen._refresh_counters()
+	assert_true(screen._lbl_type_stats.text.contains("🔥 1/1"),
+		"innocent counter should advance after saving an innocent soul")
+
+func test_type_stats_skips_zero_total_categories() -> void:
+	# Stub a list with only innocent souls — broken/sleeping should
+	# not appear in the strip at all.
+	screen._named_souls = [
+		{"id": 11, "name": "А", "circle": 1, "type": "innocent",
+		 "age": 1, "level": 1, "sin": "none", "full_story": ""},
+	]
+	screen._refresh_counters()
+	assert_false(screen._lbl_type_stats.text.contains("💀"),
+		"broken icon should be omitted when no broken souls exist")
+	assert_false(screen._lbl_type_stats.text.contains("😴"),
+		"sleeping icon should be omitted when no sleeping souls exist")
 
 # ── TODO ──────────────────────────────────────────────────────────────────────
 

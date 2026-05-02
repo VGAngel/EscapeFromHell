@@ -21,6 +21,10 @@ const DETAIL_W         := 320
 # Bottom sheet caps at this fraction of viewport height; content scrolls
 # inside if a hidden soul's full_story exceeds the cap.
 const SHEET_MAX_H_FRAC := 0.62
+# Above this viewport width the layout switches from grid + bottom-sheet
+# to grid-left + persistent detail-panel-right (Persona/Hades style).
+const WIDE_LAYOUT_PX   := 900
+const SIDE_PANEL_W     := 380
 
 # ── Soul data ─────────────────────────────────────────────────────────────────
 var _named_souls:  Array = []
@@ -40,6 +44,9 @@ var _root:       ColorRect       = null
 # Header
 var _lbl_named:  Label           = null
 var _lbl_hidden: Label           = null
+# Per-type stats strip (sits between header and circle progress).
+# "🔥 24/40  •  💀 18/35  •  😴 8/25" — refreshed in _refresh_counters.
+var _lbl_type_stats: Label       = null
 # Per-circle progress strip — populated in _build_circle_progress, refreshed
 # from _refresh_counters whenever SaveManager state changes.
 var _circle_progress_box: HBoxContainer = null
@@ -57,7 +64,11 @@ var _btn_missing:  Button        = null
 var _grid_scroll:  ScrollContainer = null
 var _grid:         GridContainer   = null
 
-# Detail bottom sheet
+# Detail panels — TWO physical UI trees share the same content shape
+# (name/age/loc/sep/text/extra). The screen routes via _show_detail() to
+# the bottom sheet on narrow viewports and to the right side panel on
+# wide ones. Refs for each are kept in dictionaries to avoid duplicating
+# the populate/clear logic.
 var _sheet_backdrop: Button       = null  # tap-outside-to-close, hidden when sheet closed
 var _sheet:        PanelContainer  = null
 var _sheet_tween:  Tween           = null
@@ -68,6 +79,19 @@ var _sheet_sep:    HSeparator      = null
 var _sheet_text:   Label           = null
 var _sheet_extra:  Label           = null
 var _sheet_open:   bool            = false
+
+# Side panel (wide layout only). Mirrors the sheet's structure 1:1.
+var _side_panel:    PanelContainer  = null
+var _side_name:     Label           = null
+var _side_age:      Label           = null
+var _side_loc:      Label           = null
+var _side_sep:      HSeparator      = null
+var _side_text:     Label           = null
+var _side_extra:    Label           = null
+var _side_placeholder: Label        = null  # "Tap a soul..." when nothing selected
+# True if last-shown detail came in wide mode (used to re-route on resize).
+var _last_detail: Dictionary       = {}     # {soul, is_hidden} or empty
+var _last_detail_was_not_found: bool = false
 
 # Completion overlay
 var _completion_lbl: Label         = null
@@ -96,21 +120,52 @@ func _ready() -> void:
 func _on_viewport_resized() -> void:
 	if not _grid:
 		return
+	# Layout mode (sheet vs side panel) is width-driven — re-evaluate
+	# BEFORE recomputing columns since cols depend on whether the side
+	# panel is visible.
+	_apply_layout_mode()
 	var cols := _compute_cols()
 	if _grid.columns != cols:
 		_grid.columns = cols
 	if visible:
 		_rebuild_grid()
+	# If a soul was shown in the now-inactive panel, re-route to the new one.
+	if not _last_detail.is_empty():
+		if _last_detail_was_not_found:
+			_show_detail_not_found(_last_detail.get("soul", {}))
+		else:
+			_show_detail(_last_detail.get("soul", {}),
+				bool(_last_detail.get("is_hidden", false)))
 
 
 func _compute_cols() -> int:
 	var w: float = get_viewport().get_visible_rect().size.x
+	# In wide layout the right side panel claims SIDE_PANEL_W of horizontal
+	# space, so the grid has less room — subtract it before computing cols.
+	if _is_wide_layout():
+		w -= float(SIDE_PANEL_W + 24)  # +24 for HBox separation/margin
 	# Subtract horizontal margins (18 left + 18 right) and a soft buffer
 	# so the rightmost cell never clips against the scrollbar.
 	var usable: float = max(0.0, w - 56.0)
 	var per_cell: float = float(CELL_TARGET_W + CELL_GAP)
 	var cols: int = int(floor(usable / per_cell))
 	return clamp(cols, MIN_COLS, MAX_COLS)
+
+
+# Test-only override. When set to "narrow" or "wide", _is_wide_layout()
+# returns the forced value instead of probing the viewport. Lets the
+# integration suite assert sheet-vs-side-panel routing without juggling
+# the test viewport size.
+var _force_layout: String = ""
+
+# True when viewport is wide enough for the desktop split layout (grid +
+# persistent right detail panel). Falsey on phones / portrait tablets.
+func _is_wide_layout() -> bool:
+	if _force_layout == "wide":
+		return true
+	if _force_layout == "narrow":
+		return false
+	return get_viewport().get_visible_rect().size.x >= float(WIDE_LAYOUT_PX)
 
 
 func _on_language_changed(_lang: String) -> void:
@@ -149,9 +204,21 @@ func router_title() -> String:
 func open() -> void:
 	visible = true
 	_cell_nodes.clear()
+	_apply_layout_mode()
 	_refresh_counters()
 	_rebuild_grid()
 	_close_sheet_instant()
+	# Reset side panel to placeholder on each open so stale content from
+	# a previous session doesn't show.
+	_last_detail = {}
+	_last_detail_was_not_found = false
+	if _side_placeholder:
+		_side_placeholder.visible = true
+		for lbl in [_side_name, _side_age, _side_loc, _side_text, _side_extra]:
+			if lbl:
+				lbl.visible = false
+		if _side_sep:
+			_side_sep.visible = false
 	var tw := create_tween()
 	tw.tween_property(_root, "modulate:a", 1.0, FADE_DURATION)
 
@@ -199,7 +266,42 @@ func _refresh_counters() -> void:
 	_lbl_hidden.text = _t("collection.counter_hidden", {"saved": hidden}, "✦ %d / 20" % hidden)
 	_lbl_named.add_theme_color_override("font_color",
 		Color("#FFD700") if named >= 100 else Color(0.82, 0.80, 0.86))
+	_refresh_type_stats()
 	_refresh_circle_progress()
+
+
+# Tally per-type totals from the loaded named-soul list against the
+# SaveManager's saved IDs and render them as a single emoji strip:
+#   "🔥 24/40  •  💀 18/35  •  😴 8/25"
+# Hidden souls aren't included here — they have their own ✦ counter.
+# Types with zero total are skipped so the strip stays compact.
+func _refresh_type_stats() -> void:
+	if not _lbl_type_stats:
+		return
+	var saved_ids: Array = SaveManager.get_saved_soul_ids() if SaveManager else []
+
+	var totals: Dictionary = {"innocent": 0, "broken": 0, "sleeping": 0}
+	var saved:  Dictionary = {"innocent": 0, "broken": 0, "sleeping": 0}
+	for soul in _named_souls:
+		var t: String = String(soul.get("type", ""))
+		if not totals.has(t):
+			continue
+		totals[t] = int(totals[t]) + 1
+		if int(soul.get("id", 0)) in saved_ids:
+			saved[t] = int(saved[t]) + 1
+
+	var icons: Dictionary = {
+		"innocent": "🔥",
+		"broken":   "💀",
+		"sleeping": "😴",
+	}
+	var parts: PackedStringArray = []
+	for k in ["innocent", "broken", "sleeping"]:
+		var tot: int = int(totals[k])
+		if tot <= 0:
+			continue
+		parts.append("%s %d/%d" % [icons[k], int(saved[k]), tot])
+	_lbl_type_stats.text = "  •  ".join(parts)
 
 ## Compute per-circle (1..10) counts from the loaded named/hidden lists and
 ## the SaveManager's saved IDs, then refresh the inline progress strip so
@@ -500,9 +602,9 @@ func _on_cell_pressed(soul: Dictionary, is_hidden: bool, saved: bool) -> void:
 				# Pull the badge off the just-pressed cell instantly so
 				# the player sees the cause-and-effect.
 				_remove_new_badge_for(sid)
-		_show_sheet(soul, is_hidden)
+		_show_detail(soul, is_hidden)
 	else:
-		_show_sheet_not_found(soul)
+		_show_detail_not_found(soul)
 
 
 # Find the cell associated with this soul id and queue_free its
@@ -515,63 +617,129 @@ func _remove_new_badge_for(soul_id: int) -> void:
 	if badge:
 		badge.queue_free()
 
-func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
-	_sheet_name.text = soul.get("name", "?")
-	_sheet_name.add_theme_color_override("font_color",
+# Returns the dict of active label refs (sheet OR side panel) based on
+# current layout mode. Both sets share the exact same key names so the
+# populate functions don't need to know which one they're filling.
+func _active_refs() -> Dictionary:
+	if _is_wide_layout() and _side_panel:
+		return {
+			"name": _side_name, "age": _side_age, "loc": _side_loc,
+			"sep":  _side_sep,  "text": _side_text, "extra": _side_extra,
+		}
+	return {
+		"name": _sheet_name, "age": _sheet_age, "loc": _sheet_loc,
+		"sep":  _sheet_sep,  "text": _sheet_text, "extra": _sheet_extra,
+	}
+
+
+func _populate_detail(refs: Dictionary, soul: Dictionary, is_hidden: bool) -> void:
+	var name_lbl: Label = refs["name"]
+	name_lbl.text = soul.get("name", "?")
+	name_lbl.add_theme_color_override("font_color",
 		Color("#FFD700") if is_hidden else Color(0.92, 0.90, 0.96))
+	name_lbl.visible = true
 
 	# Age can be int OR the string "?" (used by soul id 100, "Безіменний").
 	# %d would crash on a string, and the literal "років" was hardcoded
 	# even in English. Route through Loc with a robust string param.
 	var age_v: Variant = soul.get("age", 0)
 	var age_s: String  = str(age_v) if typeof(age_v) == TYPE_STRING else str(int(age_v))
-	_sheet_age.text    = _t("collection.detail_age_format", {"age": age_s}, "%s років" % age_s)
-	_sheet_age.visible = true
+	var age_lbl: Label = refs["age"]
+	age_lbl.text    = _t("collection.detail_age_format", {"age": age_s}, "%s років" % age_s)
+	age_lbl.visible = true
 
 	var circle: int = soul.get("circle", 1)
 	var level:  int = soul.get("level",  0)
+	var loc_lbl: Label = refs["loc"]
 	if is_hidden:
-		_sheet_loc.text = _t("collection.detail_location_hidden",
+		loc_lbl.text = _t("collection.detail_location_hidden",
 			{"circle": circle}, "Коло %d • Прихована" % circle)
 	else:
-		_sheet_loc.text = _t("collection.detail_location_common",
+		loc_lbl.text = _t("collection.detail_location_common",
 			{"circle": circle, "level": level},
 			"Коло %d • Рівень %d" % [circle, level])
-	_sheet_loc.visible = true
-	_sheet_sep.visible = true
+	loc_lbl.visible = true
+	(refs["sep"] as HSeparator).visible = true
 
 	var story: String = soul.get("full_story", soul.get("epitaph", ""))
-	_sheet_text.text    = story
-	_sheet_text.visible = true
+	var text_lbl: Label = refs["text"]
+	text_lbl.text    = story
+	text_lbl.visible = true
 
+	var extra_lbl: Label = refs["extra"]
 	if is_hidden:
 		var reward: String = soul.get("reward", "")
-		_sheet_extra.text = _t("collection.detail_reward_format",
+		extra_lbl.text = _t("collection.detail_reward_format",
 			{"reward": reward}, "Нагорода: %s" % reward) if reward else ""
-		_sheet_extra.add_theme_color_override("font_color", Color("#FFD700"))
+		extra_lbl.add_theme_color_override("font_color", Color("#FFD700"))
 	else:
 		var sin_val: String = soul.get("sin", "none")
 		if sin_val != "none":
-			_sheet_extra.text = _t("collection.detail_sin_format",
+			extra_lbl.text = _t("collection.detail_sin_format",
 				{"sin": sin_val}, "Гріх: %s" % sin_val)
 		else:
-			_sheet_extra.text = ""
-		_sheet_extra.add_theme_color_override("font_color", Color(0.65, 0.60, 0.72))
-	_sheet_extra.visible = _sheet_extra.text != ""
+			extra_lbl.text = ""
+		extra_lbl.add_theme_color_override("font_color", Color(0.65, 0.60, 0.72))
+	extra_lbl.visible = extra_lbl.text != ""
 
+
+func _populate_detail_not_found(refs: Dictionary) -> void:
+	var name_lbl: Label = refs["name"]
+	name_lbl.text = _t("collection.detail_not_found", {}, "Душа не знайдена")
+	name_lbl.add_theme_color_override("font_color", Color(0.48, 0.46, 0.54))
+	name_lbl.visible = true
+	(refs["age"] as Label).visible = false
+	(refs["loc"] as Label).visible = false
+	(refs["sep"] as HSeparator).visible = false
+	var text_lbl: Label = refs["text"]
+	text_lbl.text = _t("collection.detail_not_found_hint", {},
+		"Продовжуй шукати в цьому Колі")
+	text_lbl.visible = true
+	(refs["extra"] as Label).visible = false
+
+
+# Direct sheet populators — kept narrow-only so unit tests can assert
+# against _sheet_* labels regardless of test viewport width. Production
+# UI uses _show_detail() below, which picks between sheet and side panel.
+func _show_sheet(soul: Dictionary, is_hidden: bool) -> void:
+	_populate_detail({
+		"name": _sheet_name, "age": _sheet_age, "loc": _sheet_loc,
+		"sep":  _sheet_sep,  "text": _sheet_text, "extra": _sheet_extra,
+	}, soul, is_hidden)
 	_open_sheet()
+
 
 func _show_sheet_not_found(_soul: Dictionary) -> void:
-	_sheet_name.text = _t("collection.detail_not_found", {}, "Душа не знайдена")
-	_sheet_name.add_theme_color_override("font_color", Color(0.48, 0.46, 0.54))
-	_sheet_age.visible  = false
-	_sheet_loc.visible  = false
-	_sheet_sep.visible  = false
-	_sheet_text.text    = _t("collection.detail_not_found_hint", {},
-		"Продовжуй шукати в цьому Колі")
-	_sheet_text.visible = true
-	_sheet_extra.visible = false
+	_populate_detail_not_found({
+		"name": _sheet_name, "age": _sheet_age, "loc": _sheet_loc,
+		"sep":  _sheet_sep,  "text": _sheet_text, "extra": _sheet_extra,
+	})
 	_open_sheet()
+
+
+# Layout-aware detail entry — chooses bottom sheet (narrow) or right
+# side panel (wide ≥ WIDE_LAYOUT_PX). _on_cell_pressed routes here so
+# desktop users get the persistent-panel experience automatically.
+func _show_detail(soul: Dictionary, is_hidden: bool) -> void:
+	_last_detail = {"soul": soul, "is_hidden": is_hidden}
+	_last_detail_was_not_found = false
+	if _is_wide_layout():
+		_populate_detail(_active_refs(), soul, is_hidden)
+		if _side_placeholder:
+			_side_placeholder.visible = false
+	else:
+		_show_sheet(soul, is_hidden)
+
+
+func _show_detail_not_found(soul: Dictionary) -> void:
+	_last_detail = {"soul": soul, "is_hidden": false}
+	_last_detail_was_not_found = true
+	if _is_wide_layout():
+		_populate_detail_not_found(_active_refs())
+		if _side_placeholder:
+			_side_placeholder.visible = false
+	else:
+		_show_sheet_not_found(soul)
 
 func _open_sheet() -> void:
 	_sheet_open = true
@@ -653,10 +821,30 @@ func _build_ui() -> void:
 	_root.add_child(vbox)
 
 	_build_header(vbox)
+	_build_type_stats_strip(vbox)
 	_build_circle_progress(vbox)
 	_build_circle_row(vbox)
 	_build_type_row(vbox)
 	_build_grid_area(vbox)
+
+
+# Compact per-type stats strip ("🔥 24/40 • 💀 18/35 • 😴 8/25"). Sits
+# right under the title row, gives the player a quick at-a-glance read
+# of which soul archetype they still have to find.
+func _build_type_stats_strip(parent: VBoxContainer) -> void:
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left",  24)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_top",    0)
+	margin.add_theme_constant_override("margin_bottom", 6)
+	parent.add_child(margin)
+
+	_lbl_type_stats = Label.new()
+	_lbl_type_stats.text = ""
+	_lbl_type_stats.add_theme_font_size_override("font_size", 22)
+	_lbl_type_stats.add_theme_color_override("font_color", Color(0.78, 0.76, 0.84))
+	_lbl_type_stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	margin.add_child(_lbl_type_stats)
 
 func _build_circle_progress(parent: VBoxContainer) -> void:
 	# 10 cells in one row, evenly spread, sitting just under the title bar.
@@ -795,10 +983,18 @@ func _build_type_row(parent: VBoxContainer) -> void:
 	_on_type_btn("all")
 
 func _build_grid_area(parent: VBoxContainer) -> void:
+	# HBox: [grid_scroll (flex)] [side_panel (fixed, hidden on narrow)]
+	var split := HBoxContainer.new()
+	split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	split.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	split.add_theme_constant_override("separation", 12)
+	parent.add_child(split)
+
 	_grid_scroll = ScrollContainer.new()
-	_grid_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_grid_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_grid_scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	_grid_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	parent.add_child(_grid_scroll)
+	split.add_child(_grid_scroll)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left",  18)
@@ -812,6 +1008,107 @@ func _build_grid_area(parent: VBoxContainer) -> void:
 	_grid.add_theme_constant_override("h_separation", CELL_GAP)
 	_grid.add_theme_constant_override("v_separation", CELL_GAP)
 	margin.add_child(_grid)
+
+	_build_side_panel(split)
+	_apply_layout_mode()
+
+
+# Right-side persistent detail panel — shown only when viewport is wide
+# enough (WIDE_LAYOUT_PX). Mirrors the bottom-sheet labels 1:1 so the
+# same _populate_detail() call fills either UI tree.
+func _build_side_panel(parent: HBoxContainer) -> void:
+	_side_panel = PanelContainer.new()
+	_side_panel.custom_minimum_size = Vector2(SIDE_PANEL_W, 0)
+	_side_panel.size_flags_horizontal = Control.SIZE_FILL
+	_side_panel.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.09, 0.08, 0.12, 0.98)
+	style.border_color = Color(0.28, 0.24, 0.36)
+	style.border_width_left = 2
+	style.corner_radius_top_left    = 18
+	style.corner_radius_bottom_left = 18
+	style.content_margin_left   = 24.0
+	style.content_margin_right  = 24.0
+	style.content_margin_top    = 22.0
+	style.content_margin_bottom = 24.0
+	_side_panel.add_theme_stylebox_override("panel", style)
+	parent.add_child(_side_panel)
+
+	# Wrap content in a ScrollContainer so long hidden-soul stories don't
+	# overflow on shorter desktop windows.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode   = ScrollContainer.SCROLL_MODE_AUTO
+	_side_panel.add_child(scroll)
+
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 10)
+	scroll.add_child(vbox)
+
+	_side_placeholder = Label.new()
+	_side_placeholder.text = _t("collection.side_placeholder", {},
+		"Натисни на душу щоб побачити деталі")
+	_side_placeholder.add_theme_font_size_override("font_size", 22)
+	_side_placeholder.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
+	_side_placeholder.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_side_placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(_side_placeholder)
+
+	_side_name = Label.new()
+	_side_name.add_theme_font_size_override("font_size", 36)
+	_side_name.add_theme_color_override("font_color", Color(0.92, 0.90, 0.96))
+	_side_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_side_name.visible = false
+	vbox.add_child(_side_name)
+
+	_side_age = Label.new()
+	_side_age.add_theme_font_size_override("font_size", 24)
+	_side_age.add_theme_color_override("font_color", Color(0.58, 0.56, 0.64))
+	_side_age.visible = false
+	vbox.add_child(_side_age)
+
+	_side_loc = Label.new()
+	_side_loc.add_theme_font_size_override("font_size", 22)
+	_side_loc.add_theme_color_override("font_color", Color(0.52, 0.50, 0.58))
+	_side_loc.visible = false
+	vbox.add_child(_side_loc)
+
+	_side_sep = HSeparator.new()
+	var ss := StyleBoxFlat.new()
+	ss.bg_color = Color(0.28, 0.24, 0.36)
+	ss.content_margin_top = 1.0; ss.content_margin_bottom = 1.0
+	_side_sep.add_theme_stylebox_override("separator", ss)
+	_side_sep.visible = false
+	vbox.add_child(_side_sep)
+
+	_side_text = Label.new()
+	_side_text.add_theme_font_size_override("font_size", 22)
+	_side_text.add_theme_color_override("font_color", Color(0.84, 0.82, 0.88))
+	_side_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_side_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_side_text.visible = false
+	vbox.add_child(_side_text)
+
+	_side_extra = Label.new()
+	_side_extra.add_theme_font_size_override("font_size", 20)
+	_side_extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_side_extra.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_side_extra.visible = false
+	vbox.add_child(_side_extra)
+
+
+# Switch between narrow (sheet) and wide (side panel) presentations.
+# Called on _ready, open(), and viewport size_changed.
+func _apply_layout_mode() -> void:
+	if not _side_panel:
+		return
+	var wide: bool = _is_wide_layout()
+	_side_panel.visible = wide
+	# In wide mode the bottom sheet must never appear. Force-close it.
+	if wide and _sheet_open:
+		_close_sheet_instant()
 
 func _build_sheet() -> void:
 	# Backdrop sits BEHIND the sheet, fills the whole screen, captures
