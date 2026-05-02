@@ -971,8 +971,14 @@ func _on_edit_mobile_pressed() -> void:
 		mc = mc_script.new()
 		owns_mc = true
 	close()
-	mc.set_edit_mode(true)
+	# Build the overlay (which also add_child(mc) for the temp case so
+	# its `_ready()` runs and the buttons exist) BEFORE flipping edit
+	# mode — `set_edit_mode(true)` walks `_btn_actions` to apply the
+	# gold-rim glow, and previously the loop ran on an empty dict
+	# (mc not yet in tree) so the buttons stayed plain. Players had no
+	# visual cue that edit mode was active and assumed nothing happened.
 	_show_edit_overlay(mc, owns_mc)
+	mc.set_edit_mode(true)
 
 func _show_edit_overlay(mc: Node, owns_mc: bool = false) -> void:
 	if _edit_overlay and is_instance_valid(_edit_overlay):
@@ -982,10 +988,29 @@ func _show_edit_overlay(mc: Node, owns_mc: bool = false) -> void:
 	_edit_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().root.add_child(_edit_overlay)
 
-	# If we own the mc (no HUD), parent it inside the overlay so it's
-	# visible and receives touch input during the edit session.
-	if owns_mc:
-		_edit_overlay.add_child(mc)
+	# Dim the level/menu behind the overlay so it's obvious that edit
+	# mode is active and the buttons-being-dragged are the real targets.
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.55)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_edit_overlay.add_child(dim)
+
+	# Parent the mc into the overlay regardless of who owns it. When the
+	# Settings screen is opened from the in-game pause menu, the actual
+	# MobileControls lives on HUD's layer=1 — which renders BELOW the
+	# pause screen's layer=10 dim. Without reparenting, the player saw
+	# the "drag the buttons" hint but the buttons themselves were hidden
+	# behind the pause overlay and impossible to grab. We snapshot the
+	# original parent + index so _on_edit_done can put it back.
+	if mc.has_method("set"):
+		mc.set_meta("_edit_origin_parent", mc.get_parent())
+		mc.set_meta("_edit_origin_index",  mc.get_index())
+	if mc.get_parent() != null:
+		mc.get_parent().remove_child(mc)
+	_edit_overlay.add_child(mc)
+	# Track ownership so _on_edit_done knows whether to free or restore.
+	mc.set_meta("_edit_owns_mc", owns_mc)
 
 	var hint := Label.new()
 	hint.text = _t("settings.mobile_drag_hint", {}, "Перетягуй кнопки куди зручно. Натисни ✓ коли готовий.")
@@ -1024,6 +1049,23 @@ func _on_edit_done(mc: Node) -> void:
 		mc.set_edit_mode(false)
 		if mc.has_method("save_layout"):
 			mc.save_layout()
+	# Restore the mc to its original parent (HUD when in-game) so it
+	# keeps driving touch input after the edit session. For the
+	# main-menu temp-instance case the original parent is the overlay
+	# itself or null — we just free the temp mc instead.
+	if mc and is_instance_valid(mc):
+		var owns_mc: bool = bool(mc.get_meta("_edit_owns_mc", false))
+		var origin_parent: Node = mc.get_meta("_edit_origin_parent", null) as Node
+		var origin_index: int = int(mc.get_meta("_edit_origin_index", -1))
+		if mc.get_parent() != null:
+			mc.get_parent().remove_child(mc)
+		if owns_mc or origin_parent == null \
+				or not is_instance_valid(origin_parent):
+			mc.queue_free()
+		else:
+			origin_parent.add_child(mc)
+			if origin_index >= 0 and origin_index < origin_parent.get_child_count():
+				origin_parent.move_child(mc, origin_index)
 	if _edit_overlay and is_instance_valid(_edit_overlay):
 		_edit_overlay.queue_free()
 		_edit_overlay = null
