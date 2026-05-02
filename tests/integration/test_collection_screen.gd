@@ -458,6 +458,46 @@ func test_type_stats_skips_zero_total_categories() -> void:
 	assert_false(screen._lbl_type_stats.text.contains("😴"),
 		"sleeping icon should be omitted when no sleeping souls exist")
 
+# ── Hidden in per-type strip + grand-total counter ────────────────────────────
+
+func test_type_stats_includes_hidden_marker() -> void:
+	# Hidden souls now appear as a "✦ X/Y" entry alongside the type icons.
+	# TEST_HIDDEN has 1 entry, none saved — expect "✦ 0/1".
+	screen._refresh_counters()
+	assert_true(screen._lbl_type_stats.text.contains("✦ 0/1"),
+		"hidden tier should render as ✦ X/Y in the per-type strip")
+
+func test_grand_total_label_exists() -> void:
+	assert_not_null(screen._lbl_total,
+		"grand total label should be built in the header")
+
+func test_grand_total_combines_named_and_hidden_targets() -> void:
+	# 3 named + 1 hidden in TEST data → target = 4. With nothing saved,
+	# label should mention "0" and "4".
+	screen._refresh_counters()
+	assert_true(screen._lbl_total.text.contains("0"),
+		"grand total label should show the saved count")
+	assert_true(screen._lbl_total.text.contains("4"),
+		"grand total label should show named+hidden combined target")
+
+func test_grand_total_advances_after_saving() -> void:
+	SaveManager.add_soul(1)
+	SaveManager.add_hidden_soul("h1")
+	screen._refresh_counters()
+	assert_true(screen._lbl_total.text.contains("2"),
+		"grand total should reflect both named and hidden saves")
+
+# ── Hidden souls survive the type filter ──────────────────────────────────────
+
+func test_hidden_soul_passes_type_filter_when_specific_type_selected() -> void:
+	# Bug fix: previously _passes_filter dropped hidden souls when the
+	# type filter wasn't "all" (their type field is missing).
+	screen._filter_type = "innocent"
+	screen._rebuild_grid()
+	await get_tree().process_frame
+	assert_true(screen._cell_nodes.has("h1"),
+		"hidden soul cell should remain visible under non-'all' type filter")
+
 # ── TODO ──────────────────────────────────────────────────────────────────────
 
 func test_close_emits_signal() -> void:
