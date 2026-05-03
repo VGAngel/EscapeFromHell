@@ -28,6 +28,20 @@ var state: State = State.PATROL
 @export var contact_knockback: float = 280.0
 const HIT_COOLDOWN_TIME: float = 1.0
 
+# Attack windup: when an enemy decides to strike it now waits a beat
+# before damage actually lands, with the last `parry_window` seconds
+# being a "deflect me!" cue for the player. A staff hit that connects
+# during that cue parries instead of merely stunning — full 5 s stun,
+# zero damage, zero sin. ATTACK_WINDUP_DURATION includes the parry
+# window, so total telegraph = 0.5 s with the last 0.2 s being the
+# parry cue (sprite tints red).
+const ATTACK_WINDUP_DURATION: float = 0.5
+const PARRY_WINDOW:           float = 0.2
+const PARRY_STUN_DURATION:    float = 5.0
+var _attack_windup:    float = 0.0
+var _windup_telegraph: bool  = false
+var _windup_target_pos: Vector2 = Vector2.ZERO  # rechecked at strike time
+
 # ── Config binding ────────────────────────────────────────────────────────────
 ## If set in the scene, BaseEnemy._ready() auto-loads stats from
 ## enemies_config.json entry with this id and pulls sprite frames from
@@ -510,9 +524,29 @@ func _make_placeholder_sprite(color: Color, sz: Vector2) -> void:
 	_sprite.texture = ImageTexture.create_from_image(img)
 
 # ── Player contact damage ─────────────────────────────────────────────────────
+# Two-phase attack: (1) windup with a visible telegraph, (2) damage
+# application if still in range. The mid-windup parry window lets the
+# player deflect the strike with a perfectly-timed staff swing.
 func _check_player_contact(delta: float) -> void:
-	if not _player or state == State.STUNNED:
+	if not _player:
+		_clear_attack_windup()
 		return
+	if state == State.STUNNED:
+		_clear_attack_windup()
+		return
+	# Tick the active windup. Telegraph turns red the moment we enter
+	# the parry window and damage lands when the windup hits zero.
+	if _attack_windup > 0.0:
+		_attack_windup -= delta
+		if not _windup_telegraph and _attack_windup <= PARRY_WINDOW:
+			_set_attack_telegraph(true)
+		if _attack_windup <= 0.0:
+			_set_attack_telegraph(false)
+			_resolve_attack()
+		return
+
+	# No active windup — start one if the player is close enough and the
+	# previous strike's cooldown has elapsed.
 	if _hit_cooldown > 0.0:
 		_hit_cooldown -= delta
 		return
@@ -520,11 +554,56 @@ func _check_player_contact(delta: float) -> void:
 		return
 	if global_position.distance_to(_player.global_position) > contact_range:
 		return
+	# Begin windup; record the player's current position so a frame-
+	# perfect side-step still cancels the hit.
+	_attack_windup = ATTACK_WINDUP_DURATION
+	_windup_target_pos = _player.global_position
+
+
+func _resolve_attack() -> void:
+	# Cooldown starts at strike time so the next windup can't begin until
+	# HIT_COOLDOWN_TIME real seconds later (matches old behaviour).
 	_hit_cooldown = HIT_COOLDOWN_TIME
 	_attack_timer = 0.5
+	if not _player:
+		return
+	# Range re-check — player may have walked out during the telegraph.
+	if global_position.distance_to(_player.global_position) > contact_range:
+		return
 	if _player.has_method("receive_hit"):
 		var dir: Vector2 = (_player.global_position - global_position).normalized()
 		_player.receive_hit(contact_damage, dir * contact_knockback)
+
+
+# Public — true while the parry-deflect window is open. Player checks
+# this in _apply_staff_hit before the regular knockback path so a parry
+# upgrades the response from "stun 4 s + 1 sin" to "stun 5 s + 0 sin".
+func is_parry_window_open() -> bool:
+	return _windup_telegraph and _attack_windup > 0.0
+
+
+# Public — called by Player on a successful parry so the windup is
+# cancelled before _resolve_attack runs.
+func cancel_attack_windup() -> void:
+	_clear_attack_windup()
+	_hit_cooldown = HIT_COOLDOWN_TIME
+
+
+func _clear_attack_windup() -> void:
+	if _attack_windup > 0.0 or _windup_telegraph:
+		_attack_windup = 0.0
+		_set_attack_telegraph(false)
+
+
+func _set_attack_telegraph(active: bool) -> void:
+	_windup_telegraph = active
+	var visual: CanvasItem = (_anim_sprite as CanvasItem) if _anim_sprite \
+		else (_sprite as CanvasItem)
+	if not visual:
+		return
+	# Bright red tint during the parry window — tells the player exactly
+	# when to mash Staff to deflect.
+	visual.modulate = Color(1.6, 0.4, 0.4, 1.0) if active else Color.WHITE
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 func _update_facing() -> void:
