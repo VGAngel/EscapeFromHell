@@ -21,7 +21,7 @@ signal enemy_struck(was_last: bool)
 signal carry_changed(carried: int, capacity: int)
 
 # ── State ─────────────────────────────────────────────────────────────────────
-enum State { IDLE, WALK, JUMP, FALL, STAFF_SWING, PICKUP, CARRYING, DEAD }
+enum State { IDLE, WALK, JUMP, FALL, STAFF_SWING, PICKUP, CARRYING, DEAD, DODGE }
 
 # ── Dimensions ────────────────────────────────────────────────────────────────
 # Must match CollisionShape2D in Player.tscn. Used by LevelGenerator for
@@ -56,6 +56,16 @@ var _jump_hold_timer:   float = 0.0
 var _staff_timer:       float = 0.0
 var _pickup_timer:      float = 0.0
 var _invincibility_timer: float = 0.0
+# Dodge roll: short horizontal dash with i-frames. _dodge_timer drives
+# the active phase (state stays DODGE while > 0), _dodge_cooldown gates
+# the next press so the move can't be spammed.
+const DODGE_DURATION:   float = 0.40
+const DODGE_COOLDOWN:   float = 2.0
+const DODGE_SPEED:      float = 520.0
+const DODGE_IFRAME:     float = 0.40
+var _dodge_timer:       float = 0.0
+var _dodge_cooldown:    float = 0.0
+var _dodge_dir:         float = 1.0   # captured at press; +1 right, -1 left
 var _jumps_done:        int   = 0
 var _was_on_floor:      bool  = false
 var _landing_decel_timer: float = 0.0
@@ -298,6 +308,7 @@ func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 	_handle_jump(delta)
 	_handle_staff()
+	_handle_dodge()
 	_check_fall_damage()
 	move_and_slide()
 	_update_state()
@@ -308,6 +319,12 @@ func _physics_process(delta: float) -> void:
 func _tick_timers(delta: float) -> void:
 	_staff_timer             = maxf(_staff_timer - delta, 0.0)
 	_invincibility_timer     = maxf(_invincibility_timer - delta, 0.0)
+	_dodge_timer             = maxf(_dodge_timer - delta, 0.0)
+	_dodge_cooldown          = maxf(_dodge_cooldown - delta, 0.0)
+	# Dodge auto-exits the moment the iframe burst is over so movement
+	# resumes input control without a one-frame stall.
+	if state == State.DODGE and _dodge_timer <= 0.0:
+		state = State.IDLE
 	_soul_shield_timer       = maxf(_soul_shield_timer - delta, 0.0)
 	_temp_double_jump_timer  = maxf(_temp_double_jump_timer - delta, 0.0)
 	if _jump_buffer_timer > 0.0:
@@ -333,8 +350,35 @@ func _handle_gravity(delta: float) -> void:
 		velocity.y += gravity * delta
 	velocity.y = minf(velocity.y, max_fall_speed)
 
+# ── Dodge roll ────────────────────────────────────────────────────────────────
+# Press "dodge" → short horizontal dash with i-frames. Blocks staff and
+# normal movement while active. Locked behind a 2 s cooldown so it can't
+# carry the player across an entire level for free.
+func _handle_dodge() -> void:
+	if state in [State.DEAD, State.PICKUP]:
+		return
+	if not Input.is_action_just_pressed("dodge"):
+		return
+	if _dodge_cooldown > 0.0 or _dodge_timer > 0.0:
+		return
+	# Capture facing at press; mid-dodge direction changes are intentionally
+	# ignored so the move feels committed.
+	_dodge_dir = 1.0 if _facing_right else -1.0
+	_dodge_timer = DODGE_DURATION
+	_dodge_cooldown = DODGE_COOLDOWN
+	_invincibility_timer = maxf(_invincibility_timer, DODGE_IFRAME)
+	state = State.DODGE
+	if HapticManager:
+		HapticManager.hit()
+
+
 # ── Horizontal movement ───────────────────────────────────────────────────────
 func _handle_movement(delta: float) -> void:
+	# Dodge owns the velocity for its full duration — apply the dash burst
+	# and ignore standard input until the timer expires.
+	if state == State.DODGE:
+		velocity.x = _dodge_dir * DODGE_SPEED
+		return
 	if state in [State.STAFF_SWING, State.PICKUP, State.DEAD]:
 		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
 		return
@@ -371,7 +415,7 @@ func _can_jump() -> bool:
 
 # ── Jump ──────────────────────────────────────────────────────────────────────
 func _handle_jump(delta: float) -> void:
-	if state in [State.DEAD, State.PICKUP]:
+	if state in [State.DEAD, State.PICKUP, State.DODGE]:
 		return
 
 	if Input.is_action_just_pressed("jump"):
@@ -412,7 +456,7 @@ func _handle_jump(delta: float) -> void:
 
 # ── Staff ─────────────────────────────────────────────────────────────────────
 func _handle_staff() -> void:
-	if state in [State.DEAD, State.PICKUP, State.CARRYING]:
+	if state in [State.DEAD, State.PICKUP, State.CARRYING, State.DODGE]:
 		return
 	if _staff_timer > 0.0:
 		return
@@ -433,30 +477,34 @@ func _handle_staff() -> void:
 	_orient_staff_area()
 	_staff_area.monitoring = true
 	await get_tree().create_timer(0.15).timeout
-	var hit := _apply_staff_hit()
+	var result: Dictionary = _apply_staff_hit()
 	_staff_area.monitoring = false
+	var hit:     bool = bool(result.get("hit", false))
+	var parried: bool = bool(result.get("parried", false))
 
 	if hit:
 		# Game-feel hit reaction (ordered so the spike is felt first):
 		#   1. Hit-stop: full freeze (~0.10s) sells the impact weight.
 		#   2. Slow-mo tail (~0.25s; 0.55s if it was the last threat in
-		#      sight) for cinematic follow-through.
+		#      sight, or always when a parry triggered) for cinematic
+		#      follow-through.
 		#   3. enemy_struck signal triggers HitFlash (black edge vignette).
 		# Timer flags below set ignore_time_scale so the awaits resolve in
 		# real seconds while time_scale is squashed.
 		var was_last: bool = _was_last_threat_after_hit()
-		enemy_struck.emit(was_last)
+		enemy_struck.emit(was_last or parried)
 
 		Engine.time_scale = 0.0
 		await get_tree().create_timer(0.10, true, false, true).timeout
 		Engine.time_scale = 0.35
-		var slow_dur: float = 0.55 if was_last else 0.25
+		var slow_dur: float = 0.55 if (was_last or parried) else 0.25
 		await get_tree().create_timer(slow_dur, true, false, true).timeout
 		Engine.time_scale = 1.0
 
 		# Sin is only added when the staff connects with an enemy —
-		# swinging through the air costs nothing.
-		if not _upgrade_staff_purity:
+		# swinging through the air costs nothing. PARRYING is reward
+		# for skill: zero sin even if staff_purity isn't upgraded.
+		if not _upgrade_staff_purity and not parried:
 			# Route through GameManager so the HUD toast + sin_changed
 			# signal fire — direct SaveManager.add_sin would skip the
 			# source pipeline.
@@ -504,26 +552,43 @@ func _was_last_threat_after_hit() -> bool:
 	return true
 
 
-func _apply_staff_hit() -> bool:
+func _apply_staff_hit() -> Dictionary:
 	# Defensive guard: between _handle_staff() flipping monitoring on and
 	# this call (after a 0.15s await), an interrupting state change —
 	# damage taken, death, respawn — may have already turned monitoring
 	# back off elsewhere. Querying overlaps with monitoring=false logs a
 	# C++ engine error per swing, so bail out quietly when that happens.
 	if not _staff_area.monitoring:
-		return false
-	var hit := false
+		return {"hit": false, "parried": false}
+	var hit:     bool = false
+	var parried: bool = false
 	for body in _staff_area.get_overlapping_bodies():
-		if body.is_in_group("enemy"):
-			var direction: Vector2 = Vector2.RIGHT if _facing_right else Vector2.LEFT
-			if body.has_method("receive_knockback"):
-				body.receive_knockback(direction * 280.0, 4.0)
-			# Visual feedback at the impact point. flash_white is handled
-			# by BaseEnemy.receive_knockback itself; we add the spark burst
-			# here so non-BaseEnemy targets (custom bosses) still get sparks.
-			_spawn_fx("staff_impact", body.global_position)
-			hit = true
-	return hit
+		if not body.is_in_group("enemy"):
+			continue
+		var direction: Vector2 = Vector2.RIGHT if _facing_right else Vector2.LEFT
+		# Parry detection: the swing connected with an enemy whose attack
+		# windup is already in its 0.2 s "deflect me!" cue. Cancels the
+		# pending strike and applies the longer parry stun (5 s) instead
+		# of the regular knockback's 4 s.
+		var is_parry: bool = body.has_method("is_parry_window_open") \
+			and body.is_parry_window_open()
+		if is_parry:
+			if body.has_method("cancel_attack_windup"):
+				body.cancel_attack_windup()
+			if body.has_method("stun"):
+				# Use stun (no velocity push) so the parried enemy stays
+				# put — easier follow-up for the player.
+				body.stun(5.0)
+			parried = true
+		elif body.has_method("receive_knockback"):
+			body.receive_knockback(direction * 280.0, 4.0)
+		# Visual feedback at the impact point. flash_white is handled
+		# by BaseEnemy.receive_knockback / .stun itself; we add the spark
+		# burst here so non-BaseEnemy targets (custom bosses) still get
+		# sparks regardless of which branch ran.
+		_spawn_fx("staff_impact", body.global_position)
+		hit = true
+	return {"hit": hit, "parried": parried}
 
 # Mirror the StaffArea's collision shape to the player's facing side. The
 # scene-time position is hard-coded to the right (+x); without flipping,
