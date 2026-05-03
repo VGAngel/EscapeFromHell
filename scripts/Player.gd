@@ -11,6 +11,11 @@ signal hp_changed(current: int, maximum: int)
 ## listens for this to render a red border vignette; intensity scales
 ## with `amount` so a 2-damage hit reads stronger than a 1-damage tick.
 signal damage_taken(amount: int)
+## Fired the moment the player's staff connects with one or more enemies.
+## `was_last` is true when the strike removed the last alert/chase enemy
+## within ~500 px line-of-sight, used by HitFlash to thicken the pulse
+## and by the staff slow-mo to extend the cinematic tail.
+signal enemy_struck(was_last: bool)
 ## Emitted whenever the carried soul count changes (pickup / deliver /
 ## drop / die). Useful for HUD indicators that show "carried / capacity".
 signal carry_changed(carried: int, capacity: int)
@@ -432,14 +437,29 @@ func _handle_staff() -> void:
 	_staff_area.monitoring = false
 
 	if hit:
+		# Game-feel hit reaction (ordered so the spike is felt first):
+		#   1. Hit-stop: full freeze (~0.10s) sells the impact weight.
+		#   2. Slow-mo tail (~0.25s; 0.55s if it was the last threat in
+		#      sight) for cinematic follow-through.
+		#   3. enemy_struck signal triggers HitFlash (black edge vignette).
+		# Timer flags below set ignore_time_scale so the awaits resolve in
+		# real seconds while time_scale is squashed.
+		var was_last: bool = _was_last_threat_after_hit()
+		enemy_struck.emit(was_last)
+
 		Engine.time_scale = 0.0
-		await get_tree().create_timer(0.08, true, false, true).timeout
+		await get_tree().create_timer(0.10, true, false, true).timeout
+		Engine.time_scale = 0.35
+		var slow_dur: float = 0.55 if was_last else 0.25
+		await get_tree().create_timer(slow_dur, true, false, true).timeout
 		Engine.time_scale = 1.0
-		# Sin is only added when the staff connects with an enemy — swinging
-		# through the air costs nothing.
+
+		# Sin is only added when the staff connects with an enemy —
+		# swinging through the air costs nothing.
 		if not _upgrade_staff_purity:
-			# Route through GameManager so the HUD toast + sin_changed signal
-			# fire — direct SaveManager.add_sin would skip the source pipeline.
+			# Route through GameManager so the HUD toast + sin_changed
+			# signal fire — direct SaveManager.add_sin would skip the
+			# source pipeline.
 			if GameManager:
 				GameManager.add_sin(staff_sin_cost, "staff")
 			else:
@@ -456,6 +476,39 @@ func _handle_staff() -> void:
 		state = State.IDLE
 
 	staff_used.emit()
+
+# Returns true when no other "enemy"-group node within 500 px of the
+# player is currently in an active aggression state (CHASE or ALERT).
+# Used right after a successful staff strike to decide whether the
+# moment deserves the long-tail slow-mo (no remaining threats = a small
+# catharsis beat). Stunned enemies don't count — they're already down.
+func _was_last_threat_after_hit() -> bool:
+	const SIGHT_RADIUS_2: float = 500.0 * 500.0
+	var tree := get_tree()
+	if not tree:
+		return false
+	for enemy in tree.get_nodes_in_group("enemy"):
+		if not is_instance_valid(enemy) or enemy == self:
+			continue
+		if not (enemy is Node2D):
+			continue
+		var enemy2d: Node2D = enemy as Node2D
+		if enemy2d.global_position.distance_squared_to(global_position) > SIGHT_RADIUS_2:
+			continue
+		# Inspect AI state if this is a BaseEnemy. We compare by integer
+		# value rather than enum identity so the script doesn't have a
+		# hard dependency on BaseEnemy.gd at parse time.
+		var st: Variant = enemy2d.get("state")
+		if st == null:
+			continue
+		var st_i: int = int(st)
+		# State enum order in BaseEnemy.gd:
+		#   PATROL=0, ALERT=1, CHASE=2, GIVE_UP=3, RETURN=4, STUNNED=5
+		# ALERT(1) and CHASE(2) are the only "actively threatening" states.
+		if st_i == 1 or st_i == 2:
+			return false
+	return true
+
 
 func _apply_staff_hit() -> bool:
 	# Defensive guard: between _handle_staff() flipping monitoring on and

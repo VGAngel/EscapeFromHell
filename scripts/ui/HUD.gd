@@ -138,6 +138,7 @@ func _ready() -> void:
 	# Transient red border-flash on player damage. Listens to Player's
 	# damage_taken signal and tweens itself for ~0.3s.
 	_install_damage_flash()
+	_install_hit_flash()
 	# Sin-source toast pipeline. GameManager emits sin_added(amount, cause)
 	# whenever sin moves; we render a transient pop in the bottom-left so
 	# the player can connect each delta to its source.
@@ -166,6 +167,16 @@ func _install_damage_flash() -> void:
 	df.name = "DamageFlash"
 	add_child(df)
 	move_child(df, 1)
+
+
+# Sister overlay to DamageFlash. Sits one slot above so the offensive
+# black pulse renders on top of any concurrent red defensive pulse.
+# Both keep mouse_filter=IGNORE so taps still reach gameplay below.
+func _install_hit_flash() -> void:
+	var hf := preload("res://scripts/ui/HitFlash.gd").new()
+	hf.name = "HitFlash"
+	add_child(hf)
+	move_child(hf, 2)
 
 func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
 	_max_hp     = max_hp
