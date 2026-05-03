@@ -36,6 +36,15 @@ const HUD_BOTTOM_RESERVE := 260.0
 const LOOK_DOWN_OFFSET     := 220.0
 const LOOK_DOWN_HOLD_DELAY := 0.30
 
+## Lock-on zoom — when any enemy in ALERT/CHASE state sits within
+## COMBAT_ZOOM_RADIUS of the player, the camera glides to a +10% zoom so
+## the fight feels intimate. The boost lerps both ways with the same
+## exponential rate so threats appearing/disappearing feel fluid (settles
+## in ~1 s; lower = floatier).
+const COMBAT_ZOOM_BOOST    := 0.10
+const COMBAT_ZOOM_SPEED    := 3.0
+const COMBAT_ZOOM_RADIUS   := 400.0
+
 # ── Cached config ─────────────────────────────────────────────────────────────
 var _lookahead_enabled:       bool  = true
 var _lookahead_distance:      float = 120.0
@@ -58,6 +67,13 @@ var _hud_offset_y:            float = 0.0
 var _fall_offset_y:           float = 0.0
 var _look_down_offset_y:      float = 0.0
 var _look_down_hold_t:        float = 0.0   # how long ↓ has been held this press
+
+# Combat lock-on zoom state. _base_zoom is the "non-combat" zoom set by
+# the default value or apply_zoom_preset(); _combat_zoom_extra is lerped
+# toward COMBAT_ZOOM_BOOST while threats are nearby and back to 0 when
+# they clear. Final zoom = _base_zoom + _combat_zoom_extra (uniform x/y).
+var _base_zoom:           float = 1.0
+var _combat_zoom_extra:   float = 0.0
 
 # How fast the camera chases the player position each second (exponential
 # decay rate). Higher = snappier, lower = floatier. 8.0 settles in ~0.3 s.
@@ -149,7 +165,8 @@ func _apply_camera_settings() -> void:
 	# disabled its built-in smoothing.
 
 func _apply_default_zoom() -> void:
-	zoom = Vector2(_zoom_default, _zoom_default)
+	_base_zoom = _zoom_default
+	zoom = Vector2(_base_zoom, _base_zoom)
 
 func _apply_hud_offset() -> void:
 	# Stored as a Y bias that gets baked into global_position each frame
@@ -255,6 +272,51 @@ func _process(delta: float) -> void:
 	# into global_position above — the Camera2D.offset channel is left
 	# untouched so CameraShake can tween it independently.
 
+	_update_combat_zoom(delta, parent)
+
+
+# Lock-on zoom: when at least one alert/chasing enemy sits within
+# COMBAT_ZOOM_RADIUS of the player, ease the camera in by COMBAT_ZOOM_BOOST.
+# Eases back the same way when threats clear. Stacks on top of _base_zoom
+# so it composes cleanly with apply_zoom_preset() (e.g. "void_levels").
+func _update_combat_zoom(delta: float, parent: Node2D) -> void:
+	var target_extra: float = COMBAT_ZOOM_BOOST if _enemy_in_combat_range(parent) else 0.0
+	var t: float = 1.0 - exp(-COMBAT_ZOOM_SPEED * delta)
+	_combat_zoom_extra = lerpf(_combat_zoom_extra, target_extra, t)
+	var z: float = _base_zoom + _combat_zoom_extra
+	zoom = Vector2(z, z)
+
+
+# True when any "enemy" group node within COMBAT_ZOOM_RADIUS is in
+# ALERT (1) or CHASE (2). Inspects `state` via duck-typing so this script
+# doesn't hard-depend on BaseEnemy.gd at parse time. Bosses live in their
+# own "boss" group and are intentionally excluded — the lock-on zoom is
+# meant to highlight regular fights, while bosses already telegraph
+# themselves with arena framing / phase music.
+func _enemy_in_combat_range(parent: Node2D) -> bool:
+	if parent == null:
+		return false
+	var ppos: Vector2 = parent.global_position
+	var radius_sq: float = COMBAT_ZOOM_RADIUS * COMBAT_ZOOM_RADIUS
+	var tree := get_tree()
+	if tree == null:
+		return false
+	for enemy in tree.get_nodes_in_group("enemy"):
+		if not is_instance_valid(enemy) or not (enemy is Node2D):
+			continue
+		var enemy2d: Node2D = enemy as Node2D
+		if ppos.distance_squared_to(enemy2d.global_position) > radius_sq:
+			continue
+		var st: Variant = enemy2d.get("state")
+		if st == null:
+			continue
+		var st_i: int = int(st)
+		# BaseEnemy state enum: PATROL=0, ALERT=1, CHASE=2, GIVE_UP=3,
+		# RETURN=4, STUNNED=5. Only ALERT/CHASE count as "in combat".
+		if st_i == 1 or st_i == 2:
+			return true
+	return false
+
 ## Track ↓ hold time and return the camera Y target. Requires:
 ##   * "look_down" action exists in the InputMap (added in project.godot)
 ##   * Player grounded — peeking mid-air feels like loss of control
@@ -285,12 +347,14 @@ func _resolve_look_down_target(delta: float, parent: Node2D) -> float:
 
 # ── Public ────────────────────────────────────────────────────────────────────
 ## Apply a zoom preset by name from camera_config.json (e.g. "void_levels").
-## No-op if the preset is missing.
+## No-op if the preset is missing. The combat lock-on boost continues to
+## stack on top of the new base zoom each frame.
 func apply_zoom_preset(preset_name: String) -> void:
 	if not _zoom_presets.has(preset_name):
 		return
-	var z: float = _zoom_presets[preset_name]
-	zoom = Vector2(z, z)
+	_base_zoom = float(_zoom_presets[preset_name])
+	zoom = Vector2(_base_zoom + _combat_zoom_extra,
+		_base_zoom + _combat_zoom_extra)
 
 ## Force a re-read of room bounds. Useful if rooms are spawned after
 ## the camera's initial deferred read.
