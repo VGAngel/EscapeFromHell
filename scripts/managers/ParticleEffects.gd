@@ -44,8 +44,6 @@ func _make(preset: String, flip: bool) -> CPUParticles2D:
 		"staff_impact": return _preset_staff_impact()
 		"respawn":      return _preset_respawn()
 		"crumble":      return _preset_crumble()
-		"enemy_kill":   return _preset_enemy_kill()
-		"enemy_stun":   return _preset_enemy_stun()
 	return null
 
 func _preset_soul_pickup() -> CPUParticles2D:
@@ -135,49 +133,6 @@ func _preset_respawn() -> CPUParticles2D:
 	p.scale_amount_max = 2.2
 	p.color          = Color("#F2F2FF")
 	return p
-
-## Heavy red splash for the moment a player stomps a stompable enemy.
-## Larger amount + dark crimson + downward gravity so it reads as a
-## visceral splat that settles, distinct from the smaller `death` burst
-## used elsewhere.
-func _preset_enemy_kill() -> CPUParticles2D:
-	var p := CPUParticles2D.new()
-	p.amount         = 36
-	p.lifetime       = 1.0
-	p.explosiveness  = 1.0
-	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
-	p.emission_sphere_radius = 12.0
-	p.direction      = Vector2.UP
-	p.spread         = 80.0
-	p.initial_velocity_min = 100.0
-	p.initial_velocity_max = 280.0
-	p.gravity        = Vector2(0.0, 480.0)
-	p.scale_amount_min = 1.6
-	p.scale_amount_max = 3.4
-	p.color          = Color("#9A1320")
-	return p
-
-
-## Cartoon "stunned stars" — yellow specks that float UP slowly in a
-## ring above the enemy's head. Uses negative gravity so they hang
-## briefly before fading, matching the duration of the stun knockback.
-func _preset_enemy_stun() -> CPUParticles2D:
-	var p := CPUParticles2D.new()
-	p.amount         = 14
-	p.lifetime       = 0.9
-	p.explosiveness  = 1.0
-	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
-	p.emission_sphere_radius = 18.0
-	p.direction      = Vector2.UP
-	p.spread         = 30.0
-	p.initial_velocity_min = 30.0
-	p.initial_velocity_max = 60.0
-	p.gravity        = Vector2(0.0, -40.0)
-	p.scale_amount_min = 1.8
-	p.scale_amount_max = 2.6
-	p.color          = Color("#FFEE55")
-	return p
-
 
 func _preset_crumble() -> CPUParticles2D:
 	var p := CPUParticles2D.new()
