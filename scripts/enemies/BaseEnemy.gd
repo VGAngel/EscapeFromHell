@@ -28,14 +28,6 @@ var state: State = State.PATROL
 @export var contact_knockback: float = 280.0
 const HIT_COOLDOWN_TIME: float = 1.0
 
-# Stomp interaction (Mario-style jump on enemy head). When stomp_killable
-# is true the enemy dies on stomp and grants the player a small sin
-# penalty; when false the same stomp only stuns. Bosses don't extend
-# BaseEnemy and use a separate "boss" group, so they're naturally
-# excluded from this mechanic.
-@export var stomp_killable: bool = true
-const STOMP_STUN_DURATION: float = 3.0
-
 # ── Config binding ────────────────────────────────────────────────────────────
 ## If set in the scene, BaseEnemy._ready() auto-loads stats from
 ## enemies_config.json entry with this id and pulls sprite frames from
@@ -336,51 +328,6 @@ func receive_knockback(direction: Vector2, stun_duration: float) -> void:
 	velocity = direction
 	_play_sound("stun")
 	flash_white(0.08)
-
-
-# Public — invoked by Player when the player lands on this enemy from
-# above. Returns "killed", "stunned" or "ignored" so the caller can pick
-# the matching FX / sin reaction. stomp_killable=false (bosses, armoured
-# enemies authored later) routes the stomp into a regular stun instead.
-func receive_stomp() -> String:
-	if state == State.STUNNED and not stomp_killable:
-		return "ignored"  # already down — second stomp does nothing
-	if stomp_killable:
-		die_from_stomp()
-		return "killed"
-	stun(STOMP_STUN_DURATION)
-	flash_white(0.12)
-	return "stunned"
-
-
-# Death animation triggered by a stomp: freeze AI, drop collisions so
-# the player can fall through the corpse, fade out, then queue_free.
-# Removed from the "enemy" group up-front so AI scans (boss minions,
-# Player's stomp loop) skip the body during its fade.
-func die_from_stomp() -> void:
-	state = State.STUNNED
-	velocity = Vector2.ZERO
-	if is_in_group("enemy"):
-		remove_from_group("enemy")
-	# Zero collisions so the player's bounce isn't blocked by the corpse
-	# and so other enemies' AI raycasts don't snag on it.
-	set_collision_layer(0)
-	set_collision_mask(0)
-	# Squash + fade out together — gives a satisfying "pop" without an
-	# extra animation asset.
-	var visual: CanvasItem = (_anim_sprite as CanvasItem) if _anim_sprite \
-		else (_sprite as CanvasItem)
-	if visual:
-		var tw := create_tween().set_parallel()
-		tw.tween_property(visual, "scale",
-			Vector2(visual.scale.x * 1.4, visual.scale.y * 0.2), 0.18)
-		tw.tween_property(self, "modulate:a", 0.0, 0.35)
-		tw.chain().tween_callback(queue_free)
-	else:
-		var tw := create_tween()
-		tw.tween_property(self, "modulate:a", 0.0, 0.35)
-		tw.tween_callback(queue_free)
-	_play_sound("stun")
 
 ## Quick white tint pulse used as hit-feedback on staff impact. Saves the
 ## current modulate before swapping so we don't permanently bleach the

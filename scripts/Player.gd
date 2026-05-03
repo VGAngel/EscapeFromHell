@@ -40,15 +40,6 @@ var staff_range:    float = 80.0
 var staff_cooldown: float = 4.5
 var staff_sin_cost: int   = 1
 
-# ── Stomp (jump-on-enemy) tuning ──────────────────────────────────────────────
-const STOMP_BOUNCE_VEL:        float = -480.0  # ~80% of jump_velocity
-const STOMP_MIN_FALL_VEL:      float = 80.0    # px/s downward to count
-const STOMP_HORIZONTAL_RANGE:  float = 50.0    # ±x from player center
-const STOMP_VERTICAL_OVERLAP:  float = 60.0    # how far below feet to scan
-const STOMP_FOOT_OFFSET:       float = 50.0    # player center → feet (≈ half body)
-const STOMP_SIN_COST:          int   = 5       # +5% sin per kill
-var _stomp_cooldown: float = 0.0
-
 var max_hp: int = 3
 var current_hp: int = 3
 
@@ -302,7 +293,6 @@ func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 	_handle_jump(delta)
 	_handle_staff()
-	_check_stomp(delta)
 	_check_fall_damage()
 	move_and_slide()
 	_update_state()
@@ -312,7 +302,6 @@ func _physics_process(delta: float) -> void:
 # ── Timers ────────────────────────────────────────────────────────────────────
 func _tick_timers(delta: float) -> void:
 	_staff_timer             = maxf(_staff_timer - delta, 0.0)
-	_stomp_cooldown          = maxf(_stomp_cooldown - delta, 0.0)
 	_invincibility_timer     = maxf(_invincibility_timer - delta, 0.0)
 	_soul_shield_timer       = maxf(_soul_shield_timer - delta, 0.0)
 	_temp_double_jump_timer  = maxf(_temp_double_jump_timer - delta, 0.0)
@@ -467,76 +456,6 @@ func _handle_staff() -> void:
 		state = State.IDLE
 
 	staff_used.emit()
-
-# ── Stomp (jump on enemy) ─────────────────────────────────────────────────────
-# Mario-style: when the player is falling fast enough and an enemy's
-# head sits within a small box just below the player's feet, the player
-# bounces upward and the enemy receives a stomp. Stompable enemies die
-# (with red-splash FX + 5% sin); armoured enemies are stunned (yellow
-# stars FX, no sin). Bosses live in a separate group, so they're
-# naturally excluded.
-func _check_stomp(delta: float) -> void:
-	if _stomp_cooldown > 0.0:
-		return
-	if state == State.DEAD:
-		return
-	if velocity.y < STOMP_MIN_FALL_VEL:
-		return
-	var feet_y: float = global_position.y + STOMP_FOOT_OFFSET
-	var tree := get_tree()
-	if not tree:
-		return
-	for enemy: Node in tree.get_nodes_in_group("enemy"):
-		if not is_instance_valid(enemy) or enemy == self:
-			continue
-		if not (enemy is Node2D):
-			continue
-		var enemy2d: Node2D = enemy as Node2D
-		var dx: float = absf(enemy2d.global_position.x - global_position.x)
-		if dx > STOMP_HORIZONTAL_RANGE:
-			continue
-		# Enemy head must be within a thin band straddling the player's
-		# feet (slight upward tolerance so a bounce-on-edge still counts).
-		var dy: float = enemy2d.global_position.y - feet_y
-		if dy < -10.0 or dy > STOMP_VERTICAL_OVERLAP:
-			continue
-		if not enemy.has_method("receive_stomp"):
-			continue
-		_do_stomp(enemy2d)
-		return  # one stomp per frame
-
-
-func _do_stomp(enemy: Node2D) -> void:
-	var result: String = String(enemy.receive_stomp())
-	if result == "ignored":
-		return
-	# Bounce regardless of kill/stun so the player isn't stuck on the
-	# enemy's collider during the death fade.
-	velocity.y = STOMP_BOUNCE_VEL
-	_stomp_cooldown = 0.25
-	# Brief i-frames so the enemy's contact damage doesn't tag the
-	# player on the same frame as the stomp.
-	_invincibility_timer = maxf(_invincibility_timer, 0.4)
-
-	if result == "killed":
-		_spawn_fx("enemy_kill", enemy.global_position)
-		# Sin pipeline goes through GameManager so the HUD toast fires
-		# with the right cause label ("stomp").
-		if GameManager:
-			GameManager.add_sin(STOMP_SIN_COST, "stomp")
-		elif SaveManager:
-			SaveManager.add_sin(STOMP_SIN_COST)
-		if SoundManager:
-			SoundManager.play_sfx("enemy", "kill")
-		if HapticManager:
-			HapticManager.hit()
-		_shake_camera(0.18, 6.0)
-	else:  # "stunned"
-		_spawn_fx("enemy_stun", enemy.global_position)
-		if SoundManager:
-			SoundManager.play_sfx("enemy", "stun")
-		_shake_camera(0.10, 4.0)
-
 
 func _apply_staff_hit() -> bool:
 	# Defensive guard: between _handle_staff() flipping monitoring on and
