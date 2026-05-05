@@ -523,18 +523,17 @@ func _apply_staff_hit() -> Dictionary:
 			continue
 		var direction: Vector2 = Vector2.RIGHT if _facing_right else Vector2.LEFT
 		# Parry detection: the swing connected with an enemy whose attack
-		# windup is already in its 0.2 s "deflect me!" cue. Cancels the
-		# pending strike and applies the longer parry stun (5 s) instead
-		# of the regular knockback's 4 s.
+		# windup is already in its 0.2 s "deflect me!" cue. The parry
+		# simply BLOCKS the incoming strike — windup is cancelled, no
+		# stun, no knockback. cancel_attack_windup() also refreshes the
+		# enemy's _hit_cooldown to 1 s, so the player gets a brief
+		# breathing window before another attack can wind up. Reward is
+		# in what the parry SAVES (0 damage, 0 sin), not what it adds.
 		var is_parry: bool = body.has_method("is_parry_window_open") \
 			and body.is_parry_window_open()
 		if is_parry:
 			if body.has_method("cancel_attack_windup"):
 				body.cancel_attack_windup()
-			if body.has_method("stun"):
-				# Use stun (no velocity push) so the parried enemy stays
-				# put — easier follow-up for the player.
-				body.stun(5.0)
 			parried = true
 		elif body.has_method("receive_knockback"):
 			body.receive_knockback(direction * 280.0, 4.0)
