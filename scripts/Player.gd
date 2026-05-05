@@ -21,7 +21,7 @@ signal enemy_struck(was_last: bool)
 signal carry_changed(carried: int, capacity: int)
 
 # ── State ─────────────────────────────────────────────────────────────────────
-enum State { IDLE, WALK, JUMP, FALL, STAFF_SWING, PICKUP, CARRYING, DEAD, DODGE }
+enum State { IDLE, WALK, JUMP, FALL, STAFF_SWING, PICKUP, CARRYING, DEAD }
 
 # ── Dimensions ────────────────────────────────────────────────────────────────
 # Must match CollisionShape2D in Player.tscn. Used by LevelGenerator for
@@ -56,16 +56,6 @@ var _jump_hold_timer:   float = 0.0
 var _staff_timer:       float = 0.0
 var _pickup_timer:      float = 0.0
 var _invincibility_timer: float = 0.0
-# Dodge roll: short horizontal dash with i-frames. _dodge_timer drives
-# the active phase (state stays DODGE while > 0), _dodge_cooldown gates
-# the next press so the move can't be spammed.
-const DODGE_DURATION:   float = 0.40
-const DODGE_COOLDOWN:   float = 2.0
-const DODGE_SPEED:      float = 520.0
-const DODGE_IFRAME:     float = 0.40
-var _dodge_timer:       float = 0.0
-var _dodge_cooldown:    float = 0.0
-var _dodge_dir:         float = 1.0   # captured at press; +1 right, -1 left
 var _jumps_done:        int   = 0
 var _was_on_floor:      bool  = false
 var _landing_decel_timer: float = 0.0
@@ -308,7 +298,6 @@ func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 	_handle_jump(delta)
 	_handle_staff()
-	_handle_dodge()
 	_check_fall_damage()
 	move_and_slide()
 	_update_state()
@@ -319,12 +308,6 @@ func _physics_process(delta: float) -> void:
 func _tick_timers(delta: float) -> void:
 	_staff_timer             = maxf(_staff_timer - delta, 0.0)
 	_invincibility_timer     = maxf(_invincibility_timer - delta, 0.0)
-	_dodge_timer             = maxf(_dodge_timer - delta, 0.0)
-	_dodge_cooldown          = maxf(_dodge_cooldown - delta, 0.0)
-	# Dodge auto-exits the moment the iframe burst is over so movement
-	# resumes input control without a one-frame stall.
-	if state == State.DODGE and _dodge_timer <= 0.0:
-		state = State.IDLE
 	_soul_shield_timer       = maxf(_soul_shield_timer - delta, 0.0)
 	_temp_double_jump_timer  = maxf(_temp_double_jump_timer - delta, 0.0)
 	if _jump_buffer_timer > 0.0:
@@ -350,35 +333,8 @@ func _handle_gravity(delta: float) -> void:
 		velocity.y += gravity * delta
 	velocity.y = minf(velocity.y, max_fall_speed)
 
-# ── Dodge roll ────────────────────────────────────────────────────────────────
-# Press "dodge" → short horizontal dash with i-frames. Blocks staff and
-# normal movement while active. Locked behind a 2 s cooldown so it can't
-# carry the player across an entire level for free.
-func _handle_dodge() -> void:
-	if state in [State.DEAD, State.PICKUP]:
-		return
-	if not Input.is_action_just_pressed("dodge"):
-		return
-	if _dodge_cooldown > 0.0 or _dodge_timer > 0.0:
-		return
-	# Capture facing at press; mid-dodge direction changes are intentionally
-	# ignored so the move feels committed.
-	_dodge_dir = 1.0 if _facing_right else -1.0
-	_dodge_timer = DODGE_DURATION
-	_dodge_cooldown = DODGE_COOLDOWN
-	_invincibility_timer = maxf(_invincibility_timer, DODGE_IFRAME)
-	state = State.DODGE
-	if HapticManager:
-		HapticManager.hit()
-
-
 # ── Horizontal movement ───────────────────────────────────────────────────────
 func _handle_movement(delta: float) -> void:
-	# Dodge owns the velocity for its full duration — apply the dash burst
-	# and ignore standard input until the timer expires.
-	if state == State.DODGE:
-		velocity.x = _dodge_dir * DODGE_SPEED
-		return
 	if state in [State.STAFF_SWING, State.PICKUP, State.DEAD]:
 		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
 		return
@@ -415,7 +371,7 @@ func _can_jump() -> bool:
 
 # ── Jump ──────────────────────────────────────────────────────────────────────
 func _handle_jump(delta: float) -> void:
-	if state in [State.DEAD, State.PICKUP, State.DODGE]:
+	if state in [State.DEAD, State.PICKUP]:
 		return
 
 	if Input.is_action_just_pressed("jump"):
@@ -456,7 +412,7 @@ func _handle_jump(delta: float) -> void:
 
 # ── Staff ─────────────────────────────────────────────────────────────────────
 func _handle_staff() -> void:
-	if state in [State.DEAD, State.PICKUP, State.CARRYING, State.DODGE]:
+	if state in [State.DEAD, State.PICKUP, State.CARRYING]:
 		return
 	if _staff_timer > 0.0:
 		return
