@@ -51,7 +51,9 @@ func _make_wired_lb() -> Node:
 	var lb: Node = WiredLevel.new()
 	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
 	hud.name = "HUD"
-	var ps: Node = preload("res://scripts/ui/PauseScreen.gd").new()
+	# PauseScreen layout lives in its .tscn now; instantiating the scene
+	# instead of `.new()` is required so the @onready label refs resolve.
+	var ps: Node = preload("res://scenes/ui/PauseScreen.tscn").instantiate()
 	ps.name = "PauseScreen"
 	var rc  := Node2D.new();   rc.name  = "RoomContainer"
 	var sp  := Marker2D.new(); sp.name  = "SpawnPoint"

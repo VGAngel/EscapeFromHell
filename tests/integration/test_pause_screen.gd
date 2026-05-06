@@ -2,10 +2,15 @@ extends GutTest
 
 # Integration tests for PauseScreen.gd (CanvasLayer).
 
+const PauseScreenScene := preload("res://scenes/ui/PauseScreen.tscn")
+
 var ps: Node
 
 func before_each() -> void:
-	ps = preload("res://scripts/ui/PauseScreen.gd").new()
+	# Layout (panels, buttons, sin bar) lives in the .tscn — bare
+	# `Script.new()` would leave every @onready ref null and the first
+	# label write would crash.
+	ps = PauseScreenScene.instantiate()
 	add_child_autofree(ps)
 	if SaveManager:
 		SaveManager._reset()

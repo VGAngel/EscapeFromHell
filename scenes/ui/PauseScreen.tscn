@@ -1,7 +1,333 @@
-[gd_scene format=3 uid="uid://oxiwvf4tyhy3"]
+[gd_scene load_steps=14 format=3 uid="uid://oxiwvf4tyhy3"]
 
 [ext_resource type="Script" path="res://scripts/ui/PauseScreen.gd" id="1_pause"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_main_panel"]
+content_margin_left = 40.0
+content_margin_top = 44.0
+content_margin_right = 40.0
+content_margin_bottom = 44.0
+bg_color = Color(0.08, 0.06, 0.1, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.28, 0.45, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_confirm_panel"]
+content_margin_left = 36.0
+content_margin_top = 36.0
+content_margin_right = 36.0
+content_margin_bottom = 36.0
+bg_color = Color(0.1, 0.05, 0.06, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.2, 0.2, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
+content_margin_top = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.3, 0.25, 0.38, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_primary_normal"]
+bg_color = Color(0.2, 0.18, 0.3, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_primary_hover"]
+bg_color = Color(0.3, 0.26, 0.44, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_primary_pressed"]
+bg_color = Color(0.15, 0.13, 0.22, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_sec_normal"]
+bg_color = Color(0.13, 0.12, 0.16, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_sec_hover"]
+bg_color = Color(0.2, 0.18, 0.24, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_sec_pressed"]
+bg_color = Color(0.09, 0.08, 0.12, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_danger_normal"]
+bg_color = Color(0.3, 0.08, 0.08, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_danger_hover"]
+bg_color = Color(0.45, 0.12, 0.12, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_danger_pressed"]
+bg_color = Color(0.22, 0.05, 0.05, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="PauseScreen" type="CanvasLayer"]
 layer = 10
 script = ExtResource("1_pause")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.55)
+
+[node name="MainCenterer" type="CenterContainer" parent="Backdrop"]
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="MainPanel" type="PanelContainer" parent="Backdrop/MainCenterer"]
+process_mode = 3
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_main_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Backdrop/MainCenterer/MainPanel"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+layout_mode = 2
+theme_type_variation = &"DisplayLabel"
+text = "ПАУЗА"
+horizontal_alignment = 1
+
+[node name="TitleSep" type="HSeparator" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="LevelLabel" type="Label" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+theme_override_colors/font_color = Color(0.78, 0.76, 0.8, 1)
+horizontal_alignment = 1
+
+[node name="SoulsLabel" type="Label" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+theme_override_colors/font_color = Color(0.78, 0.76, 0.8, 1)
+horizontal_alignment = 1
+
+[node name="TypeStrip" type="Label" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.7, 0.78, 1)
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+
+[node name="SinRow" type="HBoxContainer" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SinIcon" type="Label" parent="Backdrop/MainCenterer/MainPanel/VBox/SinRow"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "😈"
+
+[node name="SinBarBg" type="ColorRect" parent="Backdrop/MainCenterer/MainPanel/VBox/SinRow"]
+custom_minimum_size = Vector2(220, 14)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.15, 0.15, 0.15, 1)
+
+[node name="SinBar" type="ColorRect" parent="Backdrop/MainCenterer/MainPanel/VBox/SinRow/SinBarBg"]
+offset_right = 0.0
+offset_bottom = 14.0
+color = Color(1, 1, 1, 1)
+
+[node name="SinPercent" type="Label" parent="Backdrop/MainCenterer/MainPanel/VBox/SinRow"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"SectionLabel"
+text = "0%"
+
+[node name="ButtonsSep" type="HSeparator" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="ResumeButton" type="Button" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+process_mode = 3
+custom_minimum_size = Vector2(540, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.87, 1, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_primary_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_primary_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_primary_pressed")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_primary_normal")
+text = "Продовжити"
+clip_text = true
+autowrap_mode = 0
+
+[node name="CollectionButton" type="Button" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+process_mode = 3
+custom_minimum_size = Vector2(540, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.78, 0.82, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_sec_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_sec_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_sec_pressed")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_sec_normal")
+text = "Врятовані Душі"
+clip_text = true
+autowrap_mode = 0
+
+[node name="StatisticsButton" type="Button" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+process_mode = 3
+custom_minimum_size = Vector2(540, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.78, 0.82, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_sec_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_sec_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_sec_pressed")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_sec_normal")
+text = "📊  Статистика"
+clip_text = true
+autowrap_mode = 0
+
+[node name="SettingsButton" type="Button" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+process_mode = 3
+custom_minimum_size = Vector2(540, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.78, 0.82, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_sec_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_sec_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_sec_pressed")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_sec_normal")
+text = "Налаштування"
+clip_text = true
+autowrap_mode = 0
+
+[node name="MenuButton" type="Button" parent="Backdrop/MainCenterer/MainPanel/VBox"]
+process_mode = 3
+custom_minimum_size = Vector2(540, 96)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.53, 0.4, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_danger_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_danger_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_danger_pressed")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_danger_normal")
+text = "Головне Меню"
+clip_text = true
+autowrap_mode = 0
+
+[node name="ConfirmCenterer" type="CenterContainer" parent="Backdrop"]
+process_mode = 3
+z_index = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ConfirmPanel" type="PanelContainer" parent="Backdrop/ConfirmCenterer"]
+visible = false
+process_mode = 3
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_confirm_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Backdrop/ConfirmCenterer/ConfirmPanel"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ExitTitle" type="Label" parent="Backdrop/ConfirmCenterer/ConfirmPanel/VBox"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+theme_override_colors/font_color = Color(1, 0.4, 0.27, 1)
+text = "Вийти з рівня?"
+horizontal_alignment = 1
+
+[node name="ExitMessage" type="Label" parent="Backdrop/ConfirmCenterer/ConfirmPanel/VBox"]
+layout_mode = 2
+theme_type_variation = &"BodyLabel"
+text = "Зібрані душі збережені.
+Душа в руках — буде втрачена."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ExitButtons" type="HBoxContainer" parent="Backdrop/ConfirmCenterer/ConfirmPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="ExitYesButton" type="Button" parent="Backdrop/ConfirmCenterer/ConfirmPanel/VBox/ExitButtons"]
+process_mode = 3
+custom_minimum_size = Vector2(240, 90)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.53, 0.4, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_danger_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_danger_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_danger_pressed")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_danger_normal")
+text = "Вийти"
+clip_text = true
+autowrap_mode = 0
+
+[node name="ExitNoButton" type="Button" parent="Backdrop/ConfirmCenterer/ConfirmPanel/VBox/ExitButtons"]
+process_mode = 3
+custom_minimum_size = Vector2(240, 90)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.87, 1, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_primary_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_primary_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_primary_pressed")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_primary_normal")
+text = "Залишитись"
+clip_text = true
+autowrap_mode = 0
