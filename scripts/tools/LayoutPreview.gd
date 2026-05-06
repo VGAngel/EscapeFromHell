@@ -3,15 +3,14 @@ extends Node2D
 
 # Editor-only preview helper for vertical layout decoration scenes.
 #
-# Draws the shaft silhouette (walls, altar zone, safe spawn area) AND the
-# platforms loaded from vertical_layouts.json so the designer sees exactly
-# what the runtime will spawn — both the shaft context and the platform
-# positions — while editing scenes/rooms/vertical_layouts/level_NNN.tscn.
+# Renders the same backdrop + wall textures the runtime PlaceholderRoom uses,
+# the altar sprite on the topmost platform, and platform footprints loaded
+# from vertical_layouts.json — so opening a level_NNN.tscn shows the same
+# picture the player sees, minus runtime-only effects (atmospheric particles,
+# dynamic lighting, enemies). Lets the designer place decorations against
+# real visual context instead of placeholder rectangles.
 #
 # Skipped at runtime entirely (returns from _draw on Engine.is_editor_hint).
-# PlaceholderRoom adds this Node2D as a child of the shaft room but the
-# platform-spawn pipeline never reads from it — platforms come from the JSON
-# directly via _populate_vert_layout_from_data.
 
 const ROOM_WIDTH:        float = 1080.0
 const WALL_T:            float = 30.0
@@ -21,30 +20,54 @@ const ALTAR_TARGET_H:    float = 220.0
 const ALTAR_CLEARANCE:   float = 60.0
 const VERT_LAYOUTS_JSON: String = "res://vertical_layouts.json"
 
+# Mirrors PlaceholderRoom.WALL/BACKDROP_TEXTURES_BY_TILESET. tileset1 is the
+# only one shipping art today; designer can extend by adding entries there
+# and matching them here when new circles are themed.
+const WALL_TEXTURES_BY_TILESET := {
+	"tileset1": [
+		"res://Assets/OurAssets/walls/circle1/base_a.png",
+		"res://Assets/OurAssets/walls/circle1/base_b.png",
+		"res://Assets/OurAssets/walls/circle1/base_c.png",
+		"res://Assets/OurAssets/walls/circle1/base_d.png",
+	],
+}
+const BACKDROP_TEXTURES_BY_TILESET := {
+	"tileset1": [
+		"res://Assets/OurAssets/walls/circle1/backdrop_a.png",
+		"res://Assets/OurAssets/walls/circle1/backdrop_b.png",
+		"res://Assets/OurAssets/walls/circle1/backdrop_c.png",
+	],
+}
+const ALTAR_TEXTURE_PATH: String = "res://Assets/OurAssets/altar_main.png"
+const BACKDROP_DIM: Color = Color(0.75, 0.75, 0.75, 1.0)
+
 @export var shaft_height: float = 3840.0 :
 	set(v):
 		shaft_height = v
 		queue_redraw()
 
-## Set by the generator per level — drives which platform list is drawn from
-## vertical_layouts.json. Leave at 0 to preview shaft outline only.
 @export var level_id: int = 0 :
 	set(v):
 		level_id = v
 		queue_redraw()
 
-# Visual style — translucent so designer's own decoration sprites stay visible.
-const COLOR_WALL:       Color = Color(0.18, 0.18, 0.22, 0.55)
-const COLOR_BACKDROP:   Color = Color(0.10, 0.10, 0.13, 0.30)
-const COLOR_ALTAR_ZONE: Color = Color(1.00, 0.85, 0.30, 0.18)
-const COLOR_EXIT_ZONE:  Color = Color(0.30, 0.85, 1.00, 0.18)
-const COLOR_OUTLINE:    Color = Color(0.85, 0.85, 0.85, 0.90)
-const COLOR_PLAT_EDGE:  Color = Color(1.00, 1.00, 1.00, 0.50)
-const COLOR_PLAT_LABEL: Color = Color(1.00, 1.00, 1.00, 0.65)
+## Tileset id — drives which wall + backdrop textures get drawn. Defaults to
+## "tileset1" because that's what every shipped circle currently uses.
+@export var tileset: String = "tileset1" :
+	set(v):
+		tileset = v
+		queue_redraw()
 
-# Per-type fill colours (mirrors placeholder_assets_config.json so editor
-# preview matches the in-game placeholder rendering). Alpha kept at ~0.85
-# so designer's overlaid sprites remain visible underneath.
+## Show the altar / exit safe-zone overlays on top of the textured render.
+## Helpful while placing decorations; can be turned off for a cleaner look.
+@export var show_zones: bool = true :
+	set(v):
+		show_zones = v
+		queue_redraw()
+
+# Per-type fill colours for platform rectangles (mirrors
+# placeholder_assets_config.json). Alpha kept around 0.85 so designer's
+# overlaid sprites remain visible underneath.
 const PLATFORM_COLORS: Dictionary = {
 	"stone":             Color(0.40, 0.40, 0.40, 0.85),
 	"one_way":           Color(0.53, 0.53, 0.53, 0.70),
@@ -66,10 +89,14 @@ const PLATFORM_COLORS: Dictionary = {
 	"soul_bridge":       Color(0.40, 0.67, 1.00, 0.55),
 }
 const PLATFORM_COLOR_FALLBACK: Color = Color(0.55, 0.55, 0.60, 0.85)
+const COLOR_PLAT_EDGE:  Color = Color(1.00, 1.00, 1.00, 0.50)
+const COLOR_FLOOR_FILL: Color = Color(0.10, 0.07, 0.08, 1.00)
+const COLOR_OUTLINE:    Color = Color(0.85, 0.85, 0.85, 0.30)
+const COLOR_ALTAR_ZONE: Color = Color(1.00, 0.85, 0.30, 0.10)
+const COLOR_EXIT_ZONE:  Color = Color(0.30, 0.85, 1.00, 0.10)
 
-# Cached parse so opening a deep scene tree doesn't re-read the JSON for
-# every LayoutPreview redraw. Keyed by file modify time so the cache busts
-# when the designer edits vertical_layouts.json.
+# JSON cache invalidates by file mtime so platform rectangles refresh as the
+# designer saves vertical_layouts.json — no scene reopen needed.
 static var _json_cache:        Dictionary = {}
 static var _json_cache_mtime:  int        = -1
 
@@ -97,45 +124,75 @@ static func _get_layouts() -> Dictionary:
 	return _json_cache
 
 
+# Texture caches — load once per node; cheap because Godot dedupes loads.
+var _backdrop_textures: Array = []
+var _wall_textures:     Array = []
+var _altar_texture:     Texture2D = null
+var _textures_loaded_for: String = ""
+
+
+func _ensure_textures_loaded() -> void:
+	if _textures_loaded_for == tileset:
+		return
+	_textures_loaded_for = tileset
+	_backdrop_textures.clear()
+	_wall_textures.clear()
+	for path: String in BACKDROP_TEXTURES_BY_TILESET.get(tileset, []):
+		if ResourceLoader.exists(path):
+			var t := load(path) as Texture2D
+			if t: _backdrop_textures.append(t)
+	for path: String in WALL_TEXTURES_BY_TILESET.get(tileset, []):
+		if ResourceLoader.exists(path):
+			var t := load(path) as Texture2D
+			if t: _wall_textures.append(t)
+	if _altar_texture == null and ResourceLoader.exists(ALTAR_TEXTURE_PATH):
+		_altar_texture = load(ALTAR_TEXTURE_PATH) as Texture2D
+
+
 func _draw() -> void:
 	if not Engine.is_editor_hint():
 		return
+	_ensure_textures_loaded()
 
-	# Backdrop fill — entire interior of the shaft.
-	draw_rect(Rect2(SIDE_WALL_W, WALL_T,
-		ROOM_WIDTH - SIDE_WALL_W * 2.0,
-		shaft_height - WALL_T * 2.0), COLOR_BACKDROP, true)
+	# 1. Backdrop — textured if available, flat dark fill otherwise.
+	if not _backdrop_textures.is_empty():
+		_draw_textured_backdrop(SIDE_WALL_W, ROOM_WIDTH - SIDE_WALL_W * 2.0)
+	else:
+		draw_rect(Rect2(SIDE_WALL_W, WALL_T,
+			ROOM_WIDTH - SIDE_WALL_W * 2.0,
+			shaft_height - WALL_T * 2.0),
+			Color(0.10, 0.10, 0.13, 1.0), true)
 
-	# Walls — top, bottom, left, right.
-	draw_rect(Rect2(0, 0, ROOM_WIDTH, WALL_T), COLOR_WALL, true)
-	draw_rect(Rect2(0, shaft_height - WALL_T, ROOM_WIDTH, WALL_T), COLOR_WALL, true)
-	draw_rect(Rect2(0, 0, SIDE_WALL_W, shaft_height), COLOR_WALL, true)
-	draw_rect(Rect2(ROOM_WIDTH - SIDE_WALL_W, 0, SIDE_WALL_W, shaft_height),
-		COLOR_WALL, true)
+	# 2. Side walls — textured if available, flat dark otherwise.
+	if not _wall_textures.is_empty():
+		_draw_textured_side_wall(0.0, SIDE_WALL_W, "L")
+		_draw_textured_side_wall(ROOM_WIDTH - SIDE_WALL_W, SIDE_WALL_W, "R")
+	else:
+		draw_rect(Rect2(0, 0, SIDE_WALL_W, shaft_height),
+			Color(0.18, 0.18, 0.22, 1.0), true)
+		draw_rect(Rect2(ROOM_WIDTH - SIDE_WALL_W, 0, SIDE_WALL_W, shaft_height),
+			Color(0.18, 0.18, 0.22, 1.0), true)
 
-	# Altar zone — banner across the top showing the safe altar area.
-	var altar_zone_h: float = ALTAR_TARGET_H + ALTAR_CLEARANCE
-	draw_rect(Rect2(SIDE_WALL_W, WALL_T,
-		ROOM_WIDTH - SIDE_WALL_W * 2.0, altar_zone_h),
-		COLOR_ALTAR_ZONE, true)
+	# 3. Top + bottom walls — flat dark fills (runtime doesn't texture these).
+	draw_rect(Rect2(0, 0, ROOM_WIDTH, WALL_T), COLOR_FLOOR_FILL, true)
+	draw_rect(Rect2(0, shaft_height - WALL_T, ROOM_WIDTH, WALL_T),
+		COLOR_FLOOR_FILL, true)
 
-	# Exit zone — banner at the bottom marking where the portal will spawn.
-	var exit_zone_h: float = 200.0
-	draw_rect(Rect2(SIDE_WALL_W, shaft_height - WALL_T - exit_zone_h,
-		ROOM_WIDTH - SIDE_WALL_W * 2.0, exit_zone_h),
-		COLOR_EXIT_ZONE, true)
+	# 4. Optional safe-zone overlays so designer sees where altar/exit land.
+	if show_zones:
+		var altar_zone_h: float = ALTAR_TARGET_H + ALTAR_CLEARANCE
+		draw_rect(Rect2(SIDE_WALL_W, WALL_T,
+			ROOM_WIDTH - SIDE_WALL_W * 2.0, altar_zone_h),
+			COLOR_ALTAR_ZONE, true)
+		var exit_zone_h: float = 200.0
+		draw_rect(Rect2(SIDE_WALL_W, shaft_height - WALL_T - exit_zone_h,
+			ROOM_WIDTH - SIDE_WALL_W * 2.0, exit_zone_h),
+			COLOR_EXIT_ZONE, true)
 
-	# Outlines so zones read clearly.
+	# 5. Outline so the shaft bounds stay readable.
 	draw_rect(Rect2(0, 0, ROOM_WIDTH, shaft_height), COLOR_OUTLINE, false, 2.0)
-	draw_line(Vector2(SIDE_WALL_W, WALL_T + altar_zone_h),
-		Vector2(ROOM_WIDTH - SIDE_WALL_W, WALL_T + altar_zone_h),
-		Color(1.0, 0.85, 0.30, 0.6), 1.5)
-	draw_line(Vector2(SIDE_WALL_W, shaft_height - WALL_T - exit_zone_h),
-		Vector2(ROOM_WIDTH - SIDE_WALL_W, shaft_height - WALL_T - exit_zone_h),
-		Color(0.30, 0.85, 1.00, 0.6), 1.5)
 
-	# Platforms — read from JSON for this level_id and draw their footprints
-	# so the designer can place decorations relative to them.
+	# 6. Platforms from JSON.
 	if level_id <= 0:
 		return
 	var layouts: Dictionary = _get_layouts()
@@ -145,6 +202,9 @@ func _draw() -> void:
 	var plats: Variant = layouts[key]
 	if not (plats is Array):
 		return
+	# Find topmost platform (smallest y) so we can put the altar there.
+	var top_x: float = ROOM_WIDTH * 0.5
+	var top_y: float = -1.0
 	for p_v: Variant in plats:
 		if not (p_v is Dictionary):
 			continue
@@ -153,9 +213,69 @@ func _draw() -> void:
 		var y: float = float(p.get("y", 0.0))
 		var w: float = float(p.get("w", 220.0))
 		var t: String = String(p.get("t", "stone"))
-		# In runtime, position is the platform CENTER. Mirror that so the
-		# preview rectangles align with what the player sees.
 		var rect := Rect2(x - w * 0.5, y - PLATFORM_T * 0.5, w, PLATFORM_T)
 		var fill: Color = PLATFORM_COLORS.get(t, PLATFORM_COLOR_FALLBACK)
 		draw_rect(rect, fill, true)
 		draw_rect(rect, COLOR_PLAT_EDGE, false, 1.5)
+		if top_y < 0.0 or y < top_y:
+			top_y = y
+			top_x = x
+
+	# 7. Altar sprite on the topmost platform — same anchor maths the runtime
+	# PlaceholderRoom._spawn_altar uses: position is bottom-center, sprite
+	# offset is (-tex_w/2, -tex_h) and scale = ALTAR_TARGET_H / tex_h.
+	if _altar_texture and top_y >= 0.0:
+		var tex_w: float = float(_altar_texture.get_width())
+		var tex_h: float = float(_altar_texture.get_height())
+		if tex_h > 0.0:
+			var s: float = ALTAR_TARGET_H / tex_h
+			var anchor_y: float = top_y - PLATFORM_T * 0.5
+			var dst := Rect2(
+				top_x - tex_w * 0.5 * s,
+				anchor_y - tex_h * s,
+				tex_w * s, tex_h * s)
+			draw_texture_rect(_altar_texture, dst, false)
+
+
+# ── Texture drawing — copied from PlaceholderRoom so the editor render matches
+# the runtime byte-for-byte (same seeds, same loop, same modulate).
+
+func _draw_textured_backdrop(x: float, width: float) -> void:
+	if _backdrop_textures.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("backdrop_%d" % level_id)
+	var n: int = _backdrop_textures.size()
+	var y: float = 0.0
+	while y < shaft_height:
+		var tex: Texture2D = _backdrop_textures[rng.randi() % n]
+		var tex_w: float = float(tex.get_width())
+		var tex_h: float = float(tex.get_height())
+		var section_h: float = minf(tex_h, shaft_height - y)
+		draw_texture_rect_region(
+			tex,
+			Rect2(x, y, width, section_h),
+			Rect2(0.0, 0.0, tex_w, section_h),
+			BACKDROP_DIM)
+		y += tex_h
+
+
+func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
+	if _wall_textures.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("wall_%d_%s" % [level_id, seed_tag])
+	var n: int = _wall_textures.size()
+	var y: float = 0.0
+	while y < shaft_height:
+		var tex: Texture2D = _wall_textures[rng.randi() % n]
+		var tex_w: float = float(tex.get_width())
+		var tex_h: float = float(tex.get_height())
+		var slice_w: float = minf(width, tex_w)
+		var x_off: float = rng.randf() * maxf(0.0, tex_w - slice_w)
+		var section_h: float = minf(tex_h, shaft_height - y)
+		draw_texture_rect_region(
+			tex,
+			Rect2(x, y, width, section_h),
+			Rect2(x_off, 0.0, slice_w, section_h))
+		y += tex_h
