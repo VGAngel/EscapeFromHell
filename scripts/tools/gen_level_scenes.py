@@ -230,6 +230,7 @@ def write_decor_scene(level_id: int, force: bool) -> bool:
 [node name="LayoutPreview" type="Node2D" parent="."]
 script = ExtResource("1_preview")
 shaft_height = {shaft_h}
+level_id = {level_id}
 """
     with open(fpath, "w") as f:
         f.write(content)
