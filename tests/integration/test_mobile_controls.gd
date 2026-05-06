@@ -139,19 +139,19 @@ func test_two_fingers_can_hold_right_and_jump_simultaneously() -> void:
 # ── HUD integration ───────────────────────────────────────────────────────────
 
 func test_hud_exposes_show_pray_button() -> void:
-	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	var hud: Node = preload("res://scenes/ui/HUD.tscn").instantiate()
 	add_child_autofree(hud)
 	assert_true(hud.has_method("show_pray_button"))
 
 func test_hud_show_pray_button_delegates_to_mobile_controls() -> void:
-	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	var hud: Node = preload("res://scenes/ui/HUD.tscn").instantiate()
 	add_child_autofree(hud)
 	hud.show_pray_button(true)
 	assert_not_null(hud._mobile_controls)
 	assert_true(hud._mobile_controls.btn_pray.visible)
 
 func test_hud_show_pray_button_false_hides() -> void:
-	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	var hud: Node = preload("res://scenes/ui/HUD.tscn").instantiate()
 	add_child_autofree(hud)
 	hud.show_pray_button(true)
 	hud.show_pray_button(false)
