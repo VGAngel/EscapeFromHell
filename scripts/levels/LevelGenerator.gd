@@ -372,7 +372,10 @@ func _pick_unique_room_index(used: Array, pool_size: int) -> int:
 
 # ── Soul placement ────────────────────────────────────────────────────────────
 
-func _soul_for_level(level_id: int, circle: int) -> Dictionary:
+func _soul_for_level(level_id: int, _circle: int) -> Dictionary:
+	# `circle` is unused now that the distribution is keyed purely by
+	# level_id — kept in the signature so the existing call sites
+	# (and the symmetric _souls_for_level companion) don't churn.
 	# Legacy path: souls with explicit `level: N` in JSON win. After the
 	# 2026 unpinning all 100 originals were set to level=0, so this is
 	# normally empty — kept so future hand-pinned souls still work.
