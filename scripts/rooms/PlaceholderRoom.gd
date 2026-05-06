@@ -576,16 +576,14 @@ func _init_zone() -> void:
 
 	var platform_data: Array = []
 
+	# When external layout (JSON variant) is loaded, _populate_vert_layout_from_data
+	# already sets _bridge_rows = [] and _vert_layout/_all_rows from the data.
+	# Skip Markov + missing_bridge_ys entirely — designer's layout is the source
+	# of truth.
+	var external_used: bool = false
 	if is_vertical:
-		# Hand-authored layouts (one of 5 stubs in scenes/rooms/vertical_layouts/
-		# level_NNN/) override Markov when present. The designer picks the actual
-		# platform geometry; spawn helpers (souls/enemies/bonuses/altar) still
-		# read _vert_layout/_all_rows, which we rebuild from the layout's children.
-		if _try_use_external_layout():
-			# _vert_layout, _all_rows populated from the layout scene.
-			# Bridge rows stay empty — designer is responsible for filling gaps.
-			pass
-		else:
+		external_used = _try_use_external_layout()
+		if not external_used:
 			# Fill all rows from floor to ceiling with uniform spacing, then run the
 			# Markov layout so v_range below reflects which rows actually become
 			# moving/typed platforms.
@@ -613,7 +611,8 @@ func _init_zone() -> void:
 			{ "y": _row_high, "v_range": vr_high },
 		]
 
-	_bridge_rows = LevelGenerator.missing_bridge_ys(platform_data, floor_y)
+	if not external_used:
+		_bridge_rows = LevelGenerator.missing_bridge_ys(platform_data, floor_y)
 
 func _compute_all_rows(floor_y: float, ceiling_y: float, spacing: float) -> Array:
 	# Generate evenly-spaced row Y positions from the floor upward.
@@ -1235,11 +1234,23 @@ static func _ensure_layouts_loaded() -> void:
 		return
 	var f := FileAccess.open(VERT_LAYOUTS_JSON, FileAccess.READ)
 	if not f:
+		push_warning("PlaceholderRoom: cannot open " + VERT_LAYOUTS_JSON +
+				" — falling back to Markov for all vertical levels")
 		return
-	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	var raw: String = f.get_as_text()
 	f.close()
-	if parsed is Dictionary:
-		_layouts_cache = (parsed as Dictionary).get("levels", {})
+	var parsed: Variant = JSON.parse_string(raw)
+	if not (parsed is Dictionary):
+		push_warning("PlaceholderRoom: " + VERT_LAYOUTS_JSON +
+				" is not a valid JSON object (root must be a Dictionary). " +
+				"Falling back to Markov.")
+		return
+	var levels_v: Variant = (parsed as Dictionary).get("levels", null)
+	if not (levels_v is Dictionary):
+		push_warning("PlaceholderRoom: " + VERT_LAYOUTS_JSON +
+				" missing top-level 'levels' object. Falling back to Markov.")
+		return
+	_layouts_cache = levels_v
 
 func _try_use_external_layout() -> bool:
 	if not is_vertical or level_id <= 0 or room_type != "shaft":
