@@ -1,7 +1,73 @@
-[gd_scene format=3 uid="uid://stats0001screen"]
+[gd_scene load_steps=2 format=3 uid="uid://stats0001screen"]
 
 [ext_resource type="Script" path="res://scripts/ui/StatisticsScreen.gd" id="1_stats"]
 
 [node name="StatisticsScreen" type="CanvasLayer"]
 layer = 10
 script = ExtResource("1_stats")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.05, 0.04, 0.08, 0.97)
+
+[node name="VRoot" type="VBoxContainer" parent="Backdrop"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="HeaderMargin" type="MarginContainer" parent="Backdrop/VRoot"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
+
+[node name="Header" type="HBoxContainer" parent="Backdrop/VRoot/HeaderMargin"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="Backdrop/VRoot/HeaderMargin/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"DisplayLabel"
+text = "📊  Статистика"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="Backdrop/VRoot/HeaderMargin/Header"]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+theme_type_variation = &"IconButton"
+text = "✕"
+
+[node name="Scroll" type="ScrollContainer" parent="Backdrop/VRoot"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Center" type="CenterContainer" parent="Backdrop/VRoot/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ContentMargin" type="MarginContainer" parent="Backdrop/VRoot/Scroll/Center"]
+custom_minimum_size = Vector2(900, 0)
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 90
+
+[node name="Content" type="VBoxContainer" parent="Backdrop/VRoot/Scroll/Center/ContentMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
