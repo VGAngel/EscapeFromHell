@@ -36,6 +36,7 @@ BASE_SCENE = {
 }
 
 BASE_PLATFORM_SCRIPT = "res://scripts/platforms/BasePlatform.gd"
+LAYOUT_PREVIEW_SCRIPT = "res://scripts/tools/LayoutPreview.gd"
 
 # ── Shaft geometry (mirrors PlaceholderRoom + LevelGenerator constants) ──────
 ROOM_WIDTH = 1080.0
@@ -220,12 +221,18 @@ def write_layout_scene(level_id: int, k: int) -> str:
     plats = generate_layout(level_id, k)
 
     uid = make_layout_uid(level_id, k)
+    shaft_h = shaft_height_for(level_id)
     lines = [
-        f'[gd_scene load_steps=2 format=3 uid="{uid}"]',
+        f'[gd_scene load_steps=3 format=3 uid="{uid}"]',
         '',
         f'[ext_resource type="Script" path="{BASE_PLATFORM_SCRIPT}" id="1_plat"]',
+        f'[ext_resource type="Script" path="{LAYOUT_PREVIEW_SCRIPT}" id="2_preview"]',
         '',
         '[node name="VerticalLayout" type="Node2D"]',
+        '',
+        '[node name="LayoutPreview" type="Node2D" parent="."]',
+        'script = ExtResource("2_preview")',
+        f'shaft_height = {shaft_h}',
         '',
     ]
     for i, p in enumerate(plats):
