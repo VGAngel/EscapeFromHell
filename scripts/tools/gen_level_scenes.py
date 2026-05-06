@@ -50,10 +50,12 @@ SAME_LEVEL_REACH = 240.0   # horizontal distance the player can clear at no rise
 #   idx 0 (level 10/20/...): unused in vertical (those are circle bosses).
 ROOM_COUNT_BY_IDX = [4, 2, 3, 4, 4, 5, 6, 6, 7, 8]
 
-# Row spacing per circle/difficulty — middle-of-the-road default. Real game
-# uses 200..280 px depending on tier; 260 keeps every gap inside MAX_JUMP_HEIGHT
-# with a small safety margin.
-ROW_SPACING = 260.0
+# Row spacing must stay below MAX_JUMP_HEIGHT (200 px) — otherwise the player
+# can fall down between platforms but never jump back up. Markov caps at
+# MAX_JUMP_HEIGHT * 0.9 = 180 px (see PlaceholderRoom._init_zone). Y-jitter
+# adds up to ±5 % per row, so worst-case adjacent gap is 180 + 18 = 198 px,
+# still inside the jump limit.
+ROW_SPACING = 180.0
 
 # Horizontal zones across the shaft (relative to room_width). Same anchors as
 # the Markov generator — wide enough that even max-width platforms (~330 px)
