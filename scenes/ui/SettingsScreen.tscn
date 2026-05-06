@@ -1,7 +1,527 @@
-[gd_scene format=3 uid="uid://settings001"]
+[gd_scene load_steps=10 format=3 uid="uid://settings001"]
 
 [ext_resource type="Script" path="res://scripts/ui/SettingsScreen.gd" id="1_set"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_bottom = 24.0
+bg_color = Color(0.08, 0.07, 0.11, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.27, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_close"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_normal"]
+bg_color = Color(0.12, 0.11, 0.16, 1)
+border_width_bottom = 2
+border_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_hover"]
+bg_color = Color(0.18, 0.16, 0.22, 1)
+border_width_bottom = 2
+border_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slider_grabber"]
+bg_color = Color(0.7, 0.55, 0.9, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slider_track"]
+content_margin_top = 3.0
+content_margin_bottom = 3.0
+bg_color = Color(0.2, 0.18, 0.26, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choice_normal"]
+bg_color = Color(0.12, 0.11, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.22, 0.3, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reset"]
+bg_color = Color(0.16, 0.1, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.3, 0.3, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="SettingsScreen" type="CanvasLayer"]
 layer = 10
 script = ExtResource("1_set")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Centerer" type="CenterContainer" parent="Backdrop"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="Panel" type="PanelContainer" parent="Backdrop/Centerer"]
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Backdrop/Centerer/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TitleMargin" type="MarginContainer" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 0
+
+[node name="TitleBar" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/TitleMargin"]
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="Backdrop/Centerer/Panel/VBox/TitleMargin/TitleBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.88, 0.95, 1)
+theme_override_font_sizes/font_size = 44
+text = "Налаштування"
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="Backdrop/Centerer/Panel/VBox/TitleMargin/TitleBar"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.52, 0.62, 1)
+theme_override_font_sizes/font_size = 38
+theme_override_styles/normal = SubResource("StyleBoxEmpty_close")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_close")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_close")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_close")
+text = "✕"
+
+[node name="TabBar" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox"]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TabSound" type="Button" parent="Backdrop/Centerer/Panel/VBox/TabBar"]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_colors/font_color = Color(0.82, 0.8, 0.88, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_tab_normal")
+text = "🔊  Звук"
+tooltip_text = "Звук"
+
+[node name="TabLanguage" type="Button" parent="Backdrop/Centerer/Panel/VBox/TabBar"]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_colors/font_color = Color(0.82, 0.8, 0.88, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_tab_normal")
+text = "🌐  Мова"
+tooltip_text = "Мова"
+
+[node name="TabGraphics" type="Button" parent="Backdrop/Centerer/Panel/VBox/TabBar"]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_colors/font_color = Color(0.82, 0.8, 0.88, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_tab_normal")
+text = "🖥  Графіка"
+tooltip_text = "Графіка"
+
+[node name="TabKeys" type="Button" parent="Backdrop/Centerer/Panel/VBox/TabBar"]
+custom_minimum_size = Vector2(0, 76)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+theme_override_colors/font_color = Color(0.82, 0.8, 0.88, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_tab_normal")
+text = "⌨  Клавіші"
+tooltip_text = "Клавіші"
+
+[node name="PagesMargin" type="MarginContainer" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 0
+
+[node name="PagesStack" type="Control" parent="Backdrop/Centerer/Panel/VBox/PagesMargin"]
+custom_minimum_size = Vector2(0, 480)
+layout_mode = 2
+
+[node name="SoundPage" type="VBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 28
+
+[node name="MasterRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Label" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MasterRow"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+text = "Загальна гучність"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_grabber")
+theme_override_styles/slider = SubResource("StyleBoxFlat_slider_track")
+max_value = 100.0
+step = 1.0
+value = 80.0
+
+[node name="Value" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MasterRow"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.63, 0.72, 1)
+theme_override_font_sizes/font_size = 26
+text = "80%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MusicRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Label" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MusicRow"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+text = "Музика"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_grabber")
+theme_override_styles/slider = SubResource("StyleBoxFlat_slider_track")
+max_value = 100.0
+step = 1.0
+value = 60.0
+
+[node name="Value" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MusicRow"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.63, 0.72, 1)
+theme_override_font_sizes/font_size = 26
+text = "60%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="SfxRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Label" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/SfxRow"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+text = "Звукові ефекти"
+vertical_alignment = 1
+
+[node name="Slider" type="HSlider" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/SfxRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_grabber")
+theme_override_styles/slider = SubResource("StyleBoxFlat_slider_track")
+max_value = 100.0
+step = 1.0
+value = 90.0
+
+[node name="Value" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/SfxRow"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.63, 0.72, 1)
+theme_override_font_sizes/font_size = 26
+text = "90%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MuteRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MuteRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+text = "Вимкнути звук повністю"
+vertical_alignment = 1
+
+[node name="Toggle" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MuteRow"]
+custom_minimum_size = Vector2(110, 56)
+layout_mode = 2
+focus_mode = 0
+text = "ВИКЛ"
+
+[node name="HapticsRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/HapticsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+text = "Вібрація (mobile)"
+vertical_alignment = 1
+
+[node name="Toggle" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/HapticsRow"]
+custom_minimum_size = Vector2(110, 56)
+layout_mode = 2
+focus_mode = 0
+text = "ВКЛ"
+
+[node name="LanguagePage" type="VBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 18
+
+[node name="Header" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/LanguagePage"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.68, 0.76, 1)
+theme_override_font_sizes/font_size = 28
+text = "Мова гри"
+
+[node name="LangUk" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/LanguagePage"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_choice_normal")
+text = "🇺🇦  Українська"
+
+[node name="LangEn" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/LanguagePage"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_choice_normal")
+text = "🇬🇧  English"
+
+[node name="GraphicsPage" type="VBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 22
+
+[node name="VsyncRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/VsyncRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+text = "Вертикальна синхронізація"
+vertical_alignment = 1
+
+[node name="Toggle" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/VsyncRow"]
+custom_minimum_size = Vector2(110, 56)
+layout_mode = 2
+focus_mode = 0
+text = "ВКЛ"
+
+[node name="ReduceMotionRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/ReduceMotionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+text = "Зменшити рух (анімації)"
+vertical_alignment = 1
+
+[node name="Toggle" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/ReduceMotionRow"]
+custom_minimum_size = Vector2(110, 56)
+layout_mode = 2
+focus_mode = 0
+text = "ВИКЛ"
+
+[node name="ResolutionLabel" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.68, 0.76, 1)
+theme_override_font_sizes/font_size = 21
+text = "Роздільна здатність"
+
+[node name="ResFhd" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_choice_normal")
+text = "FHD  1080×1920"
+
+[node name="ResHd" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_choice_normal")
+text = "HD  720×1280"
+
+[node name="KeysPage" type="VBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="MobileSection" type="VBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="MobileHeader" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.88, 0.96, 1)
+theme_override_font_sizes/font_size = 26
+text = "📱  Мобільні кнопки"
+
+[node name="SizeRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Label" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection/SizeRow"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Розмір"
+vertical_alignment = 1
+
+[node name="SizeSlider" type="HSlider" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection/SizeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_slider_grabber")
+theme_override_styles/slider = SubResource("StyleBoxFlat_slider_track")
+min_value = 0.6
+max_value = 1.4
+step = 0.05
+value = 1.0
+
+[node name="SizeValue" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection/SizeRow"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "100%"
+horizontal_alignment = 2
+
+[node name="EditMobileButton" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_choice_normal")
+text = "✋  Редагувати позиції кнопок"
+
+[node name="ResetMobileButton" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.53, 0.4, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_reset")
+theme_override_styles/hover = SubResource("StyleBoxFlat_reset")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_reset")
+theme_override_styles/focus = SubResource("StyleBoxFlat_reset")
+text = "↺  Скинути позиції до стандартних"
+
+[node name="KeysSeparator" type="HSeparator" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage"]
+layout_mode = 2
+
+[node name="Hint" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.62, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+text = "Тисни «Призначити» і потім бажану клавішу.
+На мобільних — клавіатурні бінди не використовуються."
+autowrap_mode = 3
+
+[node name="KeyRows" type="VBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ResetButton" type="Button" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.53, 0.4, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_reset")
+theme_override_styles/hover = SubResource("StyleBoxFlat_reset")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_reset")
+theme_override_styles/focus = SubResource("StyleBoxFlat_reset")
+text = "↺  Скинути всі до стандартних"

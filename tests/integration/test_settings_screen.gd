@@ -2,10 +2,15 @@ extends GutTest
 
 # Integration tests for SettingsScreen.gd (CanvasLayer).
 
+const SettingsScreenScene := preload("res://scenes/ui/SettingsScreen.tscn")
+
 var ss: Node
 
 func before_each() -> void:
-	ss = preload("res://scripts/ui/SettingsScreen.gd").new()
+	# Layout (panel, tab bar, sliders, toggles, choice buttons, key rows)
+	# lives in the .tscn — script-only `.new()` would leave every @onready
+	# ref null and _refresh_widgets() would crash on the first `_sl_master.value`.
+	ss = SettingsScreenScene.instantiate()
 	add_child_autofree(ss)
 	# Reset to defaults so that tests which call _save() don't pollute later tests
 	ss._data = ss.DEFAULTS.duplicate()

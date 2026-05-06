@@ -3,6 +3,12 @@ extends CanvasLayer
 # Accessible from: main menu, pause menu.
 # Persists settings to user://settings.json on every change.
 # Call open() / close() from outside.
+#
+# Static layout (panel, tab bar, four pages with their sliders/toggles/
+# choice buttons, mobile section, key reset button) lives entirely in
+# scenes/ui/SettingsScreen.tscn. This script wires up signals, applies
+# the on/off + active styling at runtime, and dynamically generates the
+# per-action key rows (one per REBINDABLE_ACTIONS entry).
 
 signal closed
 
@@ -38,33 +44,6 @@ const DEFAULTS := {
 var _data: Dictionary = {}
 var _active_tab: int  = 0
 
-# ── UI roots ──────────────────────────────────────────────────────────────────
-var _root:          ColorRect      = null
-var _panel:         PanelContainer = null
-
-# Tab bar
-var _tab_btns:      Array          = []   # Array[Button]
-var _tab_pages:     Array          = []   # Array[Control]
-
-# Sound tab widgets
-var _sl_master:     HSlider        = null
-var _sl_music:      HSlider        = null
-var _sl_sfx:        HSlider        = null
-var _lbl_master:    Label          = null
-var _lbl_music:     Label          = null
-var _lbl_sfx:       Label          = null
-var _toggle_mute:   Button         = null
-var _toggle_haptics: Button        = null
-
-# Language tab widgets
-var _lang_btns:     Dictionary     = {}   # code → Button
-
-# Graphics tab widgets
-var _toggle_vsync:       Button         = null
-var _toggle_reduce_motion: Button       = null
-var _resolution_btns:    Dictionary     = {}   # preset → Button
-
-# Keys tab widgets
 ## Actions exposed to rebinding. Order = display order in the Keys tab.
 const REBINDABLE_ACTIONS: Array[Dictionary] = [
 	{"action": "move_left",  "label": "Вліво"},
@@ -75,9 +54,67 @@ const REBINDABLE_ACTIONS: Array[Dictionary] = [
 	{"action": "look_down",  "label": "Огляд вниз"},
 	{"action": "pray",       "label": "Молитва"},
 ]
-var _key_btns:        Dictionary = {}   # action → Button (shows current key)
+var _key_btns:        Dictionary = {}   # action → Button
 var _binding_action:  String     = ""   # non-empty = waiting for next key
-var _default_key_events: Dictionary = {}   # action → Array[InputEvent] (boot snapshot)
+var _default_key_events: Dictionary = {}   # action → Array[InputEvent]
+
+# Two-stage reset state for the "↺ Скинути всі" button.
+var _reset_armed:      bool   = false
+var _reset_disarm_at:  float  = 0.0
+
+# Mobile-layout edit overlay — built at runtime when the player taps
+# "Edit positions"; freed when they tap Done.
+var _edit_overlay:   CanvasLayer = null
+
+# ── Scene refs ────────────────────────────────────────────────────────────────
+@onready var _root:        ColorRect = $Backdrop
+@onready var _close_btn:   Button    = $Backdrop/Centerer/Panel/VBox/TitleMargin/TitleBar/CloseButton
+@onready var _title_label: Label     = $Backdrop/Centerer/Panel/VBox/TitleMargin/TitleBar/Title
+
+@onready var _tab_sound:    Button = $Backdrop/Centerer/Panel/VBox/TabBar/TabSound
+@onready var _tab_language: Button = $Backdrop/Centerer/Panel/VBox/TabBar/TabLanguage
+@onready var _tab_graphics: Button = $Backdrop/Centerer/Panel/VBox/TabBar/TabGraphics
+@onready var _tab_keys:     Button = $Backdrop/Centerer/Panel/VBox/TabBar/TabKeys
+
+@onready var _page_sound:    Control = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage
+@onready var _page_language: Control = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/LanguagePage
+@onready var _page_graphics: Control = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage
+@onready var _page_keys:     Control = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage
+
+# Sound page widgets
+@onready var _sl_master:  HSlider = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MasterRow/Slider
+@onready var _lbl_master: Label   = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MasterRow/Value
+@onready var _sl_music:   HSlider = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MusicRow/Slider
+@onready var _lbl_music:  Label   = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MusicRow/Value
+@onready var _sl_sfx:     HSlider = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/SfxRow/Slider
+@onready var _lbl_sfx:    Label   = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/SfxRow/Value
+@onready var _toggle_mute:    Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/MuteRow/Toggle
+@onready var _toggle_haptics: Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage/HapticsRow/Toggle
+
+# Language page widgets — keyed by code so a future "+ German" tab is one
+# extra Button node + one entry in this dict.
+@onready var _lang_uk: Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/LanguagePage/LangUk
+@onready var _lang_en: Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/LanguagePage/LangEn
+
+# Graphics page widgets
+@onready var _toggle_vsync:        Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/VsyncRow/Toggle
+@onready var _toggle_reduce_motion: Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/ReduceMotionRow/Toggle
+@onready var _res_fhd: Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/ResFhd
+@onready var _res_hd:  Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/ResHd
+
+# Keys page widgets
+@onready var _size_slider:      HSlider = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection/SizeRow/SizeSlider
+@onready var _size_label:       Label   = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection/SizeRow/SizeValue
+@onready var _btn_edit_mobile:  Button  = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection/EditMobileButton
+@onready var _btn_reset_mobile: Button  = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/MobileSection/ResetMobileButton
+@onready var _key_rows:         VBoxContainer = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/KeyRows
+@onready var _reset_btn:        Button  = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/KeysPage/ResetButton
+
+# Computed at _ready time — keep ordering stable for _switch_tab.
+var _tab_btns:     Array = []
+var _tab_pages:    Array = []
+var _lang_btns:    Dictionary = {}   # code → Button
+var _resolution_btns: Dictionary = {}
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -86,7 +123,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_capture_default_keys()   # snapshot project.godot bindings BEFORE any user override
 	_load()
-	_build_ui()
+	_wire_widgets()
 	_apply_all()
 	_root.modulate.a = 0.0
 	visible    = false
@@ -305,15 +342,13 @@ func _refresh_widgets() -> void:
 	_sl_music.value  = vmu; _lbl_music.text  = "%d%%" % vmu
 	_sl_sfx.value    = vs;  _lbl_sfx.text    = "%d%%" % vs
 	_update_toggle(_toggle_mute, muted)
-	if _toggle_haptics:
-		_update_toggle(_toggle_haptics, _data.get("haptics", true))
+	_update_toggle(_toggle_haptics, _data.get("haptics", true))
 
 	for code in _lang_btns:
 		_update_toggle(_lang_btns[code], code == lang)
 
 	_update_toggle(_toggle_vsync, vsync)
-	if _toggle_reduce_motion:
-		_update_toggle(_toggle_reduce_motion, _data.get("reduce_motion", false))
+	_update_toggle(_toggle_reduce_motion, _data.get("reduce_motion", false))
 
 	for preset in _resolution_btns:
 		_style_choice_btn(_resolution_btns[preset], preset == res)
@@ -327,314 +362,69 @@ func _switch_tab(idx: int) -> void:
 	for i in _tab_pages.size():
 		_tab_pages[i].visible = i == idx
 
-# ── Build UI ──────────────────────────────────────────────────────────────────
+# ── Wire up scene widgets ─────────────────────────────────────────────────────
 
-func _build_ui() -> void:
-	_root = ColorRect.new()
-	_root.color = Color(0, 0, 0, 0.60)
-	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_root.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_root)
+func _wire_widgets() -> void:
+	_close_btn.pressed.connect(close)
 
-	# CenterContainer keeps the panel visually centered and re-centers
-	# automatically when content_scale_size changes (resolution switch).
-	var centerer := CenterContainer.new()
-	centerer.set_anchors_preset(Control.PRESET_FULL_RECT)
-	centerer.mouse_filter = Control.MOUSE_FILTER_PASS
-	_root.add_child(centerer)
-
-	_panel = PanelContainer.new()
-	# 640 fits the HD preset (720 wide) with breathing room AND the FHD
-	# preset (1080 wide) reads cleanly on portrait devices.
-	_panel.custom_minimum_size = Vector2(640, 0)
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.07, 0.11, 0.97)
-	style.border_width_left   = 1
-	style.border_width_right  = 1
-	style.border_width_top    = 1
-	style.border_width_bottom = 1
-	style.border_color = Color(0.30, 0.27, 0.40)
-	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
-		style.set("corner_radius_" + corner, 16)
-	style.content_margin_left   = 0.0
-	style.content_margin_right  = 0.0
-	style.content_margin_top    = 0.0
-	style.content_margin_bottom = 24.0
-	_panel.add_theme_stylebox_override("panel", style)
-	centerer.add_child(_panel)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 0)
-	_panel.add_child(vbox)
-
-	_build_title_bar(vbox)
-	_build_tab_bar(vbox)
-	_build_pages(vbox)
-
-func _build_title_bar(parent: VBoxContainer) -> void:
-	var hdr := HBoxContainer.new()
-	hdr.custom_minimum_size.y = 88
-	hdr.add_theme_constant_override("separation", 0)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",  28)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top",    0)
-	margin.add_theme_constant_override("margin_bottom", 0)
-	parent.add_child(margin)
-	margin.add_child(hdr)
-
-	var title := Label.new()
-	title.text = _t("settings.title", {}, "Налаштування")
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 44)
-	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.95))
-	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hdr.add_child(title)
-
-	var btn_close := Button.new()
-	btn_close.text = "✕"
-	btn_close.custom_minimum_size = Vector2(64, 64)
-	btn_close.add_theme_font_size_override("font_size", 38)
-	var empty := StyleBoxEmpty.new()
-	for state in ["normal","hover","pressed","focus"]:
-		btn_close.add_theme_stylebox_override(state, empty)
-	btn_close.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
-	btn_close.pressed.connect(close)
-	hdr.add_child(btn_close)
-
-func _build_tab_bar(parent: VBoxContainer) -> void:
-	var bar := HBoxContainer.new()
-	bar.custom_minimum_size.y = 76
-	bar.add_theme_constant_override("separation", 4)
-	parent.add_child(bar)
-
-	var tabs := [
-			["🔊", _t("settings.tab_sound", {}, "Звук")],
-			["🌐", _t("settings.tab_language", {}, "Мова")],
-			["🖥", _t("settings.tab_graphics", {}, "Графіка")],
-			["⌨", _t("settings.tab_keys", {}, "Клавіші")]]
-	# On narrow viewports (phone portrait) drop the text label and keep
-	# just the emoji so all four tabs fit comfortably without truncating.
-	# 600 px gives each tab roughly the same touch area as 540/4 ≈ 135px.
-	var vp_w: float = get_viewport().get_visible_rect().size.x
-	var compact: bool = vp_w < 600.0
-	for i in tabs.size():
-		var btn := Button.new()
-		if compact:
-			btn.text = String(tabs[i][0])  # emoji only
-		else:
-			btn.text = "%s  %s" % [tabs[i][0], tabs[i][1]]
-		btn.tooltip_text = String(tabs[i][1])  # full name on hover/long-press
-		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		btn.custom_minimum_size.y = 76
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.add_theme_font_size_override("font_size", 32 if compact else 28)
-
-		var n := StyleBoxFlat.new()
-		n.bg_color = Color(0.12, 0.11, 0.16)
-		n.border_width_bottom = 2
-		n.border_color = Color(0.0, 0.0, 0.0, 0.0)
-		var h := n.duplicate() as StyleBoxFlat
-		h.bg_color = Color(0.18, 0.16, 0.22)
-		btn.add_theme_stylebox_override("normal",  n)
-		btn.add_theme_stylebox_override("hover",   h)
-		btn.add_theme_stylebox_override("pressed", n)
-		btn.add_theme_stylebox_override("focus",   n)
-		btn.add_theme_color_override("font_color", Color(0.82, 0.80, 0.88))
-
+	# Tabs — ordered to match _switch_tab indices.
+	_tab_btns = [_tab_sound, _tab_language, _tab_graphics, _tab_keys]
+	_tab_pages = [_page_sound, _page_language, _page_graphics, _page_keys]
+	for i in _tab_btns.size():
 		var idx := i
-		btn.pressed.connect(func() -> void: _switch_tab(idx))
-		bar.add_child(btn)
-		_tab_btns.append(btn)
+		_tab_btns[i].pressed.connect(func() -> void: _switch_tab(idx))
+	# On narrow viewports drop the text label and keep just the emoji so all
+	# four tabs fit comfortably without truncating.
+	var compact: bool = get_viewport().get_visible_rect().size.x < 600.0
+	if compact:
+		_tab_sound.text    = "🔊"
+		_tab_language.text = "🌐"
+		_tab_graphics.text = "🖥"
+		_tab_keys.text     = "⌨"
+		for btn: Button in _tab_btns:
+			btn.add_theme_font_size_override("font_size", 32)
 
-func _build_pages(parent: VBoxContainer) -> void:
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",  36)
-	margin.add_theme_constant_override("margin_right", 36)
-	margin.add_theme_constant_override("margin_top",   28)
-	margin.add_theme_constant_override("margin_bottom", 0)
-	parent.add_child(margin)
-
-	var stack := Control.new()
-	stack.custom_minimum_size = Vector2(0, 480)
-	margin.add_child(stack)
-
-	var page_sound    := _build_page_sound()
-	var page_language := _build_page_language()
-	var page_graphics := _build_page_graphics()
-	var page_keys     := _build_page_keys()
-
-	for page in [page_sound, page_language, page_graphics, page_keys]:
-		page.set_anchors_preset(Control.PRESET_FULL_RECT)
-		stack.add_child(page)
-		_tab_pages.append(page)
-
-# ── Sound page ────────────────────────────────────────────────────────────────
-
-func _build_page_sound() -> Control:
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 28)
-
-	_sl_master = _add_slider_row(vbox, _t("settings.volume_master", {}, "Загальна гучність"), 80)
-	_lbl_master = _get_value_label(vbox)
+	# Sound page
 	_sl_master.value_changed.connect(_on_master_changed)
-
-	_sl_music = _add_slider_row(vbox, _t("settings.volume_music", {}, "Музика"), 60)
-	_lbl_music = _get_value_label(vbox)
 	_sl_music.value_changed.connect(_on_music_changed)
-
-	_sl_sfx = _add_slider_row(vbox, _t("settings.volume_sfx", {}, "Звукові ефекти"), 90)
-	_lbl_sfx = _get_value_label(vbox)
 	_sl_sfx.value_changed.connect(_on_sfx_changed)
-
-	_toggle_mute = _add_toggle_row(vbox, _t("settings.mute_all", {}, "Вимкнути звук повністю"), false)
 	_toggle_mute.pressed.connect(_on_mute_pressed)
-
-	_toggle_haptics = _add_toggle_row(vbox, _t("settings.haptics", {}, "Вібрація (mobile)"),
-		_data.get("haptics", true))
 	_toggle_haptics.pressed.connect(_on_haptics_pressed)
 
-	return vbox
+	# Language page
+	_lang_btns = {"uk": _lang_uk, "en": _lang_en}
+	_lang_uk.pressed.connect(_on_language_pressed.bind("uk"))
+	_lang_en.pressed.connect(_on_language_pressed.bind("en"))
 
-func _add_slider_row(parent: VBoxContainer, label_text: String, default_val: int) -> HSlider:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 18)
-	parent.add_child(row)
-
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size.x = 240
-	lbl.add_theme_font_size_override("font_size", 28)
-	lbl.add_theme_color_override("font_color", Color(0.80, 0.78, 0.85))
-	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(lbl)
-
-	var sl := HSlider.new()
-	sl.min_value = 0
-	sl.max_value = 100
-	sl.step      = 1
-	sl.value     = default_val
-	sl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_style_slider(sl)
-	row.add_child(sl)
-
-	# value label is added as next sibling — grabbed by _get_value_label
-	var val_lbl := Label.new()
-	val_lbl.text = "%d%%" % default_val
-	val_lbl.custom_minimum_size.x = 60
-	val_lbl.horizontal_alignment  = HORIZONTAL_ALIGNMENT_RIGHT
-	val_lbl.add_theme_font_size_override("font_size", 26)
-	val_lbl.add_theme_color_override("font_color", Color(0.65, 0.63, 0.72))
-	val_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(val_lbl)
-
-	return sl
-
-# Returns the value Label that was just added as last child of the last HBoxContainer
-func _get_value_label(parent: VBoxContainer) -> Label:
-	var row: HBoxContainer = parent.get_child(parent.get_child_count() - 1)
-	return row.get_child(row.get_child_count() - 1) as Label
-
-func _style_slider(sl: HSlider) -> void:
-	var grabber := StyleBoxFlat.new()
-	grabber.bg_color = Color(0.70, 0.55, 0.90)
-	grabber.corner_radius_top_left    = 6
-	grabber.corner_radius_top_right   = 6
-	grabber.corner_radius_bottom_left = 6
-	grabber.corner_radius_bottom_right = 6
-	sl.add_theme_stylebox_override("grabber_area", grabber)
-
-	var track := StyleBoxFlat.new()
-	track.bg_color = Color(0.20, 0.18, 0.26)
-	track.content_margin_top    = 3.0
-	track.content_margin_bottom = 3.0
-	sl.add_theme_stylebox_override("slider", track)
-
-# ── Language page ─────────────────────────────────────────────────────────────
-
-func _build_page_language() -> Control:
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 18)
-
-	var lbl := Label.new()
-	lbl.text = _t("settings.language", {}, "Мова гри")
-	lbl.add_theme_font_size_override("font_size", 28)
-	lbl.add_theme_color_override("font_color", Color(0.70, 0.68, 0.76))
-	vbox.add_child(lbl)
-
-	var langs := [["uk", "🇺🇦  Українська"], ["en", "🇬🇧  English"]]
-	for pair in langs:
-		var code: String  = pair[0]
-		var label: String = pair[1]
-		var btn := _make_choice_btn(label, code == _data.get("language", "uk"))
-		btn.pressed.connect(_on_language_pressed.bind(code))
-		vbox.add_child(btn)
-		_lang_btns[code] = btn
-
-	return vbox
-
-# ── Graphics page ─────────────────────────────────────────────────────────────
-
-func _build_page_graphics() -> Control:
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 22)
-
-	_toggle_vsync = _add_toggle_row(vbox, _t("settings.vsync", {}, "Вертикальна синхронізація"), _data.get("vsync", true))
+	# Graphics page
 	_toggle_vsync.pressed.connect(_on_vsync_pressed)
-
-	# Reduce motion — accessibility toggle. Disables ambient particles,
-	# parallax drifting, breathing animations etc. Persists to
-	# settings.json and broadcasts via the MotionSettings autoload.
-	_toggle_reduce_motion = _add_toggle_row(vbox,
-			_t("settings.reduce_motion", {}, "Зменшити рух (анімації)"),
-			_data.get("reduce_motion", false))
 	_toggle_reduce_motion.pressed.connect(_on_reduce_motion_pressed)
+	_resolution_btns = {"fhd": _res_fhd, "hd": _res_hd}
+	_res_fhd.pressed.connect(_on_resolution_pressed.bind("fhd"))
+	_res_hd.pressed.connect(_on_resolution_pressed.bind("hd"))
 
-	var res_lbl := Label.new()
-	res_lbl.text = _t("settings.resolution", {}, "Роздільна здатність")
-	res_lbl.add_theme_font_size_override("font_size", 21)
-	res_lbl.add_theme_color_override("font_color", Color(0.70, 0.68, 0.76))
-	vbox.add_child(res_lbl)
+	# Keys page — mobile section
+	_size_slider.value_changed.connect(_on_mobile_size_changed)
+	_btn_edit_mobile.pressed.connect(_on_edit_mobile_pressed)
+	_btn_reset_mobile.pressed.connect(_on_reset_mobile_pressed)
 
-	var current_res: String = _data.get("resolution", "fhd")
-	var presets := [["fhd", "FHD  1080×1920"], ["hd", "HD  720×1280"]]
-	for pair in presets:
-		var preset: String = pair[0]
-		var label: String  = pair[1]
-		var btn := _make_choice_btn(label, preset == current_res)
-		btn.pressed.connect(_on_resolution_pressed.bind(preset))
-		vbox.add_child(btn)
-		_resolution_btns[preset] = btn
+	# Mirror MobileControls' current size if a level is up; otherwise the
+	# slider stays at 1.0 from the .tscn until the player drags it.
+	var mc: Node = _find_mobile_controls()
+	if mc and mc.has_method("get_size_scale"):
+		_size_slider.value = float(mc.get_size_scale())
+		_size_label.text = "%d%%" % int(_size_slider.value * 100.0)
 
-	return vbox
+	# Keys page — per-action rebind rows
+	for entry in REBINDABLE_ACTIONS:
+		var action: String = entry.action
+		# Pull localised label; UA value in REBINDABLE_ACTIONS is the fallback.
+		var label: String  = _t(
+				"settings.key_label." + action, {}, String(entry.label))
+		_key_rows.add_child(_build_key_row(action, label))
+	_reset_btn.pressed.connect(_on_reset_keys_pressed)
 
-# ── Toggle row ────────────────────────────────────────────────────────────────
-
-func _add_toggle_row(parent: VBoxContainer, label_text: String, active: bool) -> Button:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	parent.add_child(row)
-
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl.add_theme_font_size_override("font_size", 28)
-	lbl.add_theme_color_override("font_color", Color(0.80, 0.78, 0.85))
-	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(lbl)
-
-	var btn := _make_toggle_btn(active)
-	row.add_child(btn)
-	return btn
-
-func _make_toggle_btn(active: bool) -> Button:
-	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(110, 56)
-	btn.focus_mode = Control.FOCUS_NONE
-	_style_toggle(btn, active)
-	return btn
+# ── Toggle / choice button styling ────────────────────────────────────────────
 
 func _update_toggle(btn: Button, active: bool) -> void:
 	_style_toggle(btn, active)
@@ -657,17 +447,6 @@ func _style_toggle(btn: Button, active: bool) -> void:
 	btn.add_theme_color_override("font_color",
 		Color(0.88, 0.75, 1.00) if active else Color(0.48, 0.46, 0.55))
 	btn.add_theme_font_size_override("font_size", 22)
-
-# ── Choice button (language / resolution) ─────────────────────────────────────
-
-func _make_choice_btn(text: String, active: bool) -> Button:
-	var btn := Button.new()
-	btn.text = text
-	btn.custom_minimum_size = Vector2(0, 72)
-	btn.focus_mode = Control.FOCUS_NONE
-	btn.add_theme_font_size_override("font_size", 28)
-	_style_choice_btn(btn, active)
-	return btn
 
 func _style_choice_btn(btn: Button, active: bool) -> void:
 	var n := StyleBoxFlat.new()
@@ -692,55 +471,7 @@ func _style_choice_btn(btn: Button, active: bool) -> void:
 	btn.add_theme_color_override("font_color",
 		Color(0.92, 0.82, 1.00) if active else Color(0.72, 0.70, 0.78))
 
-# ── Keys page ─────────────────────────────────────────────────────────────────
-
-func _build_page_keys() -> Control:
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
-
-	# ── Mobile button layout (C5) ────────────────────────────────────────
-	_build_mobile_layout_section(vbox)
-
-	var sep := HSeparator.new()
-	vbox.add_child(sep)
-
-	var hint := Label.new()
-	hint.text = _t("settings.keys_hint", {}, "Тисни «Призначити» і потім бажану клавішу.\nНа мобільних — клавіатурні бінди не використовуються.")
-	hint.add_theme_font_size_override("font_size", 18)
-	hint.add_theme_color_override("font_color", Color(0.65, 0.62, 0.70))
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	vbox.add_child(hint)
-
-	for entry in REBINDABLE_ACTIONS:
-		var action: String = entry.action
-		# Pull localised label; UA value in REBINDABLE_ACTIONS is the fallback.
-		var label: String  = _t(
-				"settings.key_label." + action, {}, String(entry.label))
-		vbox.add_child(_build_key_row(action, label))
-
-	# Reset all bindings — two-stage confirmation: first press arms (text
-	# turns into a "press again" prompt); second press within 4 seconds
-	# actually resets. Avoids accidental wipe of custom bindings on a
-	# misclick without spawning a full modal dialog.
-	_reset_btn = Button.new()
-	_reset_btn.text = _t("settings.keys_reset_all", {}, "↺  Скинути всі до стандартних")
-	_reset_btn.custom_minimum_size = Vector2(0, 60)
-	_reset_btn.add_theme_font_size_override("font_size", 22)
-	_reset_btn.focus_mode = Control.FOCUS_NONE
-	var rs := StyleBoxFlat.new()
-	rs.bg_color = Color(0.16, 0.10, 0.10)
-	rs.border_color = Color(0.55, 0.30, 0.30)
-	rs.border_width_left = 1; rs.border_width_right = 1
-	rs.border_width_top = 1;  rs.border_width_bottom = 1
-	for c in ["top_left","top_right","bottom_left","bottom_right"]:
-		rs.set("corner_radius_" + c, 8)
-	for state in ["normal","hover","pressed","focus"]:
-		_reset_btn.add_theme_stylebox_override(state, rs)
-	_reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
-	_reset_btn.pressed.connect(_on_reset_keys_pressed)
-	vbox.add_child(_reset_btn)
-
-	return vbox
+# ── Keys page rows ────────────────────────────────────────────────────────────
 
 func _build_key_row(action: String, label_text: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
@@ -859,38 +590,30 @@ func _set_binding_silent(action: String, physical_keycode: int) -> void:
 	new_ev.physical_keycode = physical_keycode as Key
 	InputMap.action_add_event(action, new_ev)
 
-## Reset every rebindable action to the events captured at boot.
-var _reset_btn:        Button = null
-var _reset_armed:      bool   = false
-var _reset_disarm_at:  float  = 0.0
-
 
 func _on_reset_keys_pressed() -> void:
 	# Two-stage flow: first press arms; second press within 4 s commits.
 	if not _reset_armed:
 		_reset_armed = true
 		_reset_disarm_at = Time.get_ticks_msec() / 1000.0 + 4.0
-		if _reset_btn:
-			_reset_btn.text = _t("settings.keys_reset_confirm", {},
-				"⚠  Натисни ще раз для підтвердження")
-			_reset_btn.add_theme_color_override("font_color", Color("#FFD700"))
+		_reset_btn.text = _t("settings.keys_reset_confirm", {},
+			"⚠  Натисни ще раз для підтвердження")
+		_reset_btn.add_theme_color_override("font_color", Color("#FFD700"))
 		# Schedule disarm — if the player walks away, the button reverts.
 		await get_tree().create_timer(4.0, true, false, true).timeout
 		var now: float = Time.get_ticks_msec() / 1000.0
 		if _reset_armed and now >= _reset_disarm_at - 0.05:
 			_reset_armed = false
-			if _reset_btn:
-				_reset_btn.text = _t("settings.keys_reset_all",
-					{}, "↺  Скинути всі до стандартних")
-				_reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
+			_reset_btn.text = _t("settings.keys_reset_all",
+				{}, "↺  Скинути всі до стандартних")
+			_reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
 		return
 
 	# Armed → execute the wipe.
 	_reset_armed = false
-	if _reset_btn:
-		_reset_btn.text = _t("settings.keys_reset_all",
-			{}, "↺  Скинути всі до стандартних")
-		_reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
+	_reset_btn.text = _t("settings.keys_reset_all",
+		{}, "↺  Скинути всі до стандартних")
+	_reset_btn.add_theme_color_override("font_color", Color("#FF8866"))
 	for action in _default_key_events.keys():
 		InputMap.action_erase_events(action)
 		for ev in _default_key_events[action]:
@@ -901,83 +624,8 @@ func _on_reset_keys_pressed() -> void:
 
 # ── Mobile layout (C5) ────────────────────────────────────────────────────────
 
-var _size_slider:    HSlider    = null
-var _size_label:     Label      = null
-var _btn_edit_mobile: Button    = null
-var _edit_overlay:   CanvasLayer = null
-
-func _build_mobile_layout_section(parent: VBoxContainer) -> void:
-	var hdr := Label.new()
-	hdr.text = _t("settings.mobile_section", {}, "📱  Мобільні кнопки")
-	hdr.add_theme_font_size_override("font_size", 26)
-	hdr.add_theme_color_override("font_color", Color(0.90, 0.88, 0.96))
-	parent.add_child(hdr)
-
-	# Size slider row.
-	var size_row := HBoxContainer.new()
-	size_row.add_theme_constant_override("separation", 18)
-	parent.add_child(size_row)
-
-	var sl_lbl := Label.new()
-	sl_lbl.text = _t("settings.mobile_size", {}, "Розмір")
-	sl_lbl.custom_minimum_size.x = 200
-	sl_lbl.add_theme_font_size_override("font_size", 22)
-	sl_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	size_row.add_child(sl_lbl)
-
-	_size_slider = HSlider.new()
-	_size_slider.min_value = 0.6
-	_size_slider.max_value = 1.4
-	_size_slider.step      = 0.05
-	_size_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_style_slider(_size_slider)
-	var initial: float = 1.0
-	var mc: Node = _find_mobile_controls()
-	if mc and mc.has_method("get_size_scale"):
-		initial = float(mc.get_size_scale())
-	_size_slider.value = initial
-	_size_slider.value_changed.connect(_on_mobile_size_changed)
-	size_row.add_child(_size_slider)
-
-	_size_label = Label.new()
-	_size_label.text = "%d%%" % int(initial * 100.0)
-	_size_label.custom_minimum_size.x = 70
-	_size_label.add_theme_font_size_override("font_size", 22)
-	_size_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	size_row.add_child(_size_label)
-
-	# Edit-layout button.
-	_btn_edit_mobile = Button.new()
-	_btn_edit_mobile.text = _t("settings.mobile_edit", {}, "✋  Редагувати позиції кнопок")
-	_btn_edit_mobile.custom_minimum_size = Vector2(0, 60)
-	_btn_edit_mobile.add_theme_font_size_override("font_size", 22)
-	_btn_edit_mobile.focus_mode = Control.FOCUS_NONE
-	_style_choice_btn(_btn_edit_mobile, false)
-	_btn_edit_mobile.pressed.connect(_on_edit_mobile_pressed)
-	parent.add_child(_btn_edit_mobile)
-
-	# Reset.
-	var reset_mc := Button.new()
-	reset_mc.text = _t("settings.mobile_reset", {}, "↺  Скинути позиції до стандартних")
-	reset_mc.custom_minimum_size = Vector2(0, 60)
-	reset_mc.add_theme_font_size_override("font_size", 22)
-	reset_mc.focus_mode = Control.FOCUS_NONE
-	var rs := StyleBoxFlat.new()
-	rs.bg_color = Color(0.16, 0.10, 0.10)
-	rs.border_color = Color(0.55, 0.30, 0.30)
-	for side in ["left","right","top","bottom"]:
-		rs.set("border_width_" + side, 1)
-	for c in ["top_left","top_right","bottom_left","bottom_right"]:
-		rs.set("corner_radius_" + c, 8)
-	for state in ["normal","hover","pressed","focus"]:
-		reset_mc.add_theme_stylebox_override(state, rs)
-	reset_mc.add_theme_color_override("font_color", Color("#FF8866"))
-	reset_mc.pressed.connect(_on_reset_mobile_pressed)
-	parent.add_child(reset_mc)
-
 func _on_mobile_size_changed(value: float) -> void:
-	if _size_label:
-		_size_label.text = "%d%%" % int(value * 100.0)
+	_size_label.text = "%d%%" % int(value * 100.0)
 	var mc: Node = _find_mobile_controls()
 	if mc and mc.has_method("set_size_scale"):
 		mc.set_size_scale(value)
@@ -997,8 +645,7 @@ func _on_reset_mobile_pressed() -> void:
 	else:
 		if SaveManager:
 			SaveManager.set_mobile_layout({})
-	if _size_slider:
-		_size_slider.value = 1.0   # triggers _on_mobile_size_changed
+	_size_slider.value = 1.0   # triggers _on_mobile_size_changed
 
 func _on_edit_mobile_pressed() -> void:
 	var mc: Node = _find_mobile_controls()
