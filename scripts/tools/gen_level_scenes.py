@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 """
-One-shot generator: produces per-level inherited scenes + 5 randomized
-platform-layout variants per vertical level.
+One-shot generator for the per-level scaffolding.
 
 Outputs:
-  scenes/levels/instances/Level_NNN.tscn       (one per level in levels_config.json)
-  scenes/rooms/vertical_layouts/level_NNN/layout_K.tscn   (K=1..5, vertical only)
-
-Each layout_K is a *different* random arrangement seeded by (level_id, K),
-so reruns are reproducible but the 5 variants are visibly distinct from each
-other. Layouts are reachability-aware (max jump + horizontal travel) so every
-stub is playable as-is without manual fixes.
+  scenes/levels/instances/Level_NNN.tscn          inherit from Level/Boss/VoidLevel.tscn
+  vertical_layouts.json                            platform coords as data; per vertical
+                                                   level: 5 variants, runtime picks one
+                                                   uniformly at random per load.
+  scenes/rooms/vertical_layouts/level_NNN.tscn    decoration-only scene per vertical
+                                                   level. Empty Node2D + LayoutPreview
+                                                   (@tool helper drawing shaft outline);
+                                                   designer drops Sprite2D / lights /
+                                                   particles here.
 
 Run from repo root:
   python3 scripts/tools/gen_level_scenes.py
 
-Idempotent — overwrites existing files.
+Idempotent for inherited scenes + JSON. SKIPS already-existing decor scenes
+(scenes/rooms/vertical_layouts/level_NNN.tscn) so designer edits aren't
+clobbered. Pass --force-decor to regenerate them too.
 """
+import argparse
 import json
 import math
 import os
@@ -27,6 +31,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 CONFIG_PATH = os.path.join(REPO_ROOT, "levels_config.json")
 INSTANCES_DIR = os.path.join(REPO_ROOT, "scenes", "levels", "instances")
 LAYOUTS_DIR = os.path.join(REPO_ROOT, "scenes", "rooms", "vertical_layouts")
+LAYOUTS_JSON_PATH = os.path.join(REPO_ROOT, "vertical_layouts.json")
 
 BASE_SCENE = {
     "vertical":  ("res://scenes/levels/Level.tscn",     "uid://level1tscn01"),
@@ -35,7 +40,6 @@ BASE_SCENE = {
     "void":      ("res://scenes/levels/VoidLevel.tscn", "uid://cdg0m4a4r0m77"),
 }
 
-BASE_PLATFORM_SCRIPT = "res://scripts/platforms/BasePlatform.gd"
 LAYOUT_PREVIEW_SCRIPT = "res://scripts/tools/LayoutPreview.gd"
 
 # ── Shaft geometry (mirrors PlaceholderRoom + LevelGenerator constants) ──────
@@ -45,49 +49,32 @@ WALL_T = 30.0
 PLATFORM_T = 30.0
 VIEWPORT_HEIGHT = 1920.0
 MAX_JUMP_HEIGHT = 200.0
-SAME_LEVEL_REACH = 240.0   # horizontal distance the player can clear at no rise
+SAME_LEVEL_REACH = 240.0
 
 # room_count by (level_id % 10) — see scripts/levels/LevelGenerator.gd:40
-#   idx 0 (level 10/20/...): unused in vertical (those are circle bosses).
 ROOM_COUNT_BY_IDX = [4, 2, 3, 4, 4, 5, 6, 6, 7, 8]
 
-# Row spacing must stay below MAX_JUMP_HEIGHT (200 px) — otherwise the player
-# can fall down between platforms but never jump back up. Markov caps at
-# MAX_JUMP_HEIGHT * 0.9 = 180 px (see PlaceholderRoom._init_zone). Y-jitter
-# adds up to ±5 % per row, so worst-case adjacent gap is 180 + 18 = 198 px,
-# still inside the jump limit.
+# Below MAX_JUMP_HEIGHT so adjacent rows are reachable when ascending.
+# Markov caps at MAX_JUMP_HEIGHT * 0.9 = 180.
 ROW_SPACING = 180.0
 
-# Horizontal zones across the shaft (relative to room_width). Same anchors as
-# the Markov generator — wide enough that even max-width platforms (~330 px)
-# don't clip the side walls.
 ZONE_CENTERS_REL = [0.20, 0.40, 0.60, 0.80]
-
-# Width sampling — three buckets with tier-leaning weights. Sums don't have to
-# be 1.0 (we normalize when sampling).
 WIDTH_BUCKETS = [180.0, 220.0, 260.0]
 WIDTH_WEIGHTS = [0.25, 0.50, 0.25]
 
-# Stubs ship as pure stone — typed-platform behaviour (crumbling, moving, ice,
-# bounce, …) requires the matching script (CrumblingPlatform.gd, MovingPlatform.gd,
-# …), not just the BasePlatform script with a different label. Producing a stub
-# that *says* "crumbling" but doesn't actually crumble would mislead the
-# designer. They swap script/type in the Inspector when they want real
-# behaviour — that's the whole point of editable stubs.
-TYPE_OPTIONS = [
-    ("stone", 1.0),
-]
+# How many random variants per vertical level. Runtime picks one per load.
+VARIANTS_PER_LEVEL = 5
 
 
 def make_uid(prefix: str, n: int) -> str:
     return f"uid://{prefix}{n:08d}"
 
 
-def make_layout_uid(level_id: int, k: int) -> str:
-    return f"uid://vlay{level_id:04d}{k}"
+def make_decor_uid(level_id: int) -> str:
+    return f"uid://vdec{level_id:04d}00"
 
 
-def write_inherited_scene(level_id: int, base_path: str, base_uid: str) -> str:
+def write_inherited_scene(level_id: int, base_path: str, base_uid: str) -> None:
     fname = f"Level_{level_id:03d}.tscn"
     fpath = os.path.join(INSTANCES_DIR, fname)
     uid = make_uid("lvl", level_id)
@@ -101,7 +88,6 @@ level_id = {level_id}
     os.makedirs(INSTANCES_DIR, exist_ok=True)
     with open(fpath, "w") as f:
         f.write(content)
-    return fpath
 
 
 def weighted_choice(rng: random.Random, items_with_weights):
@@ -117,36 +103,27 @@ def weighted_choice(rng: random.Random, items_with_weights):
 
 def shaft_height_for(level_id: int) -> float:
     idx = level_id % 10
-    rooms = ROOM_COUNT_BY_IDX[idx]
-    return VIEWPORT_HEIGHT * float(rooms)
+    return VIEWPORT_HEIGHT * float(ROOM_COUNT_BY_IDX[idx])
 
 
 def max_horizontal_jump(v_gap_px: float) -> float:
-    """Mirror of PlaceholderRoom._max_horizontal_jump — keeps stub layouts
-    reachable. v_gap > 0 means rising; 0 means level/falling."""
     if v_gap_px <= 0.0:
         return SAME_LEVEL_REACH * 1.15
     t = max(0.0, min(1.0, v_gap_px / MAX_JUMP_HEIGHT))
     return (SAME_LEVEL_REACH + (120.0 - SAME_LEVEL_REACH) * t) * 1.15
 
 
-def generate_layout(level_id: int, variant_k: int) -> list:
-    """Return list of {x, y, width, type} platform dicts for one variant."""
-    rng = random.Random(hash((level_id, variant_k, "layout-v1")))
-
+def generate_variant(level_id: int, variant_k: int) -> list:
+    """Return list of {x,y,w,t} platform dicts for one variant. Reachability-
+    aware: every adjacent row is jumpable upward."""
+    rng = random.Random(hash((level_id, variant_k, "layout-v2")))
     height = shaft_height_for(level_id)
     floor_y = height - WALL_T
-    # The topmost row hosts the altar. Altar sprite is 220 px tall and renders
-    # UPWARD from its anchor (offset = -tex_h after scaling), so the topmost
-    # platform must sit at least altar_height + buffer below the ceiling wall
-    # or the altar clips into the wall. PlaceholderRoom._spawn_altar places
-    # altar.position.y at row_y - PLATFORM_T*0.5; sprite top ends up at
-    # altar.position.y - 220. Reserve 280 px clearance to be safe.
+    # Reserve clearance above the topmost platform so the 220 px altar sprite
+    # doesn't clip into the ceiling wall.
     ALTAR_CLEARANCE = 280.0
-    min_top_y = WALL_T + ALTAR_CLEARANCE   # 30 + 280 = 310 from the top wall
+    min_top_y = WALL_T + ALTAR_CLEARANCE
 
-    # Y rows from floor walking upward. First row is one spacing above floor;
-    # last row is the closest to ceiling that still leaves room for the altar.
     rows_y = []
     y = floor_y - ROW_SPACING
     while y >= min_top_y:
@@ -163,14 +140,10 @@ def generate_layout(level_id: int, variant_k: int) -> list:
     prev_y = None
 
     for i, ry in enumerate(rows_y):
-        # Anti-clustering: avoid sticking to the same zone two rows in a row.
-        # Bias toward neighbour zones (delta ±1) — mirrors the Markov chain.
         deltas = [-2, -1, 0, 1, 2]
-        weights = [0.10, 0.40, 0.10, 0.40, 0.10] if i > 0 else [0.25, 0.25, 0.25, 0.25, 0.25]
-        # Y jitter so rows don't form a perfect grid.
-        jitter = rng.uniform(-ROW_SPACING * 0.05, ROW_SPACING * 0.05)
-        if i == 0 or i == len(rows_y) - 1:
-            jitter = 0.0
+        weights = [0.10, 0.40, 0.10, 0.40, 0.10] if i > 0 else [0.25] * 5
+        jitter = 0.0 if (i == 0 or i == len(rows_y) - 1) else rng.uniform(
+            -ROW_SPACING * 0.05, ROW_SPACING * 0.05)
         zone = prev_zone
         for _attempt in range(8):
             d = weighted_choice(rng, list(zip(deltas, weights)))
@@ -181,30 +154,25 @@ def generate_layout(level_id: int, variant_k: int) -> list:
 
         x = zone_centers[zone] + rng.uniform(-ROOM_WIDTH * 0.03, ROOM_WIDTH * 0.03)
         width = weighted_choice(rng, list(zip(WIDTH_BUCKETS, WIDTH_WEIGHTS)))
-        ptype = weighted_choice(rng, TYPE_OPTIONS)
-        # Top + bottom rows always stone for safe entry/exit.
-        if i == 0 or i == len(rows_y) - 1:
-            ptype = "stone"
-
-        # Reachability snap: keep horizontal jump from previous platform within
-        # physical reach + 15% margin. Same formula PlaceholderRoom uses.
         ry_jittered = ry + jitter
+
         if prev_x is not None:
-            v_gap = prev_y - ry_jittered  # positive = current row is higher
+            v_gap = prev_y - ry_jittered
             max_dx = (max_horizontal_jump(v_gap) + (prev_w + width) * 0.5) * 0.85
             dx = x - prev_x
             if abs(dx) > max_dx:
                 x = prev_x + math.copysign(max_dx, dx)
 
-        # Final clamp inside playable interior (don't sink half the platform
-        # into the side wall).
         min_x = SIDE_WALL_W + width * 0.5
         max_x = ROOM_WIDTH - SIDE_WALL_W - width * 0.5
         x = max(min_x, min(max_x, x))
 
-        plats.append({"x": round(x, 1), "y": round(ry_jittered, 1),
-                      "width": width, "type": ptype})
-
+        plats.append({
+            "x": round(x, 1),
+            "y": round(ry_jittered, 1),
+            "w": width,
+            "t": "stone",
+        })
         prev_zone = zone
         prev_x = x
         prev_w = width
@@ -213,49 +181,78 @@ def generate_layout(level_id: int, variant_k: int) -> list:
     return plats
 
 
-def write_layout_scene(level_id: int, k: int) -> str:
-    layout_dir = os.path.join(LAYOUTS_DIR, f"level_{level_id:03d}")
-    os.makedirs(layout_dir, exist_ok=True)
-    fpath = os.path.join(layout_dir, f"layout_{k}.tscn")
+def write_vertical_layouts_json(vertical_levels: list) -> None:
+    """Write {level_id: [variant_0, variant_1, ..., variant_4]} for every
+    vertical level. Custom-formatted: outer structure pretty-printed for
+    diff readability, each variant collapsed to one line so the file
+    stays under ~500 KB instead of 2.5 MB."""
+    parts: list = []
+    parts.append('{')
+    parts.append('  "version": 1,')
+    parts.append('  "_comment": "Per-level platform variants for vertical '
+                 'shafts. Runtime picks one variant uniformly at random per '
+                 'level load. Edit by hand or regenerate via '
+                 'scripts/tools/gen_level_scenes.py. Coords are local to the '
+                 'shaft origin (top-left). Keys: x, y = position; w = width; '
+                 't = platform_type (stone, one_way, ice, mud, crumbling, '
+                 'bounce, moving_horizontal, moving_vertical, etc).",')
+    parts.append('  "levels": {')
+    last_idx = len(vertical_levels) - 1
+    for i, level_id in enumerate(vertical_levels):
+        variants = [generate_variant(level_id, k)
+                    for k in range(VARIANTS_PER_LEVEL)]
+        parts.append(f'    "{level_id}": [')
+        for j, variant in enumerate(variants):
+            row = json.dumps(variant, separators=(',', ':'))
+            comma = ',' if j < len(variants) - 1 else ''
+            parts.append(f'      {row}{comma}')
+        trail = ',' if i < last_idx else ''
+        parts.append(f'    ]{trail}')
+    parts.append('  }')
+    parts.append('}')
+    with open(LAYOUTS_JSON_PATH, "w") as f:
+        f.write("\n".join(parts) + "\n")
 
-    plats = generate_layout(level_id, k)
 
-    uid = make_layout_uid(level_id, k)
+def write_decor_scene(level_id: int, force: bool) -> bool:
+    """Write a stub decoration scene per vertical level. Returns True if
+    written, False if skipped because the file exists and force=False."""
+    fpath = os.path.join(LAYOUTS_DIR, f"level_{level_id:03d}.tscn")
+    if os.path.exists(fpath) and not force:
+        return False
+    os.makedirs(LAYOUTS_DIR, exist_ok=True)
+    uid = make_decor_uid(level_id)
     shaft_h = shaft_height_for(level_id)
-    lines = [
-        f'[gd_scene load_steps=3 format=3 uid="{uid}"]',
-        '',
-        f'[ext_resource type="Script" path="{BASE_PLATFORM_SCRIPT}" id="1_plat"]',
-        f'[ext_resource type="Script" path="{LAYOUT_PREVIEW_SCRIPT}" id="2_preview"]',
-        '',
-        '[node name="VerticalLayout" type="Node2D"]',
-        '',
-        '[node name="LayoutPreview" type="Node2D" parent="."]',
-        'script = ExtResource("2_preview")',
-        f'shaft_height = {shaft_h}',
-        '',
-    ]
-    for i, p in enumerate(plats):
-        node_name = f"Platform_{i+1}"
-        lines.append(f'[node name="{node_name}" type="StaticBody2D" parent="."]')
-        lines.append(f'position = Vector2({p["x"]}, {p["y"]})')
-        lines.append('collision_layer = 1')
-        lines.append('script = ExtResource("1_plat")')
-        lines.append(f'platform_type = "{p["type"]}"')
-        lines.append(f'size = Vector2({p["width"]}, {PLATFORM_T})')
-        lines.append('')
+    content = f"""[gd_scene load_steps=2 format=3 uid="{uid}"]
+
+[ext_resource type="Script" path="{LAYOUT_PREVIEW_SCRIPT}" id="1_preview"]
+
+[node name="VerticalLayout" type="Node2D"]
+
+[node name="LayoutPreview" type="Node2D" parent="."]
+script = ExtResource("1_preview")
+shaft_height = {shaft_h}
+"""
     with open(fpath, "w") as f:
-        f.write("\n".join(lines))
-    return fpath
+        f.write(content)
+    return True
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--force-decor", action="store_true",
+                    help="Overwrite existing per-level decoration scenes "
+                         "(default: skip to preserve designer edits).")
+    args = ap.parse_args()
+
     with open(CONFIG_PATH) as f:
         cfg = json.load(f)
     levels = cfg.get("levels", [])
 
     inherit_count = 0
-    layout_count = 0
+    decor_written = 0
+    decor_skipped = 0
+    vertical_ids: list = []
 
     for lvl in levels:
         level_id = int(lvl["id"])
@@ -263,14 +260,18 @@ def main() -> int:
         base = BASE_SCENE.get(ltype, BASE_SCENE["platformer"])
         write_inherited_scene(level_id, base[0], base[1])
         inherit_count += 1
-
         if ltype == "vertical":
-            for k in range(1, 6):
-                write_layout_scene(level_id, k)
-                layout_count += 1
+            vertical_ids.append(level_id)
+            if write_decor_scene(level_id, args.force_decor):
+                decor_written += 1
+            else:
+                decor_skipped += 1
 
-    print(f"Generated {inherit_count} inherited level scenes → {INSTANCES_DIR}")
-    print(f"Generated {layout_count} layout variants → {LAYOUTS_DIR}")
+    write_vertical_layouts_json(vertical_ids)
+
+    print(f"Inherited level scenes:    {inherit_count} written → {INSTANCES_DIR}")
+    print(f"Decor scenes:              {decor_written} written, {decor_skipped} skipped (existing)")
+    print(f"Platform variants:         {len(vertical_ids) * VARIANTS_PER_LEVEL} entries → {LAYOUTS_JSON_PATH}")
     return 0
 
 

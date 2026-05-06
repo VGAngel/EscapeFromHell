@@ -119,12 +119,6 @@ var _all_rows: Array = []
 # kind ∈ "single" | "bridge".
 var _vert_layout: Array[Dictionary] = []
 
-# True when a hand-authored layout scene (1 of 5) replaced Markov platform
-# generation for this vertical level. Spawn helpers still read _vert_layout —
-# we rebuild it from the loaded scene so souls/enemies/bonuses land on real
-# platforms.
-var _external_layout_used: bool = false
-
 # Rows occupied by spawned souls — bonuses skip these (and their neighbours)
 # so the two pickups never share a platform or stand right next to each other.
 var _soul_rows: Array[int] = []
@@ -1143,10 +1137,6 @@ func _sample_base_platform_width(rng: RandomNumberGenerator) -> float:
 const LevelGeneratorScript := preload("res://scripts/levels/LevelGenerator.gd")
 
 func _add_main_platforms() -> void:
-	# Hand-authored layout already added the platforms as children — don't
-	# double-spawn from _vert_layout (it's a mirror of the loaded scene now).
-	if _external_layout_used:
-		return
 	var col_l: float = room_width * 0.22
 	var col_c: float = room_width * 0.50
 	var col_r: float = room_width * 0.78
@@ -1222,66 +1212,71 @@ func _add_vertical_main_platforms(_col_l: float, _col_c: float, _col_r: float,
 
 # ── Hand-authored layout loader ───────────────────────────────────────────────
 #
-# Each vertical level can ship 5 pre-built platform layouts in
-# scenes/rooms/vertical_layouts/level_NNN/layout_1..5.tscn. When at least one
-# is present we pick one uniformly at random and instantiate it as a child of
-# the shaft room — the designer's geometry replaces Markov for that run.
-# Souls/enemies/bonuses still spawn procedurally; we just rebuild _vert_layout
-# from the loaded scene so they land on the actual hand-placed platforms.
-const VERT_LAYOUT_VARIANT_COUNT: int = 5
-const VERT_LAYOUTS_BASE: String = "res://scenes/rooms/vertical_layouts"
+# Per-level platform variants live as data in vertical_layouts.json (5 variants
+# per vertical level — runtime picks one uniformly at random per load).
+# Per-level decoration scenes live in scenes/rooms/vertical_layouts/level_NNN.tscn —
+# designers drop Sprite2D / lights / particles there to override the procedural
+# look without touching code. Both are independent: a level can have platform
+# variants without a decor scene (Markov-styled stub) or vice-versa.
+const VERT_LAYOUTS_JSON: String = "res://vertical_layouts.json"
+const VERT_DECOR_BASE:   String = "res://scenes/rooms/vertical_layouts"
+
+# Lazy-loaded once per process. JSON parsing is non-trivial (~1 MB file with
+# 89 levels × 5 variants), and PlaceholderRoom._ready runs once per shaft room.
+static var _layouts_cache:        Dictionary = {}
+static var _layouts_cache_loaded: bool       = false
+
+static func _ensure_layouts_loaded() -> void:
+	if _layouts_cache_loaded:
+		return
+	_layouts_cache_loaded = true
+	if not ResourceLoader.exists(VERT_LAYOUTS_JSON) and \
+			not FileAccess.file_exists(VERT_LAYOUTS_JSON):
+		return
+	var f := FileAccess.open(VERT_LAYOUTS_JSON, FileAccess.READ)
+	if not f:
+		return
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if parsed is Dictionary:
+		_layouts_cache = (parsed as Dictionary).get("levels", {})
 
 func _try_use_external_layout() -> bool:
 	if not is_vertical or level_id <= 0 or room_type != "shaft":
 		return false
-	var dir_path: String = "%s/level_%03d" % [VERT_LAYOUTS_BASE, level_id]
-	# Enumerate every layout variant that exists — designer might delete or
-	# rename one and we shouldn't silently fall back to Markov when the others
-	# are still authored.
-	var available: Array[String] = []
-	for k in range(1, VERT_LAYOUT_VARIANT_COUNT + 1):
-		var p: String = "%s/layout_%d.tscn" % [dir_path, k]
-		if ResourceLoader.exists(p):
-			available.append(p)
-	if available.is_empty():
+	# Decor scene is independent of platform data — load it whenever it
+	# exists, even if Markov ends up driving the platforms.
+	_instantiate_decor_scene_if_present()
+	_ensure_layouts_loaded()
+	var key: String = str(level_id)
+	if not _layouts_cache.has(key):
+		return false
+	var variants: Variant = _layouts_cache[key]
+	if not (variants is Array) or (variants as Array).is_empty():
 		return false
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var chosen_path: String = available[rng.randi() % available.size()]
-	var packed := load(chosen_path) as PackedScene
-	if not packed:
+	var variant: Variant = (variants as Array)[rng.randi() % (variants as Array).size()]
+	if not (variant is Array):
 		return false
-	var layout_root: Node2D = packed.instantiate() as Node2D
-	if not layout_root:
-		return false
-	add_child(layout_root)
-	_populate_vert_layout_from_scene(layout_root)
-	_external_layout_used = true
+	_populate_vert_layout_from_data(variant as Array)
 	return true
 
-# Walk the layout scene's platform children (StaticBody2D / AnimatableBody2D
-# with a `platform_type` property — the BasePlatform / MovingPlatform contract),
-# extract (x, y, width, type), and rebuild _vert_layout / _all_rows so spawn
-# helpers (souls, enemies, bonuses, altar) land on real platforms only.
-# Decorative children (Sprite2D, lights, particles, plain Node2D groupings)
-# are ignored — without this filter a wall torch would become a phantom row.
-func _populate_vert_layout_from_scene(root: Node2D) -> void:
+# Build _vert_layout / _all_rows from a JSON-encoded variant. Each entry is
+# {"x": float, "y": float, "w": float, "t": String}; we expand to the same
+# shape Markov produces so every downstream spawn helper keeps working.
+func _populate_vert_layout_from_data(plats: Array) -> void:
 	var entries: Array = []
-	for child in root.get_children():
-		if not (child is StaticBody2D or child is AnimatableBody2D):
+	for p_v: Variant in plats:
+		if not (p_v is Dictionary):
 			continue
-		var p := child as Node2D
-		var sz_v: Variant = p.get("size")
-		if not (sz_v is Vector2):
-			continue   # not a platform — skip
-		var width: float = float((sz_v as Vector2).x)
-		var ptype: String = "stone"
-		var t_v: Variant = p.get("platform_type")
-		if t_v is String and (t_v as String) != "":
-			ptype = t_v
+		var p: Dictionary = p_v
 		entries.append({
-			"x": p.position.x, "y": p.position.y, "kind": "single",
-			"width": width, "type": ptype,
+			"x":     float(p.get("x", room_width * 0.5)),
+			"y":     float(p.get("y", 0.0)),
+			"kind":  "single",
+			"width": float(p.get("w", _platform_width)),
+			"type":  String(p.get("t", "stone")),
 		})
 	# Sort descending by Y so _vert_layout[0] is the bottom platform — same
 	# convention as Markov (which builds from floor upward). Lets every spawn
@@ -1293,7 +1288,23 @@ func _populate_vert_layout_from_scene(root: Node2D) -> void:
 	for e: Dictionary in entries:
 		_vert_layout.append(e)
 		_all_rows.append(float(e.y))
-	_bridge_rows = []   # designer is responsible for filling jump gaps
+	_bridge_rows = []   # designer-authored data fills its own jump gaps
+
+# Per-level decoration scene (sprites, lights, particles). Optional. Added as
+# a child of the shaft room so coords are relative to the shaft origin.
+func _instantiate_decor_scene_if_present() -> void:
+	if not is_vertical or level_id <= 0 or room_type != "shaft":
+		return
+	var path: String = "%s/level_%03d.tscn" % [VERT_DECOR_BASE, level_id]
+	if not ResourceLoader.exists(path):
+		return
+	var packed := load(path) as PackedScene
+	if not packed:
+		return
+	var decor: Node = packed.instantiate()
+	if not decor:
+		return
+	add_child(decor)
 
 # Section-based Markov layout generator for vertical rooms.
 #
