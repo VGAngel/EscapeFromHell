@@ -7,12 +7,16 @@ extends GutTest
 # show_soul() instantly clobbered the first and the player only saw
 # the last delivered name.
 
-const SoulRevealPanelScript := preload("res://scripts/ui/SoulRevealPanel.gd")
+const SoulRevealPanelScene := preload("res://scenes/ui/SoulRevealPanel.tscn")
 
 var panel: CanvasLayer
 
 func before_each() -> void:
-	panel = SoulRevealPanelScript.new()
+	# The panel's UI hierarchy lives in the .tscn (script @onready vars
+	# point at named children), so the scene must be instantiated — a bare
+	# `Script.new()` instance has no Backdrop/VBox children and show_soul
+	# would crash writing to null labels.
+	panel = SoulRevealPanelScene.instantiate()
 	add_child_autofree(panel)
 
 
