@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 """
-One-shot generator for the per-level scaffolding.
+Per-level scaffolding generator for vertical shafts.
 
 Outputs:
-  scenes/levels/instances/Level_NNN.tscn          inherit from Level/Boss/VoidLevel.tscn
-  vertical_layouts.json                            platform coords as data; per vertical
-                                                   level: 5 variants, runtime picks one
-                                                   uniformly at random per load.
-  scenes/rooms/vertical_layouts/level_NNN.tscn    decoration-only scene per vertical
-                                                   level. Empty Node2D + LayoutPreview
-                                                   (@tool helper drawing shaft outline);
-                                                   designer drops Sprite2D / lights /
-                                                   particles here.
+  vertical_layouts.json                            ONE deterministic platform
+                                                   layout per vertical level.
+                                                   Edit by hand to reshape a
+                                                   level — what's in the JSON
+                                                   is what the player sees.
+  scenes/rooms/vertical_layouts/level_NNN.tscn    THE editable scene per
+                                                   vertical level. Contains a
+                                                   LayoutPreview node that
+                                                   renders the real shaft —
+                                                   walls, backdrop, altar,
+                                                   platforms — in the editor.
+                                                   Designer drops Sprite2D /
+                                                   lights / particles here as
+                                                   children of VerticalLayout.
 
 Run from repo root:
   python3 scripts/tools/gen_level_scenes.py
 
-Idempotent for inherited scenes + JSON. SKIPS already-existing decor scenes
-(scenes/rooms/vertical_layouts/level_NNN.tscn) so designer edits aren't
-clobbered. Pass --force-decor to regenerate them too.
+JSON is overwritten every run. SKIPS existing decor scenes by default so
+designer edits aren't clobbered; pass --force-decor to overwrite them.
 """
 import argparse
 import json
@@ -29,16 +33,8 @@ import sys
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CONFIG_PATH = os.path.join(REPO_ROOT, "levels_config.json")
-INSTANCES_DIR = os.path.join(REPO_ROOT, "scenes", "levels", "instances")
 LAYOUTS_DIR = os.path.join(REPO_ROOT, "scenes", "rooms", "vertical_layouts")
 LAYOUTS_JSON_PATH = os.path.join(REPO_ROOT, "vertical_layouts.json")
-
-BASE_SCENE = {
-    "vertical":  ("res://scenes/levels/Level.tscn",     "uid://level1tscn01"),
-    "platformer":("res://scenes/levels/Level.tscn",     "uid://level1tscn01"),
-    "boss":      ("res://scenes/levels/BossLevel.tscn", "uid://bosslevel1tsc"),
-    "void":      ("res://scenes/levels/VoidLevel.tscn", "uid://cdg0m4a4r0m77"),
-}
 
 LAYOUT_PREVIEW_SCRIPT = "res://scripts/tools/LayoutPreview.gd"
 
@@ -90,28 +86,8 @@ TYPE_OPTIONS = [
 # scaffolding when the designer hasn't touched a particular level.
 
 
-def make_uid(prefix: str, n: int) -> str:
-    return f"uid://{prefix}{n:08d}"
-
-
 def make_decor_uid(level_id: int) -> str:
     return f"uid://vdec{level_id:04d}00"
-
-
-def write_inherited_scene(level_id: int, base_path: str, base_uid: str) -> None:
-    fname = f"Level_{level_id:03d}.tscn"
-    fpath = os.path.join(INSTANCES_DIR, fname)
-    uid = make_uid("lvl", level_id)
-    content = f"""[gd_scene load_steps=2 format=3 uid="{uid}"]
-
-[ext_resource type="PackedScene" uid="{base_uid}" path="{base_path}" id="1_base"]
-
-[node name="Level" instance=ExtResource("1_base")]
-level_id = {level_id}
-"""
-    os.makedirs(INSTANCES_DIR, exist_ok=True)
-    with open(fpath, "w") as f:
-        f.write(content)
 
 
 def weighted_choice(rng: random.Random, items_with_weights):
@@ -276,29 +252,24 @@ def main() -> int:
         cfg = json.load(f)
     levels = cfg.get("levels", [])
 
-    inherit_count = 0
     decor_written = 0
     decor_skipped = 0
     vertical_ids: list = []
 
     for lvl in levels:
         level_id = int(lvl["id"])
-        ltype = lvl.get("type", "platformer")
-        base = BASE_SCENE.get(ltype, BASE_SCENE["platformer"])
-        write_inherited_scene(level_id, base[0], base[1])
-        inherit_count += 1
-        if ltype == "vertical":
-            vertical_ids.append(level_id)
-            if write_decor_scene(level_id, args.force_decor):
-                decor_written += 1
-            else:
-                decor_skipped += 1
+        if lvl.get("type", "platformer") != "vertical":
+            continue
+        vertical_ids.append(level_id)
+        if write_decor_scene(level_id, args.force_decor):
+            decor_written += 1
+        else:
+            decor_skipped += 1
 
     write_vertical_layouts_json(vertical_ids)
 
-    print(f"Inherited level scenes:    {inherit_count} written → {INSTANCES_DIR}")
-    print(f"Decor scenes:              {decor_written} written, {decor_skipped} skipped (existing)")
-    print(f"Platform layouts:          {len(vertical_ids)} entries → {LAYOUTS_JSON_PATH}")
+    print(f"Decor scenes:     {decor_written} written, {decor_skipped} skipped (existing)")
+    print(f"Platform layouts: {len(vertical_ids)} entries → {LAYOUTS_JSON_PATH}")
     return 0
 
 
