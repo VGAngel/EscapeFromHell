@@ -1211,12 +1211,13 @@ func _add_vertical_main_platforms(_col_l: float, _col_c: float, _col_r: float,
 
 # ── Hand-authored layout loader ───────────────────────────────────────────────
 #
-# Per-level platform variants live as data in vertical_layouts.json (5 variants
-# per vertical level — runtime picks one uniformly at random per load).
+# Per-level platform layouts live as data in vertical_layouts.json. ONE layout
+# per vertical level — what the JSON says is exactly what the player sees. No
+# random selection: designer edits → game uses exactly that.
 # Per-level decoration scenes live in scenes/rooms/vertical_layouts/level_NNN.tscn —
 # designers drop Sprite2D / lights / particles there to override the procedural
-# look without touching code. Both are independent: a level can have platform
-# variants without a decor scene (Markov-styled stub) or vice-versa.
+# look without touching code. Both are independent: a level can have a layout
+# without a decor scene, or vice-versa.
 const VERT_LAYOUTS_JSON: String = "res://vertical_layouts.json"
 const VERT_DECOR_BASE:   String = "res://scenes/rooms/vertical_layouts"
 
@@ -1262,15 +1263,10 @@ func _try_use_external_layout() -> bool:
 	var key: String = str(level_id)
 	if not _layouts_cache.has(key):
 		return false
-	var variants: Variant = _layouts_cache[key]
-	if not (variants is Array) or (variants as Array).is_empty():
+	var layout: Variant = _layouts_cache[key]
+	if not (layout is Array) or (layout as Array).is_empty():
 		return false
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
-	var variant: Variant = (variants as Array)[rng.randi() % (variants as Array).size()]
-	if not (variant is Array):
-		return false
-	_populate_vert_layout_from_data(variant as Array)
+	_populate_vert_layout_from_data(layout as Array)
 	return true
 
 # Build _vert_layout / _all_rows from a JSON-encoded variant. Each entry is

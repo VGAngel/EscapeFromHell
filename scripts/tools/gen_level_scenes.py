@@ -62,8 +62,10 @@ ZONE_CENTERS_REL = [0.20, 0.40, 0.60, 0.80]
 WIDTH_BUCKETS = [180.0, 220.0, 260.0]
 WIDTH_WEIGHTS = [0.25, 0.50, 0.25]
 
-# How many random variants per vertical level. Runtime picks one per load.
-VARIANTS_PER_LEVEL = 5
+# Single deterministic layout per vertical level — designer edits the JSON
+# entry directly and that's exactly what the player sees. No runtime random
+# pick. Generator still uses a per-level seed so re-runs produce identical
+# scaffolding when the designer hasn't touched a particular level.
 
 
 def make_uid(prefix: str, n: int) -> str:
@@ -182,16 +184,17 @@ def generate_variant(level_id: int, variant_k: int) -> list:
 
 
 def write_vertical_layouts_json(vertical_levels: list) -> None:
-    """Write {level_id: [variant_0, variant_1, ..., variant_4]} for every
-    vertical level. Custom-formatted: outer structure pretty-printed for
-    diff readability, each variant collapsed to one line so the file
-    stays under ~500 KB instead of 2.5 MB."""
+    """Write {level_id: [platform0, platform1, ...]} for every vertical level.
+    One deterministic layout per level — what the JSON says is exactly what
+    the player sees. Custom-formatted so each level's array sits on one line
+    for compact diff."""
     parts: list = []
     parts.append('{')
-    parts.append('  "version": 1,')
-    parts.append('  "_comment": "Per-level platform variants for vertical '
-                 'shafts. Runtime picks one variant uniformly at random per '
-                 'level load. Edit by hand or regenerate via '
+    parts.append('  "version": 2,')
+    parts.append('  "_comment": "Per-level platform layouts for vertical '
+                 'shafts. ONE layout per level — designer edits this file '
+                 'directly and the runtime spawns exactly these platforms. '
+                 'No random selection. Regenerate scaffolding via '
                  'scripts/tools/gen_level_scenes.py. Coords are local to the '
                  'shaft origin (top-left). Keys: x, y = position; w = width; '
                  't = platform_type (stone, one_way, ice, mud, crumbling, '
@@ -199,15 +202,10 @@ def write_vertical_layouts_json(vertical_levels: list) -> None:
     parts.append('  "levels": {')
     last_idx = len(vertical_levels) - 1
     for i, level_id in enumerate(vertical_levels):
-        variants = [generate_variant(level_id, k)
-                    for k in range(VARIANTS_PER_LEVEL)]
-        parts.append(f'    "{level_id}": [')
-        for j, variant in enumerate(variants):
-            row = json.dumps(variant, separators=(',', ':'))
-            comma = ',' if j < len(variants) - 1 else ''
-            parts.append(f'      {row}{comma}')
+        layout = generate_variant(level_id, 0)
+        row = json.dumps(layout, separators=(',', ':'))
         trail = ',' if i < last_idx else ''
-        parts.append(f'    ]{trail}')
+        parts.append(f'    "{level_id}": {row}{trail}')
     parts.append('  }')
     parts.append('}')
     with open(LAYOUTS_JSON_PATH, "w") as f:
@@ -271,7 +269,7 @@ def main() -> int:
 
     print(f"Inherited level scenes:    {inherit_count} written → {INSTANCES_DIR}")
     print(f"Decor scenes:              {decor_written} written, {decor_skipped} skipped (existing)")
-    print(f"Platform variants:         {len(vertical_ids) * VARIANTS_PER_LEVEL} entries → {LAYOUTS_JSON_PATH}")
+    print(f"Platform layouts:          {len(vertical_ids)} entries → {LAYOUTS_JSON_PATH}")
     return 0
 
 
