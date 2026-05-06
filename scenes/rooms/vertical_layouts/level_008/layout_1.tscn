@@ -5,358 +5,351 @@
 [node name="VerticalLayout" type="Node2D"]
 
 [node name="Platform_1" type="StaticBody2D" parent="."]
-position = Vector2(191.2, 13150.0)
+position = Vector2(625.7, 13150.0)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(180.0, 30.0)
+size = Vector2(220.0, 30.0)
 
 [node name="Platform_2" type="StaticBody2D" parent="."]
-position = Vector2(457.4, 12887.6)
+position = Vector2(460.5, 12882.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(220.0, 30.0)
+size = Vector2(260.0, 30.0)
 
 [node name="Platform_3" type="StaticBody2D" parent="."]
-position = Vector2(233.3, 12637.2)
+position = Vector2(798.8, 12619.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(180.0, 30.0)
+size = Vector2(260.0, 30.0)
 
 [node name="Platform_4" type="StaticBody2D" parent="."]
-position = Vector2(447.7, 12373.3)
+position = Vector2(659.6, 12369.6)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(220.0, 30.0)
+size = Vector2(260.0, 30.0)
 
 [node name="Platform_5" type="StaticBody2D" parent="."]
-position = Vector2(752.0, 12103.4)
+position = Vector2(876.9, 12122.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_6" type="StaticBody2D" parent="."]
-position = Vector2(464.7, 11842.2)
+position = Vector2(589.6, 11840.6)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(180.0, 30.0)
 
 [node name="Platform_7" type="StaticBody2D" parent="."]
-position = Vector2(637.4, 11581.2)
+position = Vector2(319.3, 11593.9)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(260.0, 30.0)
+size = Vector2(180.0, 30.0)
 
 [node name="Platform_8" type="StaticBody2D" parent="."]
-position = Vector2(422.0, 11322.7)
+position = Vector2(461.0, 11342.2)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_9" type="StaticBody2D" parent="."]
-position = Vector2(240.6, 11065.9)
+position = Vector2(191.3, 11070.4)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(260.0, 30.0)
+size = Vector2(220.0, 30.0)
 
 [node name="Platform_10" type="StaticBody2D" parent="."]
-position = Vector2(457.7, 10801.1)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(260.0, 30.0)
-
-[node name="Platform_11" type="StaticBody2D" parent="."]
-position = Vector2(190.8, 10555.5)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_12" type="StaticBody2D" parent="."]
-position = Vector2(495.1, 10283.9)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_13" type="StaticBody2D" parent="."]
-position = Vector2(463.6, 10040.8)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_14" type="StaticBody2D" parent="."]
-position = Vector2(750.9, 9762.4)
+position = Vector2(478.6, 10800.8)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(180.0, 30.0)
 
+[node name="Platform_11" type="StaticBody2D" parent="."]
+position = Vector2(446.6, 10542.2)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(260.0, 30.0)
+
+[node name="Platform_12" type="StaticBody2D" parent="."]
+position = Vector2(187.1, 10297.3)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(180.0, 30.0)
+
+[node name="Platform_13" type="StaticBody2D" parent="."]
+position = Vector2(447.8, 10040.6)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(180.0, 30.0)
+
+[node name="Platform_14" type="StaticBody2D" parent="."]
+position = Vector2(670.7, 9758.8)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(260.0, 30.0)
+
 [node name="Platform_15" type="StaticBody2D" parent="."]
-position = Vector2(673.3, 9501.4)
+position = Vector2(883.1, 9499.5)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_16" type="StaticBody2D" parent="."]
-position = Vector2(852.7, 9244.4)
+position = Vector2(645.3, 9253.6)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(260.0, 30.0)
+size = Vector2(220.0, 30.0)
 
 [node name="Platform_17" type="StaticBody2D" parent="."]
-position = Vector2(651.4, 8991.7)
+position = Vector2(887.7, 8992.2)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(260.0, 30.0)
+size = Vector2(220.0, 30.0)
 
 [node name="Platform_18" type="StaticBody2D" parent="."]
-position = Vector2(436.4, 8726.6)
+position = Vector2(583.4, 8735.0)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(260.0, 30.0)
+size = Vector2(220.0, 30.0)
 
 [node name="Platform_19" type="StaticBody2D" parent="."]
-position = Vector2(622.5, 8473.5)
+position = Vector2(279.1, 8482.2)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_20" type="StaticBody2D" parent="."]
-position = Vector2(420.6, 8205.6)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_21" type="StaticBody2D" parent="."]
-position = Vector2(214.2, 7939.3)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(260.0, 30.0)
-
-[node name="Platform_22" type="StaticBody2D" parent="."]
-position = Vector2(444.9, 7680.7)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(260.0, 30.0)
-
-[node name="Platform_23" type="StaticBody2D" parent="."]
-position = Vector2(208.4, 7430.6)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_24" type="StaticBody2D" parent="."]
-position = Vector2(429.9, 7171.7)
+position = Vector2(417.9, 8219.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(180.0, 30.0)
 
-[node name="Platform_25" type="StaticBody2D" parent="."]
-position = Vector2(634.7, 6902.4)
+[node name="Platform_21" type="StaticBody2D" parent="."]
+position = Vector2(209.0, 7953.7)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
+[node name="Platform_22" type="StaticBody2D" parent="."]
+position = Vector2(430.3, 7699.6)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(220.0, 30.0)
+
+[node name="Platform_23" type="StaticBody2D" parent="."]
+position = Vector2(637.8, 7431.8)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(180.0, 30.0)
+
+[node name="Platform_24" type="StaticBody2D" parent="."]
+position = Vector2(333.5, 7170.0)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(260.0, 30.0)
+
+[node name="Platform_25" type="StaticBody2D" parent="."]
+position = Vector2(402.7, 6919.0)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(180.0, 30.0)
+
 [node name="Platform_26" type="StaticBody2D" parent="."]
-position = Vector2(406.5, 6638.9)
+position = Vector2(690.0, 6639.4)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_27" type="StaticBody2D" parent="."]
-position = Vector2(219.1, 6383.5)
+position = Vector2(617.4, 6377.8)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(260.0, 30.0)
+size = Vector2(180.0, 30.0)
 
 [node name="Platform_28" type="StaticBody2D" parent="."]
-position = Vector2(540.4, 6139.8)
+position = Vector2(410.5, 6127.9)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(220.0, 30.0)
+size = Vector2(180.0, 30.0)
 
 [node name="Platform_29" type="StaticBody2D" parent="."]
-position = Vector2(418.3, 5857.5)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_30" type="StaticBody2D" parent="."]
-position = Vector2(634.1, 5612.8)
+position = Vector2(199.7, 5867.3)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(260.0, 30.0)
 
+[node name="Platform_30" type="StaticBody2D" parent="."]
+position = Vector2(410.8, 5607.5)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(220.0, 30.0)
+
 [node name="Platform_31" type="StaticBody2D" parent="."]
-position = Vector2(408.1, 5362.5)
+position = Vector2(674.4, 5359.3)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(180.0, 30.0)
 
 [node name="Platform_32" type="StaticBody2D" parent="."]
-position = Vector2(209.7, 5088.9)
+position = Vector2(441.5, 5087.3)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(260.0, 30.0)
+size = Vector2(180.0, 30.0)
 
 [node name="Platform_33" type="StaticBody2D" parent="."]
-position = Vector2(531.0, 4819.8)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_34" type="StaticBody2D" parent="."]
-position = Vector2(448.2, 4564.6)
+position = Vector2(618.7, 4833.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(260.0, 30.0)
 
+[node name="Platform_34" type="StaticBody2D" parent="."]
+position = Vector2(857.2, 4562.0)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(180.0, 30.0)
+
 [node name="Platform_35" type="StaticBody2D" parent="."]
-position = Vector2(229.5, 4321.6)
+position = Vector2(660.4, 4319.9)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_36" type="StaticBody2D" parent="."]
-position = Vector2(212.7, 4040.1)
+position = Vector2(439.9, 4038.7)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(220.0, 30.0)
+size = Vector2(180.0, 30.0)
 
 [node name="Platform_37" type="StaticBody2D" parent="."]
-position = Vector2(423.8, 3797.7)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_38" type="StaticBody2D" parent="."]
-position = Vector2(196.8, 3532.0)
+position = Vector2(624.2, 3795.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(260.0, 30.0)
 
+[node name="Platform_38" type="StaticBody2D" parent="."]
+position = Vector2(839.3, 3536.4)
+collision_layer = 1
+script = ExtResource("1_plat")
+platform_type = "stone"
+size = Vector2(180.0, 30.0)
+
 [node name="Platform_39" type="StaticBody2D" parent="."]
-position = Vector2(452.8, 3263.3)
+position = Vector2(535.0, 3266.6)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(260.0, 30.0)
 
 [node name="Platform_40" type="StaticBody2D" parent="."]
-position = Vector2(791.1, 3013.5)
+position = Vector2(230.7, 2999.8)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(260.0, 30.0)
+size = Vector2(180.0, 30.0)
 
 [node name="Platform_41" type="StaticBody2D" parent="."]
-position = Vector2(649.0, 2738.6)
+position = Vector2(442.3, 2738.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_42" type="StaticBody2D" parent="."]
-position = Vector2(872.5, 2487.9)
+position = Vector2(675.4, 2478.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(180.0, 30.0)
 
 [node name="Platform_43" type="StaticBody2D" parent="."]
-position = Vector2(641.5, 2232.0)
+position = Vector2(458.7, 2223.5)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(180.0, 30.0)
+size = Vector2(260.0, 30.0)
 
 [node name="Platform_44" type="StaticBody2D" parent="."]
-position = Vector2(451.0, 1962.0)
+position = Vector2(657.8, 1971.8)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(260.0, 30.0)
 
 [node name="Platform_45" type="StaticBody2D" parent="."]
-position = Vector2(228.2, 1717.6)
+position = Vector2(412.6, 1712.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(180.0, 30.0)
+size = Vector2(220.0, 30.0)
 
 [node name="Platform_46" type="StaticBody2D" parent="."]
-position = Vector2(405.4, 1453.5)
+position = Vector2(631.0, 1448.3)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_47" type="StaticBody2D" parent="."]
-position = Vector2(210.0, 1196.8)
+position = Vector2(434.1, 1199.8)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_48" type="StaticBody2D" parent="."]
-position = Vector2(444.7, 918.8)
+position = Vector2(208.9, 925.1)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(220.0, 30.0)
 
 [node name="Platform_49" type="StaticBody2D" parent="."]
-position = Vector2(195.2, 658.7)
+position = Vector2(461.7, 660.7)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
 size = Vector2(180.0, 30.0)
 
 [node name="Platform_50" type="StaticBody2D" parent="."]
-position = Vector2(482.5, 406.5)
+position = Vector2(660.5, 410.0)
 collision_layer = 1
 script = ExtResource("1_plat")
 platform_type = "stone"
-size = Vector2(220.0, 30.0)
-
-[node name="Platform_51" type="StaticBody2D" parent="."]
-position = Vector2(786.8, 150.0)
-collision_layer = 1
-script = ExtResource("1_plat")
-platform_type = "stone"
-size = Vector2(220.0, 30.0)
+size = Vector2(180.0, 30.0)
