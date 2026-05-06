@@ -49,7 +49,7 @@ func _make_safe_lb() -> Node:
 # Build a WiredLevel with real HUD + PauseScreen so signal wiring can be tested.
 func _make_wired_lb() -> Node:
 	var lb: Node = WiredLevel.new()
-	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	var hud: Node = preload("res://scenes/ui/HUD.tscn").instantiate()
 	hud.name = "HUD"
 	# PauseScreen layout lives in its .tscn now; instantiating the scene
 	# instead of `.new()` is required so the @onready label refs resolve.

@@ -240,7 +240,7 @@ func test_set_pray_button_no_crash_without_hud_in_tree() -> void:
 
 func test_set_pray_button_shows_via_hud_in_group() -> void:
 	var altar := _make_altar()
-	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	var hud: Node = preload("res://scenes/ui/HUD.tscn").instantiate()
 	add_child_autofree(hud)   # _ready() adds it to "hud" group
 
 	altar._set_pray_button(true)
@@ -248,7 +248,7 @@ func test_set_pray_button_shows_via_hud_in_group() -> void:
 
 func test_set_pray_button_hides_via_hud_in_group() -> void:
 	var altar := _make_altar()
-	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	var hud: Node = preload("res://scenes/ui/HUD.tscn").instantiate()
 	add_child_autofree(hud)
 
 	altar._set_pray_button(true)
@@ -257,7 +257,7 @@ func test_set_pray_button_hides_via_hud_in_group() -> void:
 
 func test_pray_button_shown_on_body_entered() -> void:
 	var altar := _make_altar()
-	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	var hud: Node = preload("res://scenes/ui/HUD.tscn").instantiate()
 	add_child_autofree(hud)
 	var player := _make_player()
 
@@ -266,7 +266,7 @@ func test_pray_button_shown_on_body_entered() -> void:
 
 func test_pray_button_hidden_on_body_exited() -> void:
 	var altar := _make_altar()
-	var hud: Node = preload("res://scripts/ui/HUD.gd").new()
+	var hud: Node = preload("res://scenes/ui/HUD.tscn").instantiate()
 	add_child_autofree(hud)
 	var player := _make_player()
 

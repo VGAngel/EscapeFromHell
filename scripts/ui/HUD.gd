@@ -2,6 +2,12 @@ extends CanvasLayer
 
 # Attach to a CanvasLayer node (layer = 1) inside the level scene.
 # Call setup() once after level loads, then use the public API during play.
+#
+# Static layout (top row, bottom row, sin bar, escape bar, pause button,
+# sin-toast container) lives in scenes/ui/HUD.tscn — open that to retheme.
+# Dynamic spawners (sin toasts, bonus icons, ability slots, screen flashes,
+# overlay scripts) keep building their nodes at runtime because the count
+# depends on game state.
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 signal pause_requested
@@ -18,40 +24,27 @@ const SIN_COLORS := [
 ]
 const SIN_THRESHOLDS := [0, 30, 60, 85]
 
-# ── Layout roots ──────────────────────────────────────────────────────────────
-var _root:         Control          = null
+# ── Scene refs ────────────────────────────────────────────────────────────────
+@onready var _root:         Control       = $Root
+@onready var _hearts:       HBoxContainer = $Root/TopRow/Hearts
+@onready var _level_label:  Label         = $Root/TopRow/LevelLabel
+@onready var _souls_total:  Label         = $Root/TopRow/RightColumn/SoulsTotal
+@onready var _light_label:  Label         = $Root/TopRow/RightColumn/LightLabel
+@onready var _timer_label:  Label         = $Root/TimerLabel
+@onready var _bottom_row:   HBoxContainer = $Root/BottomRow
+@onready var _ability_row:  HBoxContainer = $Root/BottomRow/AbilityRow
+@onready var _bonus_row:    HBoxContainer = $Root/BottomRow/BonusRow
+@onready var _carry_label:  Label         = $Root/BottomRow/CarryLabel
+@onready var _souls_level:  Label         = $Root/BottomRow/SoulsLevel
+@onready var _sin_bar_bg:   ColorRect     = $Root/SinBarBg
+@onready var _sin_bar:      ColorRect     = $Root/SinBarBg/SinBar
+@onready var _escape_bg:    ColorRect     = $Root/EscapeBg
+@onready var _escape_bar:   ColorRect     = $Root/EscapeBg/EscapeBar
+@onready var _sin_toast_box: VBoxContainer = $Root/SinToastBox
+@onready var _pause_btn:    Button        = $Root/PauseButton
 
-# Top row
-var _hearts:       HBoxContainer    = null
-var _level_label:  Label            = null
-var _souls_total:  Label            = null
-var _light_label:  Label            = null
-var _timer_label:  Label            = null
-
-# Bottom row
-var _ability_row:  HBoxContainer    = null
-var _bonus_row:    HBoxContainer    = null
-var _souls_level:  Label            = null
-# "Carried soul slots" indicator — only visible when capacity > 1 (i.e. the
-# soul_echo upgrade has been bought). Shows current/max carried souls.
-var _carry_label:  Label            = null
-
-# Sin bar
-var _sin_bar:      ColorRect        = null
-var _sin_bar_bg:   ColorRect        = null
-
-# Bottom row (kept as a field so _apply_safe_area can reposition it)
-var _bottom_row:   HBoxContainer    = null
-
-# Escape timer bar (escape levels only)
-var _escape_bar:   ColorRect        = null
-var _escape_bg:    ColorRect        = null
-
-# Pause button (on-screen companion to the Esc key binding)
-var _pause_btn:    Button           = null
-
-# Mobile on-screen controls (Android)
-var _mobile_controls: Control       = null
+# Mobile on-screen controls (Android) — built at runtime, no scene file.
+var _mobile_controls: Control = null
 # Cached lazily by _update_staff_cooldown() — found via the "player"
 # group once the level is spawned.
 var _player_ref: Node = null
@@ -81,10 +74,6 @@ var _ability_slots: Dictionary = {}
 var _hearts_tween: Tween = null
 
 # ── Sin-source toast (S1) ────────────────────────────────────────────────────
-# Stack of pop-ups in the bottom-left that show "+1% гріх ⚔ Посох" each
-# time GameManager.sin_added fires. Capped + per-cause throttled so per-
-# frame ticks (sin_platform, sin_aura) don't spam the screen.
-var _sin_toast_box: VBoxContainer = null
 const _SIN_TOAST_MAX:           int   = 3
 const _SIN_TOAST_FADE_IN:       float = 0.15
 const _SIN_TOAST_HOLD:          float = 1.20
@@ -131,7 +120,11 @@ func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
 
 func _ready() -> void:
 	add_to_group("hud")
-	_build_ui()
+	_pause_btn.pressed.connect(_on_pause_btn_pressed)
+	_build_mobile_controls()
+	_apply_safe_area()
+	if Engine.has_singleton("SafeArea") or get_node_or_null("/root/SafeArea"):
+		SafeArea.changed.connect(_apply_safe_area)
 	# Poison-veins vignette — diegetic full-screen sin indicator that
 	# overlays the existing UI without hiding it.
 	_install_sin_vignette()
@@ -198,9 +191,8 @@ func setup(circle: int, level: int, max_hp: int, souls_total: int) -> void:
 
 	_play_time = 0.0
 	_timer_running = true
-	if _timer_label:
-		_timer_label.text = "00:00"
-		_timer_label.modulate.a = 0.0
+	_timer_label.text = "00:00"
+	_timer_label.modulate.a = 0.0
 
 	_refresh_ability_slots()
 
@@ -289,17 +281,15 @@ func _process(delta: float) -> void:
 		if _level_info_timer <= 0.0:
 			var tw := create_tween()
 			tw.tween_property(_level_label, "modulate:a", 0.0, 0.5)
-			if _timer_label:
-				tw.parallel().tween_property(_timer_label, "modulate:a", 1.0, 0.5)
+			tw.parallel().tween_property(_timer_label, "modulate:a", 1.0, 0.5)
 
 	# Play timer (level stopwatch)
 	if _timer_running:
 		_play_time += delta
-		if _timer_label:
-			var total_s: int = int(_play_time)
-			@warning_ignore("integer_division")
-			var minutes: int = total_s / 60
-			_timer_label.text = "%02d:%02d" % [minutes, total_s % 60]
+		var total_s: int = int(_play_time)
+		@warning_ignore("integer_division")
+		var minutes: int = total_s / 60
+		_timer_label.text = "%02d:%02d" % [minutes, total_s % 60]
 
 	# Sin pulse at >= 85%
 	if _sin >= 85.0:
@@ -536,26 +526,7 @@ func _refresh_ability_slots() -> void:
 		_ability_row.add_child(container)
 		_ability_slots[aid] = {"container": container, "used": false}
 
-# ── Build UI ──────────────────────────────────────────────────────────────────
-
-func _build_ui() -> void:
-	layer = 1
-
-	_root = Control.new()
-	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(_root)
-
-	_build_escape_bar()
-	_build_top_row()
-	_build_bottom_row()
-	_build_sin_bar()
-	_build_sin_toast_box()
-	_build_pause_button()
-	_build_mobile_controls()
-
-	_apply_safe_area()
-	if Engine.has_singleton("SafeArea") or get_node_or_null("/root/SafeArea"):
-		SafeArea.changed.connect(_apply_safe_area)
+# ── Safe area + mobile controls ──────────────────────────────────────────────
 
 ## Reposition edge-anchored HUD pieces so the ad banner never covers
 ## them. Delegated to SafeArea so "no_ads" purchase reclaims the space
@@ -571,138 +542,6 @@ func _apply_safe_area() -> void:
 	if _bottom_row:
 		_bottom_row.position.y = vp.y - float(banner) - 6.0 - 36.0 - 8.0
 		_bottom_row.size.x = vp.x - 16.0
-
-func _build_escape_bar() -> void:
-	_escape_bg = ColorRect.new()
-	_escape_bg.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	# Only offset_bottom controls height — anchors already fix width to viewport.
-	_escape_bg.offset_bottom = 8.0
-	_escape_bg.color = Color(0.15, 0.15, 0.15)
-	_escape_bg.visible = false
-	_root.add_child(_escape_bg)
-
-	_escape_bar = ColorRect.new()
-	_escape_bar.position = Vector2.ZERO
-	_escape_bar.size = Vector2(0, 8)
-	_escape_bar.color = Color("#00FF88")
-	_escape_bar.visible = false
-	_escape_bg.add_child(_escape_bar)
-
-func _build_top_row() -> void:
-	var top := HBoxContainer.new()
-	top.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	top.add_theme_constant_override("separation", 0)
-	top.offset_left   =  8.0
-	# Leave room on the right edge for the pause button built separately.
-	top.offset_right  = -56.0
-	top.offset_top    = 12.0
-	top.offset_bottom = 44.0
-	_root.add_child(top)
-
-	# Hearts (left)
-	_hearts = HBoxContainer.new()
-	_hearts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top.add_child(_hearts)
-	for _i in MAX_HEARTS:
-		var h := Label.new()
-		h.text = "♡"
-		h.add_theme_font_size_override("font_size", 27)
-		h.add_theme_color_override("font_color", Color("#FF6666"))
-		_hearts.add_child(h)
-
-	# Level info (center)
-	_level_label = Label.new()
-	_level_label.text = ""
-	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_level_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_level_label.add_theme_font_size_override("font_size", 21)
-	_level_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 0.85))
-	top.add_child(_level_label)
-
-	# Light + total souls (right, stacked)
-	var right_col := VBoxContainer.new()
-	right_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right_col.add_theme_constant_override("separation", 0)
-	top.add_child(right_col)
-
-	_souls_total = Label.new()
-	_souls_total.text = ""  # populated by _set_souls_total() at first refresh
-	_souls_total.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_souls_total.add_theme_font_size_override("font_size", 21)
-	right_col.add_child(_souls_total)
-
-	_light_label = Label.new()
-	_light_label.text = "💡 0"
-	_light_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_light_label.add_theme_font_size_override("font_size", 20)
-	_light_label.add_theme_color_override("font_color", Color("#FFD060"))
-	right_col.add_child(_light_label)
-
-	# Play timer (centered under level label, fades in after level info fades out)
-	_timer_label = Label.new()
-	_timer_label.text = "00:00"
-	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_timer_label.add_theme_font_size_override("font_size", 21)
-	_timer_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75, 0.85))
-	_timer_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_timer_label.offset_top    = 46.0
-	_timer_label.offset_bottom = 66.0
-	_timer_label.modulate.a = 0.0
-	_root.add_child(_timer_label)
-
-func _build_bottom_row() -> void:
-	# Y position is applied in _apply_safe_area so banner toggles reflow.
-	_bottom_row = HBoxContainer.new()
-	_bottom_row.position = Vector2(8, 0)
-	_bottom_row.size = Vector2(get_viewport().get_visible_rect().size.x - 16.0, 36)
-	_bottom_row.add_theme_constant_override("separation", 6)
-	_root.add_child(_bottom_row)
-
-	# Ability slots (left)
-	_ability_row = HBoxContainer.new()
-	_ability_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_ability_row.add_theme_constant_override("separation", 4)
-	_bottom_row.add_child(_ability_row)
-
-	# Active bonuses (center)
-	_bonus_row = HBoxContainer.new()
-	_bonus_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_bonus_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_bonus_row.add_theme_constant_override("separation", 4)
-	_bottom_row.add_child(_bonus_row)
-
-	# Carry-capacity slots — hidden by default, surfaces when soul_echo
-	# upgrade is bought (or otherwise capacity > 1).
-	_carry_label = Label.new()
-	_carry_label.text = "✋ 0/2"
-	_carry_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_carry_label.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_carry_label.add_theme_font_size_override("font_size", 21)
-	_carry_label.add_theme_color_override("font_color", Color("#FFD700"))
-	_carry_label.visible = false
-	_bottom_row.add_child(_carry_label)
-
-	# Level souls counter (right)
-	_souls_level = Label.new()
-	_souls_level.text = "👻 0 / 0"
-	_souls_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_souls_level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_souls_level.add_theme_font_size_override("font_size", 21)
-	_bottom_row.add_child(_souls_level)
-
-func _build_pause_button() -> void:
-	_pause_btn = Button.new()
-	_pause_btn.name = "PauseButton"
-	_pause_btn.text = "⏸"
-	_pause_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_pause_btn.offset_left   = -52.0
-	_pause_btn.offset_right  = -8.0
-	_pause_btn.offset_top    = 8.0
-	_pause_btn.offset_bottom = 52.0
-	_pause_btn.add_theme_font_size_override("font_size", 33)
-	_pause_btn.focus_mode = Control.FOCUS_NONE
-	_pause_btn.pressed.connect(_on_pause_btn_pressed)
-	_root.add_child(_pause_btn)
 
 func _on_pause_btn_pressed() -> void:
 	pause_requested.emit()
@@ -741,41 +580,7 @@ func _build_mobile_controls() -> void:
 	_mobile_controls = mc_script.new()
 	_root.add_child(_mobile_controls)
 
-func _build_sin_bar() -> void:
-	# Y position is applied in _apply_safe_area so banner toggles reflow.
-	_sin_bar_bg = ColorRect.new()
-	_sin_bar_bg.position = Vector2(0, 0)
-	_sin_bar_bg.size = Vector2(0, 6)
-	_sin_bar_bg.color = Color(0.12, 0.12, 0.12)
-	_root.add_child(_sin_bar_bg)
-
-	_sin_bar = ColorRect.new()
-	_sin_bar.position = Vector2.ZERO
-	_sin_bar.size = Vector2(0, 6)
-	_sin_bar.color = Color.WHITE
-	_sin_bar_bg.add_child(_sin_bar)
-
 # ── Sin-source toast (S1) ────────────────────────────────────────────────────
-
-func _build_sin_toast_box() -> void:
-	# Top-center, just under the level info label ("Коло X • Рівень Y").
-	# Players already train their eyes on this strip during pickup events
-	# (👻 N/M, hp updates), so sin-source feedback lands where it can
-	# actually be read — bottom-left was hidden behind mobile controls
-	# and the sin bar, defeating the entire feedback loop.
-	#
-	# TOP_WIDE anchor with a centred VBox so toasts stack downward.
-	_sin_toast_box = VBoxContainer.new()
-	_sin_toast_box.name = "SinToastBox"
-	_sin_toast_box.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_sin_toast_box.offset_top    = 110.0   # below the level info row (~y=70-100)
-	_sin_toast_box.offset_bottom = 360.0   # leaves room for ~3 stacked toasts
-	_sin_toast_box.offset_left   = 0.0
-	_sin_toast_box.offset_right  = 0.0
-	_sin_toast_box.add_theme_constant_override("separation", 6)
-	_sin_toast_box.alignment = BoxContainer.ALIGNMENT_BEGIN   # top-down stack
-	_sin_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(_sin_toast_box)
 
 func _on_sin_added(amount: float, cause: String) -> void:
 	# Skip zero-deltas (defensive — shouldn't fire but guard anyway).

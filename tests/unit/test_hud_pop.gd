@@ -8,14 +8,15 @@ extends GutTest
 # stashed in meta, previous tween killed on rapid re-call, and that
 # the function tolerates non-Label nodes.
 
-const HUDScript := preload("res://scripts/ui/HUD.gd")
+const HUDScene := preload("res://scenes/ui/HUD.tscn")
 
 var hud: CanvasLayer
 
 func before_each() -> void:
-	hud = HUDScript.new()
+	# HUD layout lives in the .tscn — script-only `.new()` would leave
+	# every @onready ref null and the first setup() call would crash.
+	hud = HUDScene.instantiate()
 	add_child_autofree(hud)
-	# _ready builds the UI; we just need the helper to be available.
 
 # ── Pivot ─────────────────────────────────────────────────────────────────────
 

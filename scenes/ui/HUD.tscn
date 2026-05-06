@@ -1,7 +1,186 @@
-[gd_scene format=3 uid="uid://hud1tscn0001"]
+[gd_scene load_steps=2 format=3 uid="uid://hud1tscn0001"]
 
 [ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="1_hud"]
 
 [node name="HUD" type="CanvasLayer"]
 layer = 1
 script = ExtResource("1_hud")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="EscapeBg" type="ColorRect" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 8.0
+grow_horizontal = 2
+color = Color(0.15, 0.15, 0.15, 1)
+
+[node name="EscapeBar" type="ColorRect" parent="Root/EscapeBg"]
+visible = false
+offset_right = 0.0
+offset_bottom = 8.0
+color = Color(0, 1, 0.533, 1)
+
+[node name="TopRow" type="HBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 8.0
+offset_top = 12.0
+offset_right = -56.0
+offset_bottom = 44.0
+grow_horizontal = 2
+theme_override_constants/separation = 0
+
+[node name="Hearts" type="HBoxContainer" parent="Root/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Heart1" type="Label" parent="Root/TopRow/Hearts"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 27
+text = "♡"
+
+[node name="Heart2" type="Label" parent="Root/TopRow/Hearts"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 27
+text = "♡"
+
+[node name="Heart3" type="Label" parent="Root/TopRow/Hearts"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 27
+text = "♡"
+
+[node name="Heart4" type="Label" parent="Root/TopRow/Hearts"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 27
+text = "♡"
+
+[node name="Heart5" type="Label" parent="Root/TopRow/Hearts"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 27
+text = "♡"
+
+[node name="Heart6" type="Label" parent="Root/TopRow/Hearts"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 27
+text = "♡"
+
+[node name="LevelLabel" type="Label" parent="Root/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 0.85)
+theme_override_font_sizes/font_size = 21
+horizontal_alignment = 1
+
+[node name="RightColumn" type="VBoxContainer" parent="Root/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="SoulsTotal" type="Label" parent="Root/TopRow/RightColumn"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+horizontal_alignment = 2
+
+[node name="LightLabel" type="Label" parent="Root/TopRow/RightColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.816, 0.376, 1)
+theme_override_font_sizes/font_size = 20
+text = "💡 0"
+horizontal_alignment = 2
+
+[node name="TimerLabel" type="Label" parent="Root"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 46.0
+offset_bottom = 66.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 0.85)
+theme_override_font_sizes/font_size = 21
+text = "00:00"
+horizontal_alignment = 1
+
+[node name="BottomRow" type="HBoxContainer" parent="Root"]
+offset_left = 8.0
+offset_right = 1064.0
+offset_bottom = 36.0
+theme_override_constants/separation = 6
+
+[node name="AbilityRow" type="HBoxContainer" parent="Root/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="BonusRow" type="HBoxContainer" parent="Root/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="CarryLabel" type="Label" parent="Root/BottomRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 21
+text = "✋ 0/2"
+horizontal_alignment = 2
+
+[node name="SoulsLevel" type="Label" parent="Root/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 21
+text = "👻 0 / 0"
+horizontal_alignment = 2
+
+[node name="SinBarBg" type="ColorRect" parent="Root"]
+offset_right = 0.0
+offset_bottom = 6.0
+color = Color(0.12, 0.12, 0.12, 1)
+
+[node name="SinBar" type="ColorRect" parent="Root/SinBarBg"]
+offset_right = 0.0
+offset_bottom = 6.0
+color = Color(1, 1, 1, 1)
+
+[node name="SinToastBox" type="VBoxContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 110.0
+offset_bottom = 360.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 0
+
+[node name="PauseButton" type="Button" parent="Root"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -52.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 52.0
+grow_horizontal = 0
+focus_mode = 0
+theme_override_font_sizes/font_size = 33
+text = "⏸"
