@@ -119,6 +119,12 @@ var _all_rows: Array = []
 # kind ∈ "single" | "bridge".
 var _vert_layout: Array[Dictionary] = []
 
+# True when a hand-authored layout scene (1 of 5) replaced Markov platform
+# generation for this vertical level. Spawn helpers still read _vert_layout —
+# we rebuild it from the loaded scene so souls/enemies/bonuses land on real
+# platforms.
+var _external_layout_used: bool = false
+
 # Rows occupied by spawned souls — bonuses skip these (and their neighbours)
 # so the two pickups never share a platform or stand right next to each other.
 var _soul_rows: Array[int] = []
@@ -577,17 +583,26 @@ func _init_zone() -> void:
 	var platform_data: Array = []
 
 	if is_vertical:
-		# Fill all rows from floor to ceiling with uniform spacing, then run the
-		# Markov layout so v_range below reflects which rows actually become
-		# moving/typed platforms.
-		_all_rows = _compute_all_rows(floor_y, ceiling_y, spacing)
-		_vert_layout = _build_vertical_layout(_all_rows)
-		# v_range comes from each row's resolved platform type, so moving_vertical
-		# rows give missing_bridge_ys() the extra reach they actually provide.
-		for entry in _vert_layout:
-			var ptype: String = String(entry.get("type", "stone"))
-			var vr: float = LevelGenerator.platform_v_range(ptype, MOVING_V_DISTANCE)
-			platform_data.append({ "y": float(entry.get("y", 0.0)), "v_range": vr })
+		# Hand-authored layouts (one of 5 stubs in scenes/rooms/vertical_layouts/
+		# level_NNN/) override Markov when present. The designer picks the actual
+		# platform geometry; spawn helpers (souls/enemies/bonuses/altar) still
+		# read _vert_layout/_all_rows, which we rebuild from the layout's children.
+		if _try_use_external_layout():
+			# _vert_layout, _all_rows populated from the layout scene.
+			# Bridge rows stay empty — designer is responsible for filling gaps.
+			pass
+		else:
+			# Fill all rows from floor to ceiling with uniform spacing, then run the
+			# Markov layout so v_range below reflects which rows actually become
+			# moving/typed platforms.
+			_all_rows = _compute_all_rows(floor_y, ceiling_y, spacing)
+			_vert_layout = _build_vertical_layout(_all_rows)
+			# v_range comes from each row's resolved platform type, so moving_vertical
+			# rows give missing_bridge_ys() the extra reach they actually provide.
+			for entry in _vert_layout:
+				var ptype: String = String(entry.get("type", "stone"))
+				var vr: float = LevelGenerator.platform_v_range(ptype, MOVING_V_DISTANCE)
+				platform_data.append({ "y": float(entry.get("y", 0.0)), "v_range": vr })
 	else:
 		# Horizontal room — three fixed rows with per-row v_range.
 		var vr_low:  float = 0.0
@@ -1121,6 +1136,10 @@ func _sample_base_platform_width(rng: RandomNumberGenerator) -> float:
 const LevelGeneratorScript := preload("res://scripts/levels/LevelGenerator.gd")
 
 func _add_main_platforms() -> void:
+	# Hand-authored layout already added the platforms as children — don't
+	# double-spawn from _vert_layout (it's a mirror of the loaded scene now).
+	if _external_layout_used:
+		return
 	var col_l: float = room_width * 0.22
 	var col_c: float = room_width * 0.50
 	var col_r: float = room_width * 0.78
@@ -1193,6 +1212,81 @@ func _add_vertical_main_platforms(_col_l: float, _col_c: float, _col_r: float,
 				var bridge_size := Vector2(_platform_width, PLATFORM_T)
 				_add_platform(Vector2(bridge_left_x,  pos.y), bridge_size)
 				_add_platform(Vector2(bridge_right_x, pos.y), bridge_size)
+
+# ── Hand-authored layout loader ───────────────────────────────────────────────
+#
+# Each vertical level can ship 5 pre-built platform layouts in
+# scenes/rooms/vertical_layouts/level_NNN/layout_1..5.tscn. When at least one
+# is present we pick one uniformly at random and instantiate it as a child of
+# the shaft room — the designer's geometry replaces Markov for that run.
+# Souls/enemies/bonuses still spawn procedurally; we just rebuild _vert_layout
+# from the loaded scene so they land on the actual hand-placed platforms.
+const VERT_LAYOUT_VARIANT_COUNT: int = 5
+const VERT_LAYOUTS_BASE: String = "res://scenes/rooms/vertical_layouts"
+
+func _try_use_external_layout() -> bool:
+	if not is_vertical or level_id <= 0 or room_type != "shaft":
+		return false
+	var dir_path: String = "%s/level_%03d" % [VERT_LAYOUTS_BASE, level_id]
+	# Enumerate every layout variant that exists — designer might delete or
+	# rename one and we shouldn't silently fall back to Markov when the others
+	# are still authored.
+	var available: Array[String] = []
+	for k in range(1, VERT_LAYOUT_VARIANT_COUNT + 1):
+		var p: String = "%s/layout_%d.tscn" % [dir_path, k]
+		if ResourceLoader.exists(p):
+			available.append(p)
+	if available.is_empty():
+		return false
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var chosen_path: String = available[rng.randi() % available.size()]
+	var packed := load(chosen_path) as PackedScene
+	if not packed:
+		return false
+	var layout_root: Node2D = packed.instantiate() as Node2D
+	if not layout_root:
+		return false
+	add_child(layout_root)
+	_populate_vert_layout_from_scene(layout_root)
+	_external_layout_used = true
+	return true
+
+# Walk the layout scene's platform children (StaticBody2D / AnimatableBody2D
+# with a `platform_type` property — the BasePlatform / MovingPlatform contract),
+# extract (x, y, width, type), and rebuild _vert_layout / _all_rows so spawn
+# helpers (souls, enemies, bonuses, altar) land on real platforms only.
+# Decorative children (Sprite2D, lights, particles, plain Node2D groupings)
+# are ignored — without this filter a wall torch would become a phantom row.
+func _populate_vert_layout_from_scene(root: Node2D) -> void:
+	var entries: Array = []
+	for child in root.get_children():
+		if not (child is StaticBody2D or child is AnimatableBody2D):
+			continue
+		var p := child as Node2D
+		var sz_v: Variant = p.get("size")
+		if not (sz_v is Vector2):
+			continue   # not a platform — skip
+		var width: float = float((sz_v as Vector2).x)
+		var ptype: String = "stone"
+		var t_v: Variant = p.get("platform_type")
+		if t_v is String and (t_v as String) != "":
+			ptype = t_v
+		entries.append({
+			"x": p.position.x, "y": p.position.y, "kind": "single",
+			"width": width, "type": ptype,
+		})
+	# Sort descending by Y so _vert_layout[0] is the bottom platform — same
+	# convention as Markov (which builds from floor upward). Lets every spawn
+	# helper that thinks in row-indices keep working unchanged.
+	entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.y) > float(b.y))
+	_vert_layout = []
+	_all_rows = []
+	for e: Dictionary in entries:
+		_vert_layout.append(e)
+		_all_rows.append(float(e.y))
+	_bridge_rows = []   # designer is responsible for filling jump gaps
 
 # Section-based Markov layout generator for vertical rooms.
 #

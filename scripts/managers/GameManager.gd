@@ -378,9 +378,19 @@ func _change_scene_to_level(level_id: int) -> void:
 	# Set current_level_id BEFORE scene change so LevelBase._ready() can read it.
 	# LevelBase uses GameManager.current_level_id when its own export is default (1).
 	current_level_id = level_id
-	var level_type: String = LevelConfig.get_level_type(level_id) if LevelConfig else "platformer"
-	var scene_path: String = _scene_for_level_type(level_type)
+	var scene_path: String = _scene_for_level_id(level_id)
 	_change_scene(scene_path)
+
+# Per-level inherited scenes live in scenes/levels/instances/Level_NNN.tscn.
+# When present, they let the designer override decor/spawns/exit per level
+# (see scripts/tools/gen_level_scenes.py). Falls back to the shared base scene
+# for the level's type so an unauthored level still boots.
+func _scene_for_level_id(level_id: int) -> String:
+	var instance_path: String = "res://scenes/levels/instances/Level_%03d.tscn" % level_id
+	if ResourceLoader.exists(instance_path):
+		return instance_path
+	var level_type: String = LevelConfig.get_level_type(level_id) if LevelConfig else "platformer"
+	return _scene_for_level_type(level_type)
 
 func _scene_for_level_type(level_type: String) -> String:
 	match level_type:
