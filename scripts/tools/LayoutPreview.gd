@@ -39,9 +39,33 @@ const COLOR_BACKDROP:   Color = Color(0.10, 0.10, 0.13, 0.30)
 const COLOR_ALTAR_ZONE: Color = Color(1.00, 0.85, 0.30, 0.18)
 const COLOR_EXIT_ZONE:  Color = Color(0.30, 0.85, 1.00, 0.18)
 const COLOR_OUTLINE:    Color = Color(0.85, 0.85, 0.85, 0.90)
-const COLOR_PLATFORM:   Color = Color(0.55, 0.55, 0.60, 0.85)
 const COLOR_PLAT_EDGE:  Color = Color(1.00, 1.00, 1.00, 0.50)
 const COLOR_PLAT_LABEL: Color = Color(1.00, 1.00, 1.00, 0.65)
+
+# Per-type fill colours (mirrors placeholder_assets_config.json so editor
+# preview matches the in-game placeholder rendering). Alpha kept at ~0.85
+# so designer's overlaid sprites remain visible underneath.
+const PLATFORM_COLORS: Dictionary = {
+	"stone":             Color(0.40, 0.40, 0.40, 0.85),
+	"one_way":           Color(0.53, 0.53, 0.53, 0.70),
+	"moving_horizontal": Color(0.27, 0.53, 1.00, 0.85),
+	"moving_vertical":   Color(0.13, 0.40, 0.87, 0.85),
+	"crumbling":         Color(0.67, 0.40, 0.20, 0.85),
+	"falling":           Color(0.80, 0.33, 0.00, 0.85),
+	"ash":               Color(0.73, 0.67, 0.60, 0.85),
+	"ice":               Color(0.67, 0.87, 1.00, 0.85),
+	"mud":               Color(0.40, 0.27, 0.13, 0.90),
+	"lava_edge":         Color(1.00, 0.27, 0.00, 0.90),
+	"sin_platform":      Color(0.53, 0.00, 0.20, 0.90),
+	"conveyor":          Color(1.00, 0.80, 0.00, 0.85),
+	"bounce":            Color(0.27, 0.80, 0.27, 0.85),
+	"chain":             Color(0.67, 0.67, 0.27, 0.85),
+	"pressure_plate":    Color(0.00, 0.80, 0.80, 0.85),
+	"illusory":          Color(0.67, 0.40, 1.00, 0.55),
+	"faith":             Color(1.00, 1.00, 0.67, 0.85),
+	"soul_bridge":       Color(0.40, 0.67, 1.00, 0.55),
+}
+const PLATFORM_COLOR_FALLBACK: Color = Color(0.55, 0.55, 0.60, 0.85)
 
 # Cached parse so opening a deep scene tree doesn't re-read the JSON for
 # every LayoutPreview redraw. Keyed by file modify time so the cache busts
@@ -128,8 +152,10 @@ func _draw() -> void:
 		var x: float = float(p.get("x", 0.0))
 		var y: float = float(p.get("y", 0.0))
 		var w: float = float(p.get("w", 220.0))
+		var t: String = String(p.get("t", "stone"))
 		# In runtime, position is the platform CENTER. Mirror that so the
 		# preview rectangles align with what the player sees.
 		var rect := Rect2(x - w * 0.5, y - PLATFORM_T * 0.5, w, PLATFORM_T)
-		draw_rect(rect, COLOR_PLATFORM, true)
+		var fill: Color = PLATFORM_COLORS.get(t, PLATFORM_COLOR_FALLBACK)
+		draw_rect(rect, fill, true)
 		draw_rect(rect, COLOR_PLAT_EDGE, false, 1.5)

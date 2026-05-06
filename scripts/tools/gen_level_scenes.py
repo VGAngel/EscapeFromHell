@@ -62,6 +62,28 @@ ZONE_CENTERS_REL = [0.20, 0.40, 0.60, 0.80]
 WIDTH_BUCKETS = [180.0, 220.0, 260.0]
 WIDTH_WEIGHTS = [0.25, 0.50, 0.25]
 
+# Type distribution for generated stubs. Each "t" string maps to real
+# behaviour at runtime via PlaceholderRoom._add_typed_platform — the right
+# script gets attached (CrumblingPlatform.gd, MovingPlatform.gd, IcePlatform.gd, …)
+# so the platform actually crumbles/moves/slips. Designer can swap any "t"
+# in vertical_layouts.json to any supported type without code changes.
+#
+# Supported types (see PlaceholderRoom._add_typed_platform match block):
+#   stone, one_way, crumbling, bounce, mud, ash, faith, sin_platform,
+#   illusory, ice, soul_bridge, moving_horizontal, moving_vertical
+#
+# Top + bottom rows of every level are forced to "stone" downstream so
+# spawn/altar landing stays predictable.
+TYPE_OPTIONS = [
+    ("stone",             0.66),
+    ("one_way",           0.12),
+    ("crumbling",         0.07),
+    ("bounce",            0.05),
+    ("moving_horizontal", 0.04),
+    ("ice",               0.03),
+    ("mud",               0.03),
+]
+
 # Single deterministic layout per vertical level — designer edits the JSON
 # entry directly and that's exactly what the player sees. No runtime random
 # pick. Generator still uses a per-level seed so re-runs produce identical
@@ -169,11 +191,17 @@ def generate_variant(level_id: int, variant_k: int) -> list:
         max_x = ROOM_WIDTH - SIDE_WALL_W - width * 0.5
         x = max(min_x, min(max_x, x))
 
+        # Top + bottom rows always stone — bottom is the player's first
+        # landing after spawn, top hosts the altar; predictable footing both.
+        if i == 0 or i == len(rows_y) - 1:
+            ptype = "stone"
+        else:
+            ptype = weighted_choice(rng, TYPE_OPTIONS)
         plats.append({
             "x": round(x, 1),
             "y": round(ry_jittered, 1),
             "w": width,
-            "t": "stone",
+            "t": ptype,
         })
         prev_zone = zone
         prev_x = x
