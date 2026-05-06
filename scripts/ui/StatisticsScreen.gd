@@ -1,14 +1,12 @@
 extends CanvasLayer
 
 # StatisticsScreen — read-only summary of cumulative player metrics.
-# Reads SaveManager.data["statistics"] + level_bests + souls. Built in
-# code so the .tscn can stay an empty CanvasLayer that just attaches us.
+# Reads SaveManager.data["statistics"] + level_bests + souls. Static
+# layout (backdrop, header, scroll, content VBox) lives in the .tscn;
+# the dynamic section + line rows are appended into Content at runtime
+# by _refresh().
 #
-# Open via .open() / closes itself via ✕ button or Esc.
-
-# Palette is a global class_name (scripts/ui/Palette.gd) — reference it
-# directly via `Palette.X`. A `const Palette := preload(...)` shadows
-# the global and Godot 4.6 warns SHADOWED_GLOBAL_IDENTIFIER.
+# Open via .open() / closes via ✕ button or Esc.
 
 signal closed
 
@@ -25,17 +23,17 @@ const CAUSE_LABELS := {
 	"unknown":       "інше",
 }
 
-# ── UI roots ──────────────────────────────────────────────────────────────────
-var _root:        ColorRect    = null
-var _scroll:      ScrollContainer = null
-var _vbox:        VBoxContainer = null
+# ── Scene refs ────────────────────────────────────────────────────────────────
+@onready var _root:    ColorRect      = $Backdrop
+@onready var _close:   Button         = $Backdrop/VRoot/HeaderMargin/Header/CloseButton
+@onready var _vbox:    VBoxContainer  = $Backdrop/VRoot/Scroll/Center/ContentMargin/Content
 
 # ── Init ──────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
 	layer = 10
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_build_ui()
+	_close.pressed.connect(close)
 	_root.modulate.a = 0.0
 	visible = false
 
@@ -140,7 +138,10 @@ func _refresh() -> void:
 	_section("😈  Гріх")
 	_line("Поточний",   "%d%%" % int(SaveManager.get_sin()))
 
-# ── UI helpers ────────────────────────────────────────────────────────────────
+# ── Row helpers ──────────────────────────────────────────────────────────────
+# Sections + lines are dynamic per refresh (counts depend on which death
+# causes / level bests SaveManager has recorded), so they're built in
+# code and appended into the Content VBox declared in the .tscn.
 
 func _section(title: String) -> void:
 	# Bumped from theme's 24 px to 32 px — the screen reads as a list of
@@ -217,77 +218,3 @@ func _stars_str(n: int) -> String:
 	for i in 3:
 		out += FULL if i < n else EMPTY
 	return out
-
-# ── Build UI ──────────────────────────────────────────────────────────────────
-
-func _build_ui() -> void:
-	_root = ColorRect.new()
-	_root.color = Palette.BG_DARKER
-	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_root.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_root)
-
-	var vroot := VBoxContainer.new()
-	vroot.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vroot.add_theme_constant_override("separation", 0)
-	_root.add_child(vroot)
-
-	_build_header(vroot)
-	_build_body(vroot)
-
-func _build_header(parent: VBoxContainer) -> void:
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",  24)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top",   14)
-	margin.add_theme_constant_override("margin_bottom", 6)
-	parent.add_child(margin)
-
-	var hdr := HBoxContainer.new()
-	hdr.custom_minimum_size.y = 80
-	hdr.add_theme_constant_override("separation", 18)
-	margin.add_child(hdr)
-
-	# DisplayLabel: 48px, TEXT_DISPLAY (theme handles the styling).
-	var title := Label.new()
-	title.theme_type_variation = "DisplayLabel"
-	title.text = "📊  Статистика"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hdr.add_child(title)
-
-	# IconButton variation: empty StyleBoxes + muted/primary colours.
-	var btn_close := Button.new()
-	btn_close.theme_type_variation = "IconButton"
-	btn_close.text = "✕"
-	btn_close.custom_minimum_size = Vector2(72, 72)
-	btn_close.pressed.connect(close)
-	hdr.add_child(btn_close)
-
-func _build_body(parent: VBoxContainer) -> void:
-	_scroll = ScrollContainer.new()
-	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	parent.add_child(_scroll)
-
-	# On wide displays the screen could otherwise stretch a single row of
-	# "Label ........ Value" across 1920+ px which is hard to read. Cap
-	# the content column at a comfortable reading width and center it.
-	var center := CenterContainer.new()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center.size_flags_vertical   = Control.SIZE_EXPAND_FILL
-	_scroll.add_child(center)
-
-	var margin := MarginContainer.new()
-	margin.custom_minimum_size = Vector2(900, 0)
-	margin.add_theme_constant_override("margin_left",  32)
-	margin.add_theme_constant_override("margin_right", 32)
-	margin.add_theme_constant_override("margin_top",   16)
-	margin.add_theme_constant_override("margin_bottom", 90)
-	center.add_child(margin)
-
-	_vbox = VBoxContainer.new()
-	_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_vbox.add_theme_constant_override("separation", 14)
-	margin.add_child(_vbox)

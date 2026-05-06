@@ -7,8 +7,13 @@ extends GutTest
 
 var lc: Node
 
+const LevelCompleteScene := preload("res://scenes/ui/LevelComplete.tscn")
+
 func before_each() -> void:
-	lc = preload("res://scripts/ui/LevelComplete.gd").new()
+	# Layout (panel + stats + buttons) lives in the .tscn — `Script.new()`
+	# would leave every @onready label null and _fill_static() would crash
+	# writing into a null _stat_souls.
+	lc = LevelCompleteScene.instantiate()
 	add_child_autofree(lc)
 
 # ── show_results — visibility ─────────────────────────────────────────────────

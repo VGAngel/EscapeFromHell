@@ -1,7 +1,212 @@
-[gd_scene load_steps=2 format=3 uid="uid://levelcomplete01"]
+[gd_scene load_steps=7 format=3 uid="uid://levelcomplete01"]
 
 [ext_resource type="Script" path="res://scripts/ui/LevelComplete.gd" id="1_lc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 44.0
+content_margin_top = 44.0
+content_margin_right = 44.0
+content_margin_bottom = 44.0
+bg_color = Color(0.07, 0.06, 0.09, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.48, 0.22, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
+content_margin_top = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.32, 0.27, 0.18, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_secondary"]
+bg_color = Color(0.13, 0.12, 0.16, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_secondary_hover"]
+bg_color = Color(0.2, 0.18, 0.24, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_secondary_press"]
+bg_color = Color(0.09, 0.08, 0.12, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_primary"]
+bg_color = Color(0.22, 0.19, 0.32, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_primary_hover"]
+bg_color = Color(0.32, 0.28, 0.46, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_primary_press"]
+bg_color = Color(0.16, 0.14, 0.24, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="LevelComplete" type="CanvasLayer"]
 layer = 10
 script = ExtResource("1_lc")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0, 0, 0, 0.67)
+
+[node name="Centerer" type="CenterContainer" parent="Backdrop"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="Panel" type="PanelContainer" parent="Backdrop/Centerer"]
+custom_minimum_size = Vector2(640, 560)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Backdrop/Centerer/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "РІВЕНЬ ПРОЙДЕНО"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+horizontal_alignment = 1
+
+[node name="HeaderSep" type="HSeparator" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="Stars" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Star1" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stars"]
+layout_mode = 2
+pivot_offset = Vector2(28, 28)
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 56
+text = "☆"
+
+[node name="Star2" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stars"]
+layout_mode = 2
+pivot_offset = Vector2(28, 28)
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 56
+text = "☆"
+
+[node name="Star3" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stars"]
+layout_mode = 2
+pivot_offset = Vector2(28, 28)
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 56
+text = "☆"
+
+[node name="StarsSep" type="HSeparator" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="Stats" type="VBoxContainer" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Souls" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stats"]
+layout_mode = 2
+theme_type_variation = &"BodyLabel"
+
+[node name="Deaths" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stats"]
+layout_mode = 2
+theme_type_variation = &"BodyLabel"
+
+[node name="Time" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stats"]
+layout_mode = 2
+theme_type_variation = &"BodyLabel"
+
+[node name="Best" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stats"]
+layout_mode = 2
+theme_type_variation = &"BodyLabel"
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+
+[node name="Sin" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stats"]
+layout_mode = 2
+theme_type_variation = &"BodyLabel"
+
+[node name="Light" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stats"]
+layout_mode = 2
+theme_type_variation = &"BodyLabel"
+theme_override_colors/font_color = Color(1, 0.816, 0.376, 1)
+
+[node name="NewBestBadge" type="Label" parent="Backdrop/Centerer/Panel/VBox/Stats"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"BodyLabel"
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
+theme_override_constants/outline_size = 4
+text = "✨ НОВИЙ РЕКОРД ✨"
+horizontal_alignment = 1
+
+[node name="ButtonsSep" type="HSeparator" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="Buttons" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="HubButton" type="Button" parent="Backdrop/Centerer/Panel/VBox/Buttons"]
+custom_minimum_size = Vector2(220, 64)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.73, 0.78, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_secondary")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_secondary_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_secondary_press")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_secondary")
+text = "Хаб Раю"
+
+[node name="NextButton" type="Button" parent="Backdrop/Centerer/Panel/VBox/Buttons"]
+custom_minimum_size = Vector2(220, 64)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.87, 1, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_primary")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_primary_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_primary_press")
+theme_override_styles/focus = SubResource("StyleBoxFlat_btn_primary")
+text = "Далі →"
