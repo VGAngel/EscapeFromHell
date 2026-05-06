@@ -117,6 +117,15 @@ func _refresh_title() -> void:
 # ── Resource readout ──────────────────────────────────────────────────────────
 
 func _refresh_resources() -> void:
+	# Guard against the scene-transition path: SceneTransition.fade_out
+	# triggers UIRouter._remove → stack_changed → _refresh_resources
+	# while TopBar itself is mid-detach from the tree. Calling
+	# get_node_or_null with an absolute path on a detached node logs
+	# "Can't use get_node() with absolute paths from outside the active
+	# scene tree." The signal will fire again once we're parented again
+	# (or never, if we stay detached) so silently skipping is fine.
+	if not is_inside_tree():
+		return
 	var sm: Node = get_node_or_null("/root/SaveManager")
 	if sm == null:
 		return
