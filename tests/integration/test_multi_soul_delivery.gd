@@ -15,7 +15,7 @@ extends GutTest
 # _on_soul_delivered, SoulRevealPanel) and replay the same sequence.
 
 const PlayerScript          := preload("res://scripts/Player.gd")
-const SoulRevealPanelScript := preload("res://scripts/ui/SoulRevealPanel.gd")
+const SoulRevealPanelScene  := preload("res://scenes/ui/SoulRevealPanel.tscn")
 const LevelBaseScript       := preload("res://scripts/levels/LevelBase.gd")
 
 
@@ -31,7 +31,9 @@ class FakeLevelBase extends Node:
 
 	func _ready() -> void:
 		# Mirror the real LevelBase: SoulRevealPanel sits underneath us.
-		_soul_reveal = SoulRevealPanelScript.new()
+		# Instantiate the scene so the @onready label refs resolve —
+		# script-only .new() would leave them null.
+		_soul_reveal = SoulRevealPanelScene.instantiate()
 		add_child(_soul_reveal)
 
 	# Mirrors LevelBase._on_soul_delivered (named-soul branch only —
