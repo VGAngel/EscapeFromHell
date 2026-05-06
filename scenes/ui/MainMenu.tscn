@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://b4gnvj8u38kus" path="res://scripts/ui/MainMenu.gd" id="1_script"]
 [ext_resource type="Script" uid="uid://d0wpr3ydq7n8" path="res://scripts/ui/CollectionScreen.gd" id="2_collection"]
-[ext_resource type="Script" uid="uid://chce4igqugr7h" path="res://scripts/ui/SettingsScreen.gd" id="3_settings"]
+[ext_resource type="PackedScene" uid="uid://settings001" path="res://scenes/ui/SettingsScreen.tscn" id="3_settings"]
 [ext_resource type="Script" uid="uid://bsfiumx6xhwym" path="res://scripts/ui/DonatePanel.gd" id="4_donate"]
 [ext_resource type="Texture2D" uid="uid://bira54j7jreet" path="res://Assets/hellAssets/Background/Background_02.png" id="5_bg"]
 [ext_resource type="Script" uid="uid://ban28gf3dasha" path="res://scripts/ui/ProfileScreen.gd" id="6_profile"]
@@ -128,10 +128,8 @@ layer = 10
 visible = false
 script = ExtResource("2_collection")
 
-[node name="SettingsScreen" type="CanvasLayer" parent="." unique_id=168947133]
-layer = 10
+[node name="SettingsScreen" parent="." instance=ExtResource("3_settings")]
 visible = false
-script = ExtResource("3_settings")
 
 [node name="DonatePanel" type="CanvasLayer" parent="." unique_id=263337592]
 layer = 10
