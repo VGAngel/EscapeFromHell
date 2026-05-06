@@ -953,6 +953,13 @@ func _spawn_altar() -> void:
 			altar_row_y = float(top_entry.get("y", altar_row_y))
 		elif not _all_rows.is_empty():
 			altar_row_y = float(_all_rows.back())
+		# Clamp: the altar sprite is ~220 px tall and renders upward from its
+		# anchor, so a row sitting flush against the ceiling wall (small Y)
+		# clips the top of the altar texture into the wall. Push the anchor
+		# down to leave 280 px of clearance below the ceiling line.
+		var min_altar_y: float = WALL_T + float(sa_top_px) + ALTAR_TARGET_HEIGHT + 60.0
+		if altar_row_y < min_altar_y:
+			altar_row_y = min_altar_y
 		altar.position = Vector2(altar_x, altar_row_y - PLATFORM_T * 0.5)
 	else:
 		# Horizontal level — altar on the high-platform shelf in the exit room.

@@ -133,13 +133,20 @@ def generate_layout(level_id: int, variant_k: int) -> list:
 
     height = shaft_height_for(level_id)
     floor_y = height - WALL_T
-    ceiling_y = WALL_T + 120.0  # leave headroom for player
+    # The topmost row hosts the altar. Altar sprite is 220 px tall and renders
+    # UPWARD from its anchor (offset = -tex_h after scaling), so the topmost
+    # platform must sit at least altar_height + buffer below the ceiling wall
+    # or the altar clips into the wall. PlaceholderRoom._spawn_altar places
+    # altar.position.y at row_y - PLATFORM_T*0.5; sprite top ends up at
+    # altar.position.y - 220. Reserve 280 px clearance to be safe.
+    ALTAR_CLEARANCE = 280.0
+    min_top_y = WALL_T + ALTAR_CLEARANCE   # 30 + 280 = 310 from the top wall
 
     # Y rows from floor walking upward. First row is one spacing above floor;
-    # last row is the closest to ceiling that still leaves player headroom.
+    # last row is the closest to ceiling that still leaves room for the altar.
     rows_y = []
     y = floor_y - ROW_SPACING
-    while y >= ceiling_y:
+    while y >= min_top_y:
         rows_y.append(y)
         y -= ROW_SPACING
 
