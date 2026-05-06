@@ -1,7 +1,102 @@
-[gd_scene format=3 uid="uid://ba6w1wj83hofc"]
+[gd_scene load_steps=2 format=3 uid="uid://ba6w1wj83hofc"]
 
 [ext_resource type="Script" path="res://scripts/ui/PrivacyPolicy.gd" id="1_privacy"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_btn"]
 
 [node name="PrivacyPolicy" type="CanvasLayer"]
 layer = 12
 script = ExtResource("1_privacy")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.04, 0.03, 0.06, 0.97)
+
+[node name="Margin" type="MarginContainer" parent="Backdrop"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 80
+
+[node name="VBox" type="VBoxContainer" parent="Backdrop/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Backdrop/Margin/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Backdrop/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.88, 0.95, 1)
+theme_override_font_sizes/font_size = 20
+text = "Політика конфіденційності"
+
+[node name="CloseButton" type="Button" parent="Backdrop/Margin/VBox/Header"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.52, 0.62, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxEmpty_btn")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_btn")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_btn")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_btn")
+text = "✕"
+
+[node name="Scroll" type="ScrollContainer" parent="Backdrop/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TextBox" type="VBoxContainer" parent="Backdrop/Margin/VBox/Scroll"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="BodyUA" type="Label" parent="Backdrop/Margin/VBox/Scroll/TextBox"]
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.8, 0.86, 1)
+theme_override_font_sizes/font_size = 13
+text = "Остання редакція: 2026-04-21
+
+1. Які дані збираємо
+Ігровий прогрес зберігається локально на пристрої (current_level, sin, light, upgrades, saved_soul_ids). Жодні персональні дані ми не передаємо на сервер.
+
+2. Реклама
+Інтерстиціальні та reward-ролики надаються стороннім SDK. Може передаватись анонімний ідентифікатор пристрою для таргетингу.
+
+3. IAP
+Покупки обробляються Google Play / App Store. Ми не зберігаємо платіжних даних.
+
+4. Контакт
+valentin.polischuk@dreamplay.games"
+autowrap_mode = 3
+
+[node name="BodyEN" type="Label" parent="Backdrop/Margin/VBox/Scroll/TextBox"]
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.8, 0.86, 1)
+theme_override_font_sizes/font_size = 13
+text = "Last updated: 2026-04-21
+
+1. Data we collect
+Game progress is stored locally (current_level, sin, light, upgrades, saved_soul_ids). No personal data is sent to our servers.
+
+2. Ads
+Interstitial and reward videos are served by a third-party SDK. An anonymous device id may be shared for targeting.
+
+3. In-app purchases
+Handled by Google Play / App Store. We do not store payment data.
+
+4. Contact
+valentin.polischuk@dreamplay.games"
+autowrap_mode = 3

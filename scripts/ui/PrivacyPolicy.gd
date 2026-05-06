@@ -4,13 +4,19 @@ extends CanvasLayer
 # Final text must be reviewed before store submission; keep the scope
 # conservative (app-level saves, ad SDK, IAP) so it matches actual data
 # handling at release time.
+#
+# UI lives in scenes/ui/PrivacyPolicy.tscn — open that file in the editor
+# to tweak layout, text, colours. This script only handles open/close +
+# localisation overrides.
 
 signal closed
 
 const FADE_DURATION := 0.25
 
 # Hardcoded Ukrainian copy with English block underneath — both locales
-# need to be visible in-app per Play Store / App Store requirements.
+# need to be visible in-app per Play Store / App Store requirements. The
+# scene ships with the same strings; runtime override via Loc.t() lets
+# translators swap them without re-saving the .tscn.
 const BODY_UA := """Остання редакція: 2026-04-21
 
 1. Які дані збираємо
@@ -39,11 +45,18 @@ Handled by Google Play / App Store. We do not store payment data.
 4. Contact
 valentin.polischuk@dreamplay.games"""
 
-var _root: ColorRect = null
+@onready var _root:    ColorRect = $Backdrop
+@onready var _title:   Label     = $Backdrop/Margin/VBox/Header/Title
+@onready var _close:   Button    = $Backdrop/Margin/VBox/Header/CloseButton
+@onready var _body_ua: Label     = $Backdrop/Margin/VBox/Scroll/TextBox/BodyUA
+@onready var _body_en: Label     = $Backdrop/Margin/VBox/Scroll/TextBox/BodyEN
 
 func _ready() -> void:
 	layer = 12
-	_build_ui()
+	_close.pressed.connect(close)
+	_title.text   = _t("privacy_policy.title", {}, "Політика конфіденційності")
+	_body_ua.text = _t("privacy_policy.body_ua", {}, BODY_UA)
+	_body_en.text = _t("privacy_policy.body_en", {}, BODY_EN)
 	visible = false
 	_root.modulate.a = 0.0
 
@@ -73,60 +86,3 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()
-
-func _build_ui() -> void:
-	_root = ColorRect.new()
-	_root.color = Color(0.04, 0.03, 0.06, 0.97)
-	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_root.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_root)
-
-	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left",  24)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_top",   24)
-	margin.add_theme_constant_override("margin_bottom", 80)
-	_root.add_child(margin)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
-	margin.add_child(vbox)
-
-	var hdr := HBoxContainer.new()
-	vbox.add_child(hdr)
-
-	var title := Label.new()
-	title.text = _t("privacy_policy.title", {}, "Політика конфіденційності")
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", 20)
-	title.add_theme_color_override("font_color", Color(0.90, 0.88, 0.95))
-	hdr.add_child(title)
-
-	var btn_close := Button.new()
-	btn_close.text = "✕"
-	btn_close.custom_minimum_size = Vector2(40, 40)
-	btn_close.add_theme_font_size_override("font_size", 18)
-	var empty := StyleBoxEmpty.new()
-	for state in ["normal","hover","pressed","focus"]:
-		btn_close.add_theme_stylebox_override(state, empty)
-	btn_close.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
-	btn_close.pressed.connect(close)
-	hdr.add_child(btn_close)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(scroll)
-
-	var text_box := VBoxContainer.new()
-	text_box.add_theme_constant_override("separation", 18)
-	scroll.add_child(text_box)
-
-	for body in [BODY_UA, BODY_EN]:
-		var lbl := Label.new()
-		lbl.text = body
-		lbl.add_theme_font_size_override("font_size", 13)
-		lbl.add_theme_color_override("font_color", Color(0.82, 0.80, 0.86))
-		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lbl.custom_minimum_size.x = 640
-		text_box.add_child(lbl)
