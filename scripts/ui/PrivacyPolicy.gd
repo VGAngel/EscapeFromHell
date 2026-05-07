@@ -55,8 +55,11 @@ func _ready() -> void:
 	layer = 12
 	_close.pressed.connect(close)
 	_title.text   = _t("privacy_policy.title", {}, "Політика конфіденційності")
-	_body_ua.text = _t("privacy_policy.body_ua", {}, BODY_UA)
-	_body_en.text = _t("privacy_policy.body_en", {}, BODY_EN)
+	# Body text is bilingual by design (both UA + EN visible per Play Store /
+	# App Store rules), so we plant the constants directly rather than route
+	# through Loc — there's no key to translate to.
+	_body_ua.text = BODY_UA
+	_body_en.text = BODY_EN
 	visible = false
 	_root.modulate.a = 0.0
 
