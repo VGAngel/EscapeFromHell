@@ -22,7 +22,7 @@ const TEST_HIDDEN := [
 var screen: Node
 
 func before_each() -> void:
-	screen = preload("res://scripts/ui/CollectionScreen.gd").new()
+	screen = preload("res://scenes/ui/CollectionScreen.tscn").instantiate()
 	add_child_autofree(screen)
 	# Pin layout to narrow so existing assertions (_sheet_open,
 	# _sheet_*.text) stay deterministic regardless of test viewport size.
@@ -363,13 +363,13 @@ func test_missing_btn_dimmed_when_inactive() -> void:
 func test_real_config_loads_named_souls_matching_target() -> void:
 	# Pool size is now dynamic — assert it matches the JSON's declared
 	# total_named via SaveManager.get_named_souls_target().
-	var real: Node = preload("res://scripts/ui/CollectionScreen.gd").new()
+	var real: Node = preload("res://scenes/ui/CollectionScreen.tscn").instantiate()
 	add_child_autofree(real)
 	var expected: int = SaveManager.get_named_souls_target() if SaveManager else 100
 	assert_eq(real._named_souls.size(), expected)
 
 func test_real_config_loads_hidden_souls_matching_target() -> void:
-	var real: Node = preload("res://scripts/ui/CollectionScreen.gd").new()
+	var real: Node = preload("res://scenes/ui/CollectionScreen.tscn").instantiate()
 	add_child_autofree(real)
 	var expected: int = SaveManager.get_hidden_souls_target() if SaveManager else 20
 	assert_eq(real._hidden_souls.size(), expected)

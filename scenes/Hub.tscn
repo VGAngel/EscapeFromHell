@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/Hub.gd" id="1_hub"]
 [ext_resource type="Script" path="res://scripts/ui/UpgradesScreen.gd" id="2_upgrades"]
-[ext_resource type="Script" path="res://scripts/ui/CollectionScreen.gd" id="3_collection"]
+[ext_resource type="PackedScene" uid="uid://collection001" path="res://scenes/ui/CollectionScreen.tscn" id="3_collection"]
 
 [sub_resource type="StyleBoxFlat" id="MsgBoxStyle"]
 bg_color = Color(0.06, 0.04, 0.08, 0.78)
@@ -139,7 +139,5 @@ layer = 10
 visible = false
 script = ExtResource("2_upgrades")
 
-[node name="CollectionScreen" type="CanvasLayer" parent="."]
-layer = 10
+[node name="CollectionScreen" parent="." instance=ExtResource("3_collection")]
 visible = false
-script = ExtResource("3_collection")
