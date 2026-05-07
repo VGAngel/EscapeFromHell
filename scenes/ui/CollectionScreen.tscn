@@ -1,7 +1,607 @@
-[gd_scene format=3 uid="uid://collection001"]
+[gd_scene load_steps=11 format=3 uid="uid://collection001"]
 
 [ext_resource type="Script" path="res://scripts/ui/CollectionScreen.gd" id="1_col"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_close"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_filter_normal"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.14, 0.13, 0.18, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_filter_hover"]
+content_margin_left = 18.0
+content_margin_top = 10.0
+content_margin_right = 18.0
+content_margin_bottom = 10.0
+bg_color = Color(0.22, 0.2, 0.28, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_side_panel"]
+content_margin_left = 24.0
+content_margin_top = 22.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.09, 0.08, 0.12, 0.98)
+border_width_left = 2
+border_color = Color(0.28, 0.24, 0.36, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 0
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sep"]
+content_margin_top = 1.0
+content_margin_bottom = 1.0
+bg_color = Color(0.28, 0.24, 0.36, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backdrop"]
+bg_color = Color(0, 0, 0, 0.35)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sheet"]
+content_margin_left = 30.0
+content_margin_top = 26.0
+content_margin_right = 30.0
+content_margin_bottom = 30.0
+bg_color = Color(0.09, 0.08, 0.12, 0.98)
+border_width_top = 2
+border_color = Color(0.3, 0.26, 0.4, 1)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle_cell_default"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.13, 0.12, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.22, 0.32, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="CollectionScreen" type="CanvasLayer"]
 layer = 10
 script = ExtResource("1_col")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.05, 0.04, 0.07, 0.97)
+
+[node name="VBox" type="VBoxContainer" parent="Backdrop"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="HeaderMargin" type="MarginContainer" parent="Backdrop/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
+
+[node name="Header" type="HBoxContainer" parent="Backdrop/VBox/HeaderMargin"]
+custom_minimum_size = Vector2(0, 88)
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="Backdrop/VBox/HeaderMargin/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 42
+text = "Врятовані Душі"
+vertical_alignment = 1
+
+[node name="NamedLabel" type="Label" parent="Backdrop/VBox/HeaderMargin/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.78, 0.84, 1)
+theme_override_font_sizes/font_size = 30
+vertical_alignment = 1
+
+[node name="HiddenLabel" type="Label" parent="Backdrop/VBox/HeaderMargin/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.627, 0.471, 0.125, 1)
+theme_override_font_sizes/font_size = 28
+text = "✦ 0 / 20"
+vertical_alignment = 1
+
+[node name="TotalLabel" type="Label" parent="Backdrop/VBox/HeaderMargin/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.6, 0.68, 1)
+theme_override_font_sizes/font_size = 26
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="Backdrop/VBox/HeaderMargin/Header"]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.6, 0.68, 1)
+theme_override_font_sizes/font_size = 38
+theme_override_styles/normal = SubResource("StyleBoxEmpty_close")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_close")
+text = "✕"
+
+[node name="TypeStatsMargin" type="MarginContainer" parent="Backdrop/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 6
+
+[node name="TypeStats" type="Label" parent="Backdrop/VBox/TypeStatsMargin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.76, 0.84, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="CircleProgressMargin" type="MarginContainer" parent="Backdrop/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="CircleProgress" type="HBoxContainer" parent="Backdrop/VBox/CircleProgressMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="CircleScroll" type="ScrollContainer" parent="Backdrop/VBox"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="CircleRow" type="HBoxContainer" parent="Backdrop/VBox/CircleScroll"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="LeftPad" type="Control" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="TabAll" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Всі"
+
+[node name="Tab1" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 1"
+
+[node name="Tab2" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 2"
+
+[node name="Tab3" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 3"
+
+[node name="Tab4" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 4"
+
+[node name="Tab5" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 5"
+
+[node name="Tab6" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 6"
+
+[node name="Tab7" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 7"
+
+[node name="Tab8" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 8"
+
+[node name="Tab9" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 9"
+
+[node name="Tab10" type="Button" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Коло 10"
+
+[node name="RightPad" type="Control" parent="Backdrop/VBox/CircleScroll/CircleRow"]
+custom_minimum_size = Vector2(10, 0)
+layout_mode = 2
+
+[node name="TypeRowMargin" type="MarginContainer" parent="Backdrop/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 6
+
+[node name="TypeRow" type="HBoxContainer" parent="Backdrop/VBox/TypeRowMargin"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TypeAll" type="Button" parent="Backdrop/VBox/TypeRowMargin/TypeRow"]
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Всі типи"
+
+[node name="TypeInnocent" type="Button" parent="Backdrop/VBox/TypeRowMargin/TypeRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Невинні"
+
+[node name="TypeBroken" type="Button" parent="Backdrop/VBox/TypeRowMargin/TypeRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Зламані"
+
+[node name="TypeSleeping" type="Button" parent="Backdrop/VBox/TypeRowMargin/TypeRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Сплячі"
+
+[node name="Spacer" type="Control" parent="Backdrop/VBox/TypeRowMargin/TypeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MissingToggle" type="Button" parent="Backdrop/VBox/TypeRowMargin/TypeRow"]
+modulate = Color(0.55, 0.53, 0.6, 1)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "Не знайдені"
+
+[node name="SearchSortMargin" type="MarginContainer" parent="Backdrop/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 8
+
+[node name="SearchSort" type="HBoxContainer" parent="Backdrop/VBox/SearchSortMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SearchInput" type="LineEdit" parent="Backdrop/VBox/SearchSortMargin/SearchSort"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+placeholder_text = "🔍  Пошук за іменем або історією"
+clear_button_enabled = true
+
+[node name="SortButton" type="Button" parent="Backdrop/VBox/SearchSortMargin/SearchSort"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_filter_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_filter_normal")
+theme_override_styles/focus = SubResource("StyleBoxFlat_filter_normal")
+text = "↕  За ID"
+
+[node name="Split" type="HBoxContainer" parent="Backdrop/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="GridScroll" type="ScrollContainer" parent="Backdrop/VBox/Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="GridMargin" type="MarginContainer" parent="Backdrop/VBox/Split/GridScroll"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="Grid" type="GridContainer" parent="Backdrop/VBox/Split/GridScroll/GridMargin"]
+layout_mode = 2
+columns = 4
+
+[node name="SidePanel" type="PanelContainer" parent="Backdrop/VBox/Split"]
+visible = false
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_side_panel")
+
+[node name="Scroll" type="ScrollContainer" parent="Backdrop/VBox/Split/SidePanel"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Backdrop/VBox/Split/SidePanel/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="SidePlaceholder" type="Label" parent="Backdrop/VBox/Split/SidePanel/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.52, 0.62, 1)
+theme_override_font_sizes/font_size = 22
+text = "Натисни на душу щоб побачити деталі"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="SideName" type="Label" parent="Backdrop/VBox/Split/SidePanel/Scroll/VBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.9, 0.96, 1)
+theme_override_font_sizes/font_size = 36
+autowrap_mode = 3
+
+[node name="SideAge" type="Label" parent="Backdrop/VBox/Split/SidePanel/Scroll/VBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.56, 0.64, 1)
+theme_override_font_sizes/font_size = 24
+
+[node name="SideLoc" type="Label" parent="Backdrop/VBox/Split/SidePanel/Scroll/VBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52, 0.5, 0.58, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="SideSep" type="HSeparator" parent="Backdrop/VBox/Split/SidePanel/Scroll/VBox"]
+visible = false
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="SideText" type="Label" parent="Backdrop/VBox/Split/SidePanel/Scroll/VBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 22
+autowrap_mode = 3
+
+[node name="SideExtra" type="Label" parent="Backdrop/VBox/Split/SidePanel/Scroll/VBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
+
+[node name="SheetBackdrop" type="Button" parent="Backdrop"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+mouse_filter = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_backdrop")
+theme_override_styles/hover = SubResource("StyleBoxFlat_backdrop")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_backdrop")
+
+[node name="Sheet" type="PanelContainer" parent="Backdrop"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_sheet")
+
+[node name="Outer" type="VBoxContainer" parent="Backdrop/Sheet"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Handle" type="ColorRect" parent="Backdrop/Sheet/Outer"]
+custom_minimum_size = Vector2(64, 6)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.38, 0.35, 0.48, 1)
+
+[node name="Scroll" type="ScrollContainer" parent="Backdrop/Sheet/Outer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Backdrop/Sheet/Outer/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="SheetName" type="Label" parent="Backdrop/Sheet/Outer/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.9, 0.96, 1)
+theme_override_font_sizes/font_size = 42
+autowrap_mode = 3
+
+[node name="SheetAge" type="Label" parent="Backdrop/Sheet/Outer/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.56, 0.64, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="SheetLoc" type="Label" parent="Backdrop/Sheet/Outer/Scroll/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52, 0.5, 0.58, 1)
+theme_override_font_sizes/font_size = 26
+
+[node name="SheetSep" type="HSeparator" parent="Backdrop/Sheet/Outer/Scroll/VBox"]
+layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxFlat_sep")
+
+[node name="SheetText" type="Label" parent="Backdrop/Sheet/Outer/Scroll/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.84, 0.82, 0.88, 1)
+theme_override_font_sizes/font_size = 26
+autowrap_mode = 3
+
+[node name="SheetExtra" type="Label" parent="Backdrop/Sheet/Outer/Scroll/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+autowrap_mode = 3
+
+[node name="CompletionLabel" type="Label" parent="Backdrop"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_top = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+theme_override_font_sizes/font_size = 38
+horizontal_alignment = 1

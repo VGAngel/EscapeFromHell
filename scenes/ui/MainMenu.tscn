@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b4e5f6g7h8jaj"]
 
 [ext_resource type="Script" uid="uid://b4gnvj8u38kus" path="res://scripts/ui/MainMenu.gd" id="1_script"]
-[ext_resource type="Script" uid="uid://d0wpr3ydq7n8" path="res://scripts/ui/CollectionScreen.gd" id="2_collection"]
+[ext_resource type="PackedScene" uid="uid://collection001" path="res://scenes/ui/CollectionScreen.tscn" id="2_collection"]
 [ext_resource type="PackedScene" uid="uid://settings001" path="res://scenes/ui/SettingsScreen.tscn" id="3_settings"]
 [ext_resource type="Script" uid="uid://bsfiumx6xhwym" path="res://scripts/ui/DonatePanel.gd" id="4_donate"]
 [ext_resource type="Texture2D" uid="uid://bira54j7jreet" path="res://Assets/hellAssets/Background/Background_02.png" id="5_bg"]
@@ -123,10 +123,8 @@ theme_override_font_sizes/font_size = 14
 text = "v0.1"
 horizontal_alignment = 2
 
-[node name="CollectionScreen" type="CanvasLayer" parent="." unique_id=1259175796]
-layer = 10
+[node name="CollectionScreen" parent="." instance=ExtResource("2_collection")]
 visible = false
-script = ExtResource("2_collection")
 
 [node name="SettingsScreen" parent="." instance=ExtResource("3_settings")]
 visible = false
