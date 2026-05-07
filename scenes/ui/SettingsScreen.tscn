@@ -1,6 +1,18 @@
-[gd_scene load_steps=10 format=3 uid="uid://settings001"]
+[gd_scene load_steps=11 format=3 uid="uid://settings001"]
 
 [ext_resource type="Script" path="res://scripts/ui/SettingsScreen.gd" id="1_set"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toggle_off"]
+bg_color = Color(0.15, 0.14, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.26, 0.35, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_bottom = 24.0
@@ -311,6 +323,12 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(110, 56)
 layout_mode = 2
 focus_mode = 0
+theme_override_colors/font_color = Color(0.48, 0.46, 0.55, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/hover = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/focus = SubResource("StyleBoxFlat_toggle_off")
 text = "ВИКЛ"
 
 [node name="HapticsRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/SoundPage"]
@@ -329,6 +347,12 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(110, 56)
 layout_mode = 2
 focus_mode = 0
+theme_override_colors/font_color = Color(0.48, 0.46, 0.55, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/hover = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/focus = SubResource("StyleBoxFlat_toggle_off")
 text = "ВКЛ"
 
 [node name="LanguagePage" type="VBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack"]
@@ -389,6 +413,12 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(110, 56)
 layout_mode = 2
 focus_mode = 0
+theme_override_colors/font_color = Color(0.48, 0.46, 0.55, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/hover = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/focus = SubResource("StyleBoxFlat_toggle_off")
 text = "ВКЛ"
 
 [node name="ReduceMotionRow" type="HBoxContainer" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage"]
@@ -407,6 +437,12 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(110, 56)
 layout_mode = 2
 focus_mode = 0
+theme_override_colors/font_color = Color(0.48, 0.46, 0.55, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/hover = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_toggle_off")
+theme_override_styles/focus = SubResource("StyleBoxFlat_toggle_off")
 text = "ВИКЛ"
 
 [node name="ResolutionLabel" type="Label" parent="Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage"]
