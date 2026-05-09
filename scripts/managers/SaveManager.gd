@@ -530,9 +530,20 @@ func _read_file(path: String) -> Variant:
 	var file := FileAccess.open(path, FileAccess.READ)
 	if not file:
 		return null
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	var raw: String = file.get_as_text()
 	file.close()
-	return parsed if parsed is Dictionary else null
+	var parsed: Variant = JSON.parse_string(raw)
+	if not parsed is Dictionary:
+		# Without this warning a corrupted save file silently fell
+		# through to backup → defaults, and the player saw their
+		# progress reset on next launch with no clue why. Log the
+		# path + first 80 chars so we have something to repro on.
+		var preview: String = raw.substr(0, 80).strip_edges()
+		push_warning(
+				"SaveManager: failed to parse save '%s' — %d bytes, head: %s" % [
+				path, raw.length(), preview])
+		return null
+	return parsed
 
 # ── Internal: write ───────────────────────────────────────────────────────────
 
