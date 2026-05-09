@@ -829,6 +829,13 @@ func _shake_camera(duration: float, intensity: float) -> void:
 		shaker.shake(duration, intensity)
 
 func heal(amount: int) -> void:
+	# A dead player can still be inside a BonusPickup's overlap area
+	# during the ~0.5 s respawn window — _die() doesn't disable the
+	# collision shape. Without this guard the bonus revives them
+	# silently to 1 HP, leaving state stuck at DEAD while the heart
+	# strip lights back up.
+	if state == State.DEAD:
+		return
 	current_hp = mini(current_hp + amount, max_hp)
 	hp_changed.emit(current_hp, max_hp)
 

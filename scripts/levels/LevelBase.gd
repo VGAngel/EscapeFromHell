@@ -622,34 +622,46 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 ## Called when the player dies while carrying a soul. Player.gd emits one
 ## soul_dropped per carried soul, so each call respawns ONE pickup at the
 ## death position and clears just that entry from _carried_souls_data.
+##
+## Hidden souls (id like "h1") are stored under their STRING key in
+## _carried_souls_data; regular souls under int. We try the string key
+## first so hidden-soul drops keep their identity instead of falling
+## back to a generic "innocent" — and so their entry actually gets
+## erased rather than leaking forever.
 func _on_soul_dropped(soul_id: String, drop_position: Vector2) -> void:
-	var soul_scene: PackedScene = SoulScene
-	if not soul_scene or not _room_container:
-		_carried_souls_data.erase(soul_id.to_int())
+	var int_id: int = soul_id.to_int() if soul_id.is_valid_int() else 0
+	var dict_key: Variant = soul_id if _carried_souls_data.has(soul_id) \
+			else int_id
+	if not SoulScene or not _room_container:
+		_carried_souls_data.erase(dict_key)
 		return
 	# Drop straight down to the nearest platform so the soul rests on the
 	# ground rather than hanging in mid-air at the death position.
 	var grounded_position: Vector2 = _drop_to_ground(drop_position)
-	var soul: Node2D = soul_scene.instantiate()
+	var soul: Node2D = SoulScene.instantiate()
 	# Convert world drop position to _room_container local space before _ready()
 	# captures _base_y for the bobbing animation.
 	soul.position = grounded_position - _room_container.global_position
 	_room_container.add_child(soul)
-	var stored_id: int = soul_id.to_int() if soul_id.is_valid_int() else 0
-	var entry: Dictionary = _carried_souls_data.get(stored_id, {})
+	var entry: Dictionary = _carried_souls_data.get(dict_key, {})
 	var soul_type: String = entry.get("soul_type", "innocent")
 	if soul.has_method("set_soul_type"):
 		soul.set_soul_type(soul_type)
-	if stored_id != 0 and soul.has_method("set_soul_data"):
+	# Restore named-soul / hidden-soul identity. Use the original
+	# string id for hidden souls (h-prefixed) so re-pickup keys match.
+	if not entry.is_empty() and soul.has_method("set_soul_data"):
 		var data: Dictionary = entry.duplicate()
 		data.erase("soul_type")
+		var stored_id: int = int_id if int_id != 0 else 0
 		soul.set_soul_data(stored_id, data)
 		soul.set_meta("soul_id", stored_id)
+		if dict_key is String and not (dict_key as String).is_empty():
+			soul.set_meta("hidden_id", dict_key)
 	if soul.has_signal("soul_pickup_started"):
 		soul.soul_pickup_started.connect(_on_soul_pickup_started)
 	if not _souls_in_level.has(soul):
 		_souls_in_level.append(soul)
-	_carried_souls_data.erase(stored_id)
+	_carried_souls_data.erase(dict_key)
 
 ## Cast a ray downward from `from` to find the first platform/floor and
 ## return a position that rests on it, horizontally centered on that platform.
