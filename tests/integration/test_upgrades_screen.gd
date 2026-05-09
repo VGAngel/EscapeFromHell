@@ -1,5 +1,7 @@
 extends GutTest
 
+const UpgradesScreenScript: GDScript = preload("res://scripts/ui/UpgradesScreen.gd")
+
 # Integration tests for UpgradesScreen.gd (CanvasLayer).
 # After instantiation, injects lightweight test categories and rebuilds cards
 # so tests don't depend on the real upgrades_config.json content.
@@ -29,7 +31,7 @@ const TEST_CATEGORIES := [
 var screen: Node
 
 func before_each() -> void:
-	screen = preload("res://scripts/ui/UpgradesScreen.gd").new()
+	screen = UpgradesScreenScript.new()
 	add_child_autofree(screen)
 	if SaveManager:
 		SaveManager._reset()
@@ -263,17 +265,17 @@ func test_switching_back_to_cat_0_restores_two_cards() -> void:
 # ── Real config integration ────────────────────────────────────────────────────
 
 func test_real_config_loads_six_categories() -> void:
-	var real: Node = preload("res://scripts/ui/UpgradesScreen.gd").new()
+	var real: Node = UpgradesScreenScript.new()
 	add_child_autofree(real)
 	assert_eq(real._categories.size(), 6)
 
 func test_real_config_first_category_is_staff() -> void:
-	var real: Node = preload("res://scripts/ui/UpgradesScreen.gd").new()
+	var real: Node = UpgradesScreenScript.new()
 	add_child_autofree(real)
 	assert_eq(real._categories[0].get("id"), "staff")
 
 func test_real_config_body_category_has_five_upgrades() -> void:
-	var real: Node = preload("res://scripts/ui/UpgradesScreen.gd").new()
+	var real: Node = UpgradesScreenScript.new()
 	add_child_autofree(real)
 	var body_cat: Dictionary = real._categories[1]   # body is index 1
 	assert_eq(body_cat.get("upgrades", []).size(), 5)
