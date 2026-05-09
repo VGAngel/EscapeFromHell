@@ -1,5 +1,10 @@
 extends Node2D
 
+# Soul.tscn is spawned from three places (mid-room rebuild, hidden-soul
+# placement, soul-drop-on-death). Hoisted to a module const so we
+# preload once per script load instead of three runtime load() calls.
+const SoulScene: PackedScene = preload("res://scenes/Soul.tscn")
+
 # Base script for all procedural and static non-boss levels.
 # Attach to the root Node2D of Level.tscn.
 #
@@ -341,7 +346,7 @@ func _discover_souls() -> void:
 	_assign_soul_types()
 
 func _spawn_soul_node(_gen: Object) -> void:
-	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
+	var soul_scene: PackedScene = SoulScene
 	if not soul_scene:
 		_report_warn("LevelBase: Soul.tscn not found — no soul spawned")
 		return
@@ -379,7 +384,7 @@ func _spawn_soul_node(_gen: Object) -> void:
 func _spawn_hidden_soul_node(gen: Object) -> void:
 	if gen == null or gen.hidden_soul_data.is_empty():
 		return
-	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
+	var soul_scene: PackedScene = SoulScene
 	if not soul_scene:
 		return
 	var soul: Node = soul_scene.instantiate()
@@ -618,7 +623,7 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 ## soul_dropped per carried soul, so each call respawns ONE pickup at the
 ## death position and clears just that entry from _carried_souls_data.
 func _on_soul_dropped(soul_id: String, drop_position: Vector2) -> void:
-	var soul_scene := load("res://scenes/Soul.tscn") as PackedScene
+	var soul_scene: PackedScene = SoulScene
 	if not soul_scene or not _room_container:
 		_carried_souls_data.erase(soul_id.to_int())
 		return
