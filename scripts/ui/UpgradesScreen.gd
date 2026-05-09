@@ -238,6 +238,21 @@ func _make_buy_btn(id: String, cost: int, cur_level: int, max_level: int,
 func _on_buy(id: String, cost: int, cur_level: int, _max_level: int) -> void:
 	if not SaveManager:
 		return
+	# Re-read the upgrade's CURRENT level instead of trusting the
+	# `cur_level` value captured by .bind() at button-build time.
+	# If the player double-clicks quickly enough that two pressed
+	# signals fire before _rebuild_cards has time to recreate the
+	# button with a fresh bind, both callbacks would arrive with the
+	# stale captured level — spend_light would deduct the cost twice
+	# while set_upgrade_level(cur_level+1) was idempotent on the
+	# second call, so the player paid 2× cost for one upgrade tier.
+	var live_level: int = int(SaveManager.get_upgrade_level(id))
+	if live_level != cur_level:
+		# Out-of-date click: button already represented a previous
+		# state. Refresh the screen instead of charging again.
+		_refresh_currency()
+		_rebuild_cards(_active_cat)
+		return
 	if not SaveManager.spend_light(cost):
 		_flash_currency()
 		return
