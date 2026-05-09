@@ -221,6 +221,15 @@ func _enter_alert() -> void:
 	enemy_alerted.emit(self)
 	_play_sound("alert")
 	_tutorial_hint("enemy_nearby")
+	# Extra warning the FIRST time the player gets detected while
+	# carrying a soul — staff is locked then, so a fight is suicidal
+	# even if they didn't read carry_to_exit. Tutorial dedupe via
+	# SaveManager flag means it fires once per save.
+	if _player and _player.has_method("is_carrying") and _player.is_carrying():
+		# No "tutorial." prefix — soul_in_hands IS a configured trigger
+		# in tutorial_config.json, so we want its duration / text_key
+		# routing applied (the prefix path would shortcut to ad-hoc).
+		_tutorial_hint("soul_in_hands")
 
 func _do_alert(_delta: float) -> void:
 	if _alert_timer <= 0.0:

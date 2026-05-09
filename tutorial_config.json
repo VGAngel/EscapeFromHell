@@ -349,14 +349,17 @@
       "duration": 5.0
     },
     "soul_in_hands": {
-      "text": "Несеш душу — вороги відчувають тебе сильніше",
-      "show_every_time": true,
-      "duration": 3.5
+      "text_key": "tutorial.soul_in_hands",
+      "trigger": "first_enemy_alert_while_carrying",
+      "duration": 4.5,
+      "note": "Fired by BaseEnemy._enter_alert the FIRST time the player is detected by an enemy while carrying a soul. Fires once per save. Reinforces the staff-lockout warning at the moment it bites."
     },
     "pray_mechanic": {
-      "text": "Утримуй кнопку молитви в центрі арени щоб завершити ритуал",
+      "text_key": "tutorial.pray_mechanic",
+      "trigger": "boss10_phase_3_started",
+      "duration": 5.5,
       "show_every_time": true,
-      "duration": 5.0
+      "note": "Fired by BossAI._start_phase when Lucifer enters the prayer_ritual phase. Re-fires every time so a player who wipes on phase 3 isn't left guessing what to do."
     },
     "wall_grab": {
       "text": "Притиснись до стіни в повітрі — можна зависнути до 2 секунд",

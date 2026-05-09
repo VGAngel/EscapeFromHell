@@ -349,6 +349,18 @@ func _start_phase(index: int) -> void:
 			state = BossState.PATROL
 		_:
 			state = BossState.CHASE
+	# When entering a phase whose mechanic is the prayer ritual (Lucifer
+	# phase 3), surface the explainer hint so the player knows to hold
+	# the prayer button at the centre instead of running for the exit.
+	# Tutorial dedupes via SaveManager hint state — fires once per save.
+	var mechanic_type: String = phase_data.get("mechanic", {}).get("type", "")
+	if mechanic_type == "prayer_ritual":
+		var tm: Node = TutorialManager
+		if tm and tm.has_method("show_hint"):
+			# No "tutorial." prefix — pray_mechanic IS a configured
+			# trigger in tutorial_config.json, so the trigger's
+			# duration override (5.5 s) gets applied.
+			tm.show_hint("pray_mechanic")
 	phase_changed.emit(index)
 
 func _get_current_phase_data() -> Dictionary:
