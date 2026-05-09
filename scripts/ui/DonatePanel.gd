@@ -50,9 +50,8 @@ func _ready() -> void:
 	if AdsManager and AdsManager.has_signal("donate_purchased"):
 		AdsManager.donate_purchased.connect(_on_donate_purchased)
 	# Live re-render on language switch — re-set tracked label texts.
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_signal("language_changed"):
-		loc.language_changed.connect(_on_language_changed)
+	if Loc and Loc.has_signal("language_changed"):
+		Loc.language_changed.connect(_on_language_changed)
 
 
 func _on_language_changed(_lang: String) -> void:
@@ -69,9 +68,8 @@ func _on_language_changed(_lang: String) -> void:
 # ── Public ────────────────────────────────────────────────────────────────────
 
 func router_title() -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t("router_title.donate"))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t("router_title.donate"))
 	return "Підтримати"
 
 func open() -> void:

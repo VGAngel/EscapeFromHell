@@ -40,9 +40,8 @@ func _ready() -> void:
 # ── Public ────────────────────────────────────────────────────────────────────
 
 func router_title() -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t("router_title.statistics"))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t("router_title.statistics"))
 	return "Статистика"
 
 func open() -> void:

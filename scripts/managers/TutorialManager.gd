@@ -182,9 +182,8 @@ func _display(hint_id: String) -> void:
 		text = String(cfg["text"])
 	elif cfg.has("text_key") and not String(cfg["text_key"]).is_empty():
 		var key: String = String(cfg["text_key"])
-		var loc: Node = get_node_or_null("/root/Loc")
-		if loc and loc.has_method("t"):
-			var resolved: String = String(loc.t(key))
+		if Loc and Loc.has_method("t"):
+			var resolved: String = String(Loc.t(key))
 			# Loc.t() returns the key itself when the entry is missing —
 			# fall through to a clearer fallback in that case so the
 			# player sees something readable instead of a path.

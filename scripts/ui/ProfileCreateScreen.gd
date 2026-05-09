@@ -37,9 +37,8 @@ func _ready() -> void:
 	_build_ui()
 	_root.modulate.a = 0.0
 	visible = false
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_signal("language_changed"):
-		loc.language_changed.connect(func(_l: String) -> void: _refresh_labels())
+	if Loc and Loc.has_signal("language_changed"):
+		Loc.language_changed.connect(func(_l: String) -> void: _refresh_labels())
 
 
 # ── Public API ───────────────────────────────────────────────────────────────
@@ -223,7 +222,6 @@ func _refresh_labels() -> void:
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t(key, params))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t(key, params))
 	return fallback if not fallback.is_empty() else key

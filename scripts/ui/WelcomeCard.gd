@@ -137,9 +137,8 @@ func _dismiss() -> void:
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 func _t_loc(key: String, fallback: String = "") -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t(key))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t(key))
 	return fallback if not fallback.is_empty() else key
 
 

@@ -41,10 +41,11 @@ func _ready() -> void:
 	_apply_card_style()
 	_build()
 	refresh()
-	# Re-render labels when the player switches language live.
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_signal("language_changed"):
-		loc.language_changed.connect(_on_language_changed)
+	# Re-render labels when the player switches language live. Use the
+	# global Loc autoload directly — the absolute /root/Loc lookup
+	# would error if HeroCard were ever instantiated outside the tree.
+	if Loc and Loc.has_signal("language_changed"):
+		Loc.language_changed.connect(_on_language_changed)
 	# Re-render when the active profile changes (create / switch / delete-fallback)
 	# so name + per-slot stats refresh without polling.
 	var sm: Node = get_node_or_null("/root/SaveManager")
@@ -68,7 +69,6 @@ func _process(delta: float) -> void:
 # ── Public ────────────────────────────────────────────────────────────────────
 
 func refresh() -> void:
-	var loc: Node = get_node_or_null("/root/Loc")
 	var sm: Node = get_node_or_null("/root/SaveManager")
 	if sm == null:
 		_set_text(_name_lbl,   "—")
@@ -80,7 +80,7 @@ func refresh() -> void:
 		return
 
 	# Name
-	var name_text: String = _t(loc, "hero_card.name_unknown")
+	var name_text: String = _t("hero_card.name_unknown")
 	if sm.has_method("get_profile_name"):
 		var pn: String = String(sm.get_profile_name())
 		if not pn.is_empty():
@@ -90,8 +90,8 @@ func refresh() -> void:
 	# Progress
 	var current_level: int = int(sm.get_current_level()) if sm.has_method("get_current_level") else 1
 	var current_circle: int = int(sm.get_current_circle()) if sm.has_method("get_current_circle") else 1
-	_set_text(_circle_lbl, _t(loc, "hero_card.circle_format", {"n": current_circle}))
-	_set_text(_level_lbl,  _t(loc, "hero_card.level_format",  {"n": current_level}))
+	_set_text(_circle_lbl, _t("hero_card.circle_format", {"n": current_circle}))
+	_set_text(_level_lbl,  _t("hero_card.level_format",  {"n": current_level}))
 
 	# Souls / hidden / light. Pool sizes come from SaveManager which reads
 	# souls_collection.json so the card scales when more souls are added.
@@ -100,34 +100,36 @@ func refresh() -> void:
 	var light: int = int(sm.get_light()) if sm.has_method("get_light") else 0
 	var s_total: int = int(sm.get_named_souls_target()) if sm.has_method("get_named_souls_target") else 100
 	var h_total: int = int(sm.get_hidden_souls_target()) if sm.has_method("get_hidden_souls_target") else 20
-	_set_text(_souls_lbl, _t(loc, "hero_card.stats_format", {
+	_set_text(_souls_lbl, _t("hero_card.stats_format", {
 		"souls": souls, "souls_total": s_total,
 		"hidden": hidden_count, "hidden_total": h_total,
 		"light": light,
 	}))
 
 	# Best level — search 1..100, max stars then min time tiebreaker.
-	_set_text(_best_lbl, _format_best(sm, loc))
+	_set_text(_best_lbl, _format_best(sm))
 
 	# Sin
 	if sm.has_method("get_sin"):
 		var sin_pct: int = int(sm.get_sin())
 		_sin_lbl.add_theme_color_override("font_color", _sin_color(sin_pct))
-		_set_text(_sin_lbl, _t(loc, "hero_card.sin_format", {"pct": sin_pct}))
+		_set_text(_sin_lbl, _t("hero_card.sin_format", {"pct": sin_pct}))
 
 
-# Loc.t() with hardcoded fallback so unit tests without Loc autoload
-# don't crash. Returns the key itself if Loc is missing — test asserts
-# can still match by key prefix.
-func _t(loc: Node, key: String, params: Dictionary = {}) -> String:
-	if loc and loc.has_method("t"):
-		return String(loc.t(key, params))
+# Loc.t() with hardcoded fallback. Uses the global `Loc` autoload
+# directly so this works whether or not HeroCard is in the scene tree
+# (the previous get_node_or_null("/root/Loc") form would error from
+# unit tests). Returns the key itself if the autoload is unavailable
+# — test asserts can still match by key prefix.
+func _t(key: String, params: Dictionary = {}) -> String:
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t(key, params))
 	return key
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-func _format_best(sm: Node, loc: Node) -> String:
+func _format_best(sm: Node) -> String:
 	if not sm.has_method("get_level_best"):
 		return ""
 	var best_id: int = -1
@@ -144,8 +146,8 @@ func _format_best(sm: Node, loc: Node) -> String:
 			best_time = t
 			best_id = lid
 	if best_id < 0:
-		return _t(loc, "hero_card.best_none")
-	return _t(loc, "hero_card.best_format", {
+		return _t("hero_card.best_none")
+	return _t("hero_card.best_format", {
 		"time":  _format_time(best_time),
 		"stars": _stars(best_stars),
 		"level": best_id,

@@ -130,9 +130,8 @@ func _ready() -> void:
 	_apply_layout_mode()
 	_close_sheet_instant()
 	# Live-refresh on language switch — full rebuild via open() if visible.
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_signal("language_changed"):
-		loc.language_changed.connect(_on_language_changed)
+	if Loc and Loc.has_signal("language_changed"):
+		Loc.language_changed.connect(_on_language_changed)
 	# Live-relayout on rotation / window resize so columns adapt.
 	get_viewport().size_changed.connect(_on_viewport_resized)
 
@@ -271,9 +270,8 @@ func _load_souls() -> void:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 func router_title() -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t("router_title.collection"))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t("router_title.collection"))
 	return "Врятовані душі"
 
 func open() -> void:

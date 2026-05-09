@@ -24,9 +24,8 @@ func _ready() -> void:
 	visible = false
 	# Live-refresh on language switch — open() rebuilds cards each time
 	# so we just need to redraw when the screen is currently visible.
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_signal("language_changed"):
-		loc.language_changed.connect(_on_language_changed)
+	if Loc and Loc.has_signal("language_changed"):
+		Loc.language_changed.connect(_on_language_changed)
 
 
 func _on_language_changed(_lang: String) -> void:
@@ -37,17 +36,15 @@ func _on_language_changed(_lang: String) -> void:
 
 # Loc.t() with fallback so headless tests / boot without Loc still render.
 func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t(key, params))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t(key, params))
 	return fallback if not fallback.is_empty() else key
 
 # ── Public ────────────────────────────────────────────────────────────────────
 
 func router_title() -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t("router_title.profile"))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t("router_title.profile"))
 	return "Профілі"
 
 func open() -> void:

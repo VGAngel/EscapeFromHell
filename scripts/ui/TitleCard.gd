@@ -131,9 +131,8 @@ func _circle_name(c: int) -> String:
 
 
 func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t(key, params))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t(key, params))
 	return fallback if not fallback.is_empty() else key
 
 

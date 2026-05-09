@@ -178,9 +178,8 @@ func _save() -> void:
 # ── Public ────────────────────────────────────────────────────────────────────
 
 func router_title() -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t("router_title.settings"))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t("router_title.settings"))
 	return "Налаштування"
 
 func open() -> void:
@@ -229,9 +228,8 @@ func _apply_reduce_motion(enabled: bool) -> void:
 
 
 func _apply_language(code: String) -> void:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("set_language"):
-		loc.set_language(code)
+	if Loc and Loc.has_method("set_language"):
+		Loc.set_language(code)
 
 # ── Volume helpers ────────────────────────────────────────────────────────────
 
@@ -307,9 +305,8 @@ func _on_language_pressed(code: String) -> void:
 	_save()
 	# Live language switch — Loc emits language_changed which any
 	# subscriber (HeroCard, MainMenu, future TopBar etc.) re-renders on.
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("set_language"):
-		loc.set_language(code)
+	if Loc and Loc.has_method("set_language"):
+		Loc.set_language(code)
 
 func _on_vsync_pressed() -> void:
 	var enabled: bool = not _data.get("vsync", true)

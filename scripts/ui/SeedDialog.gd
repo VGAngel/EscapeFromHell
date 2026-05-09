@@ -25,9 +25,8 @@ func _ready() -> void:
 	visible = false
 	# Live re-render the dynamic info label on language switch.
 	# Static labels (title, button) re-render next time the dialog opens.
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_signal("language_changed"):
-		loc.language_changed.connect(_on_language_changed)
+	if Loc and Loc.has_signal("language_changed"):
+		Loc.language_changed.connect(_on_language_changed)
 
 
 func _on_language_changed(_lang: String) -> void:
@@ -37,9 +36,8 @@ func _on_language_changed(_lang: String) -> void:
 # ── Public ────────────────────────────────────────────────────────────────────
 
 func router_title() -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t("router_title.seed"))
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t("router_title.seed"))
 	return "Зерно світу"
 
 func open() -> void:
