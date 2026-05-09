@@ -160,7 +160,7 @@ func _on_body_entered(body: Node2D) -> void:
 	# players who picked up a soul still didn't know that this glowing
 	# stone IS the delivery point — the carry_to_exit text says "altar"
 	# but the level art doesn't always read as one.
-	var tm: Node = get_node_or_null("/root/TutorialManager")
+	var tm: Node = TutorialManager
 	if tm and tm.has_method("show_hint"):
 		# Use the "tutorial." prefix so TutorialManager accepts the id
 		# even though there's no entry for "altar" in the legacy

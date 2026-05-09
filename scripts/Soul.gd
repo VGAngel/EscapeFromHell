@@ -186,7 +186,7 @@ func _on_body_entered(body: Node2D) -> void:
 	_player_nearby = body as CharacterBody2D
 	if _prompt_label:
 		_prompt_label.visible = true
-	var tm: Node = get_node_or_null("/root/TutorialManager")
+	var tm: Node = TutorialManager
 	if tm and tm.has_method("show_hint"):
 		tm.show_hint("soul_pickup")
 	_set_pickup_button(true)

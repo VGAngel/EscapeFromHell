@@ -640,7 +640,7 @@ func _play_sound(event: String) -> void:
 func _tutorial_hint(hint_id: String) -> void:
 	if not is_inside_tree():
 		return
-	var tm: Node = get_node_or_null("/root/TutorialManager")
+	var tm: Node = TutorialManager
 	if tm and tm.has_method("show_hint"):
 		tm.show_hint(hint_id)
 

@@ -93,7 +93,7 @@ func register(node: Node2D, type_key: String, hint_id: String,
 # True if the type's hint was already shown on this save. Reads through
 # TutorialManager so we share the same persistence as regular hints.
 func is_seen(type_key: String) -> bool:
-	var tm: Node = get_node_or_null("/root/TutorialManager")
+	var tm: Node = TutorialManager
 	if tm == null:
 		return false
 	# Discovery types are stored under the same `seen_tutorial_hints`
@@ -105,7 +105,7 @@ func is_seen(type_key: String) -> bool:
 
 # Force-mark a type as already seen (e.g. for testing or skip flow).
 func mark_seen(type_key: String) -> void:
-	var tm: Node = get_node_or_null("/root/TutorialManager")
+	var tm: Node = TutorialManager
 	if tm and tm.has_method("_mark_seen"):
 		tm._mark_seen("discovery." + type_key)
 
@@ -153,7 +153,7 @@ func _fire(entry: Dictionary) -> void:
 	mark_seen(type_key)
 	# Show the tutorial hint if it has an id.
 	var hint_id: String = String(entry.hint_id)
-	var tm: Node = get_node_or_null("/root/TutorialManager")
+	var tm: Node = TutorialManager
 	if tm and tm.has_method("show_hint") and not hint_id.is_empty():
 		tm.show_hint(hint_id)
 	# Attach the gold halo to the node so the player can see WHICH
