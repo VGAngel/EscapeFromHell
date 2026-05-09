@@ -385,8 +385,14 @@
   },
 
   "main_menu_dyn": {
-    "play_first":     "▶  Play",
-    "play_continue":  "▶  Continue — level {n}",
+    "play_first":              "▶  Begin descent",
+    "play_continue":           "▶  Continue — level {n}",
+    "play_continue_short":     "▶  Level {n}",
+    "continue_first_attempt":  "{name} (Circle {circle})  •  first attempt",
+    "continue_with_best":      "{name} (Circle {circle})  •  🏆 {time}  {stars}",
+    "continue_new_circle":     "✨  New circle: {name}",
+    "continue_milestone_50":   "🎉  Halfway down",
+    "continue_milestone_99":   "One soul left",
     "souls_counter":  "Saved Souls  {saved}/{total}"
   },
 

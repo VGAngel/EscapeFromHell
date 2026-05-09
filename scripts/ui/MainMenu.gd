@@ -233,22 +233,137 @@ func _refresh_souls_counter() -> void:
 	_refresh_play_button()
 
 # Dynamic label on the primary CTA — first run shows "Грати", later
-# runs prefix the current level so the menu reads as "continue your
-# descent". Falls back to a clean default if SaveManager is missing.
+# runs surface a rich context line (circle name, best time, milestone
+# flag) below the action so the player remembers what they're walking
+# back into instead of staring at a flat "Continue — level 23".
 func _refresh_play_button() -> void:
 	if _btn_play == null:
 		return
-	if SaveManager == null:
+	_ensure_play_subtitle()
+	if SaveManager == null or not _has_played_before():
 		_btn_play.text = _loc_t("main_menu_dyn.play_first")
+		_set_play_subtitle("")
 		return
 	var lvl: int = int(SaveManager.get_current_level())
-	var played_before: bool = false
-	if SaveManager.has_method("get_stat"):
-		played_before = float(SaveManager.get_stat("total_play_seconds", 0.0)) > 0.0
-	if not played_before or lvl <= 1:
-		_btn_play.text = _loc_t("main_menu_dyn.play_first")
-	else:
-		_btn_play.text = _loc_t("main_menu_dyn.play_continue", {"n": lvl})
+	_btn_play.text = _loc_t("main_menu_dyn.play_continue_short", {"n": lvl})
+	_set_play_subtitle(_compose_play_subtitle(lvl))
+
+
+# Returns the contextual subtitle that goes under "▶ Рівень N":
+#   • "Жадібність (Коло 4) • 🏆 0:42 ★★☆"   when the level was cleared before
+#   • "Жадібність (Коло 4) • перша спроба"  when no best record yet
+#   • "✨ Нове коло: Жадібність"             when crossing into a fresh circle
+#   • "🎉 Половина шляху"                   on milestones 50 / 99
+func _compose_play_subtitle(lvl: int) -> String:
+	var circle: int = LevelConfig.get_circle(lvl) if LevelConfig else 1
+	var circle_name: String = _loc_t("title_card.circles." + str(circle))
+
+	# Milestone overrides everything else — these moments deserve the spotlight.
+	if lvl == 50:
+		return _loc_t("main_menu_dyn.continue_milestone_50")
+	if lvl == 99:
+		return _loc_t("main_menu_dyn.continue_milestone_99")
+
+	# First level of a circle the player has never cleared anything in.
+	if lvl % 10 == 1 and circle > 1 and not _has_cleared_circle(circle):
+		return _loc_t("main_menu_dyn.continue_new_circle", {"name": circle_name})
+
+	# Either "first attempt" or "with best".
+	var best: Dictionary = {}
+	if SaveManager and SaveManager.has_method("get_level_best"):
+		best = SaveManager.get_level_best(lvl)
+	if best.is_empty():
+		return _loc_t("main_menu_dyn.continue_first_attempt", {
+			"circle": circle, "name": circle_name})
+	return _loc_t("main_menu_dyn.continue_with_best", {
+		"circle": circle,
+		"name": circle_name,
+		"time":  _format_time(float(best.get("time", 0.0))),
+		"stars": _stars(int(best.get("stars", 0))),
+	})
+
+
+# True if any level in the same circle (e.g. for circle=4 → levels 31..40)
+# has a best record. Used to decide whether the "✨ Нове коло" badge fires
+# when the player's current_level is the circle opener.
+func _has_cleared_circle(circle: int) -> bool:
+	if SaveManager == null or not SaveManager.has_method("get_level_best"):
+		return false
+	var first: int = (circle - 1) * 10 + 1
+	var last:  int = circle * 10
+	for lid in range(first, last + 1):
+		if not SaveManager.get_level_best(lid).is_empty():
+			return true
+	return false
+
+
+func _has_played_before() -> bool:
+	if SaveManager == null:
+		return false
+	if not SaveManager.has_method("get_stat"):
+		return false
+	if float(SaveManager.get_stat("total_play_seconds", 0.0)) <= 0.0:
+		return false
+	# Even a tap on level 1 counts as "played" — but the play_first
+	# button copy still feels right for someone who never advanced past
+	# level 1, so gate on current_level > 1 too.
+	return int(SaveManager.get_current_level()) > 1
+
+
+func _format_time(seconds: float) -> String:
+	if seconds <= 0.0 or seconds == INF:
+		return "—"
+	var total: int = int(seconds)
+	@warning_ignore("integer_division")
+	return "%d:%02d" % [total / 60, total % 60]
+
+
+func _stars(n: int) -> String:
+	const F := "★"
+	const E := "☆"
+	var out: String = ""
+	for i in 3:
+		out += F if i < n else E
+	return out
+
+
+# Lazy-built Label child of _btn_play that holds the contextual second
+# line. The button itself stays a plain Button — its `text` is the
+# headline, this Label is the subtitle anchored to the bottom edge.
+var _btn_play_subtitle: Label = null
+
+
+func _ensure_play_subtitle() -> void:
+	if _btn_play_subtitle != null and is_instance_valid(_btn_play_subtitle):
+		return
+	if _btn_play == null:
+		return
+	_btn_play_subtitle = Label.new()
+	_btn_play_subtitle.name = "Subtitle"
+	_btn_play_subtitle.add_theme_font_size_override("font_size", 16)
+	_btn_play_subtitle.add_theme_color_override("font_color",
+			Color(0.85, 0.78, 0.92, 0.78))
+	_btn_play_subtitle.add_theme_color_override("font_outline_color",
+			Color(0, 0, 0, 0.85))
+	_btn_play_subtitle.add_theme_constant_override("outline_size", 3)
+	_btn_play_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_btn_play_subtitle.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	_btn_play_subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_btn_play_subtitle.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_btn_play_subtitle.offset_top    = -28.0
+	_btn_play_subtitle.offset_bottom = -6.0
+	# Bump the button's min height so the headline + subtitle both have
+	# breathing room. Defaults usually sit around 60 px; 88 fits two lines
+	# at our font sizes without clipping.
+	_btn_play.custom_minimum_size.y = max(_btn_play.custom_minimum_size.y, 88.0)
+	_btn_play.add_child(_btn_play_subtitle)
+
+
+func _set_play_subtitle(text: String) -> void:
+	if _btn_play_subtitle == null:
+		return
+	_btn_play_subtitle.text = text
+	_btn_play_subtitle.visible = not text.is_empty()
 
 
 func _loc_t(key: String, params: Dictionary = {}) -> String:

@@ -1183,8 +1183,14 @@
   },
 
   "main_menu_dyn": {
-    "play_first":     "▶  Грати",
-    "play_continue":  "▶  Продовжити — рівень {n}",
+    "play_first":              "▶  Почати спуск",
+    "play_continue":           "▶  Продовжити — рівень {n}",
+    "play_continue_short":     "▶  Рівень {n}",
+    "continue_first_attempt":  "{name} (Коло {circle})  •  перша спроба",
+    "continue_with_best":      "{name} (Коло {circle})  •  🏆 {time}  {stars}",
+    "continue_new_circle":     "✨  Нове коло: {name}",
+    "continue_milestone_50":   "🎉  Половина шляху",
+    "continue_milestone_99":   "Остання душа чекає",
     "souls_counter":  "Врятовані Душі  {saved}/{total}"
   },
 
