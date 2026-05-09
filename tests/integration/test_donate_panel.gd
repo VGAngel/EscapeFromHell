@@ -105,12 +105,12 @@ func test_on_donate_purchased_triggers_thanks() -> void:
 
 func test_buy_button_calls_ads_manager_iap() -> void:
 	# TODO: requires AdsManager mock — purchase_donate() triggers platform billing
-	pass
+	pending("not yet implemented")
 
 func test_thanks_label_fades_out() -> void:
 	# TODO: requires process frame simulation to decrement _thank_timer
-	pass
+	pending("not yet implemented")
 
 func test_escape_key_closes_panel() -> void:
 	# TODO: requires InputEvent simulation for "ui_cancel"
-	pass
+	pending("not yet implemented")

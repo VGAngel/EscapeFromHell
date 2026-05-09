@@ -213,20 +213,20 @@ func test_escape_bar_hidden_by_default() -> void:
 
 func test_sin_bar_pulses_above_85_percent() -> void:
 	# TODO: requires process frame simulation — _sin_pulse_timer increments in _process
-	pass
+	pending("not yet implemented")
 
 func test_sin_white_flash_at_first_crossing_85() -> void:
 	# TODO: async tween — _set_sin creates tween on 85 threshold crossing
-	pass
+	pending("not yet implemented")
 
 func test_set_hp_zero_flashes_screen_red() -> void:
 	# TODO: async — _flash_screen creates a temporary ColorRect via tween
-	pass
+	pending("not yet implemented")
 
 func test_escape_timer_decrements_over_time() -> void:
 	# TODO: requires process frame simulation with delta
-	pass
+	pending("not yet implemented")
 
 func test_bonus_icon_removed_after_duration() -> void:
 	# TODO: requires process frame simulation
-	pass
+	pending("not yet implemented")

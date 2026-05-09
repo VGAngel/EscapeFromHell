@@ -114,32 +114,32 @@ func test_next_button_emits_next_level_pressed_signal() -> void:
 func test_time_displayed() -> void:
 	# TODO: time_seconds is accepted in stats dict but not displayed in current
 	# LevelComplete.gd — add a _stat_time label and format as "M:SS" first
-	pass
+	pending("not yet implemented")
 
 func test_three_stars_shown_on_perfect_run() -> void:
 	# TODO: requires awaiting tween completion (stars are set via _animate_in callbacks)
-	pass
+	pending("not yet implemented")
 
 func test_one_star_on_partial_souls() -> void:
 	# TODO: requires awaiting tween completion
-	pass
+	pending("not yet implemented")
 
 func test_stars_animate_in_sequence() -> void:
 	# TODO: async tween — verify each star callback fires with correct filled flag
-	pass
+	pending("not yet implemented")
 
 func test_elements_fade_in_after_stars() -> void:
 	# TODO: async tween — stat labels start at modulate.a=0, animate to 1.0
-	pass
+	pending("not yet implemented")
 
 func test_next_level_button_calls_load_next() -> void:
 	# TODO: requires GameManager stub — load_next_level() calls change_scene_to_file
-	pass
+	pending("not yet implemented")
 
 func test_hub_button_calls_load_hub() -> void:
 	# TODO: requires GameManager stub — load_hub() calls change_scene_to_file
-	pass
+	pending("not yet implemented")
 
 func test_tap_anywhere_advances_to_next() -> void:
 	# TODO: requires InputEvent simulation + GameManager stub
-	pass
+	pending("not yet implemented")

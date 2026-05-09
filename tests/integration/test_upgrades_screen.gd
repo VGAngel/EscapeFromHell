@@ -282,8 +282,8 @@ func test_real_config_body_category_has_five_upgrades() -> void:
 
 func test_currency_flashes_red_on_failed_purchase() -> void:
 	# TODO: async tween — _flash_currency animates _lbl_currency color
-	pass
+	pending("not yet implemented")
 
 func test_escape_key_closes_screen() -> void:
 	# TODO: requires InputEvent simulation for "ui_cancel"
-	pass
+	pending("not yet implemented")

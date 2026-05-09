@@ -471,15 +471,15 @@ func test_destroy_copies_clears_array() -> void:
 
 func test_transitions_back_to_patrol_when_player_out_of_range() -> void:
 	# TODO: requires processing frames to observe state machine over time
-	pass
+	pending("not yet implemented")
 
 func test_phase_2_increases_speed() -> void:
 	# TODO: move_speed is set once from stats, not per-phase — no current mechanism
-	pass
+	pending("not yet implemented")
 
 func test_phase_3_activates_special_attack() -> void:
 	# TODO: special attacks are behavior-string driven; need config + scene
-	pass
+	pending("not yet implemented")
 
 # ── Progress bar (#40) ────────────────────────────────────────────────────────
 

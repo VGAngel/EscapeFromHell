@@ -214,13 +214,13 @@ func test_process_mode_is_always() -> void:
 
 func test_hp_displayed_on_open() -> void:
 	# PauseScreen shows circle/level + souls + sin — no HP display.
-	pass
+	pending("not yet implemented")
 
 func test_restart_button_calls_game_manager() -> void:
 	# PauseScreen has no restart button — only resume/collection/settings/menu.
-	pass
+	pending("not yet implemented")
 
 func test_main_menu_button_loads_menu() -> void:
 	# _on_exit_yes_pressed calls GameManager.load_main_menu() → scene change.
 	# Cannot test without a full scene tree; covered by manual QA.
-	pass
+	pending("not yet implemented")

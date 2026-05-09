@@ -543,8 +543,8 @@ func test_assign_soul_types_skips_nodes_without_method() -> void:
 
 func test_souls_required_matches_level_config() -> void:
 	# TODO: fully initialized level — requires static or procedural room setup
-	pass
+	pending("not yet implemented")
 
 func test_player_teleported_to_spawn_on_respawn() -> void:
 	# TODO: requires Player.tscn + Marker2D spawn point in the tree
-	pass
+	pending("not yet implemented")

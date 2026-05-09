@@ -192,15 +192,15 @@ func test_refresh_sets_sfx_slider_value() -> void:
 func test_master_volume_change_updates_audio_server() -> void:
 	# TODO: verify AudioServer.set_bus_volume_db called —
 	# requires bus "Master" to exist in headless AudioServer
-	pass
+	pending("not yet implemented")
 
 func test_sfx_toggle_mutes_sfx_bus() -> void:
 	# TODO: verify AudioServer.set_bus_mute for SFX bus
-	pass
+	pending("not yet implemented")
 
 func test_escape_closes_screen() -> void:
 	# TODO: requires InputEvent simulation for "ui_cancel"
-	pass
+	pending("not yet implemented")
 
 # ── Key rebinding ─────────────────────────────────────────────────────────────
 

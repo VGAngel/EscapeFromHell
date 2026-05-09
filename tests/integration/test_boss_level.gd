@@ -136,37 +136,37 @@ func test_on_phase_changed_phase_zero_no_flash() -> void:
 
 func test_intro_overlay_created_on_ready() -> void:
 	# TODO: requires full _ready() init (LevelBase + boss wiring)
-	pass
+	pending("not yet implemented")
 
 func test_intro_overlay_removed_after_hold_time() -> void:
 	# TODO: requires tween time simulation (INTRO_HOLD_SECONDS ≈ 2.8 s)
-	pass
+	pending("not yet implemented")
 
 func test_boss_win_sets_defeated_flag() -> void:
 	# TODO: _on_boss_win() has `await create_timer(5.0)` — async, timer fires
 	# after test ends and may reference freed objects
-	pass
+	pending("not yet implemented")
 
 func test_boss_win_hides_phase_panel() -> void:
 	# TODO: phase panel only exists after intro tween completes (async)
-	pass
+	pending("not yet implemented")
 
 func test_auto_complete_after_delay() -> void:
 	# TODO: requires awaiting AUTO_COMPLETE_DELAY (5 s) in test
-	pass
+	pending("not yet implemented")
 
 func test_phase_dots_built_for_multi_phase_boss() -> void:
 	# TODO: _build_phase_panel() reads _boss._phase_cfg — requires mock boss
-	pass
+	pending("not yet implemented")
 
 func test_phase_dot_updates_on_phase_change() -> void:
 	# TODO: same — needs phase_dots array populated first
-	pass
+	pending("not yet implemented")
 
 func test_pray_action_calls_tick_prayer() -> void:
 	# TODO: requires InputEvent simulation for "pray" action
-	pass
+	pending("not yet implemented")
 
 func test_release_pray_calls_reset_prayer() -> void:
 	# TODO: requires InputEvent hold + release simulation
-	pass
+	pending("not yet implemented")

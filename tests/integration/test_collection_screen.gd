@@ -585,8 +585,8 @@ func test_unsaved_cell_tooltip_is_generic() -> void:
 
 func test_close_emits_signal() -> void:
 	# TODO: signal emitted inside tween callback — cannot test synchronously
-	pass
+	pending("not yet implemented")
 
 func test_escape_key_closes_sheet_not_screen() -> void:
 	# TODO: requires InputEvent simulation for "ui_cancel"
-	pass
+	pending("not yet implemented")

@@ -17,74 +17,74 @@ func before_each() -> void:
 
 func test_state_to_anim_idle() -> void:
 	# TODO: assert player._state_to_anim(Player.State.IDLE) == "player_idle"
-	pass
+	pending("not yet implemented")
 
 func test_state_to_anim_walk() -> void:
 	# TODO: assert player._state_to_anim(Player.State.WALK) == "player_walk"
-	pass
+	pending("not yet implemented")
 
 func test_state_to_anim_jump() -> void:
 	# TODO: assert player._state_to_anim(Player.State.JUMP) == "player_jump"
-	pass
+	pending("not yet implemented")
 
 func test_state_to_anim_fall() -> void:
 	# TODO: assert player._state_to_anim(Player.State.FALL) == "player_fall"
-	pass
+	pending("not yet implemented")
 
 func test_is_carrying_false_by_default() -> void:
 	# TODO: assert player.is_carrying() == false
-	pass
+	pending("not yet implemented")
 
 func test_is_carrying_true_when_soul_set() -> void:
 	# TODO: player.carried_soul_id = "soul_01"; assert player.is_carrying()
-	pass
+	pending("not yet implemented")
 
 func test_get_staff_cooldown_ratio_full_at_start() -> void:
 	# TODO: assert player.get_staff_cooldown_ratio() == 1.0 at start
-	pass
+	pending("not yet implemented")
 
 # ── Movement ──────────────────────────────────────────────────────────────────
 
 func test_player_moves_right_on_input() -> void:
 	# TODO: simulate "move_right" action press, process one physics frame,
 	# assert velocity.x > 0
-	pass
+	pending("not yet implemented")
 
 func test_player_jumps_on_input_when_on_floor() -> void:
 	# TODO: place player on floor, simulate "jump" action,
 	# assert velocity.y < 0
-	pass
+	pending("not yet implemented")
 
 func test_player_wall_hang_on_wall_contact() -> void:
 	# TODO: place player against wall mid-air,
 	# assert _state == Player.State.WALL_HANG
-	pass
+	pending("not yet implemented")
 
 func test_player_deceleration_on_release() -> void:
 	# TODO: simulate move_right, then release, assert velocity.x approaches 0
-	pass
+	pending("not yet implemented")
 
 func test_landing_decel_burst_after_fall() -> void:
 	# TODO: drop player from height, on landing assert _landing_decel_timer > 0
-	pass
+	pending("not yet implemented")
 
 # ── Damage / Death ────────────────────────────────────────────────────────────
 
 func test_player_hp_decreases_on_damage() -> void:
 	# TODO: call player._take_damage(1); assert HP decreased
-	pass
+	pending("not yet implemented")
 
 func test_player_dies_when_hp_reaches_zero() -> void:
 	# TODO: call _take_damage repeatedly; assert player_died signal emitted
-	pass
+	pending("not yet implemented")
 
 func test_player_death_emits_signal() -> void:
 	# TODO: watch player_died signal, reduce HP to 0, assert signal received
-	pass
+	pending("not yet implemented")
 
 func test_player_knockback_applied_on_hit() -> void:
 	# TODO: call _apply_knockback(Vector2.RIGHT); assert _knockback_vel.x > 0
-	pass
+	pending("not yet implemented")
 
 # ── receive_hit (pursuer / external hazard) ────────────────────────────────────
 
@@ -206,36 +206,36 @@ func test_staff_purity_upgrade_skips_sin_even_on_hit() -> void:
 
 func test_staff_cooldown_prevents_double_swing() -> void:
 	# TODO: swing staff twice rapidly, assert second swing has no hit
-	pass
+	pending("not yet implemented")
 
 func test_hit_stop_pauses_time_scale() -> void:
 	# TODO: confirm Engine.time_scale goes to 0 during hit-stop then returns to 1
-	pass
+	pending("not yet implemented")
 
 # ── Soul carry ────────────────────────────────────────────────────────────────
 
 func test_player_picks_up_soul() -> void:
 	# TODO: place Soul node near player, trigger body_entered,
 	# assert player.is_carrying()
-	pass
+	pending("not yet implemented")
 
 func test_soul_carry_visual_becomes_visible() -> void:
 	# TODO: assert SoulCarryVisual.visible == true when carrying
-	pass
+	pending("not yet implemented")
 
 # ── Respawn ───────────────────────────────────────────────────────────────────
 
 func test_respawn_restores_hp() -> void:
 	# TODO: damage player, call respawn(), assert hp == max_hp
-	pass
+	pending("not yet implemented")
 
 func test_respawn_sprite_fade_in() -> void:
 	# TODO: after respawn(), assert _sprite.modulate.a increases from 0 to 1
-	pass
+	pending("not yet implemented")
 
 func test_respawn_clears_knockback() -> void:
 	# TODO: after respawn(), assert _knockback_vel == Vector2.ZERO
-	pass
+	pending("not yet implemented")
 
 # ── Fall damage tiers (test 5) + walk-off-ledge regression (test 6) ───────────
 #
