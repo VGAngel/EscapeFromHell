@@ -14,22 +14,11 @@ extends "res://scripts/levels/LevelBase.gd"
 #   └── Camera2D
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-const INTRO_HOLD_SECONDS  := 2.8
+# Hold long enough for the player to read both the boss name AND the
+# win-condition hint underneath. Bumped from 2.8 → 3.5 s now that the
+# intro card carries an extra two-line subtitle.
+const INTRO_HOLD_SECONDS  := 3.5
 const AUTO_COMPLETE_DELAY := 5.0   # auto-complete if player doesn't walk to exit
-
-# Boss name per boss_id — shown during the intro sequence
-const BOSS_NAMES := {
-	"boss_01": "Воротар",
-	"boss_02": "Вітрогін",
-	"boss_03": "Тюремник",
-	"boss_04": "Жнець",
-	"boss_05": "Бегемот",
-	"boss_06": "Хранитель Болот",
-	"boss_07": "Дзеркальник",
-	"boss_08": "Катюга",
-	"boss_09": "Крижаний Суддя",
-	"boss_10": "Люцифер",
-}
 
 # Phase flavor shown briefly on phase transition
 const PHASE_LABELS := [
@@ -478,49 +467,143 @@ func _build_boss_intro() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_intro_layer.add_child(bg)
 
-	var boss_name: String = _get_boss_name()
-
 	var vbox := VBoxContainer.new()
 	vbox.set_anchors_preset(Control.PRESET_CENTER)
-	vbox.add_theme_constant_override("separation", 8)
-	vbox.offset_left   = -200.0
-	vbox.offset_right  =  200.0
-	vbox.offset_top    =  -60.0
-	vbox.offset_bottom =   60.0
+	vbox.add_theme_constant_override("separation", 14)
+	vbox.offset_left   = -260.0
+	vbox.offset_right  =  260.0
+	# Tall enough to hold five rows: ornament, "БОС" caption, boss name,
+	# 2-line hint, ornament. Anchored CENTER so the math is symmetric.
+	vbox.offset_top    = -150.0
+	vbox.offset_bottom =  150.0
 	_intro_layer.add_child(vbox)
 
+	# Top ornament — a thin gold rule, mirrored at the bottom.
+	vbox.add_child(_make_intro_rule())
+
 	var lbl_chapter := Label.new()
-	lbl_chapter.text = "БОС"
+	lbl_chapter.text = _intro_t("boss.intro_label", "БОС")
 	lbl_chapter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_chapter.add_theme_font_size_override("font_size", 14)
-	lbl_chapter.add_theme_color_override("font_color", Color(0.55, 0.52, 0.62))
+	lbl_chapter.add_theme_font_size_override("font_size", 16)
+	lbl_chapter.add_theme_color_override("font_color", Color(0.62, 0.58, 0.72))
+	# Letter-spacing makes the small caption feel deliberate / heraldic.
+	lbl_chapter.add_theme_constant_override("outline_size", 3)
+	lbl_chapter.add_theme_color_override("font_outline_color",
+			Color(0, 0, 0, 0.85))
 	vbox.add_child(lbl_chapter)
 
 	var lbl_name := Label.new()
-	lbl_name.text = boss_name
+	lbl_name.text = _get_boss_name()
 	lbl_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl_name.add_theme_font_size_override("font_size", 36)
-	lbl_name.add_theme_color_override("font_color", Color("#CC2222"))
+	lbl_name.add_theme_font_size_override("font_size", 44)
+	lbl_name.add_theme_color_override("font_color", Color("#D32F2F"))
+	lbl_name.add_theme_color_override("font_outline_color",
+			Color(0, 0, 0, 0.9))
+	lbl_name.add_theme_constant_override("outline_size", 5)
 	vbox.add_child(lbl_name)
 
-	# Fade-in → hold → fade-out
+	# Win-condition hint — pulls a per-boss two-line description from
+	# the `boss.boss_XX_hint` locale key, falls back to the generic
+	# `boss.win_condition_hint` if the per-boss key is missing.
+	var hint_text: String = _get_boss_hint()
+	if not hint_text.is_empty():
+		var lbl_hint := Label.new()
+		lbl_hint.text = hint_text
+		lbl_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl_hint.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+		lbl_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl_hint.add_theme_font_size_override("font_size", 22)
+		lbl_hint.add_theme_color_override("font_color",
+				Color(0.92, 0.86, 0.78, 0.92))
+		lbl_hint.add_theme_color_override("font_outline_color",
+				Color(0, 0, 0, 0.85))
+		lbl_hint.add_theme_constant_override("outline_size", 3)
+		lbl_hint.add_theme_constant_override("line_spacing", 4)
+		# Add some vertical breathing room above the hint.
+		var spacer := Control.new()
+		spacer.custom_minimum_size = Vector2(0, 6)
+		vbox.add_child(spacer)
+		vbox.add_child(lbl_hint)
+
+	# Bottom ornament.
+	var bottom_spacer := Control.new()
+	bottom_spacer.custom_minimum_size = Vector2(0, 6)
+	vbox.add_child(bottom_spacer)
+	vbox.add_child(_make_intro_rule())
+
+	# Fade-in → hold → fade-out. Slower fade so the title feels
+	# ceremonial; the dim background reads at 0.78 alpha which is dark
+	# enough to mask the arena while still letting the player keep their
+	# bearings on the boss silhouette behind.
 	var tw := create_tween()
-	tw.tween_property(bg,        "color",      Color(0.0, 0.0, 0.0, 0.75),  0.6)
-	tw.parallel().tween_property(vbox, "modulate:a", 1.0, 0.6)
+	tw.tween_property(bg, "color", Color(0.0, 0.0, 0.0, 0.78), 0.7)
+	tw.parallel().tween_property(vbox, "modulate:a", 1.0, 0.7)
 	vbox.modulate.a = 0.0
 	tw.tween_interval(INTRO_HOLD_SECONDS)
-	tw.tween_property(bg,        "color",      Color(0.0, 0.0, 0.0, 0.0),   0.7)
+	tw.tween_property(bg, "color", Color(0.0, 0.0, 0.0, 0.0), 0.7)
 	tw.parallel().tween_property(vbox, "modulate:a", 0.0, 0.7)
 	tw.tween_callback(func() -> void:
-		_intro_layer.queue_free()
+		if is_instance_valid(_intro_layer):
+			_intro_layer.queue_free()
 		_intro_layer = null
 		_build_phase_panel()
 	)
 
+
+# Resolve a localised string. We can't use the autoload Loc directly
+# without `is_inside_tree`-style guards because BossLevel's intro is
+# called during `_ready` after super() — the node IS in the tree by
+# then. Falls back to the second arg if Loc is unavailable.
+func _intro_t(key: String, fallback: String) -> String:
+	if Loc and Loc.has_method("t"):
+		var resolved: String = String(Loc.t(key))
+		# Loc.t() returns the key itself when missing — treat as fallback.
+		return fallback if resolved == key else resolved
+	return fallback
+
+
+# Build a thin gold horizontal rule used to flank the intro card.
+# 2-pixel ColorRect at 280×2 px with low alpha — visible but not loud.
+func _make_intro_rule() -> Control:
+	var rule := ColorRect.new()
+	rule.custom_minimum_size = Vector2(280, 2)
+	rule.color = Color(0.85, 0.72, 0.42, 0.55)
+	rule.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return rule
+
+
 func _get_boss_name() -> String:
-	if _boss and _boss.has_method("get") and _boss.get("boss_id") != null:
-		return BOSS_NAMES.get(_boss.get("boss_id"), "Невідомий")
-	return "Невідомий"
+	var bid: String = _boss_id_string()
+	if bid.is_empty():
+		return _intro_t("boss.boss_01_name", "Невідомий")
+	return _intro_t("boss." + bid + "_name", bid)
+
+
+# Per-boss win-condition explainer. Each boss has its own
+# `boss.boss_XX_hint` two-line key (e.g. "Збери 3 уламки кристалу\nі
+# стрибни у вихід"). Falls back to the generic line if the boss-
+# specific key isn't in the locale.
+func _get_boss_hint() -> String:
+	var bid: String = _boss_id_string()
+	if bid.is_empty():
+		return ""
+	var per_boss_key: String = "boss." + bid + "_hint"
+	var resolved: String = _intro_t(per_boss_key, "")
+	if resolved.is_empty():
+		return _intro_t("boss.win_condition_hint", "")
+	return resolved
+
+
+func _boss_id_string() -> String:
+	if _boss == null:
+		return ""
+	if not "boss_id" in _boss:
+		return ""
+	var bid: Variant = _boss.get("boss_id")
+	if bid == null:
+		return ""
+	return String(bid)
 
 # ── Phase indicator panel ─────────────────────────────────────────────────────
 

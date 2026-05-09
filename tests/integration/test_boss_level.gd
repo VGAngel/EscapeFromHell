@@ -42,9 +42,21 @@ func after_each() -> void:
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-func test_boss_names_has_10_entries() -> void:
-	var bl: Node = autofree(BossLevelScript.new())
-	assert_eq(bl.BOSS_NAMES.size(), 10)
+func test_boss_names_localised_for_all_10_bosses() -> void:
+	# Boss names + win-condition hints live in localization/uk.json
+	# under boss.boss_XX_name / boss.boss_XX_hint. The in-script
+	# BOSS_NAMES const was retired so the intro card and the en/uk
+	# locales stay in sync. Verify every boss_id has BOTH a name and
+	# a hint key — missing entries would fall back to the boss_id
+	# string and the generic "Знайди вихід" tagline respectively.
+	for i in range(1, 11):
+		var bid: String = "boss_%02d" % i
+		var name_key: String = "boss." + bid + "_name"
+		var hint_key: String = "boss." + bid + "_hint"
+		assert_ne(Loc.t(name_key), name_key,
+			"missing locale entry for %s — boss intro would show the id" % name_key)
+		assert_ne(Loc.t(hint_key), hint_key,
+			"missing locale entry for %s — intro would show generic hint" % hint_key)
 
 func test_phase_labels_has_3_entries() -> void:
 	var bl: Node = autofree(BossLevelScript.new())
