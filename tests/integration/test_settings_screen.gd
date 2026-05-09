@@ -173,17 +173,19 @@ func test_vsync_toggle_button_text_off() -> void:
 func test_refresh_sets_master_slider_value() -> void:
 	ss._data["volume_master"] = 55
 	ss._refresh_widgets()
-	assert_eq(ss._sl_master.value, 55)
+	# HSlider.value is a float — compare against a float literal so GUT
+	# doesn't log "Float/Int comparison" warnings on every run.
+	assert_eq(ss._sl_master.value, 55.0)
 
 func test_refresh_sets_music_slider_value() -> void:
 	ss._data["volume_music"] = 30
 	ss._refresh_widgets()
-	assert_eq(ss._sl_music.value, 30)
+	assert_eq(ss._sl_music.value, 30.0)
 
 func test_refresh_sets_sfx_slider_value() -> void:
 	ss._data["volume_sfx"] = 70
 	ss._refresh_widgets()
-	assert_eq(ss._sl_sfx.value, 70)
+	assert_eq(ss._sl_sfx.value, 70.0)
 
 # ── TODO ──────────────────────────────────────────────────────────────────────
 

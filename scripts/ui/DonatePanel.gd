@@ -31,9 +31,14 @@ var _lbl_thanks:  Label = null
 # Loc.t() with explicit fallback so headless tests / boot without the
 # autoload still render correctly.
 func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t(key, params))
+	# Use the global `Loc` autoload directly so this resolves correctly
+	# from outside the active scene tree (unit tests, scene transitions).
+	# The previous get_node_or_null("/root/Loc") form errored "Can't
+	# use get_node() with absolute paths from outside the active scene
+	# tree" on detached instances and returned null → fell through to
+	# the raw key string.
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t(key, params))
 	return fallback if not fallback.is_empty() else key
 
 

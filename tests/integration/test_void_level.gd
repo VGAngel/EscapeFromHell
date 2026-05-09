@@ -192,7 +192,10 @@ func test_find_camera_returns_child_camera() -> void:
 	var found: Camera2D = vl._find_camera()
 	# May find viewport camera first, but must return a Camera2D
 	assert_true(found is Camera2D)
-	cam.queue_free()
+	# Immediate free, not queue_free — GUT samples child counts at end
+	# of test and the deferred free hasn't run yet, leaking a "2 unfreed
+	# children" warning that's purely cosmetic but noisy.
+	cam.free()
 
 # ── _setup_camera_zoom ────────────────────────────────────────────────────────
 
@@ -207,7 +210,7 @@ func test_setup_camera_zoom_applies_to_child_camera() -> void:
 	cam.make_current()
 	vl._setup_camera_zoom()
 	assert_eq(cam.zoom, vl.CAMERA_ZOOM)
-	cam.queue_free()
+	cam.free()  # see test_find_camera_returns_child_camera comment
 
 # ── GameManager death limit ───────────────────────────────────────────────────
 
