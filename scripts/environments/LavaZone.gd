@@ -57,7 +57,7 @@ func _physics_process(delta: float) -> void:
 		if dx == 0.0:
 			dx = 1.0
 		var kb := Vector2(dx * knockback_force * 0.4, -knockback_force)
-		body.receive_hit(damage_per_tick, kb)
+		body.receive_hit(damage_per_tick, kb, "lava")
 
 func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):

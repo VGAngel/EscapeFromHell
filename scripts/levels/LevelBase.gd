@@ -793,7 +793,14 @@ func _show_soul_delivered_popup(data: Dictionary = {}) -> void:
 func _on_player_died() -> void:
 	if _is_complete:
 		return
-	var cause: String = "enemy_hit"  # Player.gd can emit cause if extended
+	# Read the cause stashed by Player._take_damage (set by whichever
+	# hazard called _take_damage with a tagged cause string — fall,
+	# spike, lava, void, enemy_hit). Without this every death stat'd
+	# as "enemy_hit" and the Statistics screen's per-cause breakdown
+	# was wrong.
+	var cause: String = "enemy_hit"
+	if _player and "_last_damage_cause" in _player:
+		cause = String(_player.get("_last_damage_cause"))
 	GameManager.trigger_death(cause)
 
 func _on_player_hp_changed(hp: int, max_hp: int) -> void:

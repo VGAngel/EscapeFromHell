@@ -48,6 +48,12 @@ var staff_sin_cost: int   = 1
 var max_hp: int = 3
 var current_hp: int = 3
 
+# Cause of the most recent damage tick — read by LevelBase._on_player_died
+# so per-cause death stats (fall vs enemy vs lava vs void) get tallied
+# correctly. The previous version hardcoded "enemy_hit" for every death,
+# so the Statistics screen's per-cause breakdown was always wrong.
+var _last_damage_cause: String = "enemy_hit"
+
 # ── Runtime state ─────────────────────────────────────────────────────────────
 var _coyote_timer:      float = 0.0
 var _jump_buffer_timer: float = 0.0
@@ -601,24 +607,29 @@ func _apply_fall_damage_for(fallen: float) -> void:
 		var threshold: float = LevelGenerator.MAX_JUMP_HEIGHT \
 				* float(tier.min_jumps) * threshold_scale
 		if fallen > threshold:
-			_take_damage(int(tier.damage))
+			_take_damage(int(tier.damage), "fall")
 			return
 
 # ── Damage & death ────────────────────────────────────────────────────────────
 
 ## Called by external hazards (Pursuer, traps, etc.).
 ## Applies damage and, if the hit landed, adds an instant velocity impulse.
-func receive_hit(amount: int, knockback: Vector2) -> void:
+## `cause` lets hazards label themselves (e.g. "spike", "lava") so the
+## Statistics screen's per-cause breakdown is accurate. Defaults to
+## "enemy_hit" for backward-compat with existing call sites.
+func receive_hit(amount: int, knockback: Vector2, cause: String = "enemy_hit") -> void:
 	var was_blocked := _invincibility_timer > 0.0 or _soul_shield_timer > 0.0
-	_take_damage(amount)
+	_take_damage(amount, cause)
 	if not was_blocked:
 		velocity += knockback
 
-func _take_damage(amount: int) -> void:
+func _take_damage(amount: int, cause: String = "enemy_hit") -> void:
 	if _invincibility_timer > 0.0:
 		return
 	if _soul_shield_timer > 0.0:
 		return
+	# Stash so LevelBase._on_player_died can route the per-cause stat.
+	_last_damage_cause = cause
 	current_hp -= amount
 	_invincibility_timer = 1.2
 	hp_changed.emit(current_hp, max_hp)
