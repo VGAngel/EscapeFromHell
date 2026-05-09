@@ -237,6 +237,17 @@ func _apply_volume(bus_name: String, pct: int) -> void:
 	var idx := AudioServer.get_bus_index(bus_name)
 	if idx < 0:
 		return
+	# Godot's linear_to_db(0.0) returns -INF, and set_bus_volume_db
+	# with -INF is supposed to fully silence the bus — but the engine
+	# clamps it to a finite floor (~-80 dB) in practice, so faint
+	# residual sound can still leak through at "0%". Apply an explicit
+	# bus mute when the slider is at 0 so muting actually mutes; only
+	# the Master bus has its dedicated mute toggle elsewhere, so we
+	# scope this to the bus we're actually adjusting here.
+	if pct <= 0:
+		AudioServer.set_bus_mute(idx, true)
+		return
+	AudioServer.set_bus_mute(idx, false)
 	var db: float = linear_to_db(clampf(pct / 100.0, 0.0, 1.0))
 	AudioServer.set_bus_volume_db(idx, db)
 
