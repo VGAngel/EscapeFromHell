@@ -604,7 +604,15 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 			if GameManager:
 				GameManager.activate_bonus("torch", "🔦", 30.0)
 	if TutorialManager and TutorialManager.has_method("show_hint"):
-		TutorialManager.show_hint("bonus_" + bonus_name.to_lower())
+		# Prefix with "tutorial." so TutorialManager.show_hint accepts
+		# the id even though there's no matching entry in
+		# tutorial_config.json triggers section. Without the prefix,
+		# show_hint short-circuits at the
+		# `not hint_id.begins_with("tutorial.")` guard and silently
+		# drops the bonus tutorial — players never saw the explainer
+		# the first time they touched a holy_water / prayer_stone /
+		# manna pickup via this codepath.
+		TutorialManager.show_hint("tutorial.bonus_" + bonus_name.to_lower())
 
 ## Called when the player dies while carrying a soul. Player.gd emits one
 ## soul_dropped per carried soul, so each call respawns ONE pickup at the

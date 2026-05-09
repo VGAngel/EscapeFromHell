@@ -580,9 +580,11 @@ func show_pickup_button(value: bool) -> void:
 	if _mobile_controls:
 		_mobile_controls.show_pickup_button(value)
 
+const MobileControlsScript: GDScript = preload("res://scripts/ui/MobileControls.gd")
+
+
 func _build_mobile_controls() -> void:
-	var mc_script: GDScript = preload("res://scripts/ui/MobileControls.gd")
-	_mobile_controls = mc_script.new()
+	_mobile_controls = MobileControlsScript.new()
 	_root.add_child(_mobile_controls)
 
 # ── Sin-source toast (S1) ────────────────────────────────────────────────────
