@@ -171,8 +171,10 @@ func test_circle_filter_reduces_cell_count() -> void:
 func test_type_filter_reduces_cell_count() -> void:
 	screen._on_type_btn("innocent")
 	await get_tree().process_frame
-	# Only innocent: Іван = 1
-	assert_eq(screen._grid.get_child_count(), 1)
+	# Innocent named (Іван) + the hidden soul — hidden souls always
+	# pass the type filter on purpose (see _passes_filter and the
+	# accompanying test_hidden_soul_passes_type_filter_when_specific_type_selected).
+	assert_eq(screen._grid.get_child_count(), 2)
 
 func test_missing_filter_hides_saved_soul() -> void:
 	SaveManager.add_soul(1)
@@ -472,13 +474,20 @@ func test_grand_total_label_exists() -> void:
 		"grand total label should be built in the header")
 
 func test_grand_total_combines_named_and_hidden_targets() -> void:
-	# 3 named + 1 hidden in TEST data → target = 4. With nothing saved,
-	# label should mention "0" and "4".
+	# _refresh_counters reads named/hidden TARGETS from SaveManager
+	# (which delegates to the LevelGenerator autoload's souls_collection
+	# count) — NOT from the screen's injected `_named_souls` test data.
+	# So we assert the math, not the literal "4": grand_target should
+	# equal named_target + hidden_target. The label must contain that
+	# combined number alongside the saved count "0".
 	screen._refresh_counters()
+	var n_target: int = SaveManager.get_named_souls_target()
+	var h_target: int = SaveManager.get_hidden_souls_target()
+	var grand_target: int = n_target + h_target
 	assert_true(screen._lbl_total.text.contains("0"),
 		"grand total label should show the saved count")
-	assert_true(screen._lbl_total.text.contains("4"),
-		"grand total label should show named+hidden combined target")
+	assert_true(screen._lbl_total.text.contains(str(grand_target)),
+		"grand total label should show named+hidden combined target (%d)" % grand_target)
 
 func test_grand_total_advances_after_saving() -> void:
 	SaveManager.add_soul(1)

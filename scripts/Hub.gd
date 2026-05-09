@@ -348,11 +348,21 @@ func _speaker_label(speaker: String) -> String:
 
 
 # Loc.t() with fallback so the hub still renders if Loc isn't loaded
-# (early boot, headless tests).
+# (early boot, headless tests). Use the global `Loc` autoload symbol
+# directly instead of get_node_or_null("/root/Loc") so this works from
+# unit tests that instantiate Hub.gd outside the scene tree (the
+# absolute-path lookup would otherwise log "Can't use get_node() with
+# absolute paths from outside the active scene tree" AND return null).
 func _t(key: String, params: Dictionary = {}, fallback: String = "") -> String:
-	var loc: Node = get_node_or_null("/root/Loc")
-	if loc and loc.has_method("t"):
-		return String(loc.t(key, params))
+	# `Loc` is a global autoload (project.godot line 36) so it's
+	# accessible as a top-level symbol regardless of whether `self` is
+	# in the scene tree. The previous get_node_or_null("/root/Loc")
+	# version logged "Can't use get_node() with absolute paths from
+	# outside the active scene tree" whenever a unit test instantiated
+	# Hub.gd in isolation, AND it returned null on that error path so
+	# the function fell through to the raw key string.
+	if Loc and Loc.has_method("t"):
+		return String(Loc.t(key, params))
 	return fallback if not fallback.is_empty() else key
 
 # ── Prologue ──────────────────────────────────────────────────────────────────

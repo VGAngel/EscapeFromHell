@@ -533,6 +533,31 @@ func _rebuild_grid() -> void:
 		_cell_nodes[id] = cell
 
 
+# Ukrainian alphabet → 2-digit rank, padded so lexicographic compare
+# matches the alphabetical order. Used by the "name" sort mode below
+# because raw codepoint comparison places і / ї / є in the wrong
+# slots relative to и / й / е.
+const _UA_ALPHABET_ORDER := {
+	"а": "01", "б": "02", "в": "03", "г": "04", "ґ": "05", "д": "06",
+	"е": "07", "є": "08", "ж": "09", "з": "10", "и": "11", "і": "12",
+	"ї": "13", "й": "14", "к": "15", "л": "16", "м": "17", "н": "18",
+	"о": "19", "п": "20", "р": "21", "с": "22", "т": "23", "у": "24",
+	"ф": "25", "х": "26", "ц": "27", "ч": "28", "ш": "29", "щ": "30",
+	"ь": "31", "ю": "32", "я": "33",
+}
+
+
+# Convert a string into a sort key whose lexicographic order matches
+# the Ukrainian alphabet. Unknown chars (latin, digits, punctuation)
+# get a "99" prefix so they cluster after Cyrillic but stay self-stable.
+func _ua_sort_key(s: String) -> String:
+	var lower: String = s.to_lower()
+	var key: String = ""
+	for ch in lower:
+		key += String(_UA_ALPHABET_ORDER.get(ch, "99" + ch))
+	return key
+
+
 # Returns a copy of `souls` ordered by the current _sort_mode. Stable
 # secondary sort by id so identical primary keys (same circle, same
 # type) keep a deterministic order between rebuilds.
@@ -541,8 +566,12 @@ func _sort_souls(souls: Array) -> Array:
 	match _sort_mode:
 		"name":
 			out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-				var na: String = String(a.get("name", "")).to_lower()
-				var nb: String = String(b.get("name", "")).to_lower()
+				# Codepoint < on lowercased Cyrillic strings sorts wrong:
+				# е.g. і (U+0456) lands AFTER м (U+043C) by raw codepoint
+				# even though м is alphabetically later in Ukrainian.
+				# Map each char to its alphabet index via _ua_sort_key.
+				var na: String = _ua_sort_key(String(a.get("name", "")))
+				var nb: String = _ua_sort_key(String(b.get("name", "")))
 				if na == nb:
 					return int(a.get("id", 0)) < int(b.get("id", 0))
 				return na < nb)

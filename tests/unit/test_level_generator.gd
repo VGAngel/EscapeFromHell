@@ -225,14 +225,17 @@ func test_soul_for_level_returns_distributed_soul() -> void:
 	# Distribution maps level → assigned souls. Pre-set it so this unit
 	# test doesn't depend on LevelConfig's full level catalogue.
 	lg._distribution = {12: [{"id": 7, "name": "Іван", "circle": 2, "level": 0}]}
-	lg._distribution_seed = "test_seed"  # prevents rebuild
+	# Match SaveManager.get_world_seed_str() default ("") so
+	# _ensure_distribution treats the manually-seeded _distribution as
+	# already-current and skips the rebuild that would clear it.
+	lg._distribution_seed = SaveManager.get_world_seed_str() if SaveManager else ""
 	lg._hidden_soul_levels = {}
 	var soul: Dictionary = lg._soul_for_level(12, 2)
 	assert_eq(soul.get("id"), 7)
 
 func test_soul_for_level_returns_empty_when_level_not_in_distribution() -> void:
 	lg._distribution = {12: [{"id": 7, "circle": 2, "level": 0}]}
-	lg._distribution_seed = "test_seed"
+	lg._distribution_seed = SaveManager.get_world_seed_str() if SaveManager else ""
 	lg._hidden_soul_levels = {}
 	var soul: Dictionary = lg._soul_for_level(99, 2)  # not in distribution
 	assert_true(soul.is_empty())
@@ -244,7 +247,7 @@ func test_souls_for_level_returns_all_assigned_when_count_matches() -> void:
 		{"id": 1, "circle": 1, "level": 0},
 		{"id": 2, "circle": 1, "level": 0},
 	]}
-	lg._distribution_seed = "test_seed"
+	lg._distribution_seed = SaveManager.get_world_seed_str() if SaveManager else ""
 	var souls: Array = lg._souls_for_level(5, 1, 2)
 	assert_eq(souls.size(), 2)
 
@@ -254,7 +257,7 @@ func test_souls_for_level_trims_excess_when_count_smaller_than_assigned() -> voi
 		{"id": 2, "circle": 1, "level": 0},
 		{"id": 3, "circle": 1, "level": 0},
 	]}
-	lg._distribution_seed = "test_seed"
+	lg._distribution_seed = SaveManager.get_world_seed_str() if SaveManager else ""
 	var souls: Array = lg._souls_for_level(5, 1, 1)
 	assert_eq(souls.size(), 1)
 
