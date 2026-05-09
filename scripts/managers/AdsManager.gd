@@ -52,10 +52,24 @@ func _load_config() -> void:
 		push_error("AdsManager: failed to parse monetization_config.json")
 		return
 	_cfg = parsed
-	_sku_no_ads  = _cfg["iap"]["no_ads"]["sku"]
-	_skus_donate = _cfg["iap"]["donate"]["tiers"].map(func(t): return t["sku"])
-	_interstitial_cooldown  = float(_cfg["admob"]["interstitial"]["cooldown_seconds"])
-	_interstitial_triggers  = _cfg["admob"]["interstitial"]["show_on"]
+	# Defensive: a corrupted / partial monetization_config.json would
+	# previously crash the autoload at boot ("Dictionary key not
+	# found"). Read every nested key via .get() with sensible
+	# fallbacks so the rest of the game still loads — ads + IAP just
+	# won't be configured.
+	var iap: Dictionary = _cfg.get("iap", {})
+	var iap_no_ads: Dictionary = iap.get("no_ads", {})
+	var iap_donate: Dictionary = iap.get("donate", {})
+	var donate_tiers: Array = iap_donate.get("tiers", [])
+	var admob: Dictionary = _cfg.get("admob", {})
+	var admob_interstitial: Dictionary = admob.get("interstitial", {})
+
+	_sku_no_ads  = String(iap_no_ads.get("sku", ""))
+	_skus_donate = donate_tiers.map(func(t): return String(t.get("sku", "")))
+	_interstitial_cooldown = float(admob_interstitial.get("cooldown_seconds", 60.0))
+	_interstitial_triggers = admob_interstitial.get("show_on", [])
+	if _sku_no_ads.is_empty():
+		push_warning("AdsManager: missing iap.no_ads.sku — IAP unavailable")
 
 # ── AdMob ─────────────────────────────────────────────────────────────────────
 func _setup_admob() -> void:
@@ -173,7 +187,10 @@ func get_banner_height() -> int:
 	return int(_cfg["layout"]["banner_height_px"])
 
 func get_donate_tiers() -> Array:
-	return _cfg["iap"]["donate"]["tiers"] if _cfg.has("iap") else []
+	# .has("iap") alone wasn't enough — if "iap" was present but
+	# "donate" or "tiers" was missing, the chained subscript still
+	# crashed. Walk the path defensively.
+	return _cfg.get("iap", {}).get("donate", {}).get("tiers", [])
 
 func _on_purchases_updated(purchases: Array) -> void:
 	for purchase in purchases:
