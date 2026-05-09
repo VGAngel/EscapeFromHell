@@ -36,11 +36,13 @@ func _ready() -> void:
 	# Start fully transparent — let _on_sin_changed drive the actual alpha.
 	modulate.a = 0.0
 	# Subscribe to the live signal first; if it's not available, fall back to
-	# a one-shot poll of SaveManager.
-	if Engine.has_singleton("GameManager") or get_node_or_null("/root/GameManager"):
-		var gm: Node = get_node_or_null("/root/GameManager")
-		if gm and gm.has_signal("sin_changed"):
-			gm.sin_changed.connect(_on_sin_changed)
+	# a one-shot poll of SaveManager. Use the global autoload symbol —
+	# Engine.has_singleton() returns false for project autoloads (those
+	# are global script symbols, not engine singletons), so the previous
+	# OR-with-Engine.has_singleton was always evaluating only the
+	# get_node_or_null branch.
+	if GameManager and GameManager.has_signal("sin_changed"):
+		GameManager.sin_changed.connect(_on_sin_changed)
 	_initial_poll()
 	# Reduce-motion: the pulsing veins are exactly the kind of animation
 	# motion-sensitive players want disabled. We freeze the time uniform
