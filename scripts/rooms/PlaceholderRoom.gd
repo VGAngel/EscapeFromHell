@@ -1467,10 +1467,18 @@ func _assign_sections(row_count: int, rng: RandomNumberGenerator) -> Array[Strin
 	return assignment
 
 # Pick a numeric option from a [[value, weight], ...] table. Used for widths.
+# Empty / all-zero-weight tables would have crashed at the trailing
+# `table[size() - 1]` index on size 0 (size-1 == -1 → out of bounds).
+# Return a safe default (1.0) instead so a malformed profile doesn't
+# kill the level generator.
 func _sample_weighted(table: Array, rng: RandomNumberGenerator) -> float:
+	if table.is_empty():
+		return 1.0
 	var total: float = 0.0
 	for row in table:
 		total += float(row[1])
+	if total <= 0.0:
+		return float(table[0][0])
 	var pick: float = rng.randf() * total
 	var acc: float = 0.0
 	for row in table:
@@ -1480,10 +1488,17 @@ func _sample_weighted(table: Array, rng: RandomNumberGenerator) -> float:
 	return float(table[table.size() - 1][0])
 
 # Pick a string option from a [[value, weight], ...] table. Used for types.
+# Same empty-table guard as _sample_weighted above — a malformed level
+# profile shouldn't take the whole generator down with an out-of-bounds
+# index.
 func _sample_weighted_str(table: Array, rng: RandomNumberGenerator) -> String:
+	if table.is_empty():
+		return ""
 	var total: float = 0.0
 	for row in table:
 		total += float(row[1])
+	if total <= 0.0:
+		return String(table[0][0])
 	var pick: float = rng.randf() * total
 	var acc: float = 0.0
 	for row in table:
