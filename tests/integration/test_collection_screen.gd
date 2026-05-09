@@ -10,15 +10,15 @@ const CollectionScreenScene := preload("res://scenes/ui/CollectionScreen.tscn")
 
 const TEST_NAMED := [
 	{"id": 1, "name": "Іван",  "circle": 1, "type": "innocent", "age": 25, "level": 1,
-	 "sin": "none",  "full_story": "Тест"},
+	"sin": "none",  "full_story": "Тест"},
 	{"id": 2, "name": "Марія", "circle": 2, "type": "broken",   "age": 30, "level": 2,
-	 "sin": "greed", "full_story": "Тест 2"},
+	"sin": "greed", "full_story": "Тест 2"},
 	{"id": 3, "name": "Петро", "circle": 1, "type": "sleeping",  "age": 45, "level": 1,
-	 "sin": "none",  "full_story": "Тест 3"},
+	"sin": "none",  "full_story": "Тест 3"},
 ]
 const TEST_HIDDEN := [
 	{"id": "h1", "name": "Ангел", "circle": 3, "type": "hidden", "age": 99,
-	 "reward": "Додаткове життя"},
+	"reward": "Додаткове життя"},
 ]
 
 var screen: Node
