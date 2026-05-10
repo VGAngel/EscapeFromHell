@@ -38,6 +38,11 @@ const DEFAULTS := {
 	"resolution":       "fhd",
 	"haptics":          true,
 	"reduce_motion":    false,
+	# Default ON — repeated deaths on a level forget one previously-saved
+	# named soul (every 3rd death, capped at 5 per level). Players can
+	# disable via the toggle on the Graphics tab if they prefer the old
+	# weightless-respawn flow.
+	"soul_stakes":      true,
 }
 
 # ── State ─────────────────────────────────────────────────────────────────────
@@ -99,6 +104,11 @@ var _edit_overlay:   CanvasLayer = null
 # Graphics page widgets
 @onready var _toggle_vsync:        Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/VsyncRow/Toggle
 @onready var _toggle_reduce_motion: Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/ReduceMotionRow/Toggle
+@onready var _graphics_page: VBoxContainer = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage
+# Soul-stakes toggle row is built at runtime by _build_soul_stakes_row()
+# so the .tscn doesn't need to grow another row each time we add a
+# difficulty option.
+var _toggle_soul_stakes: Button = null
 @onready var _res_fhd: Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/ResFhd
 @onready var _res_hd:  Button = $Backdrop/Centerer/Panel/VBox/PagesMargin/PagesStack/GraphicsPage/ResHd
 
@@ -333,6 +343,44 @@ func _on_reduce_motion_pressed() -> void:
 	_update_toggle(_toggle_reduce_motion, enabled)
 	_save()
 
+
+# Build the Soul Stakes row programmatically (Label + ON/OFF toggle)
+# and append it to the GraphicsPage. Mirrors the visual style of the
+# adjacent ReduceMotionRow so the player doesn't notice it's a
+# late-added widget. Called once from _wire_widgets.
+func _build_soul_stakes_row() -> void:
+	if _graphics_page == null:
+		return
+	var row := HBoxContainer.new()
+	row.name = "SoulStakesRow"
+	row.add_theme_constant_override("separation", 12)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_graphics_page.add_child(row)
+
+	var lbl := Label.new()
+	lbl.name = "Label"
+	lbl.text = _t("settings.soul_stakes_label", {}, "Ставки душ")
+	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl.tooltip_text = _t("settings.soul_stakes_help", {},
+			"Кожна 3-тя смерть на рівні забирає одну врятовану душу")
+	row.add_child(lbl)
+
+	_toggle_soul_stakes = Button.new()
+	_toggle_soul_stakes.name = "Toggle"
+	_toggle_soul_stakes.custom_minimum_size = Vector2(110, 56)
+	_toggle_soul_stakes.add_theme_font_size_override("font_size", 22)
+	_toggle_soul_stakes.focus_mode = Control.FOCUS_NONE
+	_toggle_soul_stakes.pressed.connect(_on_soul_stakes_pressed)
+	row.add_child(_toggle_soul_stakes)
+
+
+func _on_soul_stakes_pressed() -> void:
+	var enabled: bool = not _data.get("soul_stakes", true)
+	_data["soul_stakes"] = enabled
+	_update_toggle(_toggle_soul_stakes, enabled)
+	_save()
+
 func _on_resolution_pressed(preset: String) -> void:
 	_data["resolution"] = preset
 	_apply_resolution(preset)
@@ -362,6 +410,8 @@ func _refresh_widgets() -> void:
 
 	_update_toggle(_toggle_vsync, vsync)
 	_update_toggle(_toggle_reduce_motion, _data.get("reduce_motion", false))
+	if _toggle_soul_stakes != null:
+		_update_toggle(_toggle_soul_stakes, _data.get("soul_stakes", true))
 
 	for preset in _resolution_btns:
 		_style_choice_btn(_resolution_btns[preset], preset == res)
@@ -415,6 +465,7 @@ func _wire_widgets() -> void:
 	_resolution_btns = {"fhd": _res_fhd, "hd": _res_hd}
 	_res_fhd.pressed.connect(_on_resolution_pressed.bind("fhd"))
 	_res_hd.pressed.connect(_on_resolution_pressed.bind("hd"))
+	_build_soul_stakes_row()
 
 	# Keys page — mobile section
 	_size_slider.value_changed.connect(_on_mobile_size_changed)

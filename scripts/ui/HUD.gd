@@ -142,6 +142,12 @@ func _ready() -> void:
 	# the player can connect each delta to its source.
 	if GameManager and GameManager.has_signal("sin_added"):
 		GameManager.sin_added.connect(_on_sin_added)
+	# Soul-stakes pipeline. soul_forgotten fires when the player's
+	# repeated death on a level forgets one previously-saved soul; we
+	# surface a sad-purple toast with the soul's name so the loss
+	# carries narrative weight instead of a silent counter decrement.
+	if GameManager and GameManager.has_signal("soul_forgotten"):
+		GameManager.soul_forgotten.connect(_on_soul_forgotten)
 
 
 # Add a SinVignette as a non-interactive overlay sibling. Built in code
@@ -666,5 +672,76 @@ func _spawn_sin_toast(amount: float, cause: String) -> void:
 	var tw := create_tween()
 	tw.tween_property(panel, "modulate:a", 1.0, _SIN_TOAST_FADE_IN)
 	tw.tween_interval(_SIN_TOAST_HOLD)
+	tw.tween_property(panel, "modulate:a", 0.0, _SIN_TOAST_FADE_OUT)
+	tw.tween_callback(panel.queue_free)
+
+
+# ── Soul-forgotten toast (soul-stakes mechanic) ──────────────────────────────
+
+func _on_soul_forgotten(soul_id: int, is_first_loss: bool) -> void:
+	var soul_name: String = _lookup_soul_name(soul_id)
+	_spawn_soul_forgotten_toast(soul_name)
+	# First loss only: surface the explainer hint via TutorialManager so
+	# the player understands what just happened and where to disable it.
+	# show_every_time:false in the dict means subsequent losses are
+	# silent past the toast.
+	if is_first_loss and TutorialManager and TutorialManager.has_method("show_hint"):
+		TutorialManager.show_hint("tutorial.soul_stakes_intro")
+
+
+func _lookup_soul_name(soul_id: int) -> String:
+	if not LevelGenerator:
+		return "%d" % soul_id
+	if not LevelGenerator.has_method("get_named_souls"):
+		return "%d" % soul_id
+	for soul: Dictionary in LevelGenerator.get_named_souls():
+		if int(soul.get("id", 0)) == soul_id:
+			return String(soul.get("name", "%d" % soul_id))
+	return "%d" % soul_id
+
+
+func _spawn_soul_forgotten_toast(soul_name: String) -> void:
+	# Cap on the same toast queue as sin events so the bottom area
+	# can't overflow.
+	while _sin_toast_box.get_child_count() >= _SIN_TOAST_MAX:
+		_sin_toast_box.get_child(0).queue_free()
+
+	var text: String = _t("hud.soul_forgotten_format",
+			{"name": soul_name},
+			"✦ Душа %s втратила віру" % soul_name)
+
+	var panel := PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	# Sad-purple, distinct from sin (red) and cleansing (green).
+	style.bg_color     = Color(0.10, 0.06, 0.16, 0.92)
+	style.border_color = Color("#7A4A9C")
+	for side in ["left", "right", "top", "bottom"]:
+		style.set("border_width_" + side, 2)
+	for corner in ["top_left", "top_right", "bottom_left", "bottom_right"]:
+		style.set("corner_radius_" + corner, 10)
+	style.content_margin_left   = 16.0
+	style.content_margin_right  = 16.0
+	style.content_margin_top    = 8.0
+	style.content_margin_bottom = 8.0
+	panel.add_theme_stylebox_override("panel", style)
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_color_override("font_color", Color("#E0CFFA"))
+	lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.85))
+	lbl.add_theme_constant_override("outline_size", 4)
+	panel.add_child(lbl)
+
+	_sin_toast_box.add_child(panel)
+	panel.modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(panel, "modulate:a", 1.0, _SIN_TOAST_FADE_IN)
+	# Hold a beat longer than sin toasts — the player should read the
+	# soul's name carefully.
+	tw.tween_interval(_SIN_TOAST_HOLD * 1.5)
 	tw.tween_property(panel, "modulate:a", 0.0, _SIN_TOAST_FADE_OUT)
 	tw.tween_callback(panel.queue_free)

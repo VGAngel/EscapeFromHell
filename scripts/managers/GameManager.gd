@@ -15,6 +15,11 @@ signal player_respawned
 signal sin_changed(new_value: float)
 signal hp_changed(hp: int, max_hp: int)
 signal soul_collected_in_level(found: int, total: int)
+## Emitted when the soul-stakes mechanic forgets a previously-saved
+## soul. `soul_id` is the registry key, `is_first_loss` lets the HUD
+## decide whether to also surface the explainer hint (fires once per
+## save). Listeners are the HUD (toast) and StatisticsScreen if open.
+signal soul_forgotten(soul_id: int, is_first_loss: bool)
 @warning_ignore("unused_signal")
 signal game_over  # reserved for future hard-fail states
 
@@ -30,6 +35,13 @@ const SCENE_ENDING       := "res://scenes/endings/EndingScreen.tscn"
 const SIN_ON_DEATH         := 5.0
 const SIN_ON_SOFT_EXTRA    := 5.0
 const SCREEN_DARKEN_DURATION := 0.6
+
+# Soul-stakes mechanic — every Nth death on a level forgets one
+# previously-saved named soul, capped per level so a single brutal
+# attempt can't wipe the registry. Default ON (the game's whole
+# premise is "sin has a price"); player can disable in Settings.
+const SOUL_STAKES_DEATH_THRESHOLD := 3   # forget on every 3rd death
+const SOUL_STAKES_CAP_PER_LEVEL   := 5   # max souls forgotten per level
 
 # ── Death limits per level type ───────────────────────────────────────────────
 const DEATH_LIMITS := {
@@ -48,6 +60,7 @@ var _max_hp:       int   = 3
 var _sin_at_level_start: float = 0.0
 
 var _deaths_this_level:    int  = 0
+var _souls_lost_this_level: int = 0   # souls forgotten by the stakes mechanic
 var _souls_found_this_level: int = 0
 var _souls_total_this_level: int = 0
 var _level_start_time:     float = 0.0
@@ -88,6 +101,7 @@ func begin_level(level_id: int, souls_total: int) -> void:
 	current_circle   = ceili(float(level_id) / 10.0)
 
 	_deaths_this_level = 0
+	_souls_lost_this_level = 0
 	_souls_found_this_level = 0
 	_souls_total_this_level = souls_total
 	_forgiveness_used = false
@@ -197,6 +211,11 @@ func trigger_death(cause: String = "enemy_hit") -> void:
 	if SaveManager:
 		SaveManager.add_stat("deaths_total", 1)
 		SaveManager.incr_death_cause(cause)
+	# Soul-stakes: every Nth death on a level forgets one saved soul,
+	# capped per level so a single chaotic attempt can't wipe progress.
+	# Skipped when the player has disabled the mechanic in settings or
+	# the registry is already empty.
+	_apply_soul_stakes_if_due()
 	player_died.emit(_deaths_this_level)
 
 	# Darken screen then respawn
@@ -229,6 +248,52 @@ func _do_respawn(overlay: ColorRect) -> void:
 
 	_is_transitioning = false
 	player_respawned.emit()
+
+# Soul-stakes — pull one named soul out of the registry every Nth
+# death. Capped per level. The setting (default ON) lives in
+# settings.json under "soul_stakes" so SettingsScreen can toggle it
+# without round-tripping through SaveManager.
+func _apply_soul_stakes_if_due() -> void:
+	if not _is_soul_stakes_enabled():
+		return
+	if _souls_lost_this_level >= SOUL_STAKES_CAP_PER_LEVEL:
+		return
+	if _deaths_this_level % SOUL_STAKES_DEATH_THRESHOLD != 0:
+		return
+	if SaveManager == null or not SaveManager.has_method("forget_random_saved_soul"):
+		return
+	var lost_id: int = int(SaveManager.forget_random_saved_soul())
+	if lost_id < 0:
+		return  # registry empty — nothing to forget
+	_souls_lost_this_level += 1
+	# First-loss-ever flag drives the explainer hint in HUD. Marked
+	# seen via the same SaveManager hint-flag bucket as TutorialManager.
+	var first_loss: bool = false
+	if SaveManager.has_method("is_hint_seen") \
+			and not SaveManager.is_hint_seen("soul_stakes_seen"):
+		first_loss = true
+		if SaveManager.has_method("mark_hint_seen"):
+			SaveManager.mark_hint_seen("soul_stakes_seen")
+	soul_forgotten.emit(lost_id, first_loss)
+	if _hud:
+		# HUD's saved-souls counter needs to reflect the new total.
+		_hud.set_total_souls(SaveManager.get_total_souls())
+
+
+func _is_soul_stakes_enabled() -> bool:
+	# Settings persists this in user://settings.json under "soul_stakes".
+	# Default ON. We read directly from disk on each death (cheap; one
+	# small JSON file) so a Settings toggle takes effect without us
+	# having to wire a signal between SettingsScreen and GameManager.
+	var f := FileAccess.open("user://settings.json", FileAccess.READ)
+	if not f:
+		return true  # default ON when no settings file yet
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if not parsed is Dictionary:
+		return true
+	return bool(parsed.get("soul_stakes", true))
+
 
 func _check_death_limit() -> void:
 	var level_type: String = LevelConfig.get_level_type(current_level_id) if LevelConfig else "platformer"

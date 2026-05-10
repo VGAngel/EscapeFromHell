@@ -337,3 +337,36 @@ func test_level_bests_isolated_per_level() -> void:
 	assert_eq(sm.get_level_best(1).get("time"), 25.0)
 	assert_eq(sm.get_level_best(2).get("time"), 50.0)
 	assert_eq(sm.get_level_best(99), {}, "untouched level still empty")
+
+# ── Soul stakes — forget_random_saved_soul ────────────────────────────────────
+
+func test_forget_random_saved_soul_returns_minus_one_when_empty() -> void:
+	# No souls saved yet — must signal "nothing to forget" via -1.
+	assert_eq(sm.forget_random_saved_soul(), -1)
+
+func test_forget_random_saved_soul_returns_one_of_the_saved_ids() -> void:
+	sm.add_soul(7)
+	sm.add_soul(11)
+	sm.add_soul(42)
+	var lost: int = sm.forget_random_saved_soul()
+	assert_true(lost in [7, 11, 42], "must return one of the saved ids")
+
+func test_forget_random_saved_soul_decreases_total() -> void:
+	sm.add_soul(1); sm.add_soul(2); sm.add_soul(3)
+	sm.forget_random_saved_soul()
+	assert_eq(sm.get_total_souls(), 2,
+		"total_souls counter must reflect the new size after forget")
+
+func test_forget_random_saved_soul_removes_from_registry() -> void:
+	sm.add_soul(5)
+	var lost: int = sm.forget_random_saved_soul()
+	assert_eq(lost, 5)
+	assert_false(sm.has_soul(5),
+		"forgotten soul must no longer report has_soul = true")
+
+func test_forget_random_saved_soul_increments_lost_stat() -> void:
+	sm.add_soul(1); sm.add_soul(2)
+	sm.forget_random_saved_soul()
+	sm.forget_random_saved_soul()
+	assert_eq(int(sm.get_stat("souls_lost_total", 0)), 2,
+		"every forget must add to the lifetime stat counter")

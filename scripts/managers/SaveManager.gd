@@ -279,6 +279,28 @@ func add_soul(soul_id: int) -> void:
 		data["saved_soul_ids"] = ids
 		data["total_souls"]    = ids.size()
 
+
+# Remove ONE saved soul at random and return its id. Used by the
+# "soul stakes" mechanic — every 3rd death on a level forgets one
+# previously-saved soul. Returns -1 when the registry is empty so
+# the caller knows there's nothing left to lose.
+#
+# Caller is responsible for tracking the per-level cap and surfacing
+# UI feedback (toast / hint). This method is intentionally pure data:
+# no signals, no localisation. The id-only return lets the caller
+# look up the soul name through LevelGenerator.get_named_souls().
+func forget_random_saved_soul() -> int:
+	var ids: Array = get_saved_soul_ids()
+	if ids.is_empty():
+		return -1
+	var idx: int = randi() % ids.size()
+	var lost_id: int = int(ids[idx])
+	ids.remove_at(idx)
+	data["saved_soul_ids"] = ids
+	data["total_souls"]    = ids.size()
+	add_stat("souls_lost_total", 1)
+	return lost_id
+
 func has_soul(soul_id: int) -> bool:
 	return soul_id in get_saved_soul_ids()
 
