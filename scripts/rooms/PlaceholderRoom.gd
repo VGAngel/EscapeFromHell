@@ -67,23 +67,28 @@ const VERTICAL_ROOM_SCREENS: int = 1
 # shaft doesn't show an obvious repeat. Circle 1 spans two tilesets
 # (tileset1 = L1-L4, tileset12 = L5+) — both use the same tiered set.
 # A tileset with no entry falls back to flat colored rects.
+# Pure per-tier tiles only — the *_greyGreen / *_dark variants are
+# transition art (top = prev tier, bottom = next), used once at the tier
+# boundary by _draw_textured_facade, not mixed into the random pool.
 const _C1_WALL_TIERS := {
 	"white": [
 		"res://Assets/OurAssets/walls/circle1/wall_white_00.png",
-		"res://Assets/OurAssets/walls/circle1/wall_white_Start.png",
-		"res://Assets/OurAssets/walls/circle1/wall_white_greyGreen.png",
 	],
 	"grey": [
-		"res://Assets/OurAssets/walls/circle1/wall_grey_00.png",
-		"res://Assets/OurAssets/walls/circle1/wall_grey_dark.png",
 		"res://Assets/OurAssets/walls/circle1/wall_greyGreen_00.png",
-		"res://Assets/OurAssets/walls/circle1/wall_greyGreen_grey.png",
+		"res://Assets/OurAssets/walls/circle1/wall_grey_00.png",
 	],
 	"dark": [
 		"res://Assets/OurAssets/walls/circle1/wall_dark_00.png",
 		"res://Assets/OurAssets/walls/circle1/wall_dark_01.png",
 		"res://Assets/OurAssets/walls/circle1/wall_dark_02.png",
 	],
+}
+# Blend tile drawn for the single section where the depth tier first
+# changes (keyed by the tier being entered).
+const _C1_WALL_TRANSITION := {
+	"grey": "res://Assets/OurAssets/walls/circle1/wall_white_greyGreen.png",
+	"dark": "res://Assets/OurAssets/walls/circle1/wall_grey_dark.png",
 }
 const _C1_BACKDROP_TIERS := {
 	"white": ["res://Assets/OurAssets/walls/circle1/background_white.png"],
@@ -483,9 +488,7 @@ func _make_dust_texture() -> Texture2D:
 # Horizontal rooms get four near the high/low rows so the corners stay
 # legible.
 const TORCH_SCRIPT_PATH := "res://scripts/world/Torch.gd"
-const TORCH_VERTICAL_STEP := 480.0
-const TORCH_VERTICAL_INSET := 240.0     # don't put one right at the entry/exit
-const TORCH_WALL_OFFSET := 24.0         # x-distance from inside face of wall
+const TORCH_WALL_OFFSET := 24.0         # x-distance from inside face of wall (horizontal rooms)
 
 func _spawn_torches() -> void:
 	if Engine.is_editor_hint():
@@ -495,25 +498,16 @@ func _spawn_torches() -> void:
 	var torch_script: Script = load(TORCH_SCRIPT_PATH) as Script
 	if torch_script == null:
 		return
+	if is_vertical:
+		# The old fixed-cadence wall torches don't mount onto the new
+		# full-width facade — they read as flames floating in mid-air,
+		# so don't spawn them in vertical shafts.
+		return
 	var x_left: float = max(_side_wall_w + TORCH_WALL_OFFSET, TORCH_WALL_OFFSET)
 	var x_right: float = room_width - x_left
-	if is_vertical:
-		_spawn_torches_vertical(torch_script, x_left, x_right)
-	else:
-		_spawn_torches_horizontal(torch_script, x_left, x_right)
+	_spawn_torches_horizontal(torch_script, x_left, x_right)
 
 
-func _spawn_torches_vertical(torch_script: Script, x_left: float, x_right: float) -> void:
-	# Alternate left/right so adjacent torches don't end up wall-to-wall.
-	var y: float = TORCH_VERTICAL_INSET
-	var on_left := true
-	while y < room_height - TORCH_VERTICAL_INSET * 0.5:
-		var torch: Node2D = torch_script.new()
-		torch.set("circle", circle)
-		torch.position = Vector2(x_left if on_left else x_right, y)
-		add_child(torch)
-		on_left = not on_left
-		y += TORCH_VERTICAL_STEP
 
 
 func _spawn_torches_horizontal(torch_script: Script, x_left: float, x_right: float) -> void:
@@ -576,10 +570,15 @@ const _C1_DECOR := {
 }
 
 const _BUSH_TARGET_H:   float = 130.0    # on-platform bush height (px)
-const _BUSH_CHANCE:     float = 0.45     # fraction of platforms that get a bush
+const _BUSH_CHANCE:     float = 0.22     # fraction of platforms that get a bush
+const _VINE_TARGET_H:   float = 240.0    # ivy drape hanging below a ledge (px)
+const _VINE_CHANCE:     float = 0.22     # fraction of platforms with a vine
 const _WINDOW_TARGET_H: float = 360.0
 const _WINDOW_STEP:     float = 1000.0   # vertical spacing down each wall
 const _WINDOW_INSET:    float = 620.0    # skip the entrance/exit bands
+const _WINDOW_EDGE_FRAC: float = 0.24    # window centre X as fraction from edge
+const _WINDOW_SKY_INSET_X: float = 0.16  # sky shows inside the frame (frac)
+const _WINDOW_SKY_INSET_Y: float = 0.14
 const _ARCH_WIDTH_FRAC: float = 0.78     # arch width as a fraction of room_width
 const _WEB_TARGET_H:    float = 230.0    # corner cobweb size (px)
 const _WEB_STEP:        float = 1500.0   # vertical spacing down each wall
@@ -587,7 +586,7 @@ const _WEB_INSET:       float = 520.0    # skip the entrance/exit bands
 const _CANDLE_FRAMES:   int   = 5        # fire_candle_01..05
 const _CANDLE_FPS:      float = 10.0
 const _CANDLE_TARGET_H: float = 70.0     # small ledge candle (px)
-const _CANDLE_CHANCE:   float = 0.30     # fraction of platforms with a candle
+const _CANDLE_CHANCE:   float = 0.14     # fraction of platforms with a candle
 
 static var _candle_frames_cache: SpriteFrames = null
 
@@ -680,6 +679,19 @@ func _spawn_decorations() -> void:
 		_add_decor_sprite(_decor_tex("bush", _depth_tier(py), rng),
 				Vector2(px, py), _BUSH_TARGET_H, Vector2(0.5, 1.0), 1)
 
+	# Ivy draping off the ledge front — bush art anchored at the platform
+	# underside, hanging downward (top-center pivot).
+	for i in _vert_layout.size():
+		if i == altar_idx or rng.randf() > _VINE_CHANCE:
+			continue
+		var ve: Dictionary = _vert_layout[i]
+		var vpw: float = float(ve.get("width", _platform_width))
+		var vpx: float = float(ve.get("x", room_width * 0.5)) \
+				+ (rng.randf() - 0.5) * maxf(0.0, vpw - 60.0)
+		var vpy: float = float(ve.get("y", 0.0)) + PLATFORM_T * 0.5
+		_add_decor_sprite(_decor_tex("bush", _depth_tier(vpy), rng),
+				Vector2(vpx, vpy), _VINE_TARGET_H, Vector2(0.5, 0.0), 1)
+
 	# Animated ledge candles — small looping flame accents on platforms.
 	var candle_sf: SpriteFrames = _candle_sprite_frames()
 	for i in _vert_layout.size():
@@ -708,19 +720,9 @@ func _spawn_decorations() -> void:
 		anim.play(&"default")
 		add_child(anim)
 
-	# Windows down both side walls, alternating, behind the action.
+	# Windows are now cut into the facade (sky shows through) — see
+	# _draw_windows(), drawn in _draw(). Not floating sprites anymore.
 	var sa_top: float = float(SafeArea.top_reserved) if SafeArea else 0.0
-	var wl: float = _side_wall_w + 30.0
-	var wr: float = room_width - _side_wall_w - 30.0
-	var y: float = _WINDOW_INSET
-	var on_left := true
-	while y < room_height - _WINDOW_INSET:
-		if y > WALL_T + sa_top:
-			_add_decor_sprite(_decor_tex("window", _depth_tier(y), rng),
-					Vector2(wl if on_left else wr, y),
-					_WINDOW_TARGET_H, Vector2(0.5, 0.5), 0)
-		on_left = not on_left
-		y += _WINDOW_STEP
 
 	# Cobwebs hung in the wall corners — grey/dark tiers only, sparse.
 	var web_l: float = _side_wall_w
@@ -1994,7 +1996,39 @@ func _draw_entrance_clouds() -> void:
 	var h: float = room_width * (th / tw)
 	draw_texture_rect(_clouds_tex, Rect2(0.0, 0.0, room_width, h), false)
 
-func _draw_textured_backdrop(x: float, width: float) -> void:
+# Fallback open-band height when the dedicated entrance piece isn't
+# imported; otherwise the regular facade starts right below wall_white_Start.
+const _FACADE_TOP_OPEN: float = 1632.0   # ~0.85 screen
+const _FACADE_START_PATH := "res://Assets/OurAssets/walls/circle1/wall_white_Start.png"
+# The tiled facade starts this far ABOVE the Start piece's bottom so it
+# tucks behind it — hides the hard seam where the two textures meet.
+const _FACADE_START_OVERLAP: float = 140.0
+var _facade_start_tex: Texture2D = null
+var _facade_start_tried: bool = false
+
+# The dedicated entrance piece (wall_white_Start) pinned to the very top
+# of the shaft, full width over the sky. Returns the Y where the regular
+# tiled facade continues (= its native height), or the fallback constant
+# when the art isn't imported.
+func _draw_facade_start() -> float:
+	if not _facade_start_tried:
+		_facade_start_tried = true
+		if ResourceLoader.exists(_FACADE_START_PATH):
+			_facade_start_tex = load(_FACADE_START_PATH) as Texture2D
+	if _facade_start_tex == null:
+		return _FACADE_TOP_OPEN
+	var tw: float = float(_facade_start_tex.get_width())
+	var th: float = float(_facade_start_tex.get_height())
+	if tw <= 0.0 or th <= 0.0:
+		return _FACADE_TOP_OPEN
+	draw_texture_rect_region(
+		_facade_start_tex,
+		Rect2(0.0, 0.0, room_width, th),
+		Rect2(0.0, 0.0, tw, th))
+	return maxf(0.0, th - _FACADE_START_OVERLAP)
+
+func _draw_textured_backdrop(x: float, width: float,
+		modulate: Color = BACKDROP_DIM) -> void:
 	if not _has_tiered(_backdrop_textures_cache):
 		return
 	var rng := RandomNumberGenerator.new()
@@ -2012,42 +2046,96 @@ func _draw_textured_backdrop(x: float, width: float) -> void:
 			tex,
 			Rect2(x, y, width, section_h),
 			Rect2(0.0, 0.0, tex_w, section_h),
-			BACKDROP_DIM
+			modulate
 		)
 		y += tex_h
 
-## Draws one side wall as a stack of textured sections at native pixel scale —
-## no horizontal or vertical stretching. Each section uses the source texture's
-## own height; if the remaining shaft height is shorter, we crop both source
-## and dest to match (taking the top of the texture). Texture pick per section
-## is seeded by level_id so the same level re-renders identically but adjacent
-## levels differ. A native-width vertical slice (random x-offset) is sampled
-## per section so a 768-px source isn't squashed into the 60-px wall.
-func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
+# Full-width tiered stone facade — the shaft IS the wall. Tiles vertically
+# from `start_y` (bottom of the open entrance band) to the floor, picking
+# the wall tier from each section's depth. Replaces the old thin side
+# strips for vertical shafts. Physical collision is unaffected.
+var _wall_transition_cache: Dictionary = {}
+
+func _facade_transition_tex(tier: String) -> Texture2D:
+	if _wall_transition_cache.has(tier):
+		return _wall_transition_cache[tier]
+	var path: String = String(_C1_WALL_TRANSITION.get(tier, ""))
+	var tex: Texture2D = null
+	if path != "" and ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	_wall_transition_cache[tier] = tex
+	return tex
+
+func _draw_textured_facade(start_y: float) -> void:
 	if not _has_tiered(_wall_textures_cache):
 		return
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash("wall_%d_%s" % [level_id, seed_tag])
-	var y: float = 0.0
+	rng.seed = hash("facade_%d" % level_id)
+	var y: float = maxf(0.0, start_y)
+	var prev_tier: String = ""
 	while y < room_height:
-		var pool: Array = _tier_pool(_wall_textures_cache, _depth_tier(y))
-		if pool.is_empty():
-			break
-		var tex: Texture2D = pool[rng.randi() % pool.size()]
+		var tier: String = _depth_tier(y)
+		var tex: Texture2D = null
+		# First section that crosses into a new tier → blend tile.
+		if prev_tier != "" and tier != prev_tier:
+			tex = _facade_transition_tex(tier)
+		if tex == null:
+			var pool: Array = _tier_pool(_wall_textures_cache, tier)
+			if pool.is_empty():
+				break
+			tex = pool[rng.randi() % pool.size()]
+		prev_tier = tier
 		var tex_w: float = float(tex.get_width())
 		var tex_h: float = float(tex.get_height())
-		var slice_w: float = minf(width, tex_w)
-		var x_off: float = rng.randf() * maxf(0.0, tex_w - slice_w)
-		# Use the texture's native height as the section size — no vertical stretch.
-		# The last section may be shorter than the texture, in which case we crop
-		# both src and dest by the same amount so the ratio stays 1:1.
 		var section_h: float = minf(tex_h, room_height - y)
+		# Sample a native-width horizontal slice at a random X instead of
+		# squashing the whole 2048-px source into room_width — no brick
+		# distortion, and each section shows a different part so a single
+		# variant doesn't read as an obvious vertical repeat.
+		var slice_w: float = minf(room_width, tex_w)
+		var x_off: float = rng.randf() * maxf(0.0, tex_w - slice_w)
 		draw_texture_rect_region(
 			tex,
-			Rect2(x, y, width, section_h),
+			Rect2(0.0, y, room_width, section_h),
 			Rect2(x_off, 0.0, slice_w, section_h)
 		)
 		y += tex_h
+
+# Windows cut into the facade: a sky/parallax patch (tier background)
+# painted over the stone, framed by the window_* art. Drawn after the
+# facade so it reads as an opening. Own seed → independent of decor RNG.
+func _draw_windows(start_y: float) -> void:
+	if not _has_tiered(_wall_textures_cache):
+		return
+	var sa_top: float = float(SafeArea.top_reserved) if SafeArea else 0.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("window_%d" % level_id)
+	var cx_l: float = room_width * _WINDOW_EDGE_FRAC
+	var cx_r: float = room_width - room_width * _WINDOW_EDGE_FRAC
+	var y: float = maxf(start_y, _WINDOW_INSET) + _WINDOW_STEP * 0.5
+	var on_left := true
+	while y < room_height - _WINDOW_INSET:
+		if y > start_y and y > WALL_T + sa_top:
+			var tier: String = _depth_tier(y)
+			var frame: Texture2D = _decor_tex("window", tier, rng)
+			if frame and frame.get_height() > 0:
+				var fw: float = float(frame.get_width())
+				var fh: float = float(frame.get_height())
+				var s: float = _WINDOW_TARGET_H / fh
+				var w: float = fw * s
+				var h: float = fh * s
+				var rx: float = (cx_l if on_left else cx_r) - w * 0.5
+				var ry: float = y - h * 0.5
+				var sky_pool: Array = _tier_pool(_backdrop_textures_cache, tier)
+				if not sky_pool.is_empty():
+					var sky: Texture2D = sky_pool[rng.randi() % sky_pool.size()]
+					var ix: float = w * _WINDOW_SKY_INSET_X
+					var iy: float = h * _WINDOW_SKY_INSET_Y
+					draw_texture_rect(sky,
+						Rect2(rx + ix, ry + iy, w - ix * 2.0, h - iy * 2.0), false)
+				draw_texture_rect(frame, Rect2(rx, ry, w, h), false)
+		on_left = not on_left
+		y += _WINDOW_STEP
 
 func _draw() -> void:
 	_ensure_wall_textures_loaded()
@@ -2061,9 +2149,18 @@ func _draw() -> void:
 	# overlay the backdrop, so the bg colour is only visible when no backdrop
 	# texture exists for the current tileset.
 	draw_rect(Rect2(0, 0, room_width, room_height), bg)
-	if is_vertical and _has_tiered(_backdrop_textures_cache):
-		_draw_textured_backdrop(0.0, room_width)
-	_draw_entrance_clouds()
+	if is_vertical:
+		# Sky/parallax behind everything, bright (entrance shows it; later
+		# phases reveal it through window cutouts).
+		if _has_tiered(_backdrop_textures_cache):
+			_draw_textured_backdrop(0.0, room_width, Color(1, 1, 1, 1))
+		_draw_entrance_clouds()
+		# wall_white_Start pinned at the very top, then the tiled facade
+		# continues below it. The shaft IS the wall.
+		if _has_tiered(_wall_textures_cache):
+			var facade_y: float = _draw_facade_start()
+			_draw_textured_facade(facade_y)
+			_draw_windows(facade_y)
 
 	# A "shaft" is the whole vertical level in one room — both ends are sealed.
 	# Legacy entrance/main/exit kept their split walls for the old stacked path.
@@ -2081,24 +2178,12 @@ func _draw() -> void:
 	var side_t: float = _side_wall_w if is_vertical else WALL_T
 	var left_x:  float = float(sa_left)
 	var right_x: float = room_width - side_t - float(sa_right)
-	# Side-wall draw policy:
-	#   • horizontal rooms — always draw flat coloured side walls so the room
-	#     edges read against any background
-	#   • vertical shafts — only when the level config opts in via
-	#     side_walls.draw=true (see LevelConfig.get_side_walls_for_level).
-	#     When opted in, prefer textured rendering if the tileset has wall art;
-	#     otherwise fall back to the flat colour fill at the configured width.
-	# Physical collision (built in _build_walls) is unaffected by this flag.
+	# Horizontal rooms keep flat coloured side walls. Vertical shafts no
+	# longer draw thin side strips — the full-width facade (above) IS the
+	# wall. Physical collision (built in _build_walls) is unaffected.
 	if not is_vertical:
 		draw_rect(Rect2(left_x,  0, side_t, room_height), wall_c)
 		draw_rect(Rect2(right_x, 0, side_t, room_height), wall_c)
-	elif _side_wall_draw:
-		if _has_tiered(_wall_textures_cache):
-			_draw_textured_side_wall(left_x,  side_t, "L")
-			_draw_textured_side_wall(right_x, side_t, "R")
-		else:
-			draw_rect(Rect2(left_x,  0, side_t, room_height), wall_c)
-			draw_rect(Rect2(right_x, 0, side_t, room_height), wall_c)
 
 	# Type badge
 	var type_colors := {"entrance": Color(0.2, 0.8, 0.3), "main": Color(0.6, 0.6, 0.9), "exit": Color(1.0, 0.85, 0.2)}

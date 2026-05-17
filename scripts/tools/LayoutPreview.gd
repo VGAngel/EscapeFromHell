@@ -25,23 +25,25 @@ const VERT_LAYOUTS_JSON: String = "res://vertical_layouts.json"
 # byte-for-byte. Keep both files in sync when the tiered art changes.
 const SCREEN_PX: float = 1920.0
 const _DEPTH_TIERS: Array[String] = ["white", "grey", "dark"]
+# Pure per-tier tiles only; transition art used at the boundary (mirrors
+# PlaceholderRoom._C1_WALL_TIERS / _C1_WALL_TRANSITION).
 const _C1_WALL_TIERS := {
 	"white": [
 		"res://Assets/OurAssets/walls/circle1/wall_white_00.png",
-		"res://Assets/OurAssets/walls/circle1/wall_white_Start.png",
-		"res://Assets/OurAssets/walls/circle1/wall_white_greyGreen.png",
 	],
 	"grey": [
-		"res://Assets/OurAssets/walls/circle1/wall_grey_00.png",
-		"res://Assets/OurAssets/walls/circle1/wall_grey_dark.png",
 		"res://Assets/OurAssets/walls/circle1/wall_greyGreen_00.png",
-		"res://Assets/OurAssets/walls/circle1/wall_greyGreen_grey.png",
+		"res://Assets/OurAssets/walls/circle1/wall_grey_00.png",
 	],
 	"dark": [
 		"res://Assets/OurAssets/walls/circle1/wall_dark_00.png",
 		"res://Assets/OurAssets/walls/circle1/wall_dark_01.png",
 		"res://Assets/OurAssets/walls/circle1/wall_dark_02.png",
 	],
+}
+const _C1_WALL_TRANSITION := {
+	"grey": "res://Assets/OurAssets/walls/circle1/wall_white_greyGreen.png",
+	"dark": "res://Assets/OurAssets/walls/circle1/wall_grey_dark.png",
 }
 const _C1_BACKDROP_TIERS := {
 	"white": ["res://Assets/OurAssets/walls/circle1/background_white.png"],
@@ -64,6 +66,11 @@ const BACKDROP_DIM: Color = Color(0.75, 0.75, 0.75, 1.0)
 # RNG sequence identical (seed, per-platform draw order) when changing.
 const _DECOR_ROOT := "res://Assets/OurAssets/decor/circle1/"
 const _CLOUDS_PATH := _DECOR_ROOT + "clouds_no_sky.png"
+const _FACADE_TOP_OPEN: float = 1632.0   # mirrors PlaceholderRoom
+const _FACADE_START_PATH := "res://Assets/OurAssets/walls/circle1/wall_white_Start.png"
+const _FACADE_START_OVERLAP: float = 140.0   # mirrors PlaceholderRoom
+var _facade_start_tex: Texture2D = null
+var _facade_start_tried: bool = false
 var _clouds_tex: Texture2D = null
 var _clouds_tried: bool = false
 const _C1_DECOR := {
@@ -95,17 +102,22 @@ const _C1_DECOR := {
 	},
 }
 const _BUSH_TARGET_H:   float = 130.0
-const _BUSH_CHANCE:     float = 0.45
+const _BUSH_CHANCE:     float = 0.22
+const _VINE_TARGET_H:   float = 240.0
+const _VINE_CHANCE:     float = 0.22
 const _WINDOW_TARGET_H: float = 360.0
 const _WINDOW_STEP:     float = 1000.0
 const _WINDOW_INSET:    float = 620.0
+const _WINDOW_EDGE_FRAC: float = 0.24
+const _WINDOW_SKY_INSET_X: float = 0.16
+const _WINDOW_SKY_INSET_Y: float = 0.14
 const _ARCH_WIDTH_FRAC: float = 0.78
 const _WEB_TARGET_H:    float = 230.0
 const _WEB_STEP:        float = 1500.0
 const _WEB_INSET:       float = 520.0
 const _CANDLE_FRAMES:   int   = 5
 const _CANDLE_TARGET_H: float = 70.0
-const _CANDLE_CHANCE:   float = 0.30
+const _CANDLE_CHANCE:   float = 0.14
 
 
 # Static frame load for the preview — runtime animates these as an
@@ -292,16 +304,14 @@ func _draw() -> void:
 		return
 	_ensure_textures_loaded()
 
-	# 1. Backdrop — textured if available, flat dark fill otherwise.
+	# 1. Sky/parallax behind everything (bright). Mirrors PlaceholderRoom.
 	if _has_tiered(_backdrop_textures):
-		_draw_textured_backdrop(SIDE_WALL_W, ROOM_WIDTH - SIDE_WALL_W * 2.0)
+		_draw_textured_backdrop(0.0, ROOM_WIDTH, Color(1, 1, 1, 1))
 	else:
-		draw_rect(Rect2(SIDE_WALL_W, WALL_T,
-			ROOM_WIDTH - SIDE_WALL_W * 2.0,
-			shaft_height - WALL_T * 2.0),
+		draw_rect(Rect2(0.0, 0.0, ROOM_WIDTH, shaft_height),
 			Color(0.10, 0.10, 0.13, 1.0), true)
 
-	# 1b. Clouds band at the top (mirrors PlaceholderRoom._draw_entrance_clouds).
+	# 2. Clouds band at the entrance (over the sky, under the facade).
 	if not _clouds_tried:
 		_clouds_tried = true
 		if ResourceLoader.exists(_CLOUDS_PATH):
@@ -312,15 +322,11 @@ func _draw() -> void:
 		draw_texture_rect(_clouds_tex,
 			Rect2(0.0, 0.0, ROOM_WIDTH, ROOM_WIDTH * (cth / ctw)), false)
 
-	# 2. Side walls — textured if available, flat dark otherwise.
+	# 3. wall_white_Start pinned at top, tiled facade, then window cutouts.
 	if _has_tiered(_wall_textures):
-		_draw_textured_side_wall(0.0, SIDE_WALL_W, "L")
-		_draw_textured_side_wall(ROOM_WIDTH - SIDE_WALL_W, SIDE_WALL_W, "R")
-	else:
-		draw_rect(Rect2(0, 0, SIDE_WALL_W, shaft_height),
-			Color(0.18, 0.18, 0.22, 1.0), true)
-		draw_rect(Rect2(ROOM_WIDTH - SIDE_WALL_W, 0, SIDE_WALL_W, shaft_height),
-			Color(0.18, 0.18, 0.22, 1.0), true)
+		var facade_y: float = _draw_facade_start()
+		_draw_textured_facade(facade_y)
+		_draw_windows(facade_y)
 
 	# 3. Top + bottom walls — flat dark fills (runtime doesn't texture these).
 	draw_rect(Rect2(0, 0, ROOM_WIDTH, WALL_T), COLOR_FLOOR_FILL, true)
@@ -424,6 +430,22 @@ func _draw() -> void:
 			draw_texture_rect(bt, Rect2(
 				px - bw * 0.5 * bs, py - bh * bs, bw * bs, bh * bs), false)
 
+	# Ivy draping off the ledge front (bush art hanging below the slab).
+	for i in decor_plats.size():
+		if i == altar_idx or d_rng.randf() > _VINE_CHANCE:
+			continue
+		var ve: Dictionary = decor_plats[i]
+		var vpw: float = float(ve.w)
+		var vpx: float = float(ve.x) + (d_rng.randf() - 0.5) * maxf(0.0, vpw - 60.0)
+		var vpy: float = float(ve.y) + PLATFORM_T * 0.5
+		var vt: Texture2D = _decor_tex("bush", _depth_tier(vpy), d_rng)
+		if vt and vt.get_height() > 0:
+			var vw: float = float(vt.get_width())
+			var vh: float = float(vt.get_height())
+			var vs: float = _VINE_TARGET_H / vh
+			draw_texture_rect(vt, Rect2(
+				vpx - vw * 0.5 * vs, vpy, vw * vs, vh * vs), false)
+
 	# Animated ledge candles — runtime is an AnimatedSprite2D; draw the
 	# RNG-picked start frame statically so the preview shows placement.
 	var c_f0: Texture2D = _candle_frame_tex(0)
@@ -444,24 +466,8 @@ func _draw() -> void:
 				cpx - c_rw * 0.5 * cs, cpy - c_rh * cs,
 				c_rw * cs, c_rh * cs), false)
 
-	# Windows down both side walls.
-	var wl: float = SIDE_WALL_W + 30.0
-	var wr: float = ROOM_WIDTH - SIDE_WALL_W - 30.0
-	var wy: float = _WINDOW_INSET
-	var on_left := true
-	while wy < shaft_height - _WINDOW_INSET:
-		if wy > WALL_T:
-			var wt: Texture2D = _decor_tex("window", _depth_tier(wy), d_rng)
-			if wt and wt.get_height() > 0:
-				var ww: float = float(wt.get_width())
-				var wh: float = float(wt.get_height())
-				var ws: float = _WINDOW_TARGET_H / wh
-				var wx: float = wl if on_left else wr
-				draw_texture_rect(wt, Rect2(
-					wx - ww * 0.5 * ws, wy - wh * 0.5 * ws,
-					ww * ws, wh * ws), false)
-		on_left = not on_left
-		wy += _WINDOW_STEP
+	# Windows are facade cutouts now — see _draw_windows() (after the
+	# facade), not part of the decoration RNG stream.
 
 	# Cobwebs in the wall corners — grey/dark tiers only, sparse.
 	var wbl: float = SIDE_WALL_W
@@ -496,7 +502,8 @@ func _draw() -> void:
 # ── Texture drawing — copied from PlaceholderRoom so the editor render matches
 # the runtime byte-for-byte (same seeds, same loop, same modulate).
 
-func _draw_textured_backdrop(x: float, width: float) -> void:
+func _draw_textured_backdrop(x: float, width: float,
+		modulate: Color = BACKDROP_DIM) -> void:
 	if not _has_tiered(_backdrop_textures):
 		return
 	var rng := RandomNumberGenerator.new()
@@ -514,28 +521,107 @@ func _draw_textured_backdrop(x: float, width: float) -> void:
 			tex,
 			Rect2(x, y, width, section_h),
 			Rect2(0.0, 0.0, tex_w, section_h),
-			BACKDROP_DIM)
+			modulate)
 		y += tex_h
 
 
-func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
+# Entrance piece (wall_white_Start) pinned to the top, full width over
+# the sky. Returns the Y where the tiled facade continues. Mirrors
+# PlaceholderRoom._draw_facade_start.
+func _draw_facade_start() -> float:
+	if not _facade_start_tried:
+		_facade_start_tried = true
+		if ResourceLoader.exists(_FACADE_START_PATH):
+			_facade_start_tex = load(_FACADE_START_PATH) as Texture2D
+	if _facade_start_tex == null:
+		return _FACADE_TOP_OPEN
+	var tw: float = float(_facade_start_tex.get_width())
+	var th: float = float(_facade_start_tex.get_height())
+	if tw <= 0.0 or th <= 0.0:
+		return _FACADE_TOP_OPEN
+	draw_texture_rect_region(
+		_facade_start_tex,
+		Rect2(0.0, 0.0, ROOM_WIDTH, th),
+		Rect2(0.0, 0.0, tw, th))
+	return maxf(0.0, th - _FACADE_START_OVERLAP)
+
+
+var _wall_transition_cache: Dictionary = {}
+
+func _facade_transition_tex(tier: String) -> Texture2D:
+	if _wall_transition_cache.has(tier):
+		return _wall_transition_cache[tier]
+	var path: String = String(_C1_WALL_TRANSITION.get(tier, ""))
+	var tex: Texture2D = null
+	if path != "" and ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	_wall_transition_cache[tier] = tex
+	return tex
+
+
+# Full-width tiered stone facade from `start_y` to the floor. Mirrors
+# PlaceholderRoom._draw_textured_facade (same seed/loop/transition).
+func _draw_textured_facade(start_y: float) -> void:
 	if not _has_tiered(_wall_textures):
 		return
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash("wall_%d_%s" % [level_id, seed_tag])
-	var y: float = 0.0
+	rng.seed = hash("facade_%d" % level_id)
+	var y: float = maxf(0.0, start_y)
+	var prev_tier: String = ""
 	while y < shaft_height:
-		var pool: Array = _tier_pool(_wall_textures, _depth_tier(y))
-		if pool.is_empty():
-			break
-		var tex: Texture2D = pool[rng.randi() % pool.size()]
+		var tier: String = _depth_tier(y)
+		var tex: Texture2D = null
+		if prev_tier != "" and tier != prev_tier:
+			tex = _facade_transition_tex(tier)
+		if tex == null:
+			var pool: Array = _tier_pool(_wall_textures, tier)
+			if pool.is_empty():
+				break
+			tex = pool[rng.randi() % pool.size()]
+		prev_tier = tier
 		var tex_w: float = float(tex.get_width())
 		var tex_h: float = float(tex.get_height())
-		var slice_w: float = minf(width, tex_w)
-		var x_off: float = rng.randf() * maxf(0.0, tex_w - slice_w)
 		var section_h: float = minf(tex_h, shaft_height - y)
+		var slice_w: float = minf(ROOM_WIDTH, tex_w)
+		var x_off: float = rng.randf() * maxf(0.0, tex_w - slice_w)
 		draw_texture_rect_region(
 			tex,
-			Rect2(x, y, width, section_h),
+			Rect2(0.0, y, ROOM_WIDTH, section_h),
 			Rect2(x_off, 0.0, slice_w, section_h))
 		y += tex_h
+
+
+# Window cutouts in the facade. Mirrors PlaceholderRoom._draw_windows
+# (same seed/loop). SafeArea is editor-irrelevant → sa_top = 0.
+func _draw_windows(start_y: float) -> void:
+	if not _has_tiered(_wall_textures):
+		return
+	var sa_top: float = 0.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("window_%d" % level_id)
+	var cx_l: float = ROOM_WIDTH * _WINDOW_EDGE_FRAC
+	var cx_r: float = ROOM_WIDTH - ROOM_WIDTH * _WINDOW_EDGE_FRAC
+	var y: float = maxf(start_y, _WINDOW_INSET) + _WINDOW_STEP * 0.5
+	var on_left := true
+	while y < shaft_height - _WINDOW_INSET:
+		if y > start_y and y > WALL_T + sa_top:
+			var tier: String = _depth_tier(y)
+			var frame: Texture2D = _decor_tex("window", tier, rng)
+			if frame and frame.get_height() > 0:
+				var fw: float = float(frame.get_width())
+				var fh: float = float(frame.get_height())
+				var s: float = _WINDOW_TARGET_H / fh
+				var w: float = fw * s
+				var h: float = fh * s
+				var rx: float = (cx_l if on_left else cx_r) - w * 0.5
+				var ry: float = y - h * 0.5
+				var sky_pool: Array = _tier_pool(_backdrop_textures, tier)
+				if not sky_pool.is_empty():
+					var sky: Texture2D = sky_pool[rng.randi() % sky_pool.size()]
+					var ix: float = w * _WINDOW_SKY_INSET_X
+					var iy: float = h * _WINDOW_SKY_INSET_Y
+					draw_texture_rect(sky,
+						Rect2(rx + ix, ry + iy, w - ix * 2.0, h - iy * 2.0), false)
+				draw_texture_rect(frame, Rect2(rx, ry, w, h), false)
+		on_left = not on_left
+		y += _WINDOW_STEP
