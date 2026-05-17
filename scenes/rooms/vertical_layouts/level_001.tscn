@@ -1,10 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://vdec000100"]
+[gd_scene format=3 uid="uid://vdec000100"]
 
-[ext_resource type="Script" path="res://scripts/tools/LayoutPreview.gd" id="1_preview"]
+[ext_resource type="Script" uid="uid://bueku4r3ud8ia" path="res://scripts/tools/LayoutPreview.gd" id="1_preview"]
 
-[node name="VerticalLayout" type="Node2D"]
+[node name="VerticalLayout" type="Node2D" unique_id=1358316078]
 
-[node name="LayoutPreview" type="Node2D" parent="."]
+[node name="LayoutPreview" type="Node2D" parent="." unique_id=506556715]
 script = ExtResource("1_preview")
-shaft_height = 3840.0
 level_id = 1
