@@ -19,11 +19,15 @@ const AmbientLightingRef := preload("res://scripts/world/AmbientLighting.gd")
 
 const _DECOR_ROOT  := "res://Assets/OurAssets/decor/circle1/"
 const _SCREEN_PX   := 1920.0     # depth tier boundary (matches wall tiers)
-const _TORCH_BODY_H := 170.0
-const _FLAME_H      := 95.0
+const _TORCH_BODY_H := 130.0
+const _FLAME_H      := 70.0
 const _FLAME_FRAMES := 4
 const _FLAME_FPS    := 12.0
-const _FLAME_OVERLAP := 12.0     # flame base sinks into the torch cup
+# Flame-cup position as a fraction of the torch sprite. This art leans
+# diagonally — the lit tip is upper-right, not centred — so both the
+# flame and its PointLight2D anchor here.
+const _FLAME_CUP_FX := 0.85
+const _FLAME_CUP_FY := 0.08
 
 static var _flame_frames_cache: SpriteFrames = null
 
@@ -65,11 +69,20 @@ func _build_flame_visual(color: Color) -> void:
 		return
 	var bh: float = float(body_tex.get_height())
 	var s: float = _TORCH_BODY_H / maxf(1.0, bh)
+	var bw: float = float(body_tex.get_width()) * s
 	var body := Sprite2D.new()
 	body.name = "TorchBody"
 	body.texture = body_tex
 	body.scale = Vector2(s, s)      # centered by default — sits on the mount point
 	add_child(body)
+
+	# Cup point in node space (body is centred at the origin).
+	var cup := Vector2(
+		bw * (_FLAME_CUP_FX - 0.5),
+		_TORCH_BODY_H * (_FLAME_CUP_FY - 0.5))
+	# Glow + flicker emanate from the actual fire, not the torch centre.
+	if _light:
+		_light.position = cup
 
 	var sf: SpriteFrames = _flame_sprite_frames()
 	if sf == null:
@@ -83,10 +96,8 @@ func _build_flame_visual(color: Color) -> void:
 	anim.sprite_frames = sf
 	anim.centered = false
 	anim.scale = Vector2(fs, fs)
-	anim.offset = Vector2(-fw * 0.5, -fh)   # bottom-center pivot
-	# Body is centered, so its top edge is at -_TORCH_BODY_H/2; the flame
-	# base sits there (sunk slightly into the cup).
-	anim.position = Vector2(0.0, -_TORCH_BODY_H * 0.5 + _FLAME_OVERLAP)
+	anim.offset = Vector2(-fw * 0.5, -fh)   # bottom-center pivot at the cup
+	anim.position = cup
 	add_child(anim)
 	if not Engine.is_editor_hint():
 		anim.play(&"default")

@@ -40,7 +40,7 @@ const TORCH_LIGHT_SCALE: float = 1.6
 # PlaceholderRoom.CIRCLE_COLORS but pushed to higher saturation since they
 # light flames, not floor tiles.
 const TORCH_COLORS: Dictionary = {
-	1:  Color(0.65, 0.45, 1.00),   # 1 — void purple
+	1:  Color(1.00, 0.62, 0.28),   # 1 — warm torch (sunlit temple ruins)
 	2:  Color(0.45, 0.70, 1.00),   # 2 — deep blue
 	3:  Color(1.00, 0.55, 0.20),   # 3 — charred red / fire
 	4:  Color(0.55, 1.00, 0.45),   # 4 — swamp / sickly green
