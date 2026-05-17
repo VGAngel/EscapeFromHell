@@ -565,6 +565,11 @@ const _C1_DECOR := {
 		"grey":  ["arch_entr_grey"],
 		"dark":  ["arch_entr_dark"],
 	},
+	# Cobwebs only in the deeper, dirtier tiers — none up top.
+	"web": {
+		"grey": ["web_01", "web_02"],
+		"dark": ["web_01", "web_02"],
+	},
 }
 
 const _BUSH_TARGET_H:   float = 130.0    # on-platform bush height (px)
@@ -573,6 +578,35 @@ const _WINDOW_TARGET_H: float = 360.0
 const _WINDOW_STEP:     float = 1000.0   # vertical spacing down each wall
 const _WINDOW_INSET:    float = 620.0    # skip the entrance/exit bands
 const _ARCH_WIDTH_FRAC: float = 0.78     # arch width as a fraction of room_width
+const _WEB_TARGET_H:    float = 230.0    # corner cobweb size (px)
+const _WEB_STEP:        float = 1500.0   # vertical spacing down each wall
+const _WEB_INSET:       float = 520.0    # skip the entrance/exit bands
+const _CANDLE_FRAMES:   int   = 5        # fire_candle_01..05
+const _CANDLE_FPS:      float = 10.0
+const _CANDLE_TARGET_H: float = 70.0     # small ledge candle (px)
+const _CANDLE_CHANCE:   float = 0.30     # fraction of platforms with a candle
+
+static var _candle_frames_cache: SpriteFrames = null
+
+# Build (once) the looping 5-frame flame animation shared by every candle.
+func _candle_sprite_frames() -> SpriteFrames:
+	if _candle_frames_cache != null:
+		return _candle_frames_cache
+	var sf := SpriteFrames.new()
+	sf.set_animation_loop(&"default", true)
+	sf.set_animation_speed(&"default", _CANDLE_FPS)
+	var got := false
+	for i in range(1, _CANDLE_FRAMES + 1):
+		var path: String = "%sfire_candle_%02d.png" % [_DECOR_ROOT, i]
+		if ResourceLoader.exists(path):
+			var tex: Texture2D = load(path) as Texture2D
+			if tex:
+				sf.add_frame(&"default", tex)
+				got = true
+	if not got:
+		return null
+	_candle_frames_cache = sf
+	return sf
 
 var _decor_tex_cache: Dictionary = {}    # texture name → Texture2D | null
 
@@ -643,6 +677,34 @@ func _spawn_decorations() -> void:
 		_add_decor_sprite(_decor_tex("bush", _depth_tier(py), rng),
 				Vector2(px, py), _BUSH_TARGET_H, Vector2(0.5, 1.0), 1)
 
+	# Animated ledge candles — small looping flame accents on platforms.
+	var candle_sf: SpriteFrames = _candle_sprite_frames()
+	for i in _vert_layout.size():
+		if i == altar_idx or rng.randf() > _CANDLE_CHANCE:
+			continue
+		var ce: Dictionary = _vert_layout[i]
+		var cpw: float = float(ce.get("width", _platform_width))
+		var cpx: float = float(ce.get("x", room_width * 0.5)) \
+				+ (rng.randf() - 0.5) * maxf(0.0, cpw - 60.0)
+		var cpy: float = float(ce.get("y", 0.0)) - PLATFORM_T * 0.5
+		var start_f: int = rng.randi() % _CANDLE_FRAMES
+		if candle_sf == null:
+			continue
+		var f0: Texture2D = candle_sf.get_frame_texture(&"default", 0)
+		var cth: float = float(f0.get_height()) if f0 else 1.0
+		var ctw: float = float(f0.get_width())  if f0 else 1.0
+		var cs: float = _CANDLE_TARGET_H / maxf(1.0, cth)
+		var anim := AnimatedSprite2D.new()
+		anim.sprite_frames = candle_sf
+		anim.centered = false
+		anim.scale    = Vector2(cs, cs)
+		anim.offset   = Vector2(-ctw * 0.5, -cth)   # bottom-center pivot
+		anim.position = Vector2(cpx, cpy)
+		anim.z_index  = 1
+		anim.frame    = start_f
+		anim.play(&"default")
+		add_child(anim)
+
 	# Windows down both side walls, alternating, behind the action.
 	var sa_top: float = float(SafeArea.top_reserved) if SafeArea else 0.0
 	var wl: float = _side_wall_w + 30.0
@@ -656,6 +718,20 @@ func _spawn_decorations() -> void:
 					_WINDOW_TARGET_H, Vector2(0.5, 0.5), 0)
 		on_left = not on_left
 		y += _WINDOW_STEP
+
+	# Cobwebs hung in the wall corners — grey/dark tiers only, sparse.
+	var web_l: float = _side_wall_w
+	var web_r: float = room_width - _side_wall_w
+	var wy: float = _WEB_INSET
+	var web_left := true
+	while wy < room_height - _WEB_INSET:
+		var wtier: String = _depth_tier(wy)
+		if wtier != "white" and wy > WALL_T + sa_top:
+			_add_decor_sprite(_decor_tex("web", wtier, rng),
+					Vector2(web_l if web_left else web_r, wy), _WEB_TARGET_H,
+					Vector2(0.0, 0.0) if web_left else Vector2(1.0, 0.0), 0)
+		web_left = not web_left
+		wy += _WEB_STEP
 
 	# Single entrance arch framing the top of the shaft.
 	var arch_y: float = WALL_T + sa_top + 12.0

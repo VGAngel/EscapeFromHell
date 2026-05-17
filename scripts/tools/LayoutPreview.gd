@@ -86,6 +86,10 @@ const _C1_DECOR := {
 		"grey":  ["arch_entr_grey"],
 		"dark":  ["arch_entr_dark"],
 	},
+	"web": {
+		"grey": ["web_01", "web_02"],
+		"dark": ["web_01", "web_02"],
+	},
 }
 const _BUSH_TARGET_H:   float = 130.0
 const _BUSH_CHANCE:     float = 0.45
@@ -93,6 +97,26 @@ const _WINDOW_TARGET_H: float = 360.0
 const _WINDOW_STEP:     float = 1000.0
 const _WINDOW_INSET:    float = 620.0
 const _ARCH_WIDTH_FRAC: float = 0.78
+const _WEB_TARGET_H:    float = 230.0
+const _WEB_STEP:        float = 1500.0
+const _WEB_INSET:       float = 520.0
+const _CANDLE_FRAMES:   int   = 5
+const _CANDLE_TARGET_H: float = 70.0
+const _CANDLE_CHANCE:   float = 0.30
+
+
+# Static frame load for the preview — runtime animates these as an
+# AnimatedSprite2D; here we draw the same start frame the RNG picked.
+func _candle_frame_tex(frame_idx: int) -> Texture2D:
+	var nm: String = "fire_candle_%02d" % (frame_idx + 1)
+	if _decor_tex_cache.has(nm):
+		return _decor_tex_cache[nm]
+	var path: String = _DECOR_ROOT + nm + ".png"
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	_decor_tex_cache[nm] = tex
+	return tex
 
 @export var shaft_height: float = 3840.0 :
 	set(v):
@@ -386,6 +410,26 @@ func _draw() -> void:
 			draw_texture_rect(bt, Rect2(
 				px - bw * 0.5 * bs, py - bh * bs, bw * bs, bh * bs), false)
 
+	# Animated ledge candles — runtime is an AnimatedSprite2D; draw the
+	# RNG-picked start frame statically so the preview shows placement.
+	var c_f0: Texture2D = _candle_frame_tex(0)
+	var c_rw: float = float(c_f0.get_width())  if c_f0 else 1.0
+	var c_rh: float = float(c_f0.get_height()) if c_f0 else 1.0
+	for ci in decor_plats.size():
+		if ci == altar_idx or d_rng.randf() > _CANDLE_CHANCE:
+			continue
+		var ce: Dictionary = decor_plats[ci]
+		var cpw: float = float(ce.w)
+		var cpx: float = float(ce.x) + (d_rng.randf() - 0.5) * maxf(0.0, cpw - 60.0)
+		var cpy: float = float(ce.y) - PLATFORM_T * 0.5
+		var cstart: int = d_rng.randi() % _CANDLE_FRAMES
+		var ct: Texture2D = _candle_frame_tex(cstart)
+		if ct and c_rh > 0.0:
+			var cs: float = _CANDLE_TARGET_H / c_rh
+			draw_texture_rect(ct, Rect2(
+				cpx - c_rw * 0.5 * cs, cpy - c_rh * cs,
+				c_rw * cs, c_rh * cs), false)
+
 	# Windows down both side walls.
 	var wl: float = SIDE_WALL_W + 30.0
 	var wr: float = ROOM_WIDTH - SIDE_WALL_W - 30.0
@@ -404,6 +448,24 @@ func _draw() -> void:
 					ww * ws, wh * ws), false)
 		on_left = not on_left
 		wy += _WINDOW_STEP
+
+	# Cobwebs in the wall corners — grey/dark tiers only, sparse.
+	var wbl: float = SIDE_WALL_W
+	var wbr: float = ROOM_WIDTH - SIDE_WALL_W
+	var web_y: float = _WEB_INSET
+	var web_left := true
+	while web_y < shaft_height - _WEB_INSET:
+		var wtier: String = _depth_tier(web_y)
+		if wtier != "white" and web_y > WALL_T:
+			var et: Texture2D = _decor_tex("web", wtier, d_rng)
+			if et and et.get_height() > 0:
+				var ew: float = float(et.get_width())
+				var eh: float = float(et.get_height())
+				var es: float = _WEB_TARGET_H / eh
+				var ex: float = wbl if web_left else wbr - ew * es
+				draw_texture_rect(et, Rect2(ex, web_y, ew * es, eh * es), false)
+		web_left = not web_left
+		web_y += _WEB_STEP
 
 	# Single entrance arch at the top.
 	var arch_y: float = WALL_T + 12.0
