@@ -63,6 +63,9 @@ const BACKDROP_DIM: Color = Color(0.75, 0.75, 0.75, 1.0)
 # preview shows the same bushes/windows/arch the runtime spawns. Keep the
 # RNG sequence identical (seed, per-platform draw order) when changing.
 const _DECOR_ROOT := "res://Assets/OurAssets/decor/circle1/"
+const _CLOUDS_PATH := _DECOR_ROOT + "clouds_no_sky.png"
+var _clouds_tex: Texture2D = null
+var _clouds_tried: bool = false
 const _C1_DECOR := {
 	"bush": {
 		"white": [
@@ -297,6 +300,17 @@ func _draw() -> void:
 			ROOM_WIDTH - SIDE_WALL_W * 2.0,
 			shaft_height - WALL_T * 2.0),
 			Color(0.10, 0.10, 0.13, 1.0), true)
+
+	# 1b. Clouds band at the top (mirrors PlaceholderRoom._draw_entrance_clouds).
+	if not _clouds_tried:
+		_clouds_tried = true
+		if ResourceLoader.exists(_CLOUDS_PATH):
+			_clouds_tex = load(_CLOUDS_PATH) as Texture2D
+	if _clouds_tex and _clouds_tex.get_width() > 0:
+		var ctw: float = float(_clouds_tex.get_width())
+		var cth: float = float(_clouds_tex.get_height())
+		draw_texture_rect(_clouds_tex,
+			Rect2(0.0, 0.0, ROOM_WIDTH, ROOM_WIDTH * (cth / ctw)), false)
 
 	# 2. Side walls — textured if available, flat dark otherwise.
 	if _has_tiered(_wall_textures):

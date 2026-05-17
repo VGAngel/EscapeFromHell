@@ -542,6 +542,9 @@ func _spawn_torches_horizontal(torch_script: Script, x_left: float, x_right: flo
 # only — assets live in Assets/OurAssets/decor/circle1/.
 
 const _DECOR_ROOT := "res://Assets/OurAssets/decor/circle1/"
+const _CLOUDS_PATH := _DECOR_ROOT + "clouds_no_sky.png"
+var _clouds_tex: Texture2D = null
+var _clouds_tried: bool = false
 const _C1_DECOR := {
 	"bush": {
 		"white": [
@@ -1972,6 +1975,25 @@ func _ensure_backdrop_textures_loaded() -> void:
 ## the painted detail of the backdrop art.
 const BACKDROP_DIM: Color = Color(0.75, 0.75, 0.75, 1.0)
 
+# A band of clouds at the very top of the shaft so the entrance reads as
+# open sky. Circle-1 vertical shafts only; drawn over the backdrop but
+# under the walls/platforms (part of the room canvas _draw).
+func _draw_entrance_clouds() -> void:
+	if not is_vertical or circle != 1:
+		return
+	if not _clouds_tried:
+		_clouds_tried = true
+		if ResourceLoader.exists(_CLOUDS_PATH):
+			_clouds_tex = load(_CLOUDS_PATH) as Texture2D
+	if _clouds_tex == null:
+		return
+	var tw: float = float(_clouds_tex.get_width())
+	var th: float = float(_clouds_tex.get_height())
+	if tw <= 0.0 or th <= 0.0:
+		return
+	var h: float = room_width * (th / tw)
+	draw_texture_rect(_clouds_tex, Rect2(0.0, 0.0, room_width, h), false)
+
 func _draw_textured_backdrop(x: float, width: float) -> void:
 	if not _has_tiered(_backdrop_textures_cache):
 		return
@@ -2041,6 +2063,7 @@ func _draw() -> void:
 	draw_rect(Rect2(0, 0, room_width, room_height), bg)
 	if is_vertical and _has_tiered(_backdrop_textures_cache):
 		_draw_textured_backdrop(0.0, room_width)
+	_draw_entrance_clouds()
 
 	# A "shaft" is the whole vertical level in one room — both ends are sealed.
 	# Legacy entrance/main/exit kept their split walls for the old stacked path.
