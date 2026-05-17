@@ -63,6 +63,13 @@ func _ready() -> void:
 
 	_level_type = LevelConfig.get_level_type(level_id) if LevelConfig else "platformer"
 
+	# Looping circle theme. play_circle_music is a no-op when the track
+	# for this circle is already playing, so moving between levels inside
+	# the same circle keeps the music seamless instead of restarting it.
+	if SoundManager:
+		SoundManager.play_circle_music(
+			LevelConfig.get_circle(level_id) if LevelConfig else 1)
+
 	if force_static or (LevelGenerator and LevelGenerator.is_static(level_id)):
 		_init_static_level()
 	else:

@@ -74,8 +74,21 @@ func play_sfx(category: String, key: String) -> void:
 	p.stream = stream
 	p.play()
 
+## Crossfade to the music track configured for a circle. Reads
+## music.circles.circle_<n>.file_base from audio_config.json so the
+## mapping stays data-driven — drop the file at res://audio/<file_base>.<ext>.
+func play_circle_music(circle: int) -> void:
+	var circles: Dictionary = _cfg.get("music", {}).get("circles", {})
+	var entry: Dictionary = circles.get("circle_%d" % circle, {})
+	var file_base: String = String(entry.get("file_base", ""))
+	if file_base == "":
+		return
+	play_music(file_base)
+
 ## Crossfade to a music track. Pass the audio_config.json path like
 ## "music/circle_01_antechamber". No-op if already playing this track.
+## The stream is forced to loop so level music never falls silent
+## regardless of the file's import settings.
 func play_music(path: String) -> void:
 	if path == _current_music:
 		return
@@ -83,6 +96,7 @@ func play_music(path: String) -> void:
 	var stream: AudioStream = _try_load_stream(_resolve_music(path))
 	if not stream:
 		return
+	_ensure_loop(stream)
 	var tw := create_tween()
 	if _music.playing:
 		tw.tween_property(_music, "volume_db", -40.0, MUSIC_CROSSFADE * 0.5)
@@ -126,6 +140,16 @@ func _try_load_stream(path: String) -> AudioStream:
 		_warned[path] = true
 		_report_warn("SoundManager: audio not found — " + path + " (tried .ogg/.mp3/.wav)")
 	return null
+
+# Loop is a per-stream-type property, not an AudioStreamPlayer flag, so
+# a missing import setting silently makes music play once and stop. Force
+# it on for every music stream so callers don't depend on the .import file.
+func _ensure_loop(stream: AudioStream) -> void:
+	if stream is AudioStreamMP3 or stream is AudioStreamOggVorbis:
+		stream.loop = true
+	elif stream is AudioStreamWAV:
+		if stream.loop_mode == AudioStreamWAV.LOOP_DISABLED:
+			stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 
 func _report_warn(msg: String) -> void:
 	var d: Node = get_node_or_null("/root/DebugOverlay")
