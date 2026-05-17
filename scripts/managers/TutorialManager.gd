@@ -88,6 +88,21 @@ func reset_all() -> void:
 	if SaveManager:
 		SaveManager.clear_all_hints()
 
+## Wipe any in-flight or pending hint. Called on every scene change so
+## a level's queued/animating hints don't bleed onto the next scene
+## (this autoload and its SceneTree timers outlive the level).
+func cancel_all() -> void:
+	_queue.clear()
+	if _tween:
+		_tween.kill()
+		_tween = null
+	if _layer:
+		_layer.visible = false
+	if _root:
+		_root.modulate.a = 0.0
+	_active_id  = ""
+	_is_showing = false
+
 # ── Input: any game action or touch dismisses ─────────────────────────────────
 
 func _input(_event: InputEvent) -> void:
@@ -163,6 +178,13 @@ func _fallback_for(key: String) -> String:
 # ── Display ───────────────────────────────────────────────────────────────────
 
 func _display(hint_id: String) -> void:
+	# Tutorial hints are gameplay-only. A SceneTree timer/lambda scheduled
+	# inside a level (LevelBase deferred nudges, the queued-hint retrigger)
+	# can still fire after the player exited — never paint over the menu.
+	var tree := get_tree()
+	var cs: Node = tree.current_scene if tree else null
+	if cs == null or cs.scene_file_path.ends_with("MainMenu.tscn"):
+		return
 	var cfg: Dictionary = _triggers.get(hint_id, {})
 	# Ad-hoc passthrough: if no trigger config exists but the id is
 	# a Loc key (starts with "tutorial."), treat the id itself as

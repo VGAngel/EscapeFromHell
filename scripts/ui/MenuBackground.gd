@@ -204,6 +204,11 @@ func _update_parallax(delta: float) -> void:
 		var accel := Input.get_accelerometer()
 		target = Vector2(clamp(accel.x / 5.0, -1.0, 1.0), 0.0)
 	else:
+		# get_local_mouse_position() inverts _root's global transform; when a
+		# parent has a zero scale (transient during layout/scale tweens) the
+		# matrix is non-invertible and Godot logs "det == 0". Skip this frame.
+		if is_zero_approx(_root.get_global_transform().determinant()):
+			return
 		var size := _viewport_size()
 		var mp := _root.get_local_mouse_position()
 		target = Vector2(clamp(mp.x / size.x * 2.0 - 1.0, -1.0, 1.0), 0.0)

@@ -456,6 +456,13 @@ func _scene_for_level_type(level_type: String) -> String:
 ## Fade-to-black wrapper; falls back to an immediate swap if the autoload is
 ## unavailable (e.g. in unit tests that don't boot the full project).
 func _change_scene(scene_path: String) -> void:
+	# TutorialManager is an autoload: its hint layer, active tween and
+	# queued-hint SceneTree timers survive a scene swap. Without this the
+	# pending queue keeps flushing onto whatever loads next (e.g. the
+	# main menu after exiting a level).
+	var tm: Node = get_node_or_null("/root/TutorialManager")
+	if tm and tm.has_method("cancel_all"):
+		tm.cancel_all()
 	var st: Node = get_node_or_null("/root/SceneTransition")
 	if st and st.has_method("change_scene_to"):
 		st.change_scene_to(scene_path)

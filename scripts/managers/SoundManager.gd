@@ -47,6 +47,13 @@ func _load_config() -> void:
 		_cfg = parsed
 
 func _build_pools() -> void:
+	# The Godot editor keeps rewriting project.godot and dropping the
+	# custom [audio] bus-layout registration, so the Music/SFX buses
+	# can't be relied on existing. Create them at runtime — then audio
+	# routing (and the volume sliders in Settings) work no matter what
+	# state project.godot is in.
+	_ensure_bus("Music")
+	_ensure_bus("SFX")
 	for _i in SFX_POOL_SIZE:
 		var p := AudioStreamPlayer.new()
 		p.bus = "SFX"
@@ -55,6 +62,14 @@ func _build_pools() -> void:
 	_music = AudioStreamPlayer.new()
 	_music.bus = "Music"
 	add_child(_music)
+
+func _ensure_bus(bus_name: String) -> void:
+	if AudioServer.get_bus_index(bus_name) != -1:
+		return
+	var idx: int = AudioServer.bus_count
+	AudioServer.add_bus(idx)
+	AudioServer.set_bus_name(idx, bus_name)
+	AudioServer.set_bus_send(idx, "Master")
 
 # ── Public API ────────────────────────────────────────────────────────────────
 

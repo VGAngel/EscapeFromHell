@@ -21,6 +21,11 @@ var _all_ids:     Array        = []
 
 
 func _ready() -> void:
+	# Match the other MainMenu overlays. Without this the node keeps the
+	# CanvasLayer default (1) when it comes from the scene file, so TopBar
+	# (11) and the layer-10 panels render on top and eat every click —
+	# the level rows look visible but are unselectable.
+	layer = 10
 	visible = false
 	_build_ui()
 	_populate()

@@ -588,7 +588,7 @@ func _connect_bonuses() -> void:
 		if bonus.has_signal("bonus_collected"):
 			bonus.bonus_collected.connect(_on_bonus_collected)
 
-func _on_bonus_collected(type: int, bonus_name: String) -> void:
+func _on_bonus_collected(type: int, _bonus_name: String) -> void:
 	match type:
 		0:  # HOLY_WATER — невразливість 5с
 			if _player and _player.has_method("apply_invincibility"):
@@ -616,15 +616,13 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 			if GameManager:
 				GameManager.activate_bonus("torch", "🔦", 30.0)
 	if TutorialManager and TutorialManager.has_method("show_hint"):
-		# Prefix with "tutorial." so TutorialManager.show_hint accepts
-		# the id even though there's no matching entry in
-		# tutorial_config.json triggers section. Without the prefix,
-		# show_hint short-circuits at the
-		# `not hint_id.begins_with("tutorial.")` guard and silently
-		# drops the bonus tutorial — players never saw the explainer
-		# the first time they touched a holy_water / prayer_stone /
-		# manna pickup via this codepath.
-		TutorialManager.show_hint("tutorial.bonus_" + bonus_name.to_lower())
+		# Key off the stable BonusType id, NOT the display name — the
+		# signal passes the localized name ("Манна"), which built a bogus
+		# key "tutorial.bonus_манна". The "tutorial." prefix is required
+		# or show_hint drops ids with no tutorial_config trigger entry.
+		var bonus_keys := ["holy_water", "prayer_stone", "angel_feather", "manna", "torch"]
+		if type >= 0 and type < bonus_keys.size():
+			TutorialManager.show_hint("tutorial.bonus_" + bonus_keys[type])
 
 ## Called when the player dies while carrying a soul. Player.gd emits one
 ## soul_dropped per carried soul, so each call respawns ONE pickup at the
