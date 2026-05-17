@@ -1,8 +1,10 @@
 class_name Torch extends Node2D
 
-# Self-contained themed torch — colored PointLight2D + small diamond flame
-# visual + auto-flicker. PlaceholderRoom (and any other level decorator)
-# spawns these alongside platforms; AmbientLighting picks the colour.
+# Self-contained themed torch — colored PointLight2D + a wall torch
+# sprite with a looping 4-frame flame on top + auto-flicker. The torch
+# body is tiered by depth (white tier → torch_white, deeper → torch_grey,
+# matching the wall tiers). Falls back to the old diamond polygon when
+# the art isn't imported yet, so torches are never invisible.
 #
 # Usage:
 #   var t := preload("res://scripts/world/Torch.gd").new()
@@ -15,10 +17,20 @@ class_name Torch extends Node2D
 
 const AmbientLightingRef := preload("res://scripts/world/AmbientLighting.gd")
 
+const _DECOR_ROOT  := "res://Assets/OurAssets/decor/circle1/"
+const _SCREEN_PX   := 1920.0     # depth tier boundary (matches wall tiers)
+const _TORCH_BODY_H := 170.0
+const _FLAME_H      := 95.0
+const _FLAME_FRAMES := 4
+const _FLAME_FPS    := 12.0
+const _FLAME_OVERLAP := 12.0     # flame base sinks into the torch cup
+
+static var _flame_frames_cache: SpriteFrames = null
+
 @export var circle: int = 1
 
 var _light: PointLight2D = null
-var _flame: Polygon2D = null
+var _flame: Polygon2D = null      # legacy fallback only
 var _tween: Tween = null
 
 
@@ -46,10 +58,74 @@ func _build_light(color: Color) -> void:
 	add_child(_light)
 
 
-# Small diamond flame so torches read as objects in the world even when
-# the lighting is dim. We don't ship art for this — a 4-vertex polygon
-# tinted bright reads fine for placeholder visuals.
 func _build_flame_visual(color: Color) -> void:
+	var body_tex: Texture2D = _torch_body_texture()
+	if body_tex == null:
+		_build_legacy_flame(color)   # art not imported yet
+		return
+	var bh: float = float(body_tex.get_height())
+	var s: float = _TORCH_BODY_H / maxf(1.0, bh)
+	var body := Sprite2D.new()
+	body.name = "TorchBody"
+	body.texture = body_tex
+	body.scale = Vector2(s, s)      # centered by default — sits on the mount point
+	add_child(body)
+
+	var sf: SpriteFrames = _flame_sprite_frames()
+	if sf == null:
+		return
+	var f0: Texture2D = sf.get_frame_texture(&"default", 0)
+	var fw: float = float(f0.get_width())  if f0 else 1.0
+	var fh: float = float(f0.get_height()) if f0 else 1.0
+	var fs: float = _FLAME_H / maxf(1.0, fh)
+	var anim := AnimatedSprite2D.new()
+	anim.name = "Flame"
+	anim.sprite_frames = sf
+	anim.centered = false
+	anim.scale = Vector2(fs, fs)
+	anim.offset = Vector2(-fw * 0.5, -fh)   # bottom-center pivot
+	# Body is centered, so its top edge is at -_TORCH_BODY_H/2; the flame
+	# base sits there (sunk slightly into the cup).
+	anim.position = Vector2(0.0, -_TORCH_BODY_H * 0.5 + _FLAME_OVERLAP)
+	add_child(anim)
+	if not Engine.is_editor_hint():
+		anim.play(&"default")
+
+
+# Depth tier from the torch's shaft Y (mirrors the wall tiers). No dark
+# torch art — grey covers both the grey and dark bands.
+func _torch_body_texture() -> Texture2D:
+	var screen_idx: int = int(position.y / _SCREEN_PX) + 1
+	var nm: String = "torch_white" if screen_idx <= 3 else "torch_grey"
+	var path: String = _DECOR_ROOT + nm + ".png"
+	if ResourceLoader.exists(path):
+		return load(path) as Texture2D
+	return null
+
+
+func _flame_sprite_frames() -> SpriteFrames:
+	if _flame_frames_cache != null:
+		return _flame_frames_cache
+	var sf := SpriteFrames.new()
+	sf.set_animation_loop(&"default", true)
+	sf.set_animation_speed(&"default", _FLAME_FPS)
+	var got := false
+	for i in range(1, _FLAME_FRAMES + 1):
+		var path: String = "%sfire_torch_%02d.png" % [_DECOR_ROOT, i]
+		if ResourceLoader.exists(path):
+			var tex: Texture2D = load(path) as Texture2D
+			if tex:
+				sf.add_frame(&"default", tex)
+				got = true
+	if not got:
+		return null
+	_flame_frames_cache = sf
+	return sf
+
+
+# Old placeholder: a small bright diamond so torches still read as objects
+# before the art is imported. Kept as a graceful fallback.
+func _build_legacy_flame(color: Color) -> void:
 	_flame = Polygon2D.new()
 	_flame.name = "Flame"
 	_flame.color = color.lightened(0.35)
