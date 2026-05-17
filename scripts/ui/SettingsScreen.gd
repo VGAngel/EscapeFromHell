@@ -74,7 +74,6 @@ var _edit_overlay:   CanvasLayer = null
 # ── Scene refs ────────────────────────────────────────────────────────────────
 @onready var _root:        ColorRect = $Backdrop
 @onready var _close_btn:   Button    = $Backdrop/Centerer/Panel/VBox/TitleMargin/TitleBar/CloseButton
-@onready var _title_label: Label     = $Backdrop/Centerer/Panel/VBox/TitleMargin/TitleBar/Title
 
 @onready var _tab_sound:    Button = $Backdrop/Centerer/Panel/VBox/TabBar/TabSound
 @onready var _tab_language: Button = $Backdrop/Centerer/Panel/VBox/TabBar/TabLanguage

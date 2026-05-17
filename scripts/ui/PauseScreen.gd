@@ -26,12 +26,10 @@ const SIN_BAR_WIDTH  := 220.0
 
 # ── Scene refs ────────────────────────────────────────────────────────────────
 @onready var _root:           ColorRect      = $Backdrop
-@onready var _main_panel:     PanelContainer = $Backdrop/MainCenterer/MainPanel
 @onready var _lbl_title:      Label          = $Backdrop/MainCenterer/MainPanel/VBox/Title
 @onready var _lbl_level:      Label          = $Backdrop/MainCenterer/MainPanel/VBox/LevelLabel
 @onready var _lbl_souls:      Label          = $Backdrop/MainCenterer/MainPanel/VBox/SoulsLabel
 @onready var _lbl_type_strip: Label          = $Backdrop/MainCenterer/MainPanel/VBox/TypeStrip
-@onready var _sin_bar_bg:     ColorRect      = $Backdrop/MainCenterer/MainPanel/VBox/SinRow/SinBarBg
 @onready var _sin_bar:        ColorRect      = $Backdrop/MainCenterer/MainPanel/VBox/SinRow/SinBarBg/SinBar
 @onready var _lbl_sin_pct:    Label          = $Backdrop/MainCenterer/MainPanel/VBox/SinRow/SinPercent
 @onready var _btn_resume:     Button         = $Backdrop/MainCenterer/MainPanel/VBox/ResumeButton
@@ -40,7 +38,6 @@ const SIN_BAR_WIDTH  := 220.0
 @onready var _btn_settings:   Button         = $Backdrop/MainCenterer/MainPanel/VBox/SettingsButton
 @onready var _btn_menu:       Button         = $Backdrop/MainCenterer/MainPanel/VBox/MenuButton
 
-@onready var _confirm_centerer: CenterContainer = $Backdrop/ConfirmCenterer
 @onready var _confirm_panel:    PanelContainer  = $Backdrop/ConfirmCenterer/ConfirmPanel
 @onready var _lbl_exit_title:   Label           = $Backdrop/ConfirmCenterer/ConfirmPanel/VBox/ExitTitle
 @onready var _lbl_exit_msg:     Label           = $Backdrop/ConfirmCenterer/ConfirmPanel/VBox/ExitMessage

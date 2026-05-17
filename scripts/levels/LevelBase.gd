@@ -637,8 +637,9 @@ func _on_bonus_collected(type: int, bonus_name: String) -> void:
 ## erased rather than leaking forever.
 func _on_soul_dropped(soul_id: String, drop_position: Vector2) -> void:
 	var int_id: int = soul_id.to_int() if soul_id.is_valid_int() else 0
-	var dict_key: Variant = soul_id if _carried_souls_data.has(soul_id) \
-			else int_id
+	var dict_key: Variant = int_id
+	if _carried_souls_data.has(soul_id):
+		dict_key = soul_id
 	if not SoulScene or not _room_container:
 		_carried_souls_data.erase(dict_key)
 		return
