@@ -93,7 +93,7 @@ func play_sfx(category: String, key: String) -> void:
 ## music.circles.circle_<n>.file_base from audio_config.json so the
 ## mapping stays data-driven — drop the file at res://audio/<file_base>.<ext>.
 func play_circle_music(circle: int) -> void:
-	var circles: Dictionary = _cfg.get("music", {}).get("circles", {})
+	var circles: Dictionary = _cfg.get("music", {}).get("tracks", {}).get("circles", {})
 	var entry: Dictionary = circles.get("circle_%d" % circle, {})
 	var file_base: String = String(entry.get("file_base", ""))
 	if file_base == "":
@@ -112,8 +112,8 @@ func play_music(path: String) -> void:
 	if not stream:
 		return
 	_ensure_loop(stream)
-	var tw := create_tween()
 	if _music.playing:
+		var tw := create_tween()
 		tw.tween_property(_music, "volume_db", -40.0, MUSIC_CROSSFADE * 0.5)
 		tw.tween_callback(func() -> void:
 			_music.stream = stream
