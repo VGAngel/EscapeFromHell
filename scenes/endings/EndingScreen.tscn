@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://endingscreen001"]
+[gd_scene format=3 uid="uid://cktigcp4yklki"]
 
-[ext_resource type="Script" path="res://scripts/ui/EndingScreen.gd" id="1_end"]
+[ext_resource type="Script" uid="uid://cf475dtf6oige" path="res://scripts/ui/EndingScreen.gd" id="1_end"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
 bg_color = Color(0.12, 0.1, 0.16, 1)
@@ -14,17 +14,16 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
-[node name="EndingScreen" type="Control"]
+[node name="EndingScreen" type="Control" unique_id=1416987495]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("1_end")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=526485674]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -34,36 +33,35 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.03, 0.02, 0.04, 1)
 
-[node name="Centerer" type="CenterContainer" parent="."]
+[node name="Centerer" type="CenterContainer" parent="." unique_id=193787639]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 1
 
-[node name="VBox" type="VBoxContainer" parent="Centerer"]
+[node name="VBox" type="VBoxContainer" parent="Centerer" unique_id=1386350469]
 custom_minimum_size = Vector2(560, 0)
 layout_mode = 2
 theme_override_constants/separation = 24
 alignment = 1
 
-[node name="Preheader" type="Label" parent="Centerer/VBox"]
+[node name="Preheader" type="Label" parent="Centerer/VBox" unique_id=1118110839]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.52, 0.62, 1)
 theme_override_font_sizes/font_size = 13
 text = "— Кінцівка —"
 horizontal_alignment = 1
 
-[node name="Title" type="Label" parent="Centerer/VBox"]
+[node name="Title" type="Label" parent="Centerer/VBox" unique_id=1154704171]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.84, 0, 1)
 theme_override_font_sizes/font_size = 42
 text = "Прощення"
 horizontal_alignment = 1
 
-[node name="Description" type="Label" parent="Centerer/VBox"]
+[node name="Description" type="Label" parent="Centerer/VBox" unique_id=1424053106]
 custom_minimum_size = Vector2(520, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.82, 0.9, 1)
@@ -72,17 +70,17 @@ text = "Ти повернувся. Не таким як пішов — кращ�
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Spacer" type="Control" parent="Centerer/VBox"]
+[node name="Spacer" type="Control" parent="Centerer/VBox" unique_id=732116664]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="MenuButton" type="Button" parent="Centerer/VBox"]
+[node name="MenuButton" type="Button" parent="Centerer/VBox" unique_id=1437850338]
 custom_minimum_size = Vector2(240, 52)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.88, 0.96, 1)
 theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn")
 theme_override_styles/focus = SubResource("StyleBoxFlat_btn")
 text = "У головне меню"

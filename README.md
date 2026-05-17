@@ -165,9 +165,9 @@ Preset `Android` уже налаштований в `export_presets.cfg` (arm64-
 4. **Debug keystore** (генерується один раз)
    ```bash
    keytool -keyalg RSA -genkeypair -alias androiddebugkey \
-     -keypass android -keystore ~/.android/debug.keystore \
-     -storepass android -dname "CN=Android Debug,O=Android,C=US" \
-     -validity 9999 -deststoretype pkcs12
+	 -keypass android -keystore ~/.android/debug.keystore \
+	 -storepass android -dname "CN=Android Debug,O=Android,C=US" \
+	 -validity 9999 -deststoretype pkcs12
    ```
 
 5. **Шляхи в Godot Editor Settings** (`Editor → Editor Settings → Export → Android`):
