@@ -60,27 +60,43 @@ const VIEWPORT_HEIGHT: float = 1920.0
 # want to re-introduce a per-segment multiplier later.
 const VERTICAL_ROOM_SCREENS: int = 1
 
-# Wall textures per tileset. Each variant is a seam-blended vertical tile
-# (see tools/seam_blend.py); the drawer cycles through them per screen-height
-# section using seeded RNG so the shaft doesn't show an obvious repeat.
-# When a tileset has no entries here, walls fall back to flat colored rects.
-const WALL_TEXTURES_BY_TILESET := {
-	"tileset1": [
-		"res://Assets/OurAssets/walls/circle1/base_a.png",
-		"res://Assets/OurAssets/walls/circle1/base_b.png",
-		"res://Assets/OurAssets/walls/circle1/base_c.png",
-		"res://Assets/OurAssets/walls/circle1/base_d.png",
+# Circle-1 wall + backdrop art, tiered by descending depth so the shaft
+# visibly darkens as the player falls: screens 1-3 "white", 4-6 "grey",
+# 7+ "dark" (1 screen = VIEWPORT_HEIGHT). The drawer picks the tier from
+# each section's Y, then a seeded random variant within that tier so the
+# shaft doesn't show an obvious repeat. Circle 1 spans two tilesets
+# (tileset1 = L1-L4, tileset12 = L5+) — both use the same tiered set.
+# A tileset with no entry falls back to flat colored rects.
+const _C1_WALL_TIERS := {
+	"white": [
+		"res://Assets/OurAssets/walls/circle1/wall_white_00.png",
+		"res://Assets/OurAssets/walls/circle1/wall_white_Start.png",
+		"res://Assets/OurAssets/walls/circle1/wall_white_greyGreen.png",
+	],
+	"grey": [
+		"res://Assets/OurAssets/walls/circle1/wall_grey_00.png",
+		"res://Assets/OurAssets/walls/circle1/wall_grey_dark.png",
+		"res://Assets/OurAssets/walls/circle1/wall_greyGreen_00.png",
+		"res://Assets/OurAssets/walls/circle1/wall_greyGreen_grey.png",
+	],
+	"dark": [
+		"res://Assets/OurAssets/walls/circle1/wall_dark_00.png",
+		"res://Assets/OurAssets/walls/circle1/wall_dark_01.png",
+		"res://Assets/OurAssets/walls/circle1/wall_dark_02.png",
 	],
 }
-
-# Atmospheric backdrop drawn behind walls and platforms. Falls through to a
-# flat CIRCLE_COLORS fill when a tileset has no backdrop entries.
+const _C1_BACKDROP_TIERS := {
+	"white": ["res://Assets/OurAssets/walls/circle1/background_white.png"],
+	"grey":  ["res://Assets/OurAssets/walls/circle1/background_grey.png"],
+	"dark":  ["res://Assets/OurAssets/walls/circle1/background_dark.png"],
+}
+const WALL_TEXTURES_BY_TILESET := {
+	"tileset1":  _C1_WALL_TIERS,
+	"tileset12": _C1_WALL_TIERS,
+}
 const BACKDROP_TEXTURES_BY_TILESET := {
-	"tileset1": [
-		"res://Assets/OurAssets/walls/circle1/backdrop_a.png",
-		"res://Assets/OurAssets/walls/circle1/backdrop_b.png",
-		"res://Assets/OurAssets/walls/circle1/backdrop_c.png",
-	],
+	"tileset1":  _C1_BACKDROP_TIERS,
+	"tileset12": _C1_BACKDROP_TIERS,
 }
 
 # Side-wall config resolved at runtime from
@@ -224,6 +240,7 @@ func _ready() -> void:
 		_install_debug_room_marker()
 		_spawn_atmosphere_particles()
 		_spawn_torches()
+		_spawn_decorations()
 		if is_vertical:
 			_log_vertical_layout()
 
@@ -515,6 +532,140 @@ func _spawn_torches_horizontal(torch_script: Script, x_left: float, x_right: flo
 		torch.set("circle", circle)
 		torch.position = spot
 		add_child(torch)
+
+
+# ── Decorations ───────────────────────────────────────────────────────────────
+#
+# Procedural bushes (on platform tops), windows (down both side walls) and a
+# single entrance arch. Each picks its art from the same depth tier as the
+# walls via _depth_tier(), so decor darkens together with the shaft. Circle 1
+# only — assets live in Assets/OurAssets/decor/circle1/.
+
+const _DECOR_ROOT := "res://Assets/OurAssets/decor/circle1/"
+const _C1_DECOR := {
+	"bush": {
+		"white": [
+			"bush_green_01", "bush_green_02", "bush_green_03",
+			"bush_greenFlower_01", "bush_greenFlower_02", "bush_greenFlower_03",
+			"bush_orange_01", "bush_orange_02", "bush_orange_03",
+		],
+		"grey": [
+			"bush_orange_01", "bush_orange_02", "bush_orange_03",
+			"bush_dark_01", "bush_dark_02", "bush_dark_03",
+		],
+		"dark": ["bush_dark_01", "bush_dark_02", "bush_dark_03"],
+	},
+	"window": {
+		"white": ["window_white"],
+		"grey":  ["window_grey"],
+		"dark":  ["window_dark", "window_dark_broken"],
+	},
+	"arch": {
+		"white": ["arch_entr"],
+		"grey":  ["arch_entr_grey"],
+		"dark":  ["arch_entr_dark"],
+	},
+}
+
+const _BUSH_TARGET_H:   float = 130.0    # on-platform bush height (px)
+const _BUSH_CHANCE:     float = 0.45     # fraction of platforms that get a bush
+const _WINDOW_TARGET_H: float = 360.0
+const _WINDOW_STEP:     float = 1000.0   # vertical spacing down each wall
+const _WINDOW_INSET:    float = 620.0    # skip the entrance/exit bands
+const _ARCH_WIDTH_FRAC: float = 0.78     # arch width as a fraction of room_width
+
+var _decor_tex_cache: Dictionary = {}    # texture name → Texture2D | null
+
+func _decor_tex(kind: String, tier: String, rng: RandomNumberGenerator) -> Texture2D:
+	var tiers: Dictionary = _C1_DECOR.get(kind, {})
+	var names: Array = tiers.get(tier, [])
+	if names.is_empty():
+		# Partial import — fall back to the nearest non-empty tier.
+		for t in _DEPTH_TIERS:
+			names = tiers.get(t, [])
+			if not names.is_empty():
+				break
+	if names.is_empty():
+		return null
+	var nm: String = String(names[rng.randi() % names.size()])
+	if _decor_tex_cache.has(nm):
+		return _decor_tex_cache[nm]
+	var path: String = _DECOR_ROOT + nm + ".png"
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	_decor_tex_cache[nm] = tex
+	return tex
+
+# anchor is a fractional pivot: (0.5,1.0)=bottom-center, (0.5,0.0)=top-center,
+# (0.5,0.5)=center. `pos` is where that pivot lands. Scaled to `target_h` px.
+func _add_decor_sprite(tex: Texture2D, pos: Vector2, target_h: float,
+		anchor: Vector2, z: int) -> void:
+	if tex == null:
+		return
+	var tw: float = float(tex.get_width())
+	var th: float = float(tex.get_height())
+	if tw <= 0.0 or th <= 0.0:
+		return
+	var s: float = target_h / th
+	var spr := Sprite2D.new()
+	spr.texture  = tex
+	spr.centered = false
+	spr.scale    = Vector2(s, s)
+	spr.offset   = Vector2(-tw * anchor.x, -th * anchor.y)
+	spr.position = pos
+	spr.z_index  = z
+	add_child(spr)
+
+func _spawn_decorations() -> void:
+	if Engine.is_editor_hint() or not is_vertical or circle != 1:
+		return
+	if _vert_layout.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("decor_%d" % level_id)
+
+	# The topmost platform (smallest Y) carries the altar — keep it clear.
+	var altar_idx: int = 0
+	for i in _vert_layout.size():
+		if float(_vert_layout[i].y) < float(_vert_layout[altar_idx].y):
+			altar_idx = i
+
+	# Bushes on platform tops (foreground foliage — z above platforms).
+	for i in _vert_layout.size():
+		if i == altar_idx or rng.randf() > _BUSH_CHANCE:
+			continue
+		var e: Dictionary = _vert_layout[i]
+		var pw: float = float(e.get("width", _platform_width))
+		var px: float = float(e.get("x", room_width * 0.5)) \
+				+ (rng.randf() - 0.5) * maxf(0.0, pw - 60.0)
+		var py: float = float(e.get("y", 0.0)) - PLATFORM_T * 0.5
+		_add_decor_sprite(_decor_tex("bush", _depth_tier(py), rng),
+				Vector2(px, py), _BUSH_TARGET_H, Vector2(0.5, 1.0), 1)
+
+	# Windows down both side walls, alternating, behind the action.
+	var sa_top: float = float(SafeArea.top_reserved) if SafeArea else 0.0
+	var wl: float = _side_wall_w + 30.0
+	var wr: float = room_width - _side_wall_w - 30.0
+	var y: float = _WINDOW_INSET
+	var on_left := true
+	while y < room_height - _WINDOW_INSET:
+		if y > WALL_T + sa_top:
+			_add_decor_sprite(_decor_tex("window", _depth_tier(y), rng),
+					Vector2(wl if on_left else wr, y),
+					_WINDOW_TARGET_H, Vector2(0.5, 0.5), 0)
+		on_left = not on_left
+		y += _WINDOW_STEP
+
+	# Single entrance arch framing the top of the shaft.
+	var arch_y: float = WALL_T + sa_top + 12.0
+	var arch_tex: Texture2D = _decor_tex("arch", _depth_tier(arch_y), rng)
+	if arch_tex and arch_tex.get_width() > 0:
+		var target_w: float = room_width * _ARCH_WIDTH_FRAC
+		var arch_h: float = float(arch_tex.get_height()) \
+				* (target_w / float(arch_tex.get_width()))
+		_add_decor_sprite(arch_tex, Vector2(room_width * 0.5, arch_y),
+				arch_h, Vector2(0.5, 0.0), 0)
 
 
 # Dev-only diagnostic: print the generated row Y/X positions and the largest
@@ -1674,33 +1825,66 @@ func _add_platform(pos: Vector2, size: Vector2) -> void:
 
 # ── Visuals ───────────────────────────────────────────────────────────────────
 
-# Cached texture list for the current tileset. Lazy-loaded on first _draw().
-var _wall_textures_cache: Array = []
+# tier (white/grey/dark) → Array[Texture2D]. Lazy-loaded on first _draw().
+var _wall_textures_cache: Dictionary = {}
 var _wall_textures_loaded: bool = false
-var _backdrop_textures_cache: Array = []
+var _backdrop_textures_cache: Dictionary = {}
 var _backdrop_textures_loaded: bool = false
+
+const _DEPTH_TIERS: Array[String] = ["white", "grey", "dark"]
+
+# Screen index (1-based) from the top of the shaft → depth tier. Tier is by
+# ABSOLUTE depth, so a short level (L1 = 2 screens) stays all-white while a
+# tall one (L9 = 8 screens) walks white→grey→dark.
+func _depth_tier(y: float) -> String:
+	var screen_idx: int = int(y / VIEWPORT_HEIGHT) + 1
+	if screen_idx <= 3:
+		return "white"
+	if screen_idx <= 6:
+		return "grey"
+	return "dark"
+
+func _load_tiered(src: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	for tier in _DEPTH_TIERS:
+		var arr: Array = []
+		for p in src.get(tier, []):
+			if ResourceLoader.exists(p):
+				var tex: Texture2D = load(p)
+				if tex:
+					arr.append(tex)
+		out[tier] = arr
+	return out
+
+# Textures for `tier`, falling back to the nearest non-empty tier so a
+# partially-imported asset set still draws something instead of gaps.
+func _tier_pool(cache: Dictionary, tier: String) -> Array:
+	var pool: Array = cache.get(tier, [])
+	if not pool.is_empty():
+		return pool
+	for t in _DEPTH_TIERS:
+		var alt: Array = cache.get(t, [])
+		if not alt.is_empty():
+			return alt
+	return []
+
+func _has_tiered(cache: Dictionary) -> bool:
+	for t in _DEPTH_TIERS:
+		if not (cache.get(t, []) as Array).is_empty():
+			return true
+	return false
 
 func _ensure_wall_textures_loaded() -> void:
 	if _wall_textures_loaded:
 		return
 	_wall_textures_loaded = true
-	var paths: Array = WALL_TEXTURES_BY_TILESET.get(tileset, [])
-	for p in paths:
-		if ResourceLoader.exists(p):
-			var tex: Texture2D = load(p)
-			if tex:
-				_wall_textures_cache.append(tex)
+	_wall_textures_cache = _load_tiered(WALL_TEXTURES_BY_TILESET.get(tileset, {}))
 
 func _ensure_backdrop_textures_loaded() -> void:
 	if _backdrop_textures_loaded:
 		return
 	_backdrop_textures_loaded = true
-	var paths: Array = BACKDROP_TEXTURES_BY_TILESET.get(tileset, [])
-	for p in paths:
-		if ResourceLoader.exists(p):
-			var tex: Texture2D = load(p)
-			if tex:
-				_backdrop_textures_cache.append(tex)
+	_backdrop_textures_cache = _load_tiered(BACKDROP_TEXTURES_BY_TILESET.get(tileset, {}))
 
 ## Draws an atmospheric backdrop tiled vertically at native texture height.
 ## Width is stretched to fit the shaft (small uniform fog stretch is invisible).
@@ -1713,14 +1897,16 @@ func _ensure_backdrop_textures_loaded() -> void:
 const BACKDROP_DIM: Color = Color(0.75, 0.75, 0.75, 1.0)
 
 func _draw_textured_backdrop(x: float, width: float) -> void:
-	if _backdrop_textures_cache.is_empty():
+	if not _has_tiered(_backdrop_textures_cache):
 		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("backdrop_%d" % level_id)
-	var n: int = _backdrop_textures_cache.size()
 	var y: float = 0.0
 	while y < room_height:
-		var tex: Texture2D = _backdrop_textures_cache[rng.randi() % n]
+		var pool: Array = _tier_pool(_backdrop_textures_cache, _depth_tier(y))
+		if pool.is_empty():
+			break
+		var tex: Texture2D = pool[rng.randi() % pool.size()]
 		var tex_w: float = float(tex.get_width())
 		var tex_h: float = float(tex.get_height())
 		var section_h: float = minf(tex_h, room_height - y)
@@ -1740,14 +1926,16 @@ func _draw_textured_backdrop(x: float, width: float) -> void:
 ## levels differ. A native-width vertical slice (random x-offset) is sampled
 ## per section so a 768-px source isn't squashed into the 60-px wall.
 func _draw_textured_side_wall(x: float, width: float, seed_tag: String) -> void:
-	if _wall_textures_cache.is_empty():
+	if not _has_tiered(_wall_textures_cache):
 		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("wall_%d_%s" % [level_id, seed_tag])
-	var n: int = _wall_textures_cache.size()
 	var y: float = 0.0
 	while y < room_height:
-		var tex: Texture2D = _wall_textures_cache[rng.randi() % n]
+		var pool: Array = _tier_pool(_wall_textures_cache, _depth_tier(y))
+		if pool.is_empty():
+			break
+		var tex: Texture2D = pool[rng.randi() % pool.size()]
 		var tex_w: float = float(tex.get_width())
 		var tex_h: float = float(tex.get_height())
 		var slice_w: float = minf(width, tex_w)
@@ -1775,7 +1963,7 @@ func _draw() -> void:
 	# overlay the backdrop, so the bg colour is only visible when no backdrop
 	# texture exists for the current tileset.
 	draw_rect(Rect2(0, 0, room_width, room_height), bg)
-	if is_vertical and not _backdrop_textures_cache.is_empty():
+	if is_vertical and _has_tiered(_backdrop_textures_cache):
 		_draw_textured_backdrop(0.0, room_width)
 
 	# A "shaft" is the whole vertical level in one room — both ends are sealed.
@@ -1806,7 +1994,7 @@ func _draw() -> void:
 		draw_rect(Rect2(left_x,  0, side_t, room_height), wall_c)
 		draw_rect(Rect2(right_x, 0, side_t, room_height), wall_c)
 	elif _side_wall_draw:
-		if not _wall_textures_cache.is_empty():
+		if _has_tiered(_wall_textures_cache):
 			_draw_textured_side_wall(left_x,  side_t, "L")
 			_draw_textured_side_wall(right_x, side_t, "R")
 		else:

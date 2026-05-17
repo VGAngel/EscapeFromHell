@@ -19,9 +19,10 @@ const CONFIG_PATH := "res://placeholder_assets_config.json"
 # platforms read as solid blocks with rocky undersides.
 const PLATFORM_TEXTURES: Dictionary = {
 	"stone": [
-		"res://Assets/OurAssets/platforms/circle1/stone_a.png",
-		"res://Assets/OurAssets/platforms/circle1/stone_b.png",
-		"res://Assets/OurAssets/platforms/circle1/stone_c.png",
+		"res://Assets/OurAssets/platforms/circle1/island_01.png",
+		"res://Assets/OurAssets/platforms/circle1/island_01a.png",
+		"res://Assets/OurAssets/platforms/circle1/island_02.png",
+		"res://Assets/OurAssets/platforms/circle1/island_02a.png",
 	],
 	"crumbling": [
 		"res://Assets/OurAssets/platforms/circle1/crumbling_a.png",
