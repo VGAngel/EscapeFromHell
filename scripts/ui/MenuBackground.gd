@@ -204,14 +204,18 @@ func _update_parallax(delta: float) -> void:
 		var accel := Input.get_accelerometer()
 		target = Vector2(clamp(accel.x / 5.0, -1.0, 1.0), 0.0)
 	else:
-		# get_local_mouse_position() inverts _root's global transform; when a
-		# parent has a zero scale (transient during layout/scale tweens) the
-		# matrix is non-invertible and Godot logs "det == 0". Skip this frame.
-		if is_zero_approx(_root.get_global_transform().determinant()):
-			return
+		# Read the mouse straight from the viewport instead of
+		# _root.get_local_mouse_position(): the latter inverts _root's
+		# canvas transform, which is singular (det==0) during the menu's
+		# entry scale-tween and spams an engine error. We only need the
+		# horizontal fraction across the screen, so the viewport pos —
+		# which needs no matrix inversion — is equivalent and safe.
 		var size := _viewport_size()
-		var mp := _root.get_local_mouse_position()
-		target = Vector2(clamp(mp.x / size.x * 2.0 - 1.0, -1.0, 1.0), 0.0)
+		var vp := _root.get_viewport()
+		if vp == null or size.x <= 0.0:
+			return
+		var mouse_x: float = vp.get_mouse_position().x
+		target = Vector2(clamp(mouse_x / size.x * 2.0 - 1.0, -1.0, 1.0), 0.0)
 	_tilt = _tilt.lerp(target, clamp(delta * PARALLAX_SMOOTH, 0.0, 1.0))
 	# Static Background TextureRect drifts at quarter speed too —
 	# subtle "the wall is breathing" feel without showing the edges.

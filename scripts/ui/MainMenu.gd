@@ -562,6 +562,15 @@ func _open_via_router(screen: Node) -> void:
 	if screen == null:
 		return
 	var router: Node = get_node_or_null("/root/UIRouter")
+	# Submenu → deeper screen is a replace, not a stack: close the
+	# PlaySubmenu first, otherwise its centered panel stays on top of
+	# whatever it launched (level-debug rows were visible but the
+	# submenu panel covered them and ate the clicks).
+	var sub: Node = get_node_or_null("PlaySubmenu")
+	if sub != null and sub != screen and sub.has_method("close") \
+			and router != null and router.has_method("contains") \
+			and router.contains(sub):
+		sub.close()
 	if router and router.has_method("push"):
 		router.push(screen)
 	elif screen.has_method("open"):
