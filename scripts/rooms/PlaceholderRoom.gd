@@ -489,6 +489,7 @@ func _make_dust_texture() -> Texture2D:
 # legible.
 const TORCH_SCRIPT_PATH := "res://scripts/world/Torch.gd"
 const TORCH_WALL_OFFSET := 24.0         # x-distance from inside face of wall (horizontal rooms)
+const TORCH_VERTICAL_STEP := 540.0      # vertical gap between shaft torches
 
 func _spawn_torches() -> void:
 	if Engine.is_editor_hint():
@@ -498,13 +499,21 @@ func _spawn_torches() -> void:
 	var torch_script: Script = load(TORCH_SCRIPT_PATH) as Script
 	if torch_script == null:
 		return
-	if is_vertical:
-		# The old fixed-cadence wall torches don't mount onto the new
-		# full-width facade — they read as flames floating in mid-air,
-		# so don't spawn them in vertical shafts.
-		return
 	var x_left: float = max(_side_wall_w + TORCH_WALL_OFFSET, TORCH_WALL_OFFSET)
 	var x_right: float = room_width - x_left
+	if is_vertical:
+		# Start on the stone facade (below the open-sky entrance piece) so
+		# torches mount on the wall and never read as flames in mid-air.
+		var y: float = _facade_start_y() + TORCH_VERTICAL_STEP * 0.5
+		var on_left := true
+		while y < room_height - TORCH_VERTICAL_STEP * 0.5:
+			var t: Node2D = torch_script.new()
+			t.set("circle", circle)
+			t.position = Vector2(x_left if on_left else x_right, y)
+			add_child(t)
+			on_left = not on_left
+			y += TORCH_VERTICAL_STEP
+		return
 	_spawn_torches_horizontal(torch_script, x_left, x_right)
 
 
@@ -2004,22 +2013,32 @@ var _facade_start_tried: bool = false
 # of the shaft, full width over the sky. Returns the Y where the regular
 # tiled facade continues (= its native height), or the fallback constant
 # when the art isn't imported.
-func _draw_facade_start() -> float:
+# Y where the tiled stone facade begins (bottom of the entrance piece,
+# minus the overlap). No drawing — safe to call from spawn code so things
+# like torches mount on the wall, never in the open-sky entrance.
+func _facade_start_y() -> float:
 	if not _facade_start_tried:
 		_facade_start_tried = true
 		if ResourceLoader.exists(_FACADE_START_PATH):
 			_facade_start_tex = load(_FACADE_START_PATH) as Texture2D
 	if _facade_start_tex == null:
 		return _FACADE_TOP_OPEN
-	var tw: float = float(_facade_start_tex.get_width())
 	var th: float = float(_facade_start_tex.get_height())
-	if tw <= 0.0 or th <= 0.0:
+	if th <= 0.0:
 		return _FACADE_TOP_OPEN
-	draw_texture_rect_region(
-		_facade_start_tex,
-		Rect2(0.0, 0.0, room_width, th),
-		Rect2(0.0, 0.0, tw, th))
 	return maxf(0.0, th - _FACADE_START_OVERLAP)
+
+func _draw_facade_start() -> float:
+	var start_y: float = _facade_start_y()
+	if _facade_start_tex != null:
+		var tw: float = float(_facade_start_tex.get_width())
+		var th: float = float(_facade_start_tex.get_height())
+		if tw > 0.0 and th > 0.0:
+			draw_texture_rect_region(
+				_facade_start_tex,
+				Rect2(0.0, 0.0, room_width, th),
+				Rect2(0.0, 0.0, tw, th))
+	return start_y
 
 func _draw_textured_backdrop(x: float, width: float,
 		modulate: Color = BACKDROP_DIM) -> void:
