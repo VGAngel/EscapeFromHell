@@ -1274,7 +1274,6 @@ const ONE_WAY_SCRIPT     := preload("res://scripts/platforms/OneWayPlatform.gd")
 const CRUMBLING_SCRIPT   := preload("res://scripts/platforms/CrumblingPlatform.gd")
 const BOUNCE_SCRIPT      := preload("res://scripts/platforms/BouncePlatform.gd")
 const MOVING_SCRIPT      := preload("res://scripts/platforms/MovingPlatform.gd")
-const MUD_SCRIPT         := preload("res://scripts/platforms/MudPlatform.gd")
 const ASH_SCRIPT         := preload("res://scripts/platforms/AshPlatform.gd")
 const FAITH_SCRIPT       := preload("res://scripts/platforms/FaithPlatform.gd")
 const SIN_SCRIPT         := preload("res://scripts/platforms/SinPlatform.gd")
@@ -1810,8 +1809,6 @@ func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 	# geometry stable while giving each circle a distinct feel.
 	var resolved: String = type
 	match circle:
-		4:
-			if type == "crumbling": resolved = "mud"
 		5:
 			if type == "crumbling": resolved = "ash"
 		6:
@@ -1835,9 +1832,6 @@ func _add_typed_platform(pos: Vector2, sz: Vector2, type: String) -> void:
 		"bounce":
 			body = StaticBody2D.new()
 			body.set_script(BOUNCE_SCRIPT)
-		"mud":
-			body = StaticBody2D.new()
-			body.set_script(MUD_SCRIPT)
 		"ash":
 			body = StaticBody2D.new()
 			body.set_script(ASH_SCRIPT)
